@@ -4,7 +4,7 @@ TENDEREASE.LK
 ## Project Folder Structure
 
 ```text
-project-root/
+TENDEREASE.LK/
 │
 ├── frontend/
 ├── backend/
