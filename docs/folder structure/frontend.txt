@@ -1,0 +1,88 @@
+frontend/
+│
+├── app/                        # Next.js App Router
+│   ├── (auth)/                 # Route group: auth
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── register/
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
+│   │
+│   ├── (dashboard)/            # Protected area
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │
+│   │   ├── tenders/            # Tender publishing & listing
+│   │   │   ├── page.tsx
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx
+│   │   │   └── [id]/
+│   │   │       └── page.tsx
+│   │   │
+│   │   ├── vendors/            # Vendor management
+│   │   │   ├── page.tsx
+│   │   │   └── [id]/page.tsx
+│   │   │
+│   │   ├── evaluations/        # Bid opening & evaluation
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── reports/            # KPIs & reports
+│   │   │   └── page.tsx
+│   │
+│   ├── api/                    # Next.js API routes (optional)
+│   │   └── health/route.ts
+│   │
+│   ├── layout.tsx              # Root layout
+│   └── page.tsx                # Landing page
+│
+├── components/
+│   ├── common/                 # Reusable UI
+│   │   ├── Header.tsx
+│   │   ├── Sidebar.tsx
+│   │   └── DataTable.tsx
+│   │
+│   ├── tender/
+│   │   ├── TenderForm.tsx
+│   │   └── TenderCard.tsx
+│   │
+│   ├── vendor/
+│   │   └── VendorProfile.tsx
+│   │
+│   ├── evaluation/
+│   │   └── ScoreSheet.tsx
+│
+├── stores/                     # Zustand stores
+│   ├── auth.store.ts
+│   ├── tender.store.ts
+│   └── vendor.store.ts
+│
+├── services/                   # Axios API layer
+│   ├── api.ts                  # Axios config + interceptors
+│   ├── auth.service.ts
+│   ├── tender.service.ts
+│   ├── vendor.service.ts
+│
+├── schemas/                    # Zod schemas
+│   ├── auth.schema.ts
+│   ├── tender.schema.ts
+│   └── vendor.schema.ts
+│
+├── hooks/
+│   └── useAuth.ts
+│
+├── lib/
+│   ├── i18n.ts                 # next-intl config
+│   └── constants.ts
+│
+├── styles/
+│   └── globals.css
+│
+├── public/
+│   └── assets/
+│
+├── tests/                      # Vitest + RTL
+│   └── tender.test.tsx
+│
+├── .env.local
+├── next.config.js
+└── package.json

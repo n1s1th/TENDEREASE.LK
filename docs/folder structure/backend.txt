@@ -1,0 +1,70 @@
+backend/
+│
+├── src/main/java/lk/tenderease/
+│   ├── TenderEaseApplication.java
+│   │
+│   ├── config/
+│   │   ├── SecurityConfig.java
+│   │   ├── JwtConfig.java
+│   │   ├── RedisConfig.java
+│   │   └── RabbitMQConfig.java
+│   │
+│   ├── common/
+│   │   ├── audit/
+│   │   │   ├── AuditLog.java
+│   │   │   └── AuditService.java
+│   │   ├── enums/
+│   │   └── exceptions/
+│   │
+│   ├── auth/
+│   │   ├── controller/AuthController.java
+│   │   ├── service/AuthService.java
+│   │   └── dto/
+│   │
+│   ├── tender/
+│   │   ├── controller/TenderController.java
+│   │   ├── service/TenderService.java
+│   │   ├── repository/TenderRepository.java
+│   │   ├── entity/Tender.java
+│   │   └── dto/
+│   │
+│   ├── vendor/
+│   │   ├── controller/VendorController.java
+│   │   ├── service/VendorService.java
+│   │   ├── repository/VendorRepository.java
+│   │   ├── entity/Vendor.java
+│   │   └── dto/
+│   │
+│   ├── clarification/
+│   │   ├── controller/ClarificationController.java
+│   │   ├── service/ClarificationService.java
+│   │   └── entity/
+│   │
+│   ├── evaluation/
+│   │   ├── controller/EvaluationController.java
+│   │   ├── service/EvaluationService.java
+│   │   └── entity/
+│   │
+│   ├── award/
+│   │   ├── controller/AwardController.java
+│   │   ├── service/AwardService.java
+│   │   └── entity/
+│   │
+│   ├── notification/
+│   │   ├── EmailService.java
+│   │   ├── SmsService.java
+│   │   └── EventPublisher.java
+│   │
+│   └── storage/
+│       └── S3Service.java
+│
+├── src/main/resources/
+│   ├── application.yml
+│   └── db/migration/           # Flyway migrations
+│
+├── src/test/java/
+│   └── tender/
+│
+└── pom.xml
+
+#Other section
