@@ -58,11 +58,11 @@
       }
     ],
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+  "paths": {
+  "@/*": ["./*"],
+  "@/components/*": ["./components/*"],
+  "@/lib/*": ["./lib/*"]
+}
   },
   "include": [
     "next-env.d.ts",
