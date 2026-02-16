@@ -9,7 +9,9 @@ export default function TopNavigation({
 }: Props) {
   return (
     <div className="bg-white border-b">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center gap-6 text-sm">
+
+      {/* IMPORTANT: px-3 to match page content */}
+      <div className="w-full px-3 py-2 flex items-center gap-6 text-sm">
 
         {/* Back to Search */}
         <button
@@ -20,7 +22,7 @@ export default function TopNavigation({
         </button>
 
         {/* Divider */}
-        <div className="h-5 w-px bg-gray-300"></div>
+        <div className="h-4 w-px bg-gray-300"></div>
 
         {/* Dynamic Menu */}
         {menuItems.map((item, index) => (
@@ -31,6 +33,7 @@ export default function TopNavigation({
             {item}
           </button>
         ))}
+
       </div>
     </div>
   );

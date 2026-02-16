@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import MainHeader from "@/components/tender/details/MainHeader";
 import TopNavigation from "@/components/tender/details/TopNavigation";
 import TenderHeader from "@/components/tender/details/TenderHeader";
 import SpecialRequirements from "@/components/tender/details/SpecialRequirements";
@@ -41,9 +42,13 @@ export default function TenderDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-100">
 
+      {/* NEW HEADER */}
+      <MainHeader />
+
+      {/* Back to Search Row */}
       <TopNavigation />
 
-      {/* FULL WIDTH CONTAINER */}
+      {/* Full Width Content */}
       <div className="w-full px-3 py-3 space-y-2">
 
         <TenderHeader />
