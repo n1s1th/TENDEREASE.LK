@@ -29,7 +29,7 @@ const addenda: Addendum[] = [
 
 export default function AddendaSection() {
   return (
-    <div className="bg-white p-3 rounded-md shadow-sm space-y-4">
+    <div className="bg-white rounded-xl shadow-sm px-6 py-6 space-y-6">
 
       <h2 className="font-semibold text-sm">
         Addenda and Amendments
@@ -38,11 +38,11 @@ export default function AddendaSection() {
       {addenda.map((item, index) => (
         <div
           key={index}
-          className="border rounded-md p-3 space-y-2"
+          className="border rounded-lg px-5 py-5 space-y-4"
         >
 
           {/* Header Row */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-4 text-sm">
 
             <span className="font-medium text-orange-700">
               {item.id}
@@ -52,8 +52,7 @@ export default function AddendaSection() {
               {item.date}
             </span>
 
-            {/* INLINE MANDATORY BADGE */}
-            <span className="text-xs px-2 py-0.5 border border-orange-400 text-orange-700 rounded-md">
+            <span className="text-xs px-3 py-1 border border-orange-400 text-orange-700 rounded-md">
               Mandatory
             </span>
 
@@ -65,30 +64,32 @@ export default function AddendaSection() {
           </p>
 
           {/* Description */}
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 leading-relaxed">
             {item.description}
           </p>
 
           {/* File Row */}
-          <div className="flex justify-between items-center bg-amber-50 p-2 rounded-md">
-            <div className="flex items-center gap-2">
-              <FileText size={16} className="text-yellow-600" />
+          <div className="flex justify-between items-center bg-amber-50 border border-amber-200 rounded-lg px-4 py-4">
+
+            <div className="flex items-center gap-3">
+              <FileText size={18} className="text-amber-600" />
               <span className="text-xs">
                 {item.file}
               </span>
             </div>
 
-            <button className="flex items-center gap-1 text-orange-600 text-xs hover:underline cursor-pointer">
-              <Download size={14} />
+            <button className="flex items-center gap-2 text-orange-700 text-xs hover:underline cursor-pointer">
+              <Download size={16} />
               Download
             </button>
+
           </div>
 
         </div>
       ))}
 
       {/* Footer Note */}
-      <div className="bg-amber-100 p-2 rounded text-xs text-orange-700">
+      <div className="bg-amber-100 rounded-lg px-4 py-4 text-xs text-orange-700 leading-relaxed">
         Important: All mandatory addenda must be acknowledged.
         Failure to comply may result in disqualification.
       </div>

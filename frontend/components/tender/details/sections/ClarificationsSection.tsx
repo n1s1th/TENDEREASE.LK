@@ -8,7 +8,8 @@ export default function ClarificationsSection() {
   const [question, setQuestion] = useState("");
 
   return (
-    <div className="bg-white p-3 rounded-md shadow-sm space-y-4">
+    <div className="bg-white rounded-xl shadow-sm px-6 py-6 space-y-6">
+
 
       {/* Header */}
       <div className="flex justify-between items-start">

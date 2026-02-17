@@ -1,37 +1,37 @@
 import { FileText, Download } from "lucide-react";
 
 export default function DocumentsSection() {
-  const docs = [
-    "Tender Notice",
-    "Technical Specifications",
-    "Bill of Quantities",
-    "Project Drawings",
-    "Conditions of Contract",
-  ];
-
   return (
-    <div className="bg-white p-3 rounded-md shadow-sm space-y-3">
-      <h2 className="font-semibold text-sm">Tender Documents</h2>
+    <div className="bg-white rounded-xl shadow-sm px-6 py-6 space-y-5">
 
-      {docs.map((doc, index) => (
+      <h3 className="text-base font-semibold">
+        Tender Documents
+      </h3>
+
+      {[1, 2, 3, 4].map((doc) => (
         <div
-          key={index}
-          className="flex justify-between items-center bg-amber-50 p-3 rounded-md"
+          key={doc}
+          className="bg-amber-50 border border-amber-200 rounded-lg px-5 py-5 flex justify-between items-center"
         >
-          <div className="flex gap-3 items-center">
-            <FileText size={18} className="text-yellow-600" />
+          <div className="flex items-center gap-4">
+            <FileText size={22} className="text-amber-600" />
             <div>
-              <p className="text-sm font-medium">{doc}</p>
-              <p className="text-xs text-gray-500">PDF · 235 KB</p>
+              <p className="text-sm font-medium">
+                Document 0{doc}
+              </p>
+              <p className="text-xs text-gray-500">
+                PDF · 235 KB
+              </p>
             </div>
           </div>
 
-          <button className="flex items-center gap-1 text-orange-600 text-sm hover:underline cursor-pointer">
+          <button className="flex items-center gap-2 text-orange-700 text-sm hover:underline cursor-pointer">
             <Download size={16} />
             Download
           </button>
         </div>
       ))}
+
     </div>
   );
 }

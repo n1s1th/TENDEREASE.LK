@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import MainHeader from "@/components/tender/details/MainHeader";
 import TopNavigation from "@/components/tender/details/TopNavigation";
 import TenderHeader from "@/components/tender/details/TenderHeader";
 import SpecialRequirements from "@/components/tender/details/SpecialRequirements";
@@ -42,33 +41,30 @@ export default function TenderDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-100">
 
-      {/* NEW HEADER */}
-      <MainHeader />
-
-      {/* Back to Search Row */}
       <TopNavigation />
 
-      {/* Full Width Content */}
-      <div className="w-full px-3 py-3 space-y-2">
+      <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
 
         <TenderHeader />
         <SpecialRequirements />
         <TenderTabs active={activeTab} setActive={setActiveTab} />
         {renderSection()}
 
-        <div className="flex flex-col sm:flex-row justify-between gap-2 bg-white p-3 rounded-md shadow-sm">
-          <button className="px-4 py-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-xl shadow-sm">
+
+          <button className="px-6 py-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm font-medium transition">
             Save for Later
           </button>
 
-          <div className="flex gap-2">
-            <button className="px-4 py-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm">
+          <div className="flex gap-4">
+            <button className="px-6 py-2 border rounded-md hover:bg-gray-50 cursor-pointer text-sm font-medium transition">
               Print details
             </button>
-            <button className="px-4 py-2 bg-orange-700 text-white rounded-md hover:bg-orange-800 cursor-pointer text-sm">
+            <button className="px-7 py-2 bg-orange-700 text-white rounded-md hover:bg-orange-800 cursor-pointer text-sm font-medium transition">
               Submit Bid
             </button>
           </div>
+
         </div>
 
       </div>
