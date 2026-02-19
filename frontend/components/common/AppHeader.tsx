@@ -55,7 +55,7 @@ export default function AppHeader() {
         <div className="h-[3px] w-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
 
         {/* ── Main row ── */}
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-2 sm:px-3 lg:px-4">
           <div className="flex items-center justify-between h-24 gap-6">
 
             {/* ── Logo ── */}
@@ -123,12 +123,12 @@ export default function AppHeader() {
               {/* My Account */}
               <Link
                 href="/vendor/registration"
+                style={{ backgroundColor: '#953002' }}
                 className="
                   hidden sm:flex items-center gap-2
                   px-4 py-2 rounded-xl text-sm font-medium
-                  bg-gradient-to-br from-orange-500 to-amber-500
-                  text-white shadow-sm shadow-orange-200
-                  hover:shadow-md hover:shadow-orange-300 hover:scale-[1.02]
+                  text-white shadow-sm
+                  hover:opacity-90 hover:scale-[1.02]
                   active:scale-100
                   transition-all duration-200
                 "
@@ -235,11 +235,12 @@ export default function AppHeader() {
             {/* Mobile account link */}
             <Link
               href="/vendor/registration"
+              style={{ backgroundColor: '#953002' }}
               className="
                 flex items-center gap-2 mt-2
                 px-4 py-3 rounded-xl text-sm font-semibold
-                bg-gradient-to-r from-orange-500 to-amber-500
                 text-white justify-center
+                hover:opacity-90 transition-opacity
               "
             >
               <User size={15} />
