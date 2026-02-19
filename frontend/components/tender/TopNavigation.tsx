@@ -1,37 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
-interface Props {
-  menuItems?: string[];
-}
-
-export default function TenderTopNavigation({
-  menuItems = ["Home", "Departments", "How it Works", "Help/FAQ"],
-}: Props) {
+export default function TenderTopNavigation() {
   const router = useRouter();
 
   return (
-    <div className="bg-white border-b">
-      <div className="w-full px-4 py-3 flex items-center gap-6 text-sm">
-        
+    <div className="bg-gray-50 border-b">
+      <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center">
+
         <button
-          onClick={() => router.back()}
-          className="text-gray-600 hover:text-black cursor-pointer"
+          onClick={() => router.push("/tenders")}
+          className="
+            flex items-center gap-2
+            text-sm font-medium
+            text-gray-600
+            hover:text-orange-600
+            transition-colors
+            cursor-pointer
+          "
         >
-          ← Back to Search
+          <ArrowLeft size={16} />
+          All Tenders
         </button>
 
-        <div className="h-4 w-px bg-gray-300"></div>
-
-        {menuItems.map((item, index) => (
-          <button
-            key={index}
-            className="text-gray-600 hover:text-black cursor-pointer"
-          >
-            {item}
-          </button>
-        ))}
       </div>
     </div>
   );
