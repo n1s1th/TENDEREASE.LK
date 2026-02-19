@@ -5,7 +5,7 @@ import App from "next/app";
 export default function HomePage() {
   return (
     <>
-      <GlobalTopNavigation />
+      {/* <GlobalTopNavigation /> */}
 
       <div className="px-6 py-10">
         <h1 className="text-2xl font-semibold">

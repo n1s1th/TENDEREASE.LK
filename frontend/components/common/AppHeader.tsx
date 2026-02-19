@@ -56,7 +56,7 @@ export default function AppHeader() {
 
         {/* ── Main row ── */}
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-6">
+          <div className="flex items-center justify-between h-24 gap-6">
 
             {/* ── Logo ── */}
             <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
@@ -65,21 +65,13 @@ export default function AppHeader() {
                 <Image
                   src="/assets/logo.png"
                   alt="TenderEase Logo"
-                  width={44}
-                  height={44}
+                  width={140}
+                  height={140}
                   priority
                   className="relative z-10 rounded-lg"
                 />
               </div>
-              <div className="leading-tight hidden sm:block">
-                <span className="block text-base font-bold text-gray-900 tracking-tight">
-                  TenderEase
-                  <span className="text-orange-500">.lk</span>
-                </span>
-                <span className="block text-[10px] text-gray-400 font-medium tracking-wide uppercase">
-                  Gov Tendering &amp; Bidding
-                </span>
-              </div>
+
             </Link>
 
             {/* ── Desktop Nav ── */}
@@ -130,7 +122,7 @@ export default function AppHeader() {
 
               {/* My Account */}
               <Link
-                href="/account"
+                href="/vendor/registration"
                 className="
                   hidden sm:flex items-center gap-2
                   px-4 py-2 rounded-xl text-sm font-medium
@@ -242,7 +234,7 @@ export default function AppHeader() {
 
             {/* Mobile account link */}
             <Link
-              href="/account"
+              href="/vendor/registration"
               className="
                 flex items-center gap-2 mt-2
                 px-4 py-3 rounded-xl text-sm font-semibold
@@ -259,7 +251,7 @@ export default function AppHeader() {
       </header>
 
       {/* ── Spacer so page content doesn't hide under fixed header ── */}
-      <div className="h-[67px]" />
+      <div className="h-[99px]" />
     </>
   );
 }
