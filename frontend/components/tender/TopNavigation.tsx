@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function TenderTopNavigation({
-  menuItems = ["Menu", "Registration", "Twelve", "Thirteen"],
+  menuItems = ["Home", "Departments", "How it Works", "Help/FAQ"],
 }: Props) {
   const router = useRouter();
 
