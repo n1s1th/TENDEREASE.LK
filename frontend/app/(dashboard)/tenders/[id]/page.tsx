@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import TopNavigation from "@/components/tender/details/TopNavigation";
+import TopNavigation from "@/components/tender/TopNavigation";
 import TenderHeader from "@/components/tender/details/TenderHeader";
 import SpecialRequirements from "@/components/tender/details/SpecialRequirements";
 import TenderTabs from "@/components/tender/details/TenderTabs";
