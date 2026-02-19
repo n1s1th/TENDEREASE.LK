@@ -20,22 +20,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 min-h-screen`}
       >
-        {/* Global Header */}
+        {/* Global Header (Visible on Entire App) */}
         <AppHeader />
 
-        {/* Page Content */}
-        <main className="min-h-screen">
+        {/* Main Content Area */}
+        <main className="w-full min-h-[calc(100vh-80px)]">
           {children}
         </main>
-
       </body>
     </html>
   );

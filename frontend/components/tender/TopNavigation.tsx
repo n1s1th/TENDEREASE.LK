@@ -1,17 +1,22 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 interface Props {
   menuItems?: string[];
 }
 
-export default function TopNavigation({
+export default function TenderTopNavigation({
   menuItems = ["Menu", "Registration", "Twelve", "Thirteen"],
 }: Props) {
+  const router = useRouter();
+
   return (
     <div className="bg-white border-b">
-      <div className="w-full px-3 py-2 flex items-center gap-6 text-sm">
+      <div className="w-full px-4 py-3 flex items-center gap-6 text-sm">
+        
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.back()}
           className="text-gray-600 hover:text-black cursor-pointer"
         >
           ← Back to Search
