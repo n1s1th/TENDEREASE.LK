@@ -3,18 +3,10 @@ TENDEREASE.LK
 
 ## Project Folder Structure
 
+```text
 TENDEREASE.LK/
 │
 ├── frontend/
-│   ├── app/
-│   ├── components/
-│   │   └── ui/                 # shadcn components (auto-generated)
-│   │       ├── button.tsx
-│   │       ├── input.tsx
-│   │       ├── label.tsx
-│   │       ├── checkbox.tsx
-│   │       ├── select.tsx
-│   │       └── ... (other shadcn components)
 ├── backend/
 ├── database/
 ├── docs/
