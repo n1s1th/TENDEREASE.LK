@@ -126,3 +126,52 @@
     @apply bg-background text-foreground;
   }
 }
+/* Custom Utilities */
+@utility kpi-card-after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--kpi-color, var(--color-primary));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s;
+}
+
+/* Dropdown menu */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}
+
+.dropdown-menu-content {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-lg) !important;
+  z-index: 9999 !important;
+}
+
+.sme-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);  
+  color: var(--text-primary);     
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  border: 1px solid var(--border); 
+}
+
+select, [data-state="open"] {
+  z-index: 1000 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
