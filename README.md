@@ -7,15 +7,6 @@ TENDEREASE.LK
 TENDEREASE.LK/
 │
 ├── frontend/
-│   ├── public/
-│   ├── app/
-│   ├── components/
-│   │   └── ui/
-│   ├── lib/
-│   ├── postcss.config.js
-│   ├── tsconfig.json
-│   └── package.json
-│
 ├── backend/
 ├── database/
 ├── docs/
@@ -29,7 +20,4 @@ TENDEREASE.LK/
 ├── README.md
 └── .gitignore
 ```
-
-
-
 
