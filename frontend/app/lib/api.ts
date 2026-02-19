@@ -1,51 +1,39 @@
 // app/lib/api.ts
-// Mock API implementation - Phase 2 Task 4 compliant (dummy data only)
-// Reference: Work Distribution Phase 2 Task 4, TenderEase Report §3.2.6
+// Real API implementation - calls Spring Boot backend at localhost:8080
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 /**
- * Simulates vendor registration API call
- * @param data - Vendor registration form data
- * @returns Promise with mock success/failure response
+ * Registers a new vendor by sending multipart/form-data to the backend.
+ * @param formData - FormData object containing all registration fields + files
  */
-export const registerVendor = async (data: any) => {
-  // Simulate network delay (1.5s) per UI feedback guidelines
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Log submission for debugging (Phase 8 Task 2)
-  console.log('[API] Vendor registration payload:', {
-    businessName: data.businessName,
-    email: data.email,
-    documents: [
-      data.businessRegistrationDocument,
-      ...(data.otherDocuments || [])
-    ]
+export const registerVendor = async (formData: FormData) => {
+  const response = await fetch(`${API_BASE_URL}/api/vendors/register`, {
+    method: 'POST',
+    body: formData,
+    // Do NOT set Content-Type header — browser sets it automatically with boundary for multipart
   });
-  
-  // Simulate 90% success rate (real implementation would use actual API)
-  if (Math.random() > 0.1) {
-    return {
-      success: true,
-      message: 'Vendor registration successful',
-      vendorId: `VEND-${Date.now().toString().slice(-6)}`,
-      timestamp: new Date().toISOString()
-    };
+
+  const data = await response.json();
+
+  if (!response.ok && !data.errorCode) {
+    throw new Error(data.message || 'Registration failed. Please try again.');
   }
-  
-  // Simulate validation error (Phase 2 Task 6 KYC compliance)
-  return {
-    success: false,
-    message: 'Registration failed: Document verification pending. Please ensure all required KYC documents are uploaded.',
-    errorCode: 'KYC_PENDING'
-  };
+
+  return data;
 };
 
-// Export additional mock APIs for future phases (Phase 3+)
+// Placeholder APIs for future phases
 export const fetchTenders = async () => {
-  // Placeholder for Phase 3 Task 2 implementation
-  return { success: true, tenders: [] };
+  const response = await fetch(`${API_BASE_URL}/api/tenders`);
+  return response.json();
 };
 
 export const submitBid = async (bidData: any) => {
-  // Placeholder for Phase 2 Task 11 implementation
-  return { success: true, submissionId: 'BID-12345' };
+  const response = await fetch(`${API_BASE_URL}/api/bids`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bidData),
+  });
+  return response.json();
 };
