@@ -47,7 +47,7 @@ export default function TenderPagination({
               className={`px-4 py-2 rounded-md text-sm border transition
                 ${
                   currentPage === page
-                    ? "bg-[#953002] text-white border-[#953002]"
+                    ? "bg-[#FFB401] text-white border-[#FFB401]"
                     : "hover:bg-gray-100"
                 }`}
             >
