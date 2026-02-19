@@ -7,9 +7,18 @@ export default function ClarificationsSection() {
   const [showForm, setShowForm] = useState(false);
   const [question, setQuestion] = useState("");
 
+  const handleSubmit = () => {
+    if (!question.trim()) return;
+
+    // For now just clear input
+    setQuestion("");
+
+    // 🚫 DO NOT close form
+    // setShowForm(false);  <-- removed
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm px-6 py-6 space-y-6">
-
 
       {/* Header */}
       <div className="flex justify-between items-start">
@@ -23,10 +32,10 @@ export default function ClarificationsSection() {
         </div>
 
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => setShowForm(true)}
           className="bg-orange-700 text-white px-4 py-1.5 rounded-md text-sm hover:bg-orange-800 cursor-pointer transition"
         >
-          {showForm ? "Cancel" : "Submit Question"}
+          Submit Question
         </button>
       </div>
 
@@ -48,7 +57,10 @@ export default function ClarificationsSection() {
           />
 
           <div className="flex gap-3">
-            <button className="bg-orange-700 text-white px-4 py-1.5 rounded-md text-sm hover:bg-orange-800 cursor-pointer">
+            <button
+              onClick={handleSubmit}
+              className="bg-orange-700 text-white px-4 py-1.5 rounded-md text-sm hover:bg-orange-800 cursor-pointer"
+            >
               Submit Question
             </button>
 
