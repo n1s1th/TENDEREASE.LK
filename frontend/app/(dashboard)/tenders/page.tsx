@@ -41,7 +41,7 @@ export default function TendersPage() {
 
       {/* Page Title */}
       <h1 className="text-3xl font-bold">
-        Find Government <span className="text-orange-500">Tenders</span>
+        Find Government <span className="text-[#953002]">Tenders</span>
       </h1>
 
       {/* Search */}

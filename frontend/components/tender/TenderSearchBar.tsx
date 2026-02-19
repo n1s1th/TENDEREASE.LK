@@ -29,8 +29,8 @@ export default function TenderSearchBar() {
               border border-gray-200
               focus:outline-none
               focus:ring-2
-              focus:ring-orange-500
-              focus:border-orange-500
+              focus:ring-[#953002]
+              focus:border-[#953002]
               transition
               text-sm
             "
@@ -39,14 +39,14 @@ export default function TenderSearchBar() {
 
         <button
           className="
-            bg-orange-500
+            bg-[#953002]
             text-white
             px-7 py-3
             rounded-xl
             text-sm font-medium
             cursor-pointer
             transition-all duration-200
-            hover:bg-orange-600
+            hover:bg-[#7a2802]
             hover:shadow-md
             active:scale-95
           "
@@ -65,7 +65,7 @@ export default function TenderSearchBar() {
             <label className="text-xs font-medium text-gray-500 uppercase">
               Status
             </label>
-            <select className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer">
+            <select className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#953002] focus:border-[#953002] cursor-pointer">
               <option>All</option>
               <option>Open</option>
               <option>Upcoming</option>
@@ -78,7 +78,7 @@ export default function TenderSearchBar() {
             <label className="text-xs font-medium text-gray-500 uppercase">
               Date Type
             </label>
-            <select className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer">
+            <select className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#953002] focus:border-[#953002] cursor-pointer">
               <option>None</option>
               <option>Closing Date</option>
               <option>Published Date</option>
@@ -92,7 +92,7 @@ export default function TenderSearchBar() {
             </label>
             <input
               type="date"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#953002] focus:border-[#953002] cursor-pointer"
             />
           </div>
 
@@ -103,7 +103,7 @@ export default function TenderSearchBar() {
             </label>
             <input
               type="date"
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 cursor-pointer"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#953002] focus:border-[#953002] cursor-pointer"
             />
           </div>
 
