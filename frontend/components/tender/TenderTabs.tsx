@@ -15,7 +15,7 @@ export default function TenderTabs({ activeTab, setActiveTab }: Props) {
           className={`px-4 py-2 rounded-md text-sm font-medium transition
             ${
               activeTab === tab
-                ? "bg-orange-500 text-white"
+                ? "bg-[#FFB401] text-white"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
             }`}
         >

@@ -32,9 +32,9 @@ export default function TenderTable({ data }: Props) {
             <tr
               key={tender.id}
               onClick={() => router.push(`/tenders/${tender.id}`)}
-              className="border-t cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:scale-[1.005]"
+              className="border-t cursor-pointer transition-all duration-200 hover:bg-[#FFB401]/10 hover:scale-[1.005]"
             >
-              <td className="px-6 py-4 font-semibold text-orange-600">
+              <td className="px-6 py-4 font-semibold text-[#FFB401]">
                 {tender.id}
               </td>
               <td className="px-6 py-4">{tender.entity}</td>
