@@ -11,8 +11,8 @@
  * - Bid submission and management
  */
 
-// Environment-based API URL configuration
-// Uses NEXT_PUBLIC_API_URL env variable or defaults to localhost:8080 for development
+/*Environment-based API URL configuration
+// Uses NEXT_PUBLIC_API_URL env variable or defaults to localhost:8080 for development*/
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 
