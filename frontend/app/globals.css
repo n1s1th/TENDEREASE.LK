@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /* Inter font is applied globally via layout.tsx */
 /* No need to redefine font-family here */
