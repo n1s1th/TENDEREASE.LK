@@ -29,9 +29,12 @@ export default function AppHeader() {
 
   /* close mobile menu on route change */
   useEffect(() => {
+  const id = setTimeout(() => {
     setMobileOpen(false);
     setSearchOpen(false);
-  }, [pathname]);
+  }, 0);
+  return () => clearTimeout(id);
+}, [pathname]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,26 +55,34 @@ export default function AppHeader() {
         "
       >
         {/* ── Top accent bar ── */}
-        <div className="h-[3px] w-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600" />
+        <div className="h-0.75 w-full bg-linear-to-r from-orange-500 via-amber-400 to-orange-600" />
 
         {/* ── Main row ── */}
-        <div className="w-full px-2 sm:px-3 lg:px-4">
-          <div className="flex items-center justify-between h-24 gap-6">
+        <div className="max-w-350 mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-6">
 
             {/* ── Logo ── */}
-            <Link href="/" className="flex items-center gap-3 flex-shrink-0 group">
+            <Link href="/" className="flex items-center gap-3 shrink-0 group">
               <div className="relative">
                 <div className="absolute inset-0 rounded-xl bg-orange-500/10 scale-0 group-hover:scale-100 transition-transform duration-300" />
                 <Image
                   src="/assets/logo.png"
                   alt="TenderEase Logo"
-                  width={140}
-                  height={140}
+                  width={44}
+                  height={44}
                   priority
                   className="relative z-10 rounded-lg"
                 />
               </div>
-
+              <div className="leading-tight hidden sm:block">
+                <span className="block text-base font-bold text-gray-900 tracking-tight">
+                  TenderEase
+                  <span className="text-orange-500">.lk</span>
+                </span>
+                <span className="block text-[10px] text-gray-400 font-medium tracking-wide uppercase">
+                  Gov Tendering &amp; Bidding
+                </span>
+              </div>
             </Link>
 
             {/* ── Desktop Nav ── */}
@@ -94,7 +105,7 @@ export default function AppHeader() {
                     `}
                   >
                     {active && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-[2px] rounded-full bg-orange-500" />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-orange-500" />
                     )}
                     {link.label}
                   </Link>
@@ -103,7 +114,7 @@ export default function AppHeader() {
             </nav>
 
             {/* ── Right actions ── */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
 
               {/* Search icon toggle */}
               <button
@@ -122,13 +133,13 @@ export default function AppHeader() {
 
               {/* My Account */}
               <Link
-                href="/vendor/registration"
-                style={{ backgroundColor: '#953002' }}
+                href="/account"
                 className="
                   hidden sm:flex items-center gap-2
                   px-4 py-2 rounded-xl text-sm font-medium
-                  text-white shadow-sm
-                  hover:opacity-90 hover:scale-[1.02]
+                  bg-linear-to-br from-orange-500 to-amber-500
+                  text-white shadow-sm shadow-orange-200
+                  hover:shadow-md hover:shadow-orange-300 hover:scale-[1.02]
                   active:scale-100
                   transition-all duration-200
                 "
@@ -158,7 +169,7 @@ export default function AppHeader() {
             border-t border-gray-100
           `}
         >
-          <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-350 mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <Search
                 size={18}
@@ -186,7 +197,7 @@ export default function AppHeader() {
                   absolute right-2
                   flex items-center gap-1.5
                   px-4 py-2 rounded-lg text-sm font-semibold
-                  bg-gradient-to-r from-orange-500 to-amber-500
+                  bg-linear-to-r from-orange-500 to-amber-500
                   text-white
                   hover:from-orange-600 hover:to-amber-600
                   transition-all duration-200
@@ -208,7 +219,7 @@ export default function AppHeader() {
             border-t border-gray-100 bg-white/95 backdrop-blur-md
           `}
         >
-          <nav className="max-w-[1400px] mx-auto px-4 py-3 flex flex-col gap-1">
+          <nav className="max-w-350 mx-auto px-4 py-3 flex flex-col gap-1">
             {NAV_LINKS.map((link) => {
               const active =
                 link.href === "/"
@@ -234,13 +245,12 @@ export default function AppHeader() {
 
             {/* Mobile account link */}
             <Link
-              href="/vendor/registration"
-              style={{ backgroundColor: '#953002' }}
+              href="/account"
               className="
                 flex items-center gap-2 mt-2
                 px-4 py-3 rounded-xl text-sm font-semibold
+                bg-linear-to-r from-orange-500 to-amber-500
                 text-white justify-center
-                hover:opacity-90 transition-opacity
               "
             >
               <User size={15} />
@@ -252,7 +262,7 @@ export default function AppHeader() {
       </header>
 
       {/* ── Spacer so page content doesn't hide under fixed header ── */}
-      <div className="h-[99px]" />
+      <div className="h-17" />
     </>
   );
 }
