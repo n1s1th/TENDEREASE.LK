@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import TopNavigation from "@/components/tender/details/TopNavigation";
+import { useParams } from "next/navigation";
+import { mockTenders } from "@/lib/mock-tenders";
+
+import TopNavigation from "@/components/tender/TopNavigation";
 import TenderHeader from "@/components/tender/details/TenderHeader";
 import SpecialRequirements from "@/components/tender/details/SpecialRequirements";
 import TenderTabs from "@/components/tender/details/TenderTabs";
@@ -17,22 +20,38 @@ import ContactSection from "@/components/tender/details/sections/ContactSection"
 export default function TenderDetailsPage() {
   const [activeTab, setActiveTab] = useState("overview");
 
+  // ✅ Get ID from URL
+  const params = useParams();
+  const id = params?.id as string;
+
+  // ✅ Find mock tender
+  const tender = mockTenders.find((t) => t.id === id);
+
+  // Optional safety (if ID not found)
+  if (!tender) {
+    return (
+      <div className="p-10 text-center text-gray-500">
+        Tender not found.
+      </div>
+    );
+  }
+
   const renderSection = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewSection />;
+        return <OverviewSection tender={tender} />;
       case "requirements":
-        return <RequirementsSection />;
+        return <RequirementsSection tender={tender} />;
       case "documents":
-        return <DocumentsSection />;
+        return <DocumentsSection tender={tender} />;
       case "addenda":
-        return <AddendaSection />;
+        return <AddendaSection tender={tender} />;
       case "clarifications":
-        return <ClarificationsSection />;
+        return <ClarificationsSection tender={tender} />;
       case "timeline":
-        return <TimelineSection />;
+        return <TimelineSection tender={tender} />;
       case "contact":
-        return <ContactSection />;
+        return <ContactSection tender={tender} />;
       default:
         return null;
     }
@@ -45,7 +64,9 @@ export default function TenderDetailsPage() {
 
       <div className="max-w-[1600px] mx-auto px-6 py-6 space-y-6">
 
-        <TenderHeader />
+        {/* ✅ Pass tender to header */}
+        <TenderHeader tender={tender} />
+
         <SpecialRequirements />
         <TenderTabs active={activeTab} setActive={setActiveTab} />
         {renderSection()}

@@ -2,7 +2,7 @@
 'use client';
 
 import { Control, Controller } from 'react-hook-form';
-import { VendorRegistrationForm } from '@/lib/validation';
+import { VendorRegistrationFormType } from '@/lib/validation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ export default function OrganizationDetails({
   control,
   setValue
 }: {
-  control: Control<VendorRegistrationForm>;
+  control: Control<VendorRegistrationFormType>;
   setValue: any;
 }) {
   return (
@@ -42,7 +42,7 @@ export default function OrganizationDetails({
             )}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="businessName">Business Name *</Label>
           <Controller
@@ -50,10 +50,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="businessName" 
-                  placeholder="Enter business name" 
+                <Input
+                  {...field}
+                  id="businessName"
+                  placeholder="Enter business name"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
                 {fieldState.error && (
@@ -64,7 +64,7 @@ export default function OrganizationDetails({
           />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="country">Country *</Label>
@@ -91,7 +91,7 @@ export default function OrganizationDetails({
             )}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="businessRegistrationNo">Business Registration No *</Label>
           <Controller
@@ -99,10 +99,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="businessRegistrationNo" 
-                  placeholder="Enter registration number" 
+                <Input
+                  {...field}
+                  id="businessRegistrationNo"
+                  placeholder="Enter registration number"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
                 {fieldState.error && (
@@ -113,7 +113,7 @@ export default function OrganizationDetails({
           />
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="typeOfOrganization">Type of Organization *</Label>
         <Controller
@@ -140,7 +140,7 @@ export default function OrganizationDetails({
           )}
         />
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="registeredAddress">Registered Address *</Label>
         <Controller
@@ -148,10 +148,10 @@ export default function OrganizationDetails({
           control={control}
           render={({ field, fieldState }) => (
             <>
-              <Input 
-                {...field} 
-                id="registeredAddress" 
-                placeholder="Street address" 
+              <Input
+                {...field}
+                id="registeredAddress"
+                placeholder="Street address"
                 className={fieldState.error ? 'border-red-500' : ''}
               />
               {fieldState.error && (
@@ -161,7 +161,7 @@ export default function OrganizationDetails({
           )}
         />
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="city">City *</Label>
@@ -170,10 +170,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="city" 
-                  placeholder="Enter city" 
+                <Input
+                  {...field}
+                  id="city"
+                  placeholder="Enter city"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
                 {fieldState.error && (
@@ -183,7 +183,7 @@ export default function OrganizationDetails({
             )}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="province">Province *</Label>
           <Controller
@@ -191,10 +191,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="province" 
-                  placeholder="Enter province" 
+                <Input
+                  {...field}
+                  id="province"
+                  placeholder="Enter province"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
                 {fieldState.error && (
@@ -205,7 +205,7 @@ export default function OrganizationDetails({
           />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
@@ -214,10 +214,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="website" 
-                  placeholder="https://www.yoursite.com" 
+                <Input
+                  {...field}
+                  id="website"
+                  placeholder="https://www.yoursite.com"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
                 {fieldState.error && (
@@ -227,7 +227,7 @@ export default function OrganizationDetails({
             )}
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="officialEmail">Official Email *</Label>
           <Controller
@@ -235,10 +235,10 @@ export default function OrganizationDetails({
             control={control}
             render={({ field, fieldState }) => (
               <>
-                <Input 
-                  {...field} 
-                  id="officialEmail" 
-                  placeholder="Official Email" 
+                <Input
+                  {...field}
+                  id="officialEmail"
+                  placeholder="Official Email"
                   type="email"
                   className={fieldState.error ? 'border-red-500' : ''}
                 />
@@ -250,7 +250,7 @@ export default function OrganizationDetails({
           />
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="officialTelephone">Official Telephone No *</Label>
         <Controller
@@ -258,10 +258,10 @@ export default function OrganizationDetails({
           control={control}
           render={({ field, fieldState }) => (
             <>
-              <Input 
-                {...field} 
-                id="officialTelephone" 
-                placeholder="+94 XX XXX XXXX" 
+              <Input
+                {...field}
+                id="officialTelephone"
+                placeholder="+94 XX XXX XXXX"
                 className={fieldState.error ? 'border-red-500' : ''}
               />
               {fieldState.error && (
