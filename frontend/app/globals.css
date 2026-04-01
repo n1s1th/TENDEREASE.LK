@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -7,9 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -129,13 +128,13 @@
   }
 }
 
-/* ── Home Page ────────────────────────────────────────── */
+/* â”€â”€ Home Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .home-page {
   min-height: 100vh;
   background: #fff;
 }
 
-/* ── Navbar ───────────────────────────────────────────── */
+/* â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .navbar-header {
   position: sticky;
   top: 0;
@@ -168,7 +167,7 @@
   color: #782500;
 }
 
-/* Desktop nav links — absolutely centered */
+/* Desktop nav links â€” absolutely centered */
 .navbar-links {
   position: absolute;
   left: 50%;
@@ -371,7 +370,7 @@
   background: #782500;
 }
 
-/* Responsive — hide desktop links on mobile */
+/* Responsive â€” hide desktop links on mobile */
 @media (max-width: 768px) {
   .navbar-links {
     display: none;
@@ -396,7 +395,7 @@
   }
 }
 
-/* ── Hero Section ─────────────────────────────────────── */
+/* â”€â”€ Hero Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .hero-section {
   position: relative;
   width: 100%;
@@ -443,7 +442,7 @@
   margin-top: -1.5rem;
 }
 
-/* ── Search bar ── */
+/* â”€â”€ Search bar â”€â”€ */
 .hero-search-bar {
   display: flex;
   align-items: center;
@@ -518,7 +517,7 @@
   background: #1e40af;
 }
 
-/* ── Bottom-left text ── */
+/* â”€â”€ Bottom-left text â”€â”€ */
 .hero-text-block {
   display: flex;
   flex-direction: column;
@@ -566,7 +565,7 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Carousel arrows ── */
+/* â”€â”€ Carousel arrows â”€â”€ */
 .hero-arrow {
   position: absolute;
   top: 50%;
@@ -598,7 +597,7 @@
   right: 1rem;
 }
 
-/* ── Slide dots ── */
+/* â”€â”€ Slide dots â”€â”€ */
 .hero-dots {
   position: absolute;
   bottom: 1.25rem;
@@ -656,5 +655,549 @@
   .hero-search-btn {
     padding: 0.625rem 1.25rem;
     height: 44px;
+  }
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HOW IT WORKS â€” Interactive Timeline
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+.hiw-section {
+  position: relative;
+  background: linear-gradient(180deg, #fff 0%, #fdf8f6 100%);
+  padding: 6rem 1.5rem;
+  overflow: hidden;
+}
+
+/* subtle background dot pattern */
+.hiw-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.hiw-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* â”€â”€ Header â”€â”€ */
+.hiw-header {
+  text-align: center;
+  margin-bottom: 4.5rem;
+}
+
+.hiw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #953002 0%, #c24a10 100%);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  margin-bottom: 1rem;
+}
+
+.hiw-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.hiw-subtitle {
+  font-size: 1.05rem;
+  color: #6b7280;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* â”€â”€ Timeline container â”€â”€ */
+.hiw-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* vertical connector line */
+.hiw-timeline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, #953002 0%, #FFB401 50%, #953002 100%);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  opacity: 0.25;
+}
+
+/* â”€â”€ Single step row â”€â”€ */
+.hiw-step {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 2rem;
+  animation: hiwFadeUp 0.5s ease-out both;
+}
+
+.hiw-step:nth-child(1) { animation-delay: 0s; }
+.hiw-step:nth-child(2) { animation-delay: 0.1s; }
+.hiw-step:nth-child(3) { animation-delay: 0.2s; }
+.hiw-step:nth-child(4) { animation-delay: 0.3s; }
+
+@keyframes hiwFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* â”€â”€ Step indicator (center dot) â”€â”€ */
+.hiw-indicator {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #953002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #953002;
+  z-index: 2;
+  box-shadow: 0 0 0 6px rgba(149, 48, 2, 0.08), 0 4px 12px rgba(149, 48, 2, 0.12);
+  transition: transform 0.3s, box-shadow 0.3s;
+  flex-shrink: 0;
+}
+
+.hiw-step:hover .hiw-indicator {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 10px rgba(149, 48, 2, 0.12), 0 8px 24px rgba(149, 48, 2, 0.2);
+  background: #953002;
+  color: #fff;
+}
+
+/* pulsing ring behind the indicator */
+.hiw-indicator::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(149, 48, 2, 0.15);
+  animation: hiwPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes hiwPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%      { transform: scale(1.15); opacity: 0; }
+}
+
+/* â”€â”€ Step card â”€â”€ */
+.hiw-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(149, 48, 2, 0.08);
+  border-radius: 20px;
+  padding: 2rem 1.75rem;
+  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+
+.hiw-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #953002, #FFB401);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.hiw-card:hover::before {
+  opacity: 1;
+}
+
+.hiw-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 48px rgba(149, 48, 2, 0.12);
+  border-color: rgba(149, 48, 2, 0.18);
+}
+
+/* empty spacer for the opposite side */
+.hiw-spacer {
+  display: block;
+}
+
+/* alternating layout: even steps swap columns */
+.hiw-step:nth-child(even) .hiw-card { grid-column: 3; }
+.hiw-step:nth-child(even) .hiw-spacer { grid-column: 1; }
+.hiw-step:nth-child(even) .hiw-indicator { grid-column: 2; }
+
+.hiw-step:nth-child(odd) .hiw-card { grid-column: 1; }
+.hiw-step:nth-child(odd) .hiw-spacer { grid-column: 3; }
+.hiw-step:nth-child(odd) .hiw-indicator { grid-column: 2; }
+
+/* card content */
+.hiw-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(149, 48, 2, 0.08), rgba(255, 180, 1, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: background 0.3s;
+}
+
+.hiw-card:hover .hiw-card-icon {
+  background: linear-gradient(135deg, rgba(149, 48, 2, 0.15), rgba(255, 180, 1, 0.2));
+}
+
+.hiw-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem;
+}
+
+.hiw-card-desc {
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* â”€â”€ CTA â”€â”€ */
+.hiw-cta-wrap {
+  text-align: center;
+  margin-top: 3.5rem;
+}
+
+.hiw-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 2rem;
+  background: linear-gradient(135deg, #953002 0%, #b8440e 100%);
+  color: #fff;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(149, 48, 2, 0.3);
+}
+
+.hiw-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(149, 48, 2, 0.35);
+}
+
+/* â”€â”€ Mobile â”€â”€ */
+@media (max-width: 768px) {
+  .hiw-timeline::before {
+    left: 28px;
+  }
+
+  .hiw-step {
+    display: flex;
+    flex-direction: row;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  .hiw-indicator {
+    width: 48px;
+    height: 48px;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    order: 0;
+  }
+
+  .hiw-card {
+    flex: 1;
+    order: 1;
+  }
+
+  .hiw-spacer {
+    display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   CORE FEATURES — Refined Light Section
+   ══════════════════════════════════════════════════════════ */
+
+.cf-section {
+  position: relative;
+  background: linear-gradient(180deg, #fefcfa 0%, #fff 100%);
+  padding: 6rem 1.5rem;
+  overflow: hidden;
+}
+
+.cf-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+.cf-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.cf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #953002 0%, #c24a10 100%);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  margin-bottom: 1rem;
+}
+
+.cf-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.cf-title-accent {
+  color: #953002;
+}
+
+.cf-subtitle {
+  font-size: 1.05rem;
+  color: #6b7280;
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* ── Top row: 2 large cards ── */
+.cf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Bottom row: 3 compact cards ── */
+.cf-grid-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 3.5rem;
+}
+
+/* ── Card ── */
+.cf-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #f0eeec;
+  border-radius: 20px;
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  cursor: default;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+}
+
+/* colored left accent bar */
+.cf-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent-color, #953002);
+  opacity: 0;
+  transform: scaleY(0.3);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.cf-card:hover::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.cf-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(149, 48, 2, 0.05);
+  border-color: #e8e4e0;
+}
+
+/* ── Feature number watermark ── */
+.cf-card-number {
+  position: absolute;
+  top: -6px;
+  right: 14px;
+  font-size: 5.5rem;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.025);
+  line-height: 1;
+  pointer-events: none;
+  transition: color 0.3s;
+}
+
+.cf-card:hover .cf-card-number {
+  color: rgba(149, 48, 2, 0.04);
+}
+
+/* ── Icon wrapper ── */
+.cf-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.cf-card:hover .cf-icon-wrap {
+  transform: scale(1.06);
+}
+
+/* Icon color variants — also set the accent bar color */
+.cf-icon-wrap--brand  { background: #fef2ee; --accent-color: #953002; }
+.cf-icon-wrap--orange { background: #fff7ed; --accent-color: #c2410c; }
+.cf-icon-wrap--green  { background: #ecfdf5; --accent-color: #15803d; }
+.cf-icon-wrap--purple { background: #f5f3ff; --accent-color: #7c3aed; }
+.cf-icon-wrap--cyan   { background: #ecfeff; --accent-color: #0891b2; }
+
+/* ── Tag pill ── */
+.cf-tag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: 50px;
+  background: rgba(149, 48, 2, 0.06);
+  color: #953002;
+}
+
+/* ── Card text ── */
+.cf-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.cf-card-desc {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Stats row ── */
+.cf-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f0ee;
+}
+
+.cf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.cf-stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #953002;
+}
+
+.cf-stat-label {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ── CTA ── */
+.cf-cta-wrap {
+  text-align: center;
+}
+
+.cf-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 2rem;
+  background: #953002;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(149, 48, 2, 0.25);
+}
+
+.cf-cta:hover {
+  background: #7f2801;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(149, 48, 2, 0.3);
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .cf-grid,
+  .cf-grid-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-card {
+    padding: 1.75rem 1.5rem;
+  }
+
+  .cf-stats {
+    flex-wrap: wrap;
+    gap: 1.5rem;
   }
 }
