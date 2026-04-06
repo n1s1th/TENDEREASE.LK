@@ -62,7 +62,7 @@ public class TenderController {
         @ApiResponse(responseCode = "200", description = "Ministries retrieved successfully")
     })
     public ResponseEntity<List<MinistryResponse>> listMinistries() {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listMinistries());
     }
 
     @GetMapping("/reference-data/ministries/{id}/departments")
@@ -72,7 +72,7 @@ public class TenderController {
     })
     public ResponseEntity<List<DepartmentResponse>> listDepartmentsByMinistry(
             @Parameter(description = "Ministry ID") @PathVariable Long id) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listDepartmentsByMinistry(id));
     }
 
     @GetMapping("/reference-data/funding-sources")
@@ -81,7 +81,7 @@ public class TenderController {
         @ApiResponse(responseCode = "200", description = "Funding sources retrieved successfully")
     })
     public ResponseEntity<List<FundingSourceResponse>> listFundingSources() {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listFundingSources());
     }
 
     @GetMapping("/reference-data/procurement-types")
@@ -90,7 +90,7 @@ public class TenderController {
         @ApiResponse(responseCode = "200", description = "Procurement types retrieved successfully")
     })
     public ResponseEntity<List<String>> listProcurementTypes() {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listProcurementTypes());
     }
 
     @GetMapping("/reference-data/bidding-methods")
@@ -99,7 +99,7 @@ public class TenderController {
         @ApiResponse(responseCode = "200", description = "Bidding methods retrieved successfully")
     })
     public ResponseEntity<List<String>> listBiddingMethods() {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listBiddingMethods());
     }
 
     @GetMapping("/reference-data/tender-types")
@@ -108,7 +108,7 @@ public class TenderController {
         @ApiResponse(responseCode = "200", description = "Tender types retrieved successfully")
     })
     public ResponseEntity<List<String>> listTenderTypes() {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listTenderTypes());
     }
 
     @GetMapping("/reference-data/sbd-templates")
@@ -118,7 +118,7 @@ public class TenderController {
     })
     public ResponseEntity<List<SbdTemplateResponse>> listSbdTemplates(
             @Parameter(description = "Filter by procurement type") @RequestParam(required = false) ProcurementType procurementType) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listSbdTemplates(procurementType));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -137,7 +137,9 @@ public class TenderController {
     })
     public ResponseEntity<TenderResponse> createTender(
             @Valid @RequestBody CreateTenderRequest request) {
-        return null; // TODO: implement
+        // Use a dummy user ID for development since Keycloak is disabled
+        TenderResponse response = tenderService.createTender(request, "dev-user-id");
+        return ResponseEntity.status(201).body(response);
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,7 @@
 package lk.tenderease.tender.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +21,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Request payload for creating or updating a tender")
 public class CreateTenderRequest {
 
@@ -30,6 +33,7 @@ public class CreateTenderRequest {
     @NotBlank(message = "Tender number is required")
     @Size(max = 50, message = "Tender number must not exceed 50 characters")
     @Schema(description = "Unique tender reference number", example = "NCB/2026/001")
+    @JsonAlias("referenceNumber")
     private String tenderNumber;
 
     @NotNull(message = "Procurement type is required")
@@ -50,6 +54,7 @@ public class CreateTenderRequest {
 
     @NotNull(message = "Department ID is required")
     @Schema(description = "ID of the procuring department", example = "1")
+    @JsonAlias("departmentAgencyId")
     private Long departmentId;
 
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
@@ -62,5 +67,6 @@ public class CreateTenderRequest {
     private BigDecimal estimatedBudget;
 
     @Schema(description = "ID of the funding source (optional)", example = "1")
+    @JsonAlias("fundingSource")
     private Long fundingSourceId;
 }
