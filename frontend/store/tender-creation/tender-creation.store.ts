@@ -45,6 +45,7 @@ export const useTenderCreationStore = create<TenderCreationState>()(
     (set, get) => ({
       // ── Initial State ─────────────────────────────
       currentStep: 0 as StepIndex,
+      showPreview: false,
       formData: { ...INITIAL_FORM_DATA },
       referenceData: {
         tenderTypes: [],
@@ -80,7 +81,7 @@ export const useTenderCreationStore = create<TenderCreationState>()(
         ),
 
       goToStep: (step: StepIndex) =>
-        set({ currentStep: step }, false, "creation/goToStep"),
+        set({ currentStep: step, showPreview: false }, false, "creation/goToStep"),
 
       // ── Form Data ─────────────────────────────────
       updateFormData: (partial) =>
@@ -235,11 +236,16 @@ export const useTenderCreationStore = create<TenderCreationState>()(
         }
       },
 
+      // ── Preview ───────────────────────────────────
+      setShowPreview: (show: boolean) =>
+        set({ showPreview: show }, false, "creation/setShowPreview"),
+
       // ── Reset ─────────────────────────────────────
       reset: () =>
         set(
           {
             currentStep: 0 as StepIndex,
+            showPreview: false,
             formData: { ...INITIAL_FORM_DATA, pendingFiles: [] },
             error: null,
             noticePreview: null,

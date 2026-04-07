@@ -65,6 +65,7 @@ export type StepIndex = 0 | 1 | 2 | 3 | 4;
 
 export interface TenderCreationState {
   currentStep: StepIndex;
+  showPreview: boolean;
   formData: TenderCreationFormData;
   referenceData: TenderCreationReferenceData;
   isLoading: boolean;
@@ -82,6 +83,7 @@ export interface TenderCreationState {
   removePendingFile: (index: number) => void;
   fetchReferenceData: () => Promise<void>;
   fetchDepartments: (ministryId: string) => Promise<void>;
+  setShowPreview: (show: boolean) => void;
   submitTender: () => Promise<string | null>;
   reset: () => void;
 }

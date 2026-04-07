@@ -8,8 +8,9 @@ import { FinancialInfoStep } from "@/components/tender/creation/steps/FinancialI
 import { BiddingDocumentsStep } from "@/components/tender/creation/steps/BiddingDocumentsStep";
 import { NoticeComplianceStep } from "@/components/tender/creation/steps/NoticeComplianceStep";
 import { ScheduleStep } from "@/components/tender/creation/steps/ScheduleStep";
+import { TenderPreview } from "@/components/tender/creation/steps/TenderPreview";
 import { Button } from "@/components/ui/button";
-import { Save, ChevronLeft, ChevronRight, SendHorizontal } from "lucide-react";
+import { Save, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { StepIndex } from "@/lib/types/tender-creation.types";
 
 const STEP_COMPONENTS = [
@@ -23,14 +24,14 @@ const STEP_COMPONENTS = [
 export default function TenderCreationPage() {
   const {
     currentStep,
+    showPreview,
     isSubmitting,
     error,
     nextStep,
     prevStep,
     goToStep,
+    setShowPreview,
     fetchReferenceData,
-    submitTender,
-    reset,
   } = useTenderCreationStore();
 
   useEffect(() => {
@@ -41,23 +42,37 @@ export default function TenderCreationPage() {
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === 4;
 
-  const handleSubmit = async () => {
-    const tenderId = await submitTender();
-    if (tenderId) {
-      alert(`Tender created successfully! ID: ${tenderId}`);
-      reset();
-    } else {
-      alert("Failed to create tender. Check console for details.");
-    }
-  };
-
   const handleSaveDraft = () => {
     alert("Save as Draft — not yet wired to backend.");
   };
 
+  // ── Preview mode ────────────────────────────────────────
+  if (showPreview) {
+    return (
+      <div className="min-h-screen bg-grey-1">
+        {/* Top bar */}
+        <div className="border-b border-border bg-white">
+          <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Review Tender
+            </h1>
+            <span className="text-xs font-medium text-grey-4">
+              Preview
+            </span>
+          </div>
+        </div>
+
+        <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
+          <TenderPreview />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Normal wizard mode ──────────────────────────────────
   return (
     <div className="min-h-screen bg-grey-1">
-      {/* ── Top bar ──────────────────────────────────── */}
+      {/* Top bar */}
       <div className="border-b border-border bg-white">
         <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight text-foreground">
@@ -69,7 +84,7 @@ export default function TenderCreationPage() {
         </div>
       </div>
 
-      {/* ── Main content — 960px max, 20px side padding ── */}
+      {/* Main content */}
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
         {/* Step indicator */}
         <StepIndicator
@@ -87,7 +102,7 @@ export default function TenderCreationPage() {
         {/* Active step form */}
         <ActiveStep />
 
-        {/* ── Bottom action bar — 20px top padding ───── */}
+        {/* Bottom action bar */}
         <div className="flex items-center justify-between pt-5 border-t border-border">
           <div className="flex gap-3">
             <Button
@@ -124,11 +139,10 @@ export default function TenderCreationPage() {
               <Button
                 type="button"
                 size="sm"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+                onClick={() => setShowPreview(true)}
               >
-                <SendHorizontal data-icon="inline-start" className="size-4" />
-                {isSubmitting ? "Submitting…" : "Submit for Approval"}
+                <Eye data-icon="inline-start" className="size-4" />
+                Review Tender
               </Button>
             )}
           </div>
