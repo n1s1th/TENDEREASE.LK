@@ -24,6 +24,7 @@ public class TenderDocument {
     @Enumerated(EnumType.STRING)
     private DocumentType documentType;
 
+    @Column(name = "s3_key", nullable = false)
     private String s3Key;
 
     private Integer version;

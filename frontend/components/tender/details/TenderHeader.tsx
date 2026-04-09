@@ -1,102 +1,62 @@
-import { CalendarDays, DollarSign, Building2, Clock } from "lucide-react";
-import { Tender } from "@/types/tender";
-
-interface Props {
-  tender: Tender;
-}
-
-export default function TenderHeader({ tender }: Props) {
+export default function TenderHeader({ tender }: any) {
   return (
-    <div className="bg-white rounded-xl shadow-sm px-8 py-8 space-y-7">
+    <div className="bg-white border rounded-xl p-6 space-y-4">
 
-      <div className="flex flex-col lg:flex-row justify-between gap-6">
+      {/* TOP ROW */}
+      <div className="flex justify-between items-center">
 
-        <div className="space-y-3 max-w-3xl">
-
-          <span
-            className={`text-sm px-3 py-1 rounded-md ${
-              tender.status === "Open"
-                ? "bg-green-100 text-green-700"
-                : tender.status === "Upcoming"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
             {tender.status}
           </span>
 
           <p className="text-sm text-gray-500">
-            Tender ID: {tender.id}
+            Tender ID: {tender.tenderNumber}
           </p>
-
-          <h1 className="text-2xl font-semibold leading-snug">
-            {tender.title}
-          </h1>
-
-          <p className="text-base text-gray-600 leading-relaxed">
-            {tender.description}
-          </p>
-
         </div>
 
-        <div className="flex items-start">
-          <button className="bg-orange-700 text-white px-6 py-2 rounded-md text-sm hover:bg-orange-800 transition cursor-pointer">
-            Submit
-          </button>
-        </div>
-
+        <button className="bg-orange-700 text-white px-6 py-2 rounded-lg">
+          Submit
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-
-        <MetaCard
-          icon={<CalendarDays size={22} className="text-amber-600" />}
-          label="Closing Date"
-          value={tender.closing}
-        />
-
-        <MetaCard
-          icon={<DollarSign size={22} className="text-amber-600" />}
-          label="Estimated Budget"
-          value={tender.value}
-        />
-
-        <MetaCard
-          icon={<Building2 size={22} className="text-amber-600" />}
-          label="Department"
-          value={tender.entity}
-        />
-
-        <MetaCard
-          icon={<Clock size={22} className="text-amber-600" />}
-          label="Time Remaining"
-          value="18 Days 4 Hours"
-        />
-
+      {/* TITLE */}
+      <div>
+        <h1 className="text-xl font-semibold">
+          {tender.title}
+        </h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {tender.description}
+        </p>
       </div>
 
-    </div>
-  );
-}
+      <hr />
 
-function MetaCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-amber-50 border border-amber-200 p-5 rounded-lg hover:shadow-sm transition">
-      <div className="flex items-center gap-3">
-        {icon}
+      {/* INFO GRID */}
+      <div className="grid grid-cols-4 gap-6 text-sm">
+
         <div>
-          <p className="text-sm text-gray-600">{label}</p>
-          <p className="text-base font-semibold">{value}</p>
+          <p className="text-gray-400">Closing Date</p>
+          <p className="font-medium">{tender.closingDate}</p>
         </div>
+
+        <div>
+          <p className="text-gray-400">Estimated Budget</p>
+          <p className="font-medium">{tender.estimatedBudget}</p>
+        </div>
+
+        <div>
+          <p className="text-gray-400">Department</p>
+          <p className="font-medium">{tender.departmentName}</p>
+        </div>
+
+        <div>
+          <p className="text-gray-400">Time Remaining</p>
+          <p className="font-medium">10 Days 5 Hours</p>
+        </div>
+
       </div>
+
     </div>
   );
 }

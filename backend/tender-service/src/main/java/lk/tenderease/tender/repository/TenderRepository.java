@@ -6,19 +6,44 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 
+import org.springframework.data.repository.query.Param;
+
 import java.util.Optional;
+import java.util.UUID;
 
-public interface TenderRepository extends JpaRepository<Tender, Long>, JpaSpecificationExecutor<Tender> {
+public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecificationExecutor<Tender> {
 
+    // 🔍 Find by tender number
     Optional<Tender> findByTenderNumber(String tenderNumber);
 
-    // 🔥 Public tenders (for UI listing)
+    // 📄 Get tenders by status
     Page<Tender> findByStatus(TenderStatus status, Pageable pageable);
 
-    // 🔥 Search by title (UI search bar)
-    @Query("SELECT t FROM Tender t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) AND t.status = 'PUBLISHED'")
-    Page<Tender> searchPublishedTenders(String keyword, Pageable pageable);
+    @Query("""
+                SELECT t FROM Tender t WHERE
+                (:keyword = '' OR
+                    LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(t.departmentName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+                AND t.status = :status
+                AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+            """)
+    Page<Tender> searchWithStatus(
+            @Param("keyword") String keyword,
+            @Param("status") TenderStatus status,
+            Pageable pageable);
 
-    // 🔥 Filter by department + status
-    Page<Tender> findByDepartmentNameAndStatus(String departmentName, TenderStatus status, Pageable pageable);
+    @Query("""
+                SELECT t FROM Tender t WHERE
+                (:keyword = '' OR
+                    LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                    LOWER(t.departmentName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+                AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+            """)
+    Page<Tender> searchWithoutStatus(
+            @Param("keyword") String keyword,
+            Pageable pageable);
 }

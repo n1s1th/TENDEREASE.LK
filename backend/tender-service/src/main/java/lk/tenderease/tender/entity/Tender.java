@@ -40,8 +40,9 @@ public class Tender extends BaseEntity {
     private ProcurementMethod procurementMethod;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
+    @Column(columnDefinition = "tender_status")
     private TenderStatus status;
-
     @Column(name = "estimated_budget")
     private BigDecimal estimatedBudget;
 

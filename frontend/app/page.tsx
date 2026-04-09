@@ -1,6 +1,7 @@
 import GlobalTopNavigation from "@/components/common/GlobalTopNavigation";
 import AppHeader from "@/components/common/AppHeader";
 import App from "next/app";
+import Image from "next/image";
 
 export default function HomePage() {
   return (

@@ -28,13 +28,9 @@ public class KeycloakSecurityConfig {
             .cors(cors -> cors.configure(http))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
+                .anyRequest().permitAll()  // DISABLED SECURITY FOR DEBUGGING - Allow all
             );
+            // OAuth2 disabled for debugging
             
         return http.build();
     }

@@ -1,23 +1,82 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-/* Inter font is applied globally via layout.tsx */
-/* No need to redefine font-family here */
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-inter: var(--font-inter);
+  
+  /* Brand Colors from Spec */
+  --color-primary: #A03D11;
+  --color-secondary: #FBB401;
+  
+  /* State Colors from Spec */
+  --color-info: #2F80ED;
+  --color-success: #27AE60;
+  --color-warning: #E2B93B;
+  --color-error: #EB5757;
+  
+  /* Neutral Colors from Spec */
+  --color-black-1: #000000;
+  --color-black-2: #1D1D1D;
+  --color-black-3: #282828;
+  --color-gray-1: #333333;
+  --color-gray-2: #4F4F4F;
+  --color-gray-3: #828282;
+  --color-gray-4: #B0B0B0;
+  --color-gray-5: #E0E0E0;
+  
+  --shadow-primary: 0 10px 30px -5px rgba(160, 61, 17, 0.2), 0 4px 15px -5px rgba(160, 61, 17, 0.1);
+  --shadow-secondary: 0 10px 30px -5px rgba(251, 180, 1, 0.2);
+  --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 15px -5px rgba(0, 0, 0, 0.02);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: 255 255 255;
+  --foreground: 15 23 42;
+}
+
+@layer base {
+  * {
+    @apply border-gray-100;
+  }
+  
+  body {
+    @apply antialiased text-black-2 bg-[#fafafa];
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-black text-black-1;
+  }
+
+  p {
+    @apply text-gray-1;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom Scrollbar using Brand Colors */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-5;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-4 rounded-full border-4 border-solid border-gray-5 hover:bg-primary transition-colors;
 }
