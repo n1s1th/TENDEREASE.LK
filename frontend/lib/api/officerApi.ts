@@ -75,6 +75,8 @@ export const registerOfficer = async (
 ): Promise<OfficerSuccessResponse> => {
   const payload = {
     procuringEntityType: formData.procuringEntityType,
+    procuringEntityLevel: formData.procuringEntityLevel,
+    provincialCouncil: formData.provincialCouncil || null,
     headDesignation: formData.headDesignation,
     organizationName: formData.organizationName || null,
     address: {
