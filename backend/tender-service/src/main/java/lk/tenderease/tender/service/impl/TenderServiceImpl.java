@@ -10,6 +10,8 @@ import lk.tenderease.tender.entity.Department;
 import lk.tenderease.tender.entity.FundingSource;
 import lk.tenderease.tender.entity.Ministry;
 import lk.tenderease.tender.entity.Tender;
+import lk.tenderease.tender.entity.TenderSchedule;
+import lk.tenderease.tender.entity.TenderComplianceChecklist;
 import lk.tenderease.tender.enums.BiddingMethod;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
@@ -18,10 +20,13 @@ import lk.tenderease.tender.repository.DepartmentRepository;
 import lk.tenderease.tender.repository.FundingSourceRepository;
 import lk.tenderease.tender.repository.MinistryRepository;
 import lk.tenderease.tender.repository.SbdTemplateRepository;
+import lk.tenderease.tender.dto.event.TenderSubmittedEvent;
 import lk.tenderease.tender.repository.TenderRepository;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lk.tenderease.common.exception.BusinessException;
 
 @Slf4j
 @Service
@@ -42,6 +48,13 @@ public class TenderServiceImpl implements TenderService {
     private final FundingSourceRepository fundingSourceRepository;
     private final SbdTemplateRepository sbdTemplateRepository;
     private final TenderRepository tenderRepository;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchanges.tender:tender.exchange}")
+    private String tenderExchangeName;
+
+    @Value("${rabbitmq.routing-keys.tender-submitted:tender.submitted}")
+    private String tenderSubmittedRoutingKey;
 
     @Override
     @Transactional
@@ -50,7 +63,7 @@ public class TenderServiceImpl implements TenderService {
 
         // Check for duplicate tender number
         if (tenderRepository.existsByTenderNumber(request.getTenderNumber())) {
-            throw new RuntimeException("Tender number '" + request.getTenderNumber() + "' already exists");
+            throw new BusinessException("Tender number '" + request.getTenderNumber() + "' already exists");
         }
 
         // Fetch related entities
@@ -93,7 +106,11 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private TenderResponse mapToResponse(Tender tender) {
-        return TenderResponse.builder()
+        if (tender == null) return null;
+        
+        log.debug("Mapping tender {} to response", tender.getId());
+        
+        TenderResponse.TenderResponseBuilder<?, ?> builder = TenderResponse.builder()
                 .id(tender.getId())
                 .tenderNumber(tender.getTenderNumber())
                 .title(tender.getTitle())
@@ -101,28 +118,105 @@ public class TenderServiceImpl implements TenderService {
                 .procurementType(tender.getProcurementType())
                 .biddingMethod(tender.getBiddingMethod())
                 .tenderType(tender.getTenderType())
-                .ministryId(tender.getMinistry().getId())
-                .ministryName(tender.getMinistry().getName())
-                .departmentId(tender.getDepartment().getId())
-                .departmentName(tender.getDepartment().getName())
                 .estimatedBudget(tender.getEstimatedBudget())
-                .fundingSourceId(tender.getFundingSource() != null ? tender.getFundingSource().getId() : null)
-                .fundingSourceName(tender.getFundingSource() != null ? tender.getFundingSource().getName() : null)
                 .status(tender.getStatus())
                 .createdAt(tender.getCreatedAt())
                 .updatedAt(tender.getUpdatedAt())
-                .createdBy(tender.getCreatedBy())
-                .build();
+                .createdBy(tender.getCreatedBy());
+
+        // Defensive mapping for relationships
+        if (tender.getMinistry() != null) {
+            builder.ministryId(tender.getMinistry().getId());
+            builder.ministryName(tender.getMinistry().getName());
+        }
+
+        if (tender.getDepartment() != null) {
+            builder.departmentId(tender.getDepartment().getId());
+            builder.departmentName(tender.getDepartment().getName());
+        }
+
+        if (tender.getFundingSource() != null) {
+            builder.fundingSourceId(tender.getFundingSource().getId());
+            builder.fundingSourceName(tender.getFundingSource().getName());
+        }
+
+        return builder.build();
     }
 
     @Override
     public TenderDetailResponse getTenderById(UUID id) {
-        return null; // TODO: implement
+        log.info("Fetching tender detail for ID: {}", id);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+
+        TenderDetailResponse response = new TenderDetailResponse();
+        // Map from base TenderResponse (reusing the logic from mapToResponse if needed, but let's be explicit)
+        TenderResponse base = mapToResponse(tender);
+        
+        // Manual copy to the subclass
+        response.setId(base.getId());
+        response.setTenderNumber(base.getTenderNumber());
+        response.setTitle(base.getTitle());
+        response.setDescription(base.getDescription());
+        response.setProcurementType(base.getProcurementType());
+        response.setBiddingMethod(base.getBiddingMethod());
+        response.setTenderType(base.getTenderType());
+        response.setMinistryId(base.getMinistryId());
+        response.setMinistryName(base.getMinistryName());
+        response.setDepartmentId(base.getDepartmentId());
+        response.setDepartmentName(base.getDepartmentName());
+        response.setEstimatedBudget(base.getEstimatedBudget());
+        response.setFundingSourceId(base.getFundingSourceId());
+        response.setFundingSourceName(base.getFundingSourceName());
+        response.setStatus(base.getStatus());
+        response.setCreatedAt(base.getCreatedAt());
+        response.setUpdatedAt(base.getUpdatedAt());
+        response.setCreatedBy(base.getCreatedBy());
+
+        // Map specific details (documents, schedule, checklist)
+        // These might need real implementation if they are separate tables
+        // For now, returning empty/default if not fully implemented
+        return response;
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public TenderResponse updateTender(UUID id, CreateTenderRequest request, String callerUserId) {
-        return null; // TODO: implement
+        log.info("Updating tender with ID: {}", id);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+
+        if (tender.getStatus() != TenderStatus.DRAFT) {
+            throw new RuntimeException("Only DRAFT tenders can be updated");
+        }
+
+        Ministry ministry = ministryRepository.findById(request.getMinistryId())
+                .orElseThrow(() -> new RuntimeException("Ministry not found with ID: " + request.getMinistryId()));
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new RuntimeException("Department not found with ID: " + request.getDepartmentId()));
+
+        FundingSource fundingSource = null;
+        if (request.getFundingSourceId() != null) {
+            fundingSource = fundingSourceRepository.findById(request.getFundingSourceId())
+                    .orElseThrow(() -> new RuntimeException("Funding source not found with ID: " + request.getFundingSourceId()));
+        }
+
+        tender.setTenderNumber(request.getTenderNumber());
+        tender.setTitle(request.getTitle());
+        tender.setDescription(request.getDescription());
+        tender.setProcurementType(request.getProcurementType());
+        tender.setBiddingMethod(request.getBiddingMethod());
+        tender.setTenderType(request.getTenderType());
+        tender.setMinistry(ministry);
+        tender.setDepartment(department);
+        tender.setEstimatedBudget(request.getEstimatedBudget());
+        tender.setFundingSource(fundingSource);
+
+        tender.setUpdatedAt(java.time.LocalDateTime.now());
+        Tender saved = tenderRepository.save(tender);
+        
+        return mapToResponse(saved);
     }
 
     @Override
@@ -152,32 +246,178 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public TenderScheduleResponse getSchedule(UUID tenderId) {
-        return null; // TODO: implement
+        log.debug("Fetching schedule for tender: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+        
+        if (tender.getSchedule() == null) {
+            return TenderScheduleResponse.builder().build();
+        }
+        
+        TenderSchedule schedule = tender.getSchedule();
+        return TenderScheduleResponse.builder()
+                .advertisementStartDate(schedule.getAdvertisementStartDate())
+                .bidSubmissionDeadline(schedule.getBidSubmissionDeadline())
+                .preBidMeetingEnabled(schedule.getPreBidMeetingEnabled())
+                .preBidMeetingDate(schedule.getPreBidMeetingDate())
+                .preBidMeetingTime(schedule.getPreBidMeetingTime())
+                .build();
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public TenderScheduleResponse saveSchedule(UUID tenderId, TenderScheduleRequest request, String callerUserId) {
-        return null; // TODO: implement
+        log.debug("Saving schedule for tender: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+        
+        TenderSchedule schedule = tender.getSchedule();
+        if (schedule == null) {
+            schedule = new TenderSchedule();
+            schedule.setTender(tender);
+        }
+        
+        schedule.setAdvertisementStartDate(request.getAdvertisementStartDate());
+        schedule.setBidSubmissionDeadline(request.getBidSubmissionDeadline());
+        schedule.setPreBidMeetingEnabled(request.getPreBidMeetingEnabled());
+        schedule.setPreBidMeetingDate(request.getPreBidMeetingDate());
+        schedule.setPreBidMeetingTime(request.getPreBidMeetingTime());
+        
+        tender.setSchedule(schedule);
+        tender.setUpdatedAt(java.time.LocalDateTime.now());
+        tenderRepository.save(tender);
+        
+        return TenderScheduleResponse.builder()
+                .advertisementStartDate(schedule.getAdvertisementStartDate())
+                .bidSubmissionDeadline(schedule.getBidSubmissionDeadline())
+                .preBidMeetingEnabled(schedule.getPreBidMeetingEnabled())
+                .preBidMeetingDate(schedule.getPreBidMeetingDate())
+                .preBidMeetingTime(schedule.getPreBidMeetingTime())
+                .build();
     }
 
     @Override
     public ComplianceChecklistResponse getComplianceChecklist(UUID tenderId) {
-        return null; // TODO: implement
+        log.debug("Fetching checklist for tender: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+        
+        if (tender.getComplianceChecklist() == null) {
+            return ComplianceChecklistResponse.builder().allComplete(false).build();
+        }
+        
+        TenderComplianceChecklist cl = tender.getComplianceChecklist();
+        boolean allComplete = Boolean.TRUE.equals(cl.getProcurementPlanApproved()) &&
+                             Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
+                             Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
+                             Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
+
+        return ComplianceChecklistResponse.builder()
+                .id(cl.getId())
+                .tenderId(tenderId)
+                .procurementPlanApproved(cl.getProcurementPlanApproved())
+                .budgetAvailabilityConfirmed(cl.getBudgetAvailabilityConfirmed())
+                .sbdsCompliantWithGuidelines(cl.getSbdsCompliantWithGuidelines())
+                .evaluationCriteriaDefined(cl.getEvaluationCriteriaDefined())
+                .allComplete(allComplete)
+                .build();
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public ComplianceChecklistResponse saveComplianceChecklist(UUID tenderId, ComplianceChecklistRequest request, String callerUserId) {
-        return null; // TODO: implement
+        log.debug("Saving checklist for tender: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+        
+        TenderComplianceChecklist cl = tender.getComplianceChecklist();
+        if (cl == null) {
+            cl = new TenderComplianceChecklist();
+            cl.setTender(tender);
+        }
+        
+        cl.setProcurementPlanApproved(request.getProcurementPlanApproved());
+        cl.setBudgetAvailabilityConfirmed(request.getBudgetAvailabilityConfirmed());
+        cl.setSbdsCompliantWithGuidelines(request.getSbdsCompliantWithGuidelines());
+        cl.setEvaluationCriteriaDefined(request.getEvaluationCriteriaDefined());
+        
+        tender.setComplianceChecklist(cl);
+        tender.setUpdatedAt(java.time.LocalDateTime.now());
+        tenderRepository.save(tender);
+        
+        boolean allComplete = Boolean.TRUE.equals(cl.getProcurementPlanApproved()) &&
+                             Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
+                             Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
+                             Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
+                             
+        return ComplianceChecklistResponse.builder()
+                .id(cl.getId())
+                .tenderId(tenderId)
+                .procurementPlanApproved(cl.getProcurementPlanApproved())
+                .budgetAvailabilityConfirmed(cl.getBudgetAvailabilityConfirmed())
+                .sbdsCompliantWithGuidelines(cl.getSbdsCompliantWithGuidelines())
+                .evaluationCriteriaDefined(cl.getEvaluationCriteriaDefined())
+                .allComplete(allComplete)
+                .build();
     }
 
     @Override
     public TenderNoticePreviewResponse generateNoticePreview(UUID tenderId) {
-        return null; // TODO: implement
+        log.debug("Generating notice preview for tender: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+        
+        String notice = String.format("INVITATION FOR BIDS\n\nTender: %s\nTitle: %s\nProcurement Type: %s",
+                tender.getTenderNumber(), tender.getTitle(), tender.getProcurementType());
+        
+        return TenderNoticePreviewResponse.builder()
+                .tenderId(tenderId)
+                .tenderNumber(tender.getTenderNumber())
+                .title(tender.getTitle())
+                .biddingMethod(tender.getBiddingMethod())
+                .generatedText(notice)
+                .build();
     }
 
     @Override
+    @Transactional
     public TenderResponse submitForApproval(UUID tenderId, String callerUserId) {
-        return null; // TODO: implement
+        log.info("Attempting to submit tender {} for approval. Caller: {}", tenderId, callerUserId);
+
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+
+        if (tender.getStatus() != TenderStatus.DRAFT) {
+            log.warn("Tender {} is in status {}, cannot submit.", tenderId, tender.getStatus());
+            throw new RuntimeException("Only DRAFT tenders can be submitted for approval. Current status: " + tender.getStatus());
+        }
+
+        // 1. Update status to PENDING_APPROVAL
+        tender.setStatus(TenderStatus.PENDING_APPROVAL);
+        tender.setUpdatedAt(LocalDateTime.now());
+        Tender saved = tenderRepository.save(tender);
+
+        // 2. Publish event to RabbitMQ for Notification Service
+        try {
+            TenderSubmittedEvent event = TenderSubmittedEvent.builder()
+                    .tenderId(saved.getId())
+                    .tenderNumber(saved.getTenderNumber())
+                    .title(saved.getTitle())
+                    .submittedBy(callerUserId != null ? callerUserId : "dev-user")
+                    .submittedAt(LocalDateTime.now())
+                    .build();
+
+            log.info("Publishing TenderSubmittedEvent for tender: {}", saved.getTenderNumber());
+            rabbitTemplate.convertAndSend(tenderExchangeName, tenderSubmittedRoutingKey, event);
+        } catch (Exception e) {
+            log.error("Failed to publish notification event: {}", e.getMessage());
+            // We don't block the submission if notification fails, but we log it
+        }
+
+        // 3. Simple console log
+        log.info("Tender {} has been successfully created and sent for review.", saved.getTenderNumber());
+
+        return mapToResponse(saved);
     }
 
     // ── Reference Data ──────────────────────────────────────────────────────

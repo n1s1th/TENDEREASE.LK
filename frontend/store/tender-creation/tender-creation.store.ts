@@ -209,7 +209,18 @@ export const useTenderCreationStore = create<TenderCreationState>()(
 
         try {
           // Build the payload (exclude pendingFiles — they are uploaded separately)
-          const { pendingFiles, ...payload } = formData;
+          const { pendingFiles, ...rawPayload } = formData;
+          
+          // Map frontend field names to backend CreateTenderRequest names
+          const payload = {
+            ...rawPayload,
+            tenderNumber: rawPayload.referenceNumber,
+            ministryId: Number(rawPayload.ministryId),
+            departmentId: Number(rawPayload.departmentAgencyId),
+            fundingSourceId: rawPayload.fundingSource ? Number(rawPayload.fundingSource) : null,
+            estimatedBudget: Number(rawPayload.estimatedBudget)
+          };
+
           const result = await api.createTender(payload);
           const tenderId = result?.id;
 
@@ -224,7 +235,34 @@ export const useTenderCreationStore = create<TenderCreationState>()(
             }
           }
 
-          set({ isSubmitting: false }, false, "creation/submit/fulfilled");
+          if (tenderId) {
+            // Save Schedule
+            try {
+              await api.updateTenderSchedule(tenderId, {
+                advertisementStartDate: formData.advertisementStartDate,
+                bidSubmissionDeadline: formData.bidSubmissionDeadline,
+                preBidMeetingEnabled: formData.preBidMeetingEnabled,
+                preBidMeetingDate: formData.preBidMeetingDate || null,
+                preBidMeetingTime: null,
+              });
+            } catch (err) {
+               console.error("Failed to save schedule:", err);
+            }
+
+            // Save Compliance Checklist
+            try {
+              await api.updateComplianceChecklist(tenderId, {
+                procurementPlanApproved: formData.complianceChecklist.procurementPlanApproved,
+                budgetAvailabilityConfirmed: formData.complianceChecklist.budgetAvailabilityConfirmed,
+                sbdsCompliantWithGuidelines: formData.complianceChecklist.sbdComplyWithGuidelines,
+                evaluationCriteriaDefined: formData.complianceChecklist.evaluationCriteriaDefined,
+              });
+            } catch (err) {
+               console.error("Failed to save compliance checklist:", err);
+            }
+          }
+
+          set({ isSubmitting: false, error: null }, false, "creation/submit/fulfilled");
           return tenderId || null;
         } catch (err: any) {
           set(

@@ -63,5 +63,4 @@ public class TenderRabbitMQConfig {
                 .to(tenderExchange)
                 .with("workflow.rejected.tender");
     }
-
 }

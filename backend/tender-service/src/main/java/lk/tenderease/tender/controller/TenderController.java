@@ -153,7 +153,7 @@ public class TenderController {
     })
     public ResponseEntity<TenderDetailResponse> getTenderById(
             @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.getTenderById(id));
     }
 
     @PutMapping("/{id}")
@@ -169,7 +169,7 @@ public class TenderController {
     public ResponseEntity<TenderResponse> updateTender(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @Valid @RequestBody CreateTenderRequest request) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.updateTender(id, request, "dev-user-id"));
     }
 
     @DeleteMapping("/{id}")
@@ -271,7 +271,7 @@ public class TenderController {
     })
     public ResponseEntity<TenderScheduleResponse> getSchedule(
             @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.getSchedule(id));
     }
 
     @PutMapping("/{id}/schedule")
@@ -287,7 +287,7 @@ public class TenderController {
     public ResponseEntity<TenderScheduleResponse> saveSchedule(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @Valid @RequestBody TenderScheduleRequest request) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.saveSchedule(id, request, "dev-user-id"));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -305,7 +305,7 @@ public class TenderController {
     })
     public ResponseEntity<ComplianceChecklistResponse> getComplianceChecklist(
             @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.getComplianceChecklist(id));
     }
 
     @PutMapping("/{id}/compliance-checklist")
@@ -320,7 +320,7 @@ public class TenderController {
     public ResponseEntity<ComplianceChecklistResponse> saveComplianceChecklist(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @Valid @RequestBody ComplianceChecklistRequest request) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.saveComplianceChecklist(id, request, "dev-user-id"));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -338,7 +338,7 @@ public class TenderController {
     })
     public ResponseEntity<TenderNoticePreviewResponse> getNoticePreview(
             @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.generateNoticePreview(id));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -358,6 +358,8 @@ public class TenderController {
     })
     public ResponseEntity<TenderResponse> submitForApproval(
             @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return null; // TODO: implement
+        log.info("REST request to submit tender for approval: {}", id);
+        TenderResponse response = tenderService.submitForApproval(id, "dev-user-id");
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
+import { api } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -44,12 +45,21 @@ export function TenderPreview() {
   } = useTenderCreationStore();
 
   const handleSubmit = async () => {
+    // 1. Create tender and upload files (handled by store's submitTender)
     const tenderId = await submitTender();
+    
     if (tenderId) {
-      alert(`Tender created successfully! ID: ${tenderId}`);
-      reset();
+      try {
+        // 2. Submit for actual approval (this triggers the backend events)
+        await api.submitForApproval(tenderId);
+        alert(`Tender submitted for approval successfully! Reference: ${formData.referenceNumber}`);
+        reset();
+      } catch (err: any) {
+        alert(`Tender created (ID: ${tenderId}) but failed to submit for approval: ${err.message}`);
+      }
     } else {
-      alert("Failed to create tender. Check console for details.");
+      const currentError = useTenderCreationStore.getState().error;
+      alert(`Failed to create tender: ${currentError || "Unknown error occurred"}`);
     }
   };
 

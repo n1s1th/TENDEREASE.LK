@@ -10,7 +10,7 @@ import { NoticeComplianceStep } from "@/components/tender/creation/steps/NoticeC
 import { ScheduleStep } from "@/components/tender/creation/steps/ScheduleStep";
 import { TenderPreview } from "@/components/tender/creation/steps/TenderPreview";
 import { Button } from "@/components/ui/button";
-import { Save, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Save, ChevronLeft, ChevronRight, Eye, Wand2 } from "lucide-react";
 import type { StepIndex } from "@/lib/types/tender-creation.types";
 
 const STEP_COMPONENTS = [
@@ -32,6 +32,7 @@ export default function TenderCreationPage() {
     goToStep,
     setShowPreview,
     fetchReferenceData,
+    updateFormData,
   } = useTenderCreationStore();
 
   useEffect(() => {
@@ -44,6 +45,36 @@ export default function TenderCreationPage() {
 
   const handleSaveDraft = () => {
     alert("Save as Draft — not yet wired to backend.");
+  };
+
+  const handleFillSampleData = () => {
+    updateFormData({
+      title: "Sample Tender for IT Equipment",
+      referenceNumber: "TR-2026-001",
+      procurementType: "GOODS",
+      biddingMethod: "NCB",
+      ministryId: "1",
+      departmentAgencyId: "1",
+      description: "Procurement of 100 laptops and 50 desktop computers for the new IT center. Must include 3 years warranty and on-site support.",
+      estimatedBudget: "15000000",
+      fundingSource: "1",
+      tenderType: "OPEN_TENDER",
+      sbdTemplate: "1",
+      templateVersion: "1.0",
+      complianceChecklist: {
+        procurementPlanApproved: true,
+        budgetAvailabilityConfirmed: true,
+        sbdComplyWithGuidelines: true,
+        evaluationCriteriaDefined: true,
+      },
+      advertisementStartDate: new Date().toISOString().split('T')[0],
+      bidSubmissionDeadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      preBidMeetingEnabled: true,
+      preBidMeetingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    });
+    // Go to the last step and show preview
+    goToStep(4);
+    setShowPreview(true);
   };
 
   // ── Preview mode ────────────────────────────────────────
@@ -114,6 +145,20 @@ export default function TenderCreationPage() {
               <Save data-icon="inline-start" className="size-4" />
               Save as Draft
             </Button>
+            
+            {/* Development Mode: Fill Sample Data Button */}
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleFillSampleData}
+                title="Fill sample data for development"
+              >
+                <Wand2 data-icon="inline-start" className="size-4" />
+                Auto Fill (Dev)
+              </Button>
+            )}
           </div>
 
           <div className="flex gap-3">
@@ -151,3 +196,4 @@ export default function TenderCreationPage() {
     </div>
   );
 }
+
