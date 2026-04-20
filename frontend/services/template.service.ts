@@ -1,5 +1,19 @@
 const API_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082';
 
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    let errorMessage = "An error occurred";
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.message || errorData.error || res.statusText;
+    } catch (e) {
+      errorMessage = res.statusText;
+    }
+    throw new Error(errorMessage);
+  }
+  return res.json();
+}
+
 export const templateService = {
   async createTemplate(data: any) {
     const res = await fetch(`${API_URL}/api/v1/tender-templates`, {
@@ -7,8 +21,7 @@ export const templateService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Failed to create template");
-    return res.json();
+    return handleResponse(res);
   },
 
   async updateTemplate(id: string, data: any) {
@@ -17,15 +30,13 @@ export const templateService = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error("Failed to update template");
-    return res.json();
+    return handleResponse(res);
   },
 
   async publishTemplate(id: string) {
     const res = await fetch(`${API_URL}/api/v1/tender-templates/${id}/publish`, {
       method: "POST",
     });
-    if (!res.ok) throw new Error("Failed to publish template");
-    return res.json();
+    return handleResponse(res);
   }
 };

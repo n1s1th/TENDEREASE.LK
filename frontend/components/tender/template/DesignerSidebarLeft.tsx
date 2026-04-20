@@ -1,3 +1,5 @@
+"use client";
+
 import { useTemplateDesignerStore, FieldType } from "@/store/tender-template/template-designer.store";
 import { 
   AlignLeft, AlignJustify, CheckSquare, ChevronDownSquare, 

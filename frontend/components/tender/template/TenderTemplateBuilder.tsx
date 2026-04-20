@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Save, Send } from "lucide-react";
 
 import { templateService } from "@/services/template.service";
-import { toast } from "sonner"; // Assuming sonner is used for toasts, standard in modern shadcn/next.js
+import { toast, Toaster } from "sonner";
 
 export function TenderTemplateBuilder() {
   const [isClient, setIsClient] = useState(false);
@@ -46,8 +46,8 @@ export function TenderTemplateBuilder() {
       });
       
       toast.success("Template saved successfully");
-    } catch (error) {
-      toast.error("Failed to save template");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save template");
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -68,8 +68,8 @@ export function TenderTemplateBuilder() {
         version: result.version
       });
       toast.success("Template published securely. This version is now immutable.");
-    } catch (error) {
-      toast.error("Failed to publish template");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to publish template");
       console.error(error);
     } finally {
       setIsSaving(false);
@@ -101,6 +101,7 @@ export function TenderTemplateBuilder() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <Toaster position="top-right" richColors />
       {/* Top Header */}
       <div className="bg-white border-b border-grey-2 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
