@@ -10,6 +10,7 @@ public interface TenderTemplateService {
     TenderTemplateResponse createTemplate(TenderTemplateRequest request);
     TenderTemplateResponse updateTemplate(UUID id, TenderTemplateRequest request);
     TenderTemplateResponse getTemplate(UUID id);
+    List<TenderTemplateResponse> getAllTemplates();
     List<TenderTemplateResponse> getActiveTemplates();
     TenderTemplateResponse publishTemplate(UUID id);
     void archiveTemplate(UUID id);

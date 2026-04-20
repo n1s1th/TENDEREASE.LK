@@ -42,6 +42,12 @@ public class TenderTemplateController {
         return ResponseEntity.ok(tenderTemplateService.getTemplate(id));
     }
 
+    @GetMapping("/all")
+    @Operation(summary = "Get all templates (including drafts)")
+    public ResponseEntity<List<TenderTemplateResponse>> getAllTemplates() {
+        return ResponseEntity.ok(tenderTemplateService.getAllTemplates());
+    }
+
     @GetMapping
     @Operation(summary = "Get all active published templates")
     public ResponseEntity<List<TenderTemplateResponse>> getActiveTemplates() {

@@ -38,5 +38,12 @@ export const templateService = {
       method: "POST",
     });
     return handleResponse(res);
+  },
+
+  async getAllTemplates() {
+    const res = await fetch(`${API_URL}/api/v1/tender-templates/all`, {
+      method: "GET",
+    });
+    return handleResponse(res);
   }
 };

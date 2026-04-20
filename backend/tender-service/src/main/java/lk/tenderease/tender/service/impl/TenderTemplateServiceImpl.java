@@ -99,6 +99,13 @@ public class TenderTemplateServiceImpl implements TenderTemplateService {
     }
 
     @Override
+    public List<TenderTemplateResponse> getAllTemplates() {
+        return repository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     @Transactional
     public TenderTemplateResponse publishTemplate(UUID id) {
         TenderTemplate template = repository.findById(id)
