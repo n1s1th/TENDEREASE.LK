@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, X, Menu } from "lucide-react";
+import { Search, X, Menu, User } from "lucide-react";
 import Link from "next/link";
 
 const navLinks = [
@@ -11,7 +11,11 @@ const navLinks = [
   { label: "Help / FAQ", href: "/help" },
 ];
 
-export default function Navbar() {
+interface NavbarProps {
+  isLoggedIn?: boolean;
+}
+
+export default function Navbar({ isLoggedIn = false }: NavbarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("Home");
@@ -22,7 +26,7 @@ export default function Navbar() {
       <div className="navbar-container">
         {/* Logo */}
         <Link href="/" className="navbar-logo">
-          TenderHub
+          TenderEase
         </Link>
 
         {/* Desktop Nav links */}
@@ -50,10 +54,17 @@ export default function Navbar() {
             {searchOpen ? <X size={18} /> : <Search size={18} />}
           </button>
 
-          {/* Sign In button */}
-          <Link href="/sign-in" className="navbar-signin-btn">
-            Sign In
-          </Link>
+          {/* Sign In / My Account */}
+          {isLoggedIn ? (
+            <Link href="#" className="navbar-signin-btn" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem" }}>
+              <User size={16} />
+              My Account
+            </Link>
+          ) : (
+            <Link href="/sign-in" className="navbar-signin-btn">
+              Sign In
+            </Link>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -97,9 +108,15 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="/sign-in" className="navbar-mobile-signin">
-            Sign In
-          </Link>
+          {isLoggedIn ? (
+            <Link href="#" className="navbar-mobile-signin">
+              My Account
+            </Link>
+          ) : (
+            <Link href="/sign-in" className="navbar-mobile-signin">
+              Sign In
+            </Link>
+          )}
         </nav>
       )}
     </header>
