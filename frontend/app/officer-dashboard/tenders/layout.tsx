@@ -6,6 +6,8 @@ import KpiCards from "@/components/officer-dashboard/KpiCards";
 import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
 import { useEffect } from "react";
 
+import DateRangeFilter from "@/components/officer-dashboard/DateRangeFilter";
+
 export default function TendersLayout({
   children,
 }: {
@@ -25,6 +27,7 @@ export default function TendersLayout({
       <TabBar />
       <DepartmentFilter value={department} onChange={setDepartment} />
       {children}
+      <DateRangeFilter />
       <KpiCards data={kpiSummary} />
     </div>
   );

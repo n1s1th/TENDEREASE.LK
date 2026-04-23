@@ -117,7 +117,7 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
             <tr>
               <td
                 colSpan={columns.length + (selectable ? 1 : 0) + (rowActionLabel || showMenu ? 1 : 0)}
-                style={{ textAlign: "center", padding: "3rem 1rem", color: "var(--te-gray-4)" }}
+                style={{ textAlign: "center", padding: "6rem 1rem", color: "var(--te-gray-4)" }}
               >
                 {emptyMessage}
               </td>

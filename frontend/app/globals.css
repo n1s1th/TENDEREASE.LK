@@ -901,6 +901,7 @@
    Sub Nav (Tenders | Registration + Notification Center)
    ═══════════════════════════════════════════════════════════════ */
 .dash-subnav {
+  /* HMR cache bust - remove any margins */
   background: #FDF8F4;
   border-bottom: 1px solid #D9C4B4;
   border-top: 3px solid var(--te-primary);
@@ -1446,7 +1447,8 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
-  padding: 1.5rem 0;
+  padding-top: 0.5rem;
+  padding-bottom: 1.5rem;
 }
 
 .dash-kpi-card {
@@ -1549,7 +1551,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 0;
+  padding-top: 2rem;
+  padding-bottom: 0.75rem;
 }
 
 .dash-date-filter-btn {

@@ -25,7 +25,7 @@ export default function SubNav() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        height: 48,
+        height: 64,
       }}>
         <div className="dash-subnav-tabs">
           <Link
