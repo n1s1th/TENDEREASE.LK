@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
     "lk.tenderease.common"
 })
 @EnableDiscoveryClient
-@EnableJpaAuditing
 public class BidServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(BidServiceApplication.class, args);

@@ -1,21 +1,9 @@
 package lk.tenderease.tender.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lk.tenderease.common.entity.BaseEntity;
 import lk.tenderease.tender.enums.DocumentType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -26,7 +14,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "tender_document", indexes = {
-    @Index(name = "idx_tender_document_tender_id", columnList = "tender_id")
+        @Index(name = "idx_tender_document_tender_id", columnList = "tender_id")
 })
 public class TenderDocument extends BaseEntity {
 
@@ -47,6 +35,9 @@ public class TenderDocument extends BaseEntity {
 
     @Column(name = "s3_key", nullable = false, length = 1000)
     private String s3Key;
+
+    // ✅ From LEFT (keep this)
+    private Integer version;
 
     @Column(name = "file_size_bytes", nullable = false)
     private Long fileSizeBytes;

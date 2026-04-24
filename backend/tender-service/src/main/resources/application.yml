@@ -33,11 +33,24 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+  
+  spring:
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+        timeout: 2000ms
 
   servlet:
     multipart:
@@ -59,6 +72,7 @@ server:
 
 eureka:
   client:
+    enabled: false   # 👈 ADD THIS LINE
     service-url:
       defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     fetch-registry: true
@@ -120,3 +134,7 @@ logging:
 app:
   name: Tender Service
   version: 1.0.0
+  mail:
+    from: ${MAIL_FROM:no-reply@tenderease.lk}
+
+
