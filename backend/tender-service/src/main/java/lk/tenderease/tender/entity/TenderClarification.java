@@ -23,6 +23,8 @@ public class TenderClarification {
 
     private Long askedBy;
 
+    private String bidderEmail;
+
     private LocalDateTime askedAt;
 
     private Boolean isPublic;

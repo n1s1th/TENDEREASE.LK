@@ -1,20 +1,29 @@
 const BASE_URL = "http://localhost:8082/api/tenders";
 
-// 🔐 Get Authorization headers
+// 🔐 Get Authorization headers (FIXED)
 function getAuthHeaders(): HeadersInit {
-  if (typeof window === "undefined") return {};
+  const headers: HeadersInit = {
+    "Content-Type": "application/json", // ✅ ALWAYS include this
+  };
 
-  const token = localStorage.getItem("token");
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    const userEmail =
+      localStorage.getItem("userEmail") ||
+      localStorage.getItem("email");
 
-  if (!token) {
-    console.warn("⚠️ No token found in localStorage");
-    return {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      console.warn("⚠️ No token found in localStorage");
+    }
+
+    if (userEmail) {
+      headers["X-User-Email"] = userEmail;
+    }
   }
 
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
+  return headers;
 }
 
 // 🔥 Helper function to handle responses
@@ -26,8 +35,11 @@ async function handleResponse(response: Response) {
     );
   }
 
-  // Handle empty successful responses (e.g. 200 OK with no body or 204 No Content)
-  if (response.status === 204 || response.headers.get("content-length") === "0") {
+  // Handle empty responses
+  if (
+    response.status === 204 ||
+    response.headers.get("content-length") === "0"
+  ) {
     return {};
   }
 
@@ -40,24 +52,22 @@ async function handleResponse(response: Response) {
 
   const text = await response.text();
 
-  if (!text) {
-    return {};
-  }
+  if (!text) return {};
 
   try {
     return JSON.parse(text);
-  } catch (err) {
+  } catch {
     throw new Error("Failed to parse JSON response");
   }
 }
 
-// 🔥 Common fetch wrapper (avoids repetition)
+// 🔥 Common fetch wrapper
 async function apiFetch(url: string, options: RequestInit = {}) {
   const res = await fetch(url, {
     cache: "no-store",
     ...options,
     headers: {
-      ...getAuthHeaders(),
+      ...getAuthHeaders(), // ✅ now always includes Content-Type
       ...(options.headers || {}),
     },
   });
@@ -69,19 +79,14 @@ async function apiFetch(url: string, options: RequestInit = {}) {
 export async function getTenderById(id: string) {
   try {
     const res = await apiFetch(`${BASE_URL}/${id}`);
-
-    console.log("RAW RESPONSE:", res);
-
-    // ✅ FIX HERE
     return res.data ? res.data : res;
-
   } catch (error) {
     console.error("❌ Error fetching tender:", error);
     throw error;
   }
 }
 
-// 🔥 GET ALL TENDERS (MAIN LIST)
+// 🔥 GET ALL TENDERS
 export async function getTenders(page = 0, size = 10, filters: any = {}) {
   try {
     const params = new URLSearchParams({
@@ -90,7 +95,8 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
     });
 
     if (filters.keyword) params.append("keyword", filters.keyword);
-    if (filters.status && filters.status !== "All Statuses") params.append("status", filters.status);
+    if (filters.status && filters.status !== "All Statuses")
+      params.append("status", filters.status);
     if (filters.fromDate) params.append("fromDate", filters.fromDate);
     if (filters.toDate) params.append("toDate", filters.toDate);
 
@@ -103,38 +109,30 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
 
 // 🔥 DOCUMENTS
 export async function getDocuments(id: string) {
-  try {
-    return await apiFetch(`${BASE_URL}/${id}/documents`);
-  } catch (error) {
-    console.error("❌ Error fetching documents:", error);
-    throw error;
-  }
+  return apiFetch(`${BASE_URL}/${id}/documents`);
 }
 
 // 🔥 ADDENDA
 export async function getAddenda(id: string) {
-  try {
-    return await apiFetch(`${BASE_URL}/${id}/addenda`);
-  } catch (error) {
-    console.error("❌ Error fetching addenda:", error);
-    throw error;
-  }
+  return apiFetch(`${BASE_URL}/${id}/addenda`);
 }
 
 // 🔥 CLARIFICATIONS
 export async function getClarifications(id: string) {
-  try {
-    return await apiFetch(`${BASE_URL}/${id}/clarifications`);
-  } catch (error) {
-    console.error("❌ Error fetching clarifications:", error);
-    throw error;
-  }
+  return apiFetch(`${BASE_URL}/${id}/clarifications`);
 }
 
-export async function submitClarification(tenderId: string, question: string) {
+// 🔥 SUBMIT CLARIFICATION (FINAL FIXED)
+export async function submitClarification(
+  tenderId: string,
+  question: string
+) {
   try {
     return await apiFetch(`${BASE_URL}/${tenderId}/clarifications`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json", // ✅ explicitly ensure
+      },
       body: JSON.stringify({ question }),
     });
   } catch (error) {
@@ -143,22 +141,24 @@ export async function submitClarification(tenderId: string, question: string) {
   }
 }
 
+export async function answerClarification(
+  tenderId: string,
+  clarificationId: number,
+  response: string,
+  respondedBy = 1
+) {
+  return apiFetch(`${BASE_URL}/${tenderId}/clarifications/${clarificationId}/response`, {
+    method: "POST",
+    body: JSON.stringify({ response, respondedBy }),
+  });
+}
+
 // 🔥 TIMELINE
 export async function getTimeline(id: string) {
-  try {
-    return await apiFetch(`${BASE_URL}/${id}/timeline`);
-  } catch (error) {
-    console.error("❌ Error fetching timeline:", error);
-    throw error;
-  }
+  return apiFetch(`${BASE_URL}/${id}/timeline`);
 }
 
 // 🔥 CONTACT
 export async function getContact(id: string) {
-  try {
-    return await apiFetch(`${BASE_URL}/${id}/contact`);
-  } catch (error) {
-    console.error("❌ Error fetching contact:", error);
-    throw error;
-  }
+  return apiFetch(`${BASE_URL}/${id}/contact`);
 }

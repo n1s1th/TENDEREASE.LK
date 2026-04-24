@@ -26,7 +26,15 @@ export default function DocumentsTab({ documents }: any) {
           <h2 className="text-2xl font-black text-black-1 tracking-tight">Tender Documents</h2>
           <p className="text-sm font-medium text-gray-3">Download and review all necessary documentation for your submission.</p>
         </div>
-        <button className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95">
+        <button
+          onClick={() => {
+            window.open(
+              `http://localhost:8082/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
+              "_blank"
+            );
+          }}
+          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95"
+        >
           <Download size={16} />
           Download All
         </button>
@@ -34,8 +42,8 @@ export default function DocumentsTab({ documents }: any) {
 
       <div className="grid grid-cols-1 gap-4">
         {documentsData.map((d: any) => (
-          <div 
-            key={d.id} 
+          <div
+            key={d.id}
             className="flex items-center justify-between bg-white p-6 rounded-[1.5rem] border border-gray-100 hover:border-secondary/20 hover:shadow-premium transition-all duration-300 group"
           >
             <div className="flex items-center gap-6">

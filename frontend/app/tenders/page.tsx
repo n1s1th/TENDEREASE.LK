@@ -29,7 +29,7 @@ export default function TendersPage() {
       try {
         // Backend pagination is 0-indexed
         const data = await getTenders(currentPage - 1, 10, filters);
-        
+
         // Handle both Array response and Page object response
         if (Array.isArray(data)) {
           setTenders(data);
@@ -66,7 +66,7 @@ export default function TendersPage() {
   return (
     <TenderLayout>
       <div className="max-w-[1400px] mx-auto px-4 sm:px-10 py-10 space-y-12">
-        
+
         {/* Header Section */}
         <div className="relative">
           <div className="absolute -left-4 top-0 w-1 h-12 bg-primary rounded-full"></div>
@@ -77,9 +77,9 @@ export default function TendersPage() {
         </div>
 
         {/* Search & Filters */}
-        <TenderSearchBar 
-          filters={filters} 
-          onFilterChange={setFilters} 
+        <TenderSearchBar
+          filters={filters}
+          onFilterChange={setFilters}
           onSearch={handleSearch}
           onReset={handleReset}
         />
@@ -95,7 +95,7 @@ export default function TendersPage() {
               {loading ? "Synchronizing..." : `${totalCount} Tenders Available`}
             </span>
           </div>
-          
+
           {loading ? (
             <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
               <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
@@ -104,12 +104,12 @@ export default function TendersPage() {
           ) : (
             <div className="space-y-6">
               <TenderTable data={tenders} />
-              
-              <TenderPagination 
-                currentPage={currentPage} 
-                totalPages={Math.ceil(totalCount / 10) || 1} 
+
+              <TenderPagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / 10) || 1}
                 totalItems={totalCount}
-                onPageChange={setCurrentPage} 
+                onPageChange={setCurrentPage}
               />
             </div>
           )}

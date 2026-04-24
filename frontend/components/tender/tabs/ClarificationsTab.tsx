@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
   Send,
@@ -24,6 +24,10 @@ export default function ClarificationsTab({
 
   const [localClarifications, setLocalClarifications] =
     useState<any[]>(clarifications);
+
+  useEffect(() => {
+    setLocalClarifications(clarifications);
+  }, [clarifications]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +106,7 @@ export default function ClarificationsTab({
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !question.trim()}
             className="bg-black text-white px-4 py-2 rounded flex items-center gap-2"
           >
             {isSubmitting ? (

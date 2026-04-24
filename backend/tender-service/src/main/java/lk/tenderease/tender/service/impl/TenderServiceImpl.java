@@ -1,8 +1,11 @@
 package lk.tenderease.tender.service.impl;
 
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.response.*;
 import lk.tenderease.tender.entity.*;
+import lk.tenderease.tender.producer.NotificationProducer;
+import lk.tenderease.common.event.NotificationEvent;
 import lk.tenderease.tender.repository.*;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -31,6 +35,7 @@ public class TenderServiceImpl implements TenderService {
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
     private final TenderContactRepository contactRepository;
+    private final NotificationProducer notificationProducer;
 
     // 🔥 GET ALL PUBLISHED TENDERS (LIST PAGE)
     @Override
@@ -83,7 +88,7 @@ public class TenderServiceImpl implements TenderService {
     @Override
     public List<ClarificationDTO> getClarifications(UUID tenderId) {
 
-        return clarificationRepository.findByTenderIdAndIsPublicTrue(tenderId)
+        return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId)
                 .stream()
                 .map((TenderClarification c) -> {
                     var response = responseRepository.findByClarificationId(c.getId());
@@ -128,19 +133,60 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @Transactional
-    public void submitClarification(UUID tenderId, ClarificationRequestDTO request) {
+    public void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail) {
         log.info("Submitting clarification for tender {}: {}", tenderId, request.getQuestion());
         Tender tender = getTenderOrThrow(tenderId);
 
         TenderClarification clarification = TenderClarification.builder()
                 .tender(tender)
                 .question(request.getQuestion())
+                .bidderEmail(bidderEmail)
                 .askedAt(LocalDateTime.now())
                 .isPublic(false) // Private by default until reviewed
                 .askedBy(1L) // Mocked user ID for now
                 .build();
 
         clarificationRepository.save(clarification);
+    }
+
+    @Override
+    @Transactional
+    public ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request) {
+        Tender tender = getTenderOrThrow(tenderId);
+        TenderClarification clarification = clarificationRepository.findByIdAndTenderId(clarificationId, tenderId)
+                .orElseThrow(() -> new RuntimeException("Clarification not found"));
+
+        ClarificationResponse response = responseRepository.findByClarificationId(clarificationId)
+                .orElseGet(() -> ClarificationResponse.builder()
+                        .clarification(clarification)
+                        .build());
+
+        response.setResponse(request.getResponse());
+        response.setRespondedBy(request.getRespondedBy() != null ? request.getRespondedBy() : 1L);
+        response.setRespondedAt(LocalDateTime.now());
+        ClarificationResponse savedResponse = responseRepository.save(response);
+
+        clarification.setIsPublic(true);
+        clarificationRepository.save(clarification);
+
+        // Notify bidder via Notification Service (RabbitMQ)
+        if (clarification.getBidderEmail() != null && !clarification.getBidderEmail().isEmpty()) {
+            NotificationEvent event = NotificationEvent.builder()
+                    .recipient(clarification.getBidderEmail())
+                    .type("EMAIL")
+                    .subject("Tender clarification answered: " + tender.getTenderNumber())
+                    .message(buildNotificationMessage(tender, clarification, savedResponse))
+                    .build();
+            notificationProducer.sendNotification(event);
+        }
+
+        return ClarificationDTO.builder()
+                .id(clarification.getId())
+                .question(clarification.getQuestion())
+                .answer(savedResponse.getResponse())
+                .askedAt(clarification.getAskedAt())
+                .answeredAt(savedResponse.getRespondedAt())
+                .build();
     }
 
     // ======================
@@ -200,7 +246,7 @@ public class TenderServiceImpl implements TenderService {
                 .documentName(d.getDocumentName())
                 .documentType(d.getDocumentType())
                 .version(d.getVersion())
-                .downloadUrl("S3_URL_PLACEHOLDER")
+                .downloadUrl("http://localhost:8082/api/tenders/files/" + d.getS3Key())
                 .build();
     }
 
@@ -214,4 +260,30 @@ public class TenderServiceImpl implements TenderService {
                 .createdAt(a.getCreatedAt())
                 .build();
     }
+
+    private String buildNotificationMessage(Tender tender, TenderClarification clarification, ClarificationResponse response) {
+        return """
+                Hello,
+
+                Your clarification question for the following tender has been answered.
+
+                Tender: %s
+                Tender number: %s
+
+                Your question:
+                %s
+
+                Official response:
+                %s
+
+                Regards,
+                TenderEase.lk
+                """.formatted(
+                tender.getTitle(),
+                tender.getTenderNumber(),
+                clarification.getQuestion(),
+                response.getResponse()
+        );
+    }
+
 }

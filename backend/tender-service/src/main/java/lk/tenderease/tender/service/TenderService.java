@@ -1,6 +1,7 @@
 package lk.tenderease.tender.service;
 
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.response.*;
 import lk.tenderease.tender.enums.TenderStatus;
 import org.springframework.data.domain.Page;
@@ -15,15 +16,17 @@ public interface TenderService {
 
     TenderDetailsDTO getTenderById(UUID id);
 
-    List<TenderDocumentDTO> getDocuments( UUID tenderId);
+    List<TenderDocumentDTO> getDocuments(UUID tenderId);
 
     List<TenderAmendmentDTO> getAddenda(UUID tenderId);
 
-    List<ClarificationDTO> getClarifications( UUID tenderId);
+    List<ClarificationDTO> getClarifications(UUID tenderId);
 
     List<TimelineDTO> getTimeline(UUID tenderId);
 
     List<ContactDTO> getContacts(UUID tenderId);
 
-    void submitClarification(UUID tenderId, ClarificationRequestDTO request);
+    void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
+
+    ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
 }
