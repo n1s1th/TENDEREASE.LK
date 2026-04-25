@@ -5,18 +5,28 @@ import lk.tenderease.tender.dto.request.ComplianceChecklistRequest;
 import lk.tenderease.tender.dto.request.CreateTenderRequest;
 import lk.tenderease.tender.dto.request.DocumentUploadRequest;
 import lk.tenderease.tender.dto.request.TenderScheduleRequest;
+import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
+import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ComplianceChecklistResponse;
+import lk.tenderease.tender.dto.response.ContactDTO;
 import lk.tenderease.tender.dto.response.DepartmentResponse;
 import lk.tenderease.tender.dto.response.FundingSourceResponse;
 import lk.tenderease.tender.dto.response.MinistryResponse;
 import lk.tenderease.tender.dto.response.SbdTemplateResponse;
+import lk.tenderease.tender.dto.response.TenderAmendmentDTO;
 import lk.tenderease.tender.dto.response.TenderDetailResponse;
+import lk.tenderease.tender.dto.response.TenderDetailsDTO;
+import lk.tenderease.tender.dto.response.TenderDocumentDTO;
 import lk.tenderease.tender.dto.response.TenderDocumentResponse;
 import lk.tenderease.tender.dto.response.TenderNoticePreviewResponse;
 import lk.tenderease.tender.dto.response.TenderResponse;
 import lk.tenderease.tender.dto.response.TenderScheduleResponse;
+import lk.tenderease.tender.dto.response.TenderSummaryDTO;
+import lk.tenderease.tender.dto.response.TimelineDTO;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -233,4 +243,22 @@ public interface TenderService {
      * @return list of tender type names
      */
     List<String> listTenderTypes();
+
+    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable);
+
+    TenderDetailsDTO getPublicTenderById(UUID id);
+
+    List<TenderDocumentDTO> getDocuments(UUID tenderId);
+
+    List<TenderAmendmentDTO> getAddenda(UUID tenderId);
+
+    List<ClarificationDTO> getClarifications(UUID tenderId);
+
+    List<TimelineDTO> getTimeline(UUID tenderId);
+
+    List<ContactDTO> getContacts(UUID tenderId);
+
+    void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
+
+    ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
 }
