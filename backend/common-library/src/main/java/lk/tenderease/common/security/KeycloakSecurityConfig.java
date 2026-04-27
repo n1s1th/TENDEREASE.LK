@@ -25,17 +25,27 @@ public class KeycloakSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configure(http))
+            // Disable local CORS since the API Gateway handles it
+            .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                // Vendor registration is a public flow — user has no token yet
+                .requestMatchers(
+                    "/api/v1/vendors/verify-registration",
+                    "/api/v1/vendors/register",
+                    "/api/v1/vendors/*/documents",
+                    "/api/v1/vendors/*/documents/**",
+                    "/api/v1/vendors/*/submit"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
             );
-            
+
         return http.build();
     }
 }
+

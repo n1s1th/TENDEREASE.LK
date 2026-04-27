@@ -9,7 +9,7 @@ export default function Step3Documents() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [documentType, setDocumentType] = useState('BUSINESS_REGISTRATION');
+  const [documentType, setDocumentType] = useState('INCORPORATION_CERTIFICATE');
   const [documentTitle, setDocumentTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -83,8 +83,11 @@ export default function Step3Documents() {
               onChange={(e) => setDocumentType(e.target.value)}
               className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500 bg-white"
             >
-              <option value="BUSINESS_REGISTRATION">Business Registration</option>
-              <option value="TAX_DOCUMENT">Tax Document</option>
+              <option value="INCORPORATION_CERTIFICATE">Business Registration</option>
+              <option value="TAX_CLEARANCE">Tax Document</option>
+              <option value="BANK_STATEMENT">Bank Statement</option>
+              <option value="DIRECTOR_DETAILS">Director Details</option>
+              <option value="FINANCIAL_REPORT">Financial Report</option>
               <option value="OTHER">Other</option>
             </select>
           </div>
