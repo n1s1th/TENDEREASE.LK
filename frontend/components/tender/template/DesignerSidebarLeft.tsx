@@ -6,6 +6,7 @@ import {
   Calendar, Clock, UploadCloud, Hash, FileText, DollarSign, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 
 const FIELD_GROUPS = [
   {
@@ -36,7 +37,7 @@ const FIELD_GROUPS = [
 ];
 
 export function DesignerSidebarLeft() {
-  const { addField, sections, selectedSectionId, setSelectedField } = useTemplateDesignerStore();
+  const { addField, sections, selectedSectionId } = useTemplateDesignerStore();
 
   const handleAddField = (type: FieldType) => {
     // Add to selected section, or last section if none selected
@@ -59,22 +60,59 @@ export function DesignerSidebarLeft() {
             <h3 className="text-[10px] font-bold text-grey-4 uppercase tracking-[0.15em] mb-3">
               {group.title}
             </h3>
-            <div className="space-y-2">
-              {group.fields.map((field) => {
+            <Droppable 
+              droppableId={`palette-${group.title}`} 
+              type="FIELD" 
+              isDropDisabled={true}
+              renderClone={(provided, snapshot, rubric) => {
+                const field = group.fields[rubric.source.index];
                 const Icon = field.icon;
                 return (
-                  <Button
-                    key={field.type}
-                    variant="outline"
-                    className="w-full justify-start font-medium text-grey-5 border-grey-2 hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors"
-                    onClick={() => handleAddField(field.type)}
+                  <div
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    ref={provided.innerRef}
+                    className="w-full flex items-center px-4 py-2 text-sm font-medium border rounded-md transition-colors cursor-grabbing text-primary border-primary/50 shadow-lg bg-white ring-2 ring-primary/20 select-none"
                   >
-                    <Icon className="w-4 h-4 mr-3" />
+                    <Icon className="w-4 h-4 mr-3 shrink-0" />
                     {field.label}
-                  </Button>
+                  </div>
                 );
-              })}
-            </div>
+              }}
+            >
+              {(provided, snapshot) => (
+                <div 
+                  className="space-y-2"
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                >
+                  {group.fields.map((field, index) => {
+                    const Icon = field.icon;
+                    return (
+                      <Draggable key={field.type} draggableId={`palette-${field.type}`} index={index}>
+                        {(dragProvided, dragSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            onClick={() => handleAddField(field.type)}
+                            className={`w-full flex items-center px-4 py-2 text-sm font-medium border rounded-md transition-colors cursor-grab active:cursor-grabbing select-none ${
+                              dragSnapshot.isDragging 
+                                ? "text-primary border-primary/50 shadow-md bg-white ring-2 ring-primary/20" 
+                                : "text-grey-5 border-grey-2 hover:border-primary/30 hover:bg-primary/5 hover:text-primary bg-white"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 mr-3 shrink-0" />
+                            {field.label}
+                          </div>
+                        )}
+                      </Draggable>
+                    );
+                  })}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           </div>
         ))}
       </div>

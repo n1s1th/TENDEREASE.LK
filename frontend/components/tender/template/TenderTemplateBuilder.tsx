@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
-import { useTemplateDesignerStore } from "@/store/tender-template/template-designer.store";
+import { useTemplateDesignerStore, FieldType } from "@/store/tender-template/template-designer.store";
 import { DesignerSidebarLeft } from "./DesignerSidebarLeft";
 import { DesignerCanvas } from "./DesignerCanvas";
 import { DesignerSidebarRight } from "./DesignerSidebarRight";
@@ -83,7 +83,17 @@ export function TenderTemplateBuilder() {
       return;
     }
 
-    // Currently only supporting dragging fields within sections or across sections
+    // Handle drag from Sidebar Palette to Canvas
+    if (source.droppableId.startsWith("palette-") && destination.droppableId.startsWith("section-")) {
+      const destSectionId = destination.droppableId.replace("section-", "");
+      // draggableId is defined as `palette-${field.type}` in DesignerSidebarLeft
+      const type = result.draggableId.replace("palette-", "") as FieldType;
+      
+      state.addField(destSectionId, type, destination.index);
+      return;
+    }
+
+    // Handle dragging fields within sections or across sections
     if (source.droppableId.startsWith("section-") && destination.droppableId.startsWith("section-")) {
       const sourceSectionId = source.droppableId.replace("section-", "");
       const destSectionId = destination.droppableId.replace("section-", "");
