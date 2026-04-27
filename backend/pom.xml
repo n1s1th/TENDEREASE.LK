@@ -44,6 +44,7 @@
         <module>document-service</module>
         <module>notification-service</module>
         <module>clarification-service</module>
+        <module>qa-service</module>
         <module>appeal-service</module>
         <module>reporting-service</module>
     </modules>

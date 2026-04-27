@@ -12,7 +12,7 @@ export { useNewsStore } from "./news/news.store";
 export { useVideoStore } from "./video/video.store";
 export { useHeroStore } from "./hero/hero.store";
 export { useOfficerDashboardStore } from "./officer-dashboard/officer-dashboard.store";
-
+export { useTenderCreationStore } from "./tender-creation/tender-creation.store";
 
 // ── Auth selectors ───────────────────────────────────────────
 export {
