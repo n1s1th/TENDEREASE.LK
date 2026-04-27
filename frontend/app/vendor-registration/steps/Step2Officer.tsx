@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff } from 'lucide-react';
 import { officerSchema } from '../../../lib/validations/vendorSchema';
 import { OfficerData, useVendorStore } from '../../../store/vendorRegistrationStore';
 import { registerVendor } from '../../../lib/api/vendorApi';
@@ -11,6 +12,8 @@ export default function Step2Officer() {
   const { officerData, organizationData, setOfficerData, nextStep, prevStep, setVendorId } = useVendorStore();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<OfficerData>({
     resolver: zodResolver(officerSchema),
@@ -19,8 +22,10 @@ export default function Step2Officer() {
       name: '',
       designation: '',
       mobilePhone: '',
-      email: ''
-    }
+      email: '',
+      password: '',
+      confirmPassword: ''
+    } as any
   });
 
   const onSubmit = async (data: OfficerData) => {
@@ -79,6 +84,44 @@ export default function Step2Officer() {
           <label className="block text-sm font-medium text-gray-700">Email Address *</label>
           <input {...register('email')} type="email" className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" />
           {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Password *</label>
+          <div className="relative">
+            <input 
+              {...register('password')} 
+              type={showPassword ? "text" : "password"} 
+              className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Confirm Password *</label>
+          <div className="relative">
+            <input 
+              {...register('confirmPassword')} 
+              type={showConfirmPassword ? "text" : "password"} 
+              className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>}
         </div>
       </div>
 

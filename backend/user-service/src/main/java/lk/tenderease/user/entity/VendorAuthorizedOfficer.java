@@ -33,6 +33,8 @@ public class VendorAuthorizedOfficer {
     private String designation;
     private String mobilePhone;
     private String email;
+    @Column(nullable = false)
+    private String password;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

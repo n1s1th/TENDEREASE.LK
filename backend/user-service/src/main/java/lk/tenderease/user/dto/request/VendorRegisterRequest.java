@@ -48,5 +48,7 @@ public class VendorRegisterRequest {
         private String mobilePhone;
         @Email
         private String email;
+        @NotBlank
+        private String password;
     }
 }

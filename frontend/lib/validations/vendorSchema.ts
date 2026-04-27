@@ -19,7 +19,12 @@ export const officerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   designation: z.string().min(2, 'Designation is required'),
   mobilePhone: z.string().min(9, 'Mobile phone is required'),
-  email: z.string().email('Valid email is required')
+  email: z.string().email('Valid email is required'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Confirm Password is required'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 export const termsSchema = z.object({

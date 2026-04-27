@@ -20,6 +20,7 @@ import lk.tenderease.user.service.FileStorageService;
 import lk.tenderease.user.service.VendorRegistrationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
     private final VendorDocumentRepository vendorDocumentRepository;
     private final DrcApiClient drcApiClient;
     private final FileStorageService fileStorageService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public VerifyRegistrationResponse verifyRegistrationNumber(VerifyRegistrationRequest request) {
@@ -94,6 +96,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .designation(request.getAuthorizedOfficer().getDesignation())
                 .mobilePhone(request.getAuthorizedOfficer().getMobilePhone())
                 .email(request.getAuthorizedOfficer().getEmail())
+                .password(passwordEncoder.encode(request.getAuthorizedOfficer().getPassword()))
                 .build();
         officer.setCreatedAt(LocalDateTime.now());
         officer.setUpdatedAt(LocalDateTime.now());

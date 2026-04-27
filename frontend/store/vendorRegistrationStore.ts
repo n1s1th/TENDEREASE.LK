@@ -20,6 +20,7 @@ export interface OfficerData {
   designation: string;
   mobilePhone: string;
   email: string;
+  password?: string;
 }
 
 export interface DocInfo {

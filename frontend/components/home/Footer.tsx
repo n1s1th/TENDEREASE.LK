@@ -5,7 +5,7 @@ import { Facebook, Twitter, Linkedin, Youtube, FileText } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer style={{ width: "100%", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <footer style={{ width: "100%", fontFamily: "inherit" }}>
       {/* ── Top Newsletter Bar ── */}
       <div
         style={{
