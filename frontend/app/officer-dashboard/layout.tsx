@@ -23,8 +23,6 @@ export default function OfficerDashboardLayout({
 }) {
   return (
     <div className="dash-page">
-      {/* Same Navbar as home page — just with "My Account" instead of "Sign In" */}
-      <Navbar isLoggedIn />
       <SubNav />
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
 
