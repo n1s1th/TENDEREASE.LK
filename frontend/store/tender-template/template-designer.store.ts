@@ -76,21 +76,52 @@ const getDefaultFieldProps = (type: FieldType): Partial<TemplateField> => {
   return base;
 };
 
+export const getDefaultSections = (): TemplateSection[] => [
+  {
+    id: uuidv4(),
+    title: 'Tender Details',
+    description: 'Basic identifying information about the procurement.',
+    fields: [
+      { id: uuidv4(), type: 'SHORT_ANSWER', title: 'Tender Title', helperText: 'Enter the official name of the tender', required: true, showInNotice: true },
+      { id: uuidv4(), type: 'SHORT_ANSWER', title: 'Reference Number', helperText: 'Internal reference code', required: true, showInNotice: true },
+      { id: uuidv4(), type: 'DROPDOWN', title: 'Procurement Type', required: true, showInNotice: true, options: [
+        { id: uuidv4(), label: 'Goods', value: 'GOODS' },
+        { id: uuidv4(), label: 'Works', value: 'WORKS' },
+        { id: uuidv4(), label: 'Services', value: 'SERVICES' },
+        { id: uuidv4(), label: 'Consulting', value: 'CONSULTING' }
+      ]},
+      { id: uuidv4(), type: 'PARAGRAPH', title: 'Tender Description', helperText: 'Detailed scope of work', required: true, showInNotice: false }
+    ]
+  },
+  {
+    id: uuidv4(),
+    title: 'Financial Information',
+    description: 'Budget allocations and funding details.',
+    fields: [
+      { id: uuidv4(), type: 'CURRENCY', title: 'Estimated Budget', required: true, showInNotice: false },
+      { id: uuidv4(), type: 'SHORT_ANSWER', title: 'Funding Source', required: false, showInNotice: false }
+    ]
+  },
+  {
+    id: uuidv4(),
+    title: 'Schedule & Deadlines',
+    description: 'Critical dates for this tender lifecycle.',
+    fields: [
+      { id: uuidv4(), type: 'DATE', title: 'Advertisement Start Date', required: true, showInNotice: true },
+      { id: uuidv4(), type: 'DATE', title: 'Bid Submission Deadline', required: true, showInNotice: true },
+      { id: uuidv4(), type: 'DATE', title: 'Pre-bid Meeting Date', required: false, showInNotice: true }
+    ]
+  }
+];
+
 export const useTemplateDesignerStore = create<TemplateDesignerState>((set, get) => ({
   id: null,
   templateCode: null,
-  name: 'Untitled Template',
-  description: '',
+  name: 'Standard Procurement Template',
+  description: 'Default template containing details, financials, and schedules.',
   version: 1,
   status: 'DRAFT',
-  sections: [
-    {
-      id: uuidv4(),
-      title: 'Basic Information',
-      description: '',
-      fields: []
-    }
-  ],
+  sections: getDefaultSections(),
   selectedFieldId: null,
   selectedSectionId: null,
 

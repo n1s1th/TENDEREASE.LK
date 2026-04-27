@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { templateService } from "@/services/template.service";
-import { useTemplateDesignerStore } from "@/store/tender-template/template-designer.store";
+import { useTemplateDesignerStore, getDefaultSections } from "@/store/tender-template/template-designer.store";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
 import { Plus, LayoutTemplate, Clock, Archive, FileText, ChevronRight } from "lucide-react";
@@ -32,15 +32,15 @@ export default function TenderTemplatesDashboard() {
   };
 
   const handleCreateNew = () => {
-    // Reset the designer store to start fresh
+    // Reset the designer store to start fresh with default schema
     useTemplateDesignerStore.setState({
       id: null,
       templateCode: null,
-      name: 'Untitled Template',
-      description: '',
+      name: 'Standard Procurement Template',
+      description: 'Default template containing details, financials, and schedules.',
       version: 1,
       status: 'DRAFT',
-      sections: [{ id: uuidv4(), title: 'Basic Information', description: '', fields: [] }],
+      sections: getDefaultSections(),
       selectedFieldId: null,
       selectedSectionId: null
     });
