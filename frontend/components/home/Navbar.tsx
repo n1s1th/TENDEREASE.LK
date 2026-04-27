@@ -97,15 +97,9 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          {isLoggedIn ? (
-            <Link href="#" className="navbar-mobile-signin">
-              My Account
-            </Link>
-          ) : (
-            <Link href="/sign-in" className="navbar-mobile-signin">
-              Sign In
-            </Link>
-          )}
+          <Link href="/sign-in" className="navbar-mobile-signin">
+            Sign In
+          </Link>
         </nav>
       )}
     </header>
