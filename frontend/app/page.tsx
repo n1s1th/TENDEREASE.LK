@@ -1,10 +1,5 @@
-import Navbar from "@/components/home/Navbar";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return (
-    <div className="home-page">
-      <Navbar />
-      {/* Hero, Features, and other sections will go here */}
-    </div>
-  );
+  redirect("/tenders");
 }

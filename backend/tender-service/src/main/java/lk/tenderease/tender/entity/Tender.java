@@ -1,29 +1,12 @@
 package lk.tenderease.tender.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lk.tenderease.common.entity.BaseEntity;
-import lk.tenderease.tender.enums.BiddingMethod;
-import lk.tenderease.tender.enums.ProcurementType;
-import lk.tenderease.tender.enums.TenderStatus;
-import lk.tenderease.tender.enums.TenderType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lk.tenderease.tender.enums.*;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,11 +17,11 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "tender", indexes = {
-    @Index(name = "idx_tender_status", columnList = "status"),
-    @Index(name = "idx_tender_ministry_id", columnList = "ministry_id"),
-    @Index(name = "idx_tender_department_id", columnList = "department_id"),
-    @Index(name = "idx_tender_number", columnList = "tender_number", unique = true),
-    @Index(name = "idx_tender_created_by", columnList = "created_by")
+        @Index(name = "idx_tender_status", columnList = "status"),
+        @Index(name = "idx_tender_ministry_id", columnList = "ministry_id"),
+        @Index(name = "idx_tender_department_id", columnList = "department_id"),
+        @Index(name = "idx_tender_number", columnList = "tender_number", unique = true),
+        @Index(name = "idx_tender_created_by", columnList = "created_by")
 })
 public class Tender extends BaseEntity {
 
@@ -51,16 +34,25 @@ public class Tender extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "project_overview", columnDefinition = "TEXT")
+    private String projectOverview;
+
+    @Column(name = "scope_of_work", columnDefinition = "TEXT")
+    private String scopeOfWork;
+
+    @Column(name = "special_requirements", columnDefinition = "TEXT")
+    private String specialRequirements;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "procurement_type", nullable = false, length = 30)
+    @Column(name = "procurement_type", nullable = false)
     private ProcurementType procurementType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "bidding_method", nullable = false, length = 10)
+    @Column(name = "bidding_method", nullable = false)
     private BiddingMethod biddingMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tender_type", nullable = false, length = 30)
+    @Column(name = "tender_type", nullable = false)
     private TenderType tenderType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -79,17 +71,34 @@ public class Tender extends BaseEntity {
     private FundingSource fundingSource;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false)
     @Builder.Default
     private TenderStatus status = TenderStatus.DRAFT;
 
-    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    // ✅ Dates from LEFT
+    @Column(name = "opening_date")
+    private LocalDateTime openingDate;
+
+    @Column(name = "closing_date")
+    private LocalDateTime closingDate;
+
+    // ✅ Relationships from BOTH
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TenderDocument> documents = new ArrayList<>();
 
-    @OneToOne(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL)
+    private List<TenderAmendment> amendments;
+
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL)
+    private List<TenderClarification> clarifications;
+
+    @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL)
+    private List<TenderTimeline> timelineEvents;
+
+    @OneToOne(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     private TenderSchedule schedule;
 
-    @OneToOne(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)
     private TenderComplianceChecklist complianceChecklist;
 }
