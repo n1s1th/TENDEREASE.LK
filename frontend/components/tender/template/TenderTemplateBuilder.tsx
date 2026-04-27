@@ -6,17 +6,21 @@ import { useTemplateDesignerStore, FieldType } from "@/store/tender-template/tem
 import { DesignerSidebarLeft } from "./DesignerSidebarLeft";
 import { DesignerCanvas } from "./DesignerCanvas";
 import { DesignerSidebarRight } from "./DesignerSidebarRight";
+import { TemplatePreview } from "./TemplatePreview";
 import { Button } from "@/components/ui/button";
-import { Save, Send } from "lucide-react";
+import { Save, Send, Eye, Edit2 } from "lucide-react";
 
 import { templateService } from "@/services/template.service";
 import { toast, Toaster } from "sonner";
 
 export function TenderTemplateBuilder() {
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   
   const state = useTemplateDesignerStore();
   const { moveField, status, version, id, name, description, sections } = state;
+
+  const showPreview = status === 'PUBLISHED' || isPreviewMode;
 
   const handleSave = async () => {
     try {
@@ -118,11 +122,22 @@ export function TenderTemplateBuilder() {
         </div>
         
         <div className="flex items-center gap-3">
+          {status !== 'PUBLISHED' && (
+            <Button 
+              variant="outline" 
+              className="border-primary/20 text-primary hover:bg-primary/5 mr-2" 
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+            >
+              {isPreviewMode ? <Edit2 className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+              {isPreviewMode ? "Back to Builder" : "Preview Template"}
+            </Button>
+          )}
+
           <Button 
             variant="outline" 
             className="border-grey-3 text-grey-5 hover:bg-grey-1" 
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || status === 'PUBLISHED'}
           >
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
@@ -138,17 +153,23 @@ export function TenderTemplateBuilder() {
 
       {/* Builder Workspace */}
       <div className="flex-1 overflow-hidden flex bg-grey-1 relative">
-        <DragDropContext onDragEnd={onDragEnd}>
-          <DesignerSidebarLeft />
-          
-          <div className="flex-1 overflow-y-auto no-scrollbar relative">
-            <div className="max-w-4xl mx-auto py-10 px-4 pb-32">
-              <DesignerCanvas />
-            </div>
+        {showPreview ? (
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            <TemplatePreview />
           </div>
-          
-          <DesignerSidebarRight />
-        </DragDropContext>
+        ) : (
+          <DragDropContext onDragEnd={onDragEnd}>
+            <DesignerSidebarLeft />
+            
+            <div className="flex-1 overflow-y-auto no-scrollbar relative">
+              <div className="max-w-4xl mx-auto py-10 px-4 pb-32">
+                <DesignerCanvas />
+              </div>
+            </div>
+            
+            <DesignerSidebarRight />
+          </DragDropContext>
+        )}
       </div>
     </div>
   );

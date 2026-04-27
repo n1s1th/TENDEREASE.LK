@@ -104,6 +104,31 @@ export const getDefaultSections = (): TemplateSection[] => [
   },
   {
     id: uuidv4(),
+    title: 'Bidding Documents',
+    description: 'SBD template selection and supporting file uploads.',
+    fields: [
+      { id: uuidv4(), type: 'DROPDOWN', title: 'Standard Bidding Document (SBD)', required: true, showInNotice: false, options: [
+        { id: uuidv4(), label: 'Standard Template V1', value: 'SBD-V1' },
+        { id: uuidv4(), label: 'Standard Template V2', value: 'SBD-V2' }
+      ]},
+      { id: uuidv4(), type: 'DOCUMENT_UPLOAD', title: 'Upload Supporting Documents', helperText: 'Accepted: PDF, DOC, DOCX, XLS, XLSX (Max 10MB per file)', required: true, showInNotice: false }
+    ]
+  },
+  {
+    id: uuidv4(),
+    title: 'Notice & Compliance',
+    description: 'Statutory compliance checklists and notice approvals.',
+    fields: [
+      { id: uuidv4(), type: 'CHECKBOXES', title: 'Compliance Checklist', required: true, showInNotice: false, options: [
+        { id: uuidv4(), label: 'Procurement plan approved', value: 'procurementPlanApproved' },
+        { id: uuidv4(), label: 'Budget availability confirmed', value: 'budgetAvailabilityConfirmed' },
+        { id: uuidv4(), label: 'SBDs comply with guidelines', value: 'sbdComplyWithGuidelines' },
+        { id: uuidv4(), label: 'Evaluation criteria defined', value: 'evaluationCriteriaDefined' }
+      ]}
+    ]
+  },
+  {
+    id: uuidv4(),
     title: 'Schedule & Deadlines',
     description: 'Critical dates for this tender lifecycle.',
     fields: [
