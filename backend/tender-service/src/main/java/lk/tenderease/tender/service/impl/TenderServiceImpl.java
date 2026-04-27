@@ -581,6 +581,7 @@ public class TenderServiceImpl implements TenderService {
                 .estimatedBudget(tender.getEstimatedBudget())
                 .closingDate(tender.getClosingDate())
                 .status(tender.getStatus())
+                .procurementType(tender.getProcurementType())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
                 .build();
     }

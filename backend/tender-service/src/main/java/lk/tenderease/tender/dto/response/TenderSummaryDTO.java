@@ -19,6 +19,7 @@ public class TenderSummaryDTO {
     private BigDecimal estimatedBudget;
     private LocalDateTime closingDate;
     private TenderStatus status;
+    private lk.tenderease.tender.enums.ProcurementType procurementType;
 
     // 🔥 UI IMPORTANT
     private long timeRemaining; // seconds

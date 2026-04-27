@@ -51,10 +51,10 @@ export default function TenderTable({ data }: Props) {
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-2 font-bold leading-snug">{tender.entity || "Ministry Office"}</p>
+                    <p className="text-black-2 font-bold leading-snug">{tender.departmentName || "N/A"}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.category || "General"}</span>
+                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.procurementType || "General"}</span>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-black-2 font-black leading-snug group-hover:text-primary transition-colors line-clamp-2 max-w-xs">{tender.title}</p>
