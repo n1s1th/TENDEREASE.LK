@@ -142,12 +142,12 @@ function FieldCard({ field, sectionId, index, isSelected, onSelect, onDuplicate,
           {/* Drag Handle */}
           <div 
             {...provided.dragHandleProps} 
-            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-0.5 rounded-sm border border-grey-2 cursor-grab active:cursor-grabbing"
+            className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center bg-grey-1/50 border-r border-grey-2 cursor-grab active:cursor-grabbing rounded-l-lg hover:bg-grey-2 transition-colors opacity-0 group-hover:opacity-100"
           >
-            <GripVertical className="h-4 w-4 text-grey-4" />
+            <GripVertical className="h-4 w-4 text-grey-5" />
           </div>
 
-          <div className="flex justify-between items-start mb-4">
+          <div className="pl-6 flex justify-between items-start mb-4">
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-foreground text-sm">{field.title}</span>
@@ -164,7 +164,7 @@ function FieldCard({ field, sectionId, index, isSelected, onSelect, onDuplicate,
           </div>
 
           {/* Field Preview (Dummy) */}
-          <div className="mb-4">
+          <div className="pl-6 mb-4">
             <FieldPreview field={field} />
           </div>
 

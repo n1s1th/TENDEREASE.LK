@@ -182,7 +182,12 @@ export const useTemplateDesignerStore = create<TemplateDesignerState>((set, get)
   }),
 
   moveField: (sourceSectionId, destSectionId, sourceIndex, destIndex) => set((state) => {
-    const newSections = [...state.sections];
+    // Deep clone the sections and their fields to maintain immutability
+    const newSections = state.sections.map(s => ({
+      ...s,
+      fields: [...s.fields]
+    }));
+    
     const sourceSection = newSections.find(s => s.id === sourceSectionId);
     const destSection = newSections.find(s => s.id === destSectionId);
     

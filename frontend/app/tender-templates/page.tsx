@@ -102,21 +102,41 @@ export default function TenderTemplatesDashboard() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
               <p>Loading templates...</p>
             </div>
-          ) : templates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="bg-grey-1 p-6 rounded-full mb-4">
-                <LayoutTemplate className="w-12 h-12 text-grey-4" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">No Templates Found</h3>
-              <p className="text-grey-5 max-w-md mx-auto mb-6">
-                You haven't created any dynamic tender templates yet. Click the button below to design your first required fields model.
-              </p>
-              <Button onClick={handleCreateNew} className="bg-gradient-to-r from-[#953002] to-[#FFB401]">
-                Design First Template
-              </Button>
-            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Pinned Default Template */}
+              <div 
+                key="default-standard" 
+                className="group bg-[#FFB401]/5 border-2 border-[#FFB401] rounded-xl p-6 hover:shadow-md transition-all cursor-pointer flex flex-col h-full relative overflow-hidden"
+                onClick={() => router.push('/tender-creation')}
+              >
+                <div className="absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[10px] font-bold tracking-wider uppercase bg-[#FFB401] text-white shadow-sm">
+                  SYSTEM DEFAULT
+                </div>
+
+                <div className="bg-[#953002] w-12 h-12 rounded-lg flex items-center justify-center mb-4 text-white group-hover:scale-110 transition-transform shadow-sm">
+                  <LayoutTemplate className="w-6 h-6" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-foreground mb-2 pr-20 line-clamp-1">
+                  Standard Tender Creation Flow
+                </h3>
+                
+                <p className="text-sm text-grey-6 font-medium mb-6 line-clamp-2 min-h-[40px]">
+                  The standard default 5-step wizard (Details, Financials, Documents, Compliance, Schedule).
+                </p>
+                
+                <div className="mt-auto pt-4 border-t border-[#FFB401]/30 flex items-center justify-between text-xs font-bold text-[#953002]">
+                  <div className="flex items-center">
+                    PINNED TEMPLATE
+                  </div>
+                  <div className="flex items-center">
+                    Use Template <ChevronRight className="w-4 h-4 ml-1" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Database Templates */}
               {templates.map((template) => (
                 <div 
                   key={template.id} 

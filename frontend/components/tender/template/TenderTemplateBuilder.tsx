@@ -13,15 +13,10 @@ import { templateService } from "@/services/template.service";
 import { toast, Toaster } from "sonner";
 
 export function TenderTemplateBuilder() {
-  const [isClient, setIsClient] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   const state = useTemplateDesignerStore();
   const { moveField, status, version, id, name, description, sections } = state;
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleSave = async () => {
     try {
@@ -96,8 +91,6 @@ export function TenderTemplateBuilder() {
       moveField(sourceSectionId, destSectionId, source.index, destination.index);
     }
   };
-
-  if (!isClient) return null; // Hydration fix for drag-and-drop
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">

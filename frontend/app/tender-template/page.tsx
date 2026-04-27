@@ -1,4 +1,11 @@
-import { TenderTemplateBuilder } from "@/components/tender/template/TenderTemplateBuilder";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const TenderTemplateBuilder = dynamic(
+  () => import("@/components/tender/template/TenderTemplateBuilder").then(mod => mod.TenderTemplateBuilder),
+  { ssr: false }
+);
 
 export default function TenderTemplatePage() {
   return (
