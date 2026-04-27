@@ -256,8 +256,13 @@ export default function OfficerRegistrationPage() {
                 {errors.country && <p className="text-red-500 text-xs">{errors.country.message}</p>}
 
                 <input {...register('streetLine1')} placeholder="Street Line 1" className={`${inputCls} mt-2`} />
+                {errors.streetLine1 && <p className="text-red-500 text-xs mt-1">{errors.streetLine1.message}</p>}
+                
                 <input {...register('streetLine2')} placeholder="Street Line 2" className={`${inputCls} mt-2`} />
+                
                 <input {...register('city')} placeholder="City" className={`${inputCls} mt-2`} />
+                {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+                
                 <input {...register('province')} placeholder="Province" className={`${inputCls} mt-2`} />
                 <input {...register('postalCode')} placeholder="Postal Code" className={`${inputCls} mt-2`} />
               </div>
@@ -335,6 +340,7 @@ export default function OfficerRegistrationPage() {
                   Designation <span className="text-red-500">*</span>
                 </label>
                 <input {...register('liaisonDesignation')} className={inputCls} />
+                {errors.liaisonDesignation && <p className="text-red-500 text-xs mt-1">{errors.liaisonDesignation.message}</p>}
               </div>
 
               {/* NIC */}

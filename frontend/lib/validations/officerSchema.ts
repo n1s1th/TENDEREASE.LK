@@ -19,14 +19,17 @@ export const officerRegistrationSchema = z
 
     // Address
     country: z.string().min(1, 'Country is required'),
-    streetLine1: z.string().optional().or(z.literal('')),
+    streetLine1: z.string().min(1, 'Street Line 1 is required'),
     streetLine2: z.string().optional().or(z.literal('')),
-    city: z.string().optional().or(z.literal('')),
+    city: z.string().min(1, 'City is required'),
     province: z.string().optional().or(z.literal('')),
     postalCode: z.string().optional().or(z.literal('')),
 
     // Contact Info
-    personalLandPhone: z.string().min(1, 'Personal Land Phone is required'),
+    personalLandPhone: z
+      .string()
+      .min(1, 'Personal Land Phone is required')
+      .regex(/^([0-9]{10}|\+[0-9]{12})$/, 'Enter 10 digits, or 13 digits with + country code (e.g. +94771234567)'),
     officialEmail: z.string().min(1, 'Official Email is required').email('Enter a valid email address'),
 
     // Business Info (optional)
@@ -36,7 +39,7 @@ export const officerRegistrationSchema = z
     // Liaison Officer
     liaisonTitle: z.string().min(1, 'Title is required'),
     liaisonName: z.string().min(1, 'Procurement Liaison Officer Name is required'),
-    liaisonDesignation: z.string().optional().or(z.literal('')),
+    liaisonDesignation: z.string().min(1, 'Designation is required'),
     liaisonNic: z
       .string()
       .min(1, 'NIC is required')
@@ -44,7 +47,7 @@ export const officerRegistrationSchema = z
     liaisonMobile: z
       .string()
       .min(1, 'Mobile Phone with Country Code is required')
-      .regex(/^\+?[0-9]{10,15}$/, 'Enter a valid mobile number'),
+      .regex(/^([0-9]{10}|\+[0-9]{12})$/, 'Enter 10 digits, or 13 digits with + country code (e.g. +94771234567)'),
     liaisonEmail: z.string().min(1, 'Email is required').email('Enter a valid email address'),
 
     // Terms
