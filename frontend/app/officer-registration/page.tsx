@@ -152,20 +152,24 @@ export default function OfficerRegistrationPage() {
       <Navbar />
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Page Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
               Officer Registration
             </h1>
-            <p className="mt-2 text-base font-semibold text-gray-700">
+          </div>
+
+          {/* ─── Details of Officer ─── */}
+          <div className="mb-2 text-center">
+            <h2 className="text-lg font-bold text-gray-900">
               Details of Officer
-            </p>
+            </h2>
           </div>
 
           {/* ─── Registration Form ─── */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* ── Procuring Entity Type ── */}
               <div className="space-y-1.5">
@@ -243,28 +247,43 @@ export default function OfficerRegistrationPage() {
               </div>
 
               {/* ── Address ── */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Address <span className="text-red-500">*</span>
                 </label>
-                <select {...register('country')} className={inputCls}>
-                  <option value="">Country</option>
-                  {COUNTRIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-                {errors.country && <p className="text-red-500 text-xs">{errors.country.message}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                  <div>
+                    <select {...register('country')} className={inputCls}>
+                      <option value="">Country</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
+                  </div>
 
-                <input {...register('streetLine1')} placeholder="Street Line 1" className={`${inputCls} mt-2`} />
-                {errors.streetLine1 && <p className="text-red-500 text-xs mt-1">{errors.streetLine1.message}</p>}
-                
-                <input {...register('streetLine2')} placeholder="Street Line 2" className={`${inputCls} mt-2`} />
-                
-                <input {...register('city')} placeholder="City" className={`${inputCls} mt-2`} />
-                {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
-                
-                <input {...register('province')} placeholder="Province" className={`${inputCls} mt-2`} />
-                <input {...register('postalCode')} placeholder="Postal Code" className={`${inputCls} mt-2`} />
+                  <div>
+                    <input {...register('streetLine1')} placeholder="Street Line 1" className={inputCls} />
+                    {errors.streetLine1 && <p className="text-red-500 text-xs mt-1">{errors.streetLine1.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <input {...register('streetLine2')} placeholder="Street Line 2" className={inputCls} />
+                  </div>
+                  
+                  <div>
+                    <input {...register('city')} placeholder="City" className={inputCls} />
+                    {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <input {...register('province')} placeholder="Province" className={inputCls} />
+                  </div>
+                  
+                  <div>
+                    <input {...register('postalCode')} placeholder="Postal Code" className={inputCls} />
+                  </div>
+                </div>
               </div>
 
               {/* ── Personal Land Phone ── */}
@@ -309,7 +328,7 @@ export default function OfficerRegistrationPage() {
               </h2>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-8 space-y-5">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* Title */}
               <div className="space-y-1.5">
