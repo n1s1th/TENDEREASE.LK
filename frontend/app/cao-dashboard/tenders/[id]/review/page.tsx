@@ -50,7 +50,7 @@ export default function CAOTenderReviewPage() {
               <ArrowLeft size={20} />
             </button>
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Review Tender: {id}
+              Review Tender: {tender?.tenderNumber || id}
             </h1>
           </div>
           <div className="flex gap-3">
@@ -79,7 +79,7 @@ export default function CAOTenderReviewPage() {
           readOnly={true} 
           data={{
             title: tender?.title || "Sample Tender Title",
-            referenceNumber: id,
+            referenceNumber: tender?.tenderNumber || id,
             procurementType: tender?.type || "GOODS",
             biddingMethod: "NCB",
             ministryId: "Ministry of Finance",

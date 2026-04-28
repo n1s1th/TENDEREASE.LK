@@ -9,11 +9,11 @@ import type { DashboardTender } from "@/lib/types/cao-dashboard.types";
 
 const columns: Column<DashboardTender>[] = [
   {
-    key: "id",
-    label: "Tender ID ↓",
+    key: "tenderNumber" as any,
+    label: "Reference No. ↓",
     sortable: true,
     render: (row) => (
-      <span style={{ fontWeight: 500, color: "var(--te-gray-1)" }}>{row.id}</span>
+      <span style={{ fontWeight: 500, color: "var(--te-gray-1)" }}>{row.tenderNumber || row.id}</span>
     ),
   },
   { key: "title", label: "Tender Title" },

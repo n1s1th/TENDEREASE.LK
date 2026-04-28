@@ -18,6 +18,7 @@ export type TenderTab =
 // ── Dashboard Tender (officer view) ──────────────────────────
 export interface DashboardTender {
   id: string;
+  tenderNumber?: string;
   title: string;
   category: string;
   type: string;
