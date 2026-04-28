@@ -79,6 +79,9 @@ public class Tender extends BaseEntity {
     @Builder.Default
     private TenderStatus status = TenderStatus.DRAFT;
 
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "template_id")
     private UUID templateId;
 

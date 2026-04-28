@@ -25,6 +25,7 @@ import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.enums.TenderType;
 import lk.tenderease.tender.producer.NotificationProducer;
+import lk.tenderease.tender.producer.TenderEventProducer;
 import lk.tenderease.tender.repository.ClarificationResponseRepository;
 import lk.tenderease.tender.repository.DepartmentRepository;
 import lk.tenderease.tender.repository.FundingSourceRepository;
@@ -74,6 +75,7 @@ public class TenderServiceImpl implements TenderService {
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
+    private final TenderEventProducer tenderEventProducer;
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -129,6 +131,14 @@ public class TenderServiceImpl implements TenderService {
 
         Tender saved = tenderRepository.save(tender);
         log.info("Tender created with ID: {}", saved.getId());
+
+        // Emit KPI Event
+        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
+                .tenderId(saved.getId().toString())
+                .eventType("CREATED")
+                .status(saved.getStatus().name())
+                .triggerBy(createdByUserId)
+                .build());
 
         return mapToResponse(saved);
     }
@@ -261,7 +271,28 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public PageResponse<TenderResponse> listAllTenders(TenderStatus status, Pageable pageable) {
-        return null; // TODO: implement
+        log.debug("Listing all tenders with status filter: {}", status);
+        Page<Tender> page;
+        
+        if (status == TenderStatus.APPROVED) {
+            // Dashboard "Approved" tab should show both APPROVED and PUBLISHED tenders
+            page = tenderRepository.searchWithStatus("", status, pageable); // Need a custom query for multiple statuses ideally
+            // But for now, let's just fetch all and filter or use the repository search with status logic
+            // Actually, I'll update the repository to support list of statuses or just handle it here
+            page = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED), pageable);
+        } else if (status != null) {
+            page = tenderRepository.findByStatus(status, pageable);
+        } else {
+            page = tenderRepository.findAll(pageable);
+        }
+        
+        return PageResponse.<TenderResponse>builder()
+                .content(page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .build();
     }
 
     @Override
@@ -422,21 +453,19 @@ public class TenderServiceImpl implements TenderService {
             throw new RuntimeException("Only DRAFT tenders can be submitted for approval. Current status: " + tender.getStatus());
         }
 
-        // 1. Auto-publish (no approval workflow yet — directly publish)
-        tender.setStatus(TenderStatus.PUBLISHED);
-        tender.setOpeningDate(LocalDateTime.now());
-
-        // Set closingDate from schedule's bid submission deadline if available
-        TenderSchedule schedule = scheduleRepository.findByTenderId(tenderId).orElse(null);
-        if (schedule != null && schedule.getBidSubmissionDeadline() != null) {
-            tender.setClosingDate(schedule.getBidSubmissionDeadline().atStartOfDay());
-        } else {
-            // Default: 14 days from now
-            tender.setClosingDate(LocalDateTime.now().plusDays(14));
-        }
+        // 1. Move to PENDING_APPROVAL (CAO will approve later)
+        tender.setStatus(TenderStatus.PENDING_APPROVAL);
 
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
+
+        // 2. Publish event to RabbitMQ for Reporting Service (KPI)
+        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
+                .tenderId(saved.getId().toString())
+                .eventType("STATUS_CHANGED")
+                .status(saved.getStatus().name())
+                .triggerBy(callerUserId)
+                .build());
 
         // 2. Publish event to RabbitMQ for Notification Service
         try {
@@ -842,5 +871,42 @@ public class TenderServiceImpl implements TenderService {
         return Arrays.stream(TenderType.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public TenderResponse updateTenderStatus(UUID id, TenderStatus status, String rejectionReason, String callerUserId) {
+        log.info("Updating status for tender {} to {} by {}", id, status, callerUserId);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Tender not found"));
+
+        tender.setStatus(status);
+        if (status == TenderStatus.REJECTED) {
+            tender.setRejectionReason(rejectionReason);
+        }
+        
+        // If approved, set opening date and closing date if not already set
+        if (status == TenderStatus.APPROVED || status == TenderStatus.PUBLISHED) {
+            tender.setStatus(TenderStatus.PUBLISHED); // Auto-publish on CAO approval for now
+            if (tender.getOpeningDate() == null) {
+                tender.setOpeningDate(LocalDateTime.now());
+            }
+            if (tender.getClosingDate() == null) {
+                tender.setClosingDate(LocalDateTime.now().plusDays(14));
+            }
+        }
+
+        tender.setUpdatedAt(LocalDateTime.now());
+        Tender saved = tenderRepository.save(tender);
+
+        // Emit Event for KPI
+        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
+                .tenderId(saved.getId().toString())
+                .eventType("STATUS_CHANGED")
+                .status(saved.getStatus().name())
+                .triggerBy(callerUserId)
+                .build());
+
+        return mapToResponse(saved);
     }
 }

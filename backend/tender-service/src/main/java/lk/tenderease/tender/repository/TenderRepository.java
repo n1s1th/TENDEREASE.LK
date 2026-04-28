@@ -25,6 +25,8 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
 
     Page<Tender> findByStatus(TenderStatus status, Pageable pageable);
 
+    Page<Tender> findByStatusIn(java.util.Collection<TenderStatus> statuses, Pageable pageable);
+
     Page<Tender> findByCreatedBy(String createdBy, Pageable pageable);
 
     Page<Tender> findByCreatedByAndStatus(String createdBy, TenderStatus status, Pageable pageable);

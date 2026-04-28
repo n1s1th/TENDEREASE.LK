@@ -263,4 +263,15 @@ public interface TenderService {
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
 
     List<ClarificationDTO> getClarificationsForOfficer(String officerId);
+
+    /**
+     * CAO/Admin: Updates the status of a tender (Approve/Reject).
+     * 
+     * @param id              the tender UUID
+     * @param status          the new status (APPROVED, REJECTED, etc.)
+     * @param rejectionReason optional reason for rejection
+     * @param callerUserId    the username/ID of the CAO
+     * @return the updated tender response
+     */
+    TenderResponse updateTenderStatus(UUID id, TenderStatus status, String rejectionReason, String callerUserId);
 }
