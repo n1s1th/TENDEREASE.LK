@@ -16,13 +16,31 @@ spring:
           uri: lb://tender-service
           predicates:
             - Path=/api/tenders/**
-          filters:
-            - StripPrefix=1
-
-        - id: officer-dashboard-service
-          uri: lb://officer-dashboard-service
+        
+        - id: cao-tenders
+          uri: lb://tender-service
           predicates:
-            - Path=/api/officer/**
+            - Path=/api/cao/tenders/**
+        
+        - id: cao-users
+          uri: lb://user-service
+          predicates:
+            - Path=/api/cao/officers/**, /api/cao/registrations/**
+
+        - id: cao-kpi
+          uri: lb://reporting-service
+          predicates:
+            - Path=/api/cao/kpi/**
+
+        - id: cao-notifications
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/cao/notifications/**
+
+        - id: cao-audit
+          uri: lb://workflow-service
+          predicates:
+            - Path=/api/cao/audit-logs/**
         
         # Add more routes for other services
       
@@ -37,7 +55,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/tenderease}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/tenderease}
 
 server:
   port: 8000
@@ -45,4 +63,4 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER:http://eureka-server:8761/eureka/}
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
