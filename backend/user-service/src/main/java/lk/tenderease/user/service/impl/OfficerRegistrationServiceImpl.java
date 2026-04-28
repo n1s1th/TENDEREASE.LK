@@ -19,6 +19,7 @@ import lk.tenderease.user.exception.OfficerRegistrationException;
 import lk.tenderease.user.repository.LiaisonOfficerRepository;
 import lk.tenderease.user.repository.OfficerRepository;
 import lk.tenderease.user.repository.RegistrationAuditRepository;
+import lk.tenderease.user.service.EmailService;
 import lk.tenderease.user.service.OfficerRegistrationService;
 import lk.tenderease.user.util.ReferenceIdGenerator;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +63,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     private final RegistrationAuditRepository registrationAuditRepository;
     private final ReferenceIdGenerator referenceIdGenerator;
     private final OfficerEventPublisher eventPublisher;
+    private final EmailService emailService;
 
     // ────────────────────────────────────────────────────────
     //  PUBLIC REGISTRATION
@@ -117,7 +119,18 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         // 6. Publish event
         publishOfficerEvent(savedOfficer, "REGISTERED");
 
-        // 7. Return success response
+        // 7. Send asynchronous-like mock email
+        try {
+            emailService.sendRegistrationSuccessEmail(
+                savedOfficer.getOfficialEmail(),
+                savedOfficer.getLiaisonOfficer() != null ? savedOfficer.getLiaisonOfficer().getName() : "Officer",
+                referenceId
+            );
+        } catch (Exception e) {
+            log.error("Failed to send mock registration email to {}: {}", savedOfficer.getOfficialEmail(), e.getMessage());
+        }
+
+        // 8. Return success response
         return OfficerRegistrationSuccessResponse.builder()
                 .success(true)
                 .message("Registration successful")
