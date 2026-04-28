@@ -31,6 +31,8 @@ Government e-procurement platform built with Spring Boot microservices architect
 | Clarification Service | 8090 | Q&A |
 | Appeal Service | 8091 | Appeals |
 | Reporting Service | 8092 | Analytics |
+| Officer Service | 8093 | Officer management |
+|CAO Service| 8094 | CAO management
 
 ## Prerequisites
 
