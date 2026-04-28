@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import TenderTable from "@/components/cao-dashboard/TenderTable";
 import Pagination from "@/components/cao-dashboard/Pagination";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
@@ -24,24 +25,24 @@ const columns: Column<DashboardTender>[] = [
   },
   { key: "closingDate", label: "Closing Date" },
   {
-    key: "score",
-    label: "Score",
+    key: "createdByEmail",
+    label: "Publisher Email",
     render: (row) => (
-      <span className="dash-score-badge" style={{ fontSize: "0.8rem", padding: "0.125rem 0.5rem" }}>
-        {row.score != null ? `${row.score}%` : "—"}
+      <span className="text-sm text-grey-3">
+        {row.createdByEmail || "officer@procurement.gov.lk"}
       </span>
     ),
   },
 ];
 
 export default function PendingTendersPage() {
+  const router = useRouter();
   const tenders = useCAODashboardStore((s) => s.tenders);
   const pagination = useCAODashboardStore((s) => s.pagination);
   const tendersLoading = useCAODashboardStore((s) => s.tendersLoading);
   const fetchTenders = useCAODashboardStore((s) => s.fetchTenders);
   const setActiveTab = useCAODashboardStore((s) => s.setActiveTab);
   const setPage = useCAODashboardStore((s) => s.setPage);
-  const openModal = useCAODashboardStore((s) => s.openModal);
   const department = useCAODashboardStore((s) => s.department);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -52,7 +53,7 @@ export default function PendingTendersPage() {
   }, [setActiveTab, fetchTenders, department]);
 
   const handleReview = (row: DashboardTender) => {
-    openModal("recommendation-review", { tender: row });
+    router.push(`/cao-dashboard/tenders/${row.id}/review`);
   };
 
   return (

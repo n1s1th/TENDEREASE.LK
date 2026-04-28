@@ -1,20 +1,18 @@
 "use client";
 
-import { X, Calendar, DollarSign, Building2, Clock, Check, Circle, User } from "lucide-react";
+import { X, Calendar, DollarSign, Building2, Clock, Check, Circle } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
-import type { DashboardTender, ApprovalStep, AssignedOfficer } from "@/lib/types/cao-dashboard.types";
+import type { DashboardTender, ApprovalStep } from "@/lib/types/cao-dashboard.types";
 
 export default function TenderSummaryModal() {
   const activeModal = useCAODashboardStore((s) => s.activeModal);
   const modalData = useCAODashboardStore((s) => s.modalData);
   const closeModal = useCAODashboardStore((s) => s.closeModal);
-  const openModal = useCAODashboardStore((s) => s.openModal);
 
   if (activeModal !== "tender-summary") return null;
 
   const tender = (modalData?.tender as DashboardTender) ?? null;
   const timeline = (modalData?.timeline as ApprovalStep[]) ?? [];
-  const assignedOfficers = (modalData?.assignedOfficers as AssignedOfficer[]) ?? [];
 
   return (
     <div className="dash-modal-overlay" onClick={closeModal}>
@@ -25,9 +23,6 @@ export default function TenderSummaryModal() {
 
         <div className="dash-modal-header">
           <h2 className="dash-modal-title">Tender Summary</h2>
-          <div className="dash-score-badge" style={{ marginTop: "0.5rem" }}>
-            Score {tender?.score ?? "—"}%
-          </div>
           <p className="dash-modal-subtitle" style={{ marginTop: "0.5rem", fontWeight: 600 }}>
             {tender?.title ?? "Title of The Tender"}
           </p>
@@ -119,45 +114,11 @@ export default function TenderSummaryModal() {
               {tender.description}
             </p>
           )}
-
-          {/* List of Officers Assigned */}
-          <h4 style={{ textAlign: "center", fontSize: "0.95rem", fontWeight: 600, color: "var(--te-gray-1)", margin: "1.25rem 0 0.75rem" }}>
-            List of Officers Assigned
-          </h4>
-
-          {assignedOfficers.length > 0 ? (
-            <div className="dash-assigned-officers">
-              {assignedOfficers.map((officer) => (
-                <div key={officer.id} className="dash-assigned-officer">
-                  <div className="dash-assigned-officer-avatar">
-                    <User size={16} />
-                  </div>
-                  <div>
-                    <div className="dash-assigned-officer-name">{officer.name}</div>
-                    <div className="dash-assigned-officer-meta">
-                      {officer.designation}
-                      <br />
-                      {officer.email}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ textAlign: "center", fontSize: "0.85rem", color: "var(--te-gray-4)", padding: "0.5rem 0" }}>
-              No officers assigned yet.
-            </p>
-          )}
         </div>
 
         <div className="dash-modal-footer">
-          <button
-            className="dash-btn dash-btn--secondary dash-btn--lg"
-            onClick={() =>
-              openModal("assign-officers", { tender })
-            }
-          >
-            Click Here to Assign Officers
+          <button className="dash-btn dash-btn--outline" onClick={closeModal}>
+            Close
           </button>
         </div>
       </div>

@@ -24,11 +24,11 @@ const columns: Column<DashboardTender>[] = [
   },
   { key: "closingDate", label: "Closing Date" },
   {
-    key: "score",
-    label: "Score",
+    key: "createdByEmail",
+    label: "Publisher Email",
     render: (row) => (
-      <span className="dash-score-badge" style={{ fontSize: "0.8rem", padding: "0.125rem 0.5rem" }}>
-        {row.score != null ? `${row.score}%` : "—"}
+      <span className="text-sm text-grey-3">
+        {row.createdByEmail || "officer@procurement.gov.lk"}
       </span>
     ),
   },
@@ -36,7 +36,7 @@ const columns: Column<DashboardTender>[] = [
     key: "status",
     label: "Status",
     render: () => (
-      <span className="dash-table-status dash-table-status--completed">Completed</span>
+      <span className="dash-table-status dash-table-status--completed">Approved</span>
     ),
   },
 ];

@@ -6,7 +6,6 @@ import RecommendationReviewModal from "@/components/cao-dashboard/modals/Recomme
 import TenderSummaryModal from "@/components/cao-dashboard/modals/TenderSummaryModal";
 import ConfirmApprovalModal from "@/components/cao-dashboard/modals/ConfirmApprovalModal";
 import ConfirmRejectionModal from "@/components/cao-dashboard/modals/ConfirmRejectionModal";
-import AssignOfficersModal from "@/components/cao-dashboard/modals/AssignOfficersModal";
 import OfficerDetailsModal from "@/components/cao-dashboard/modals/OfficerDetailsModal";
 
 import type { Metadata } from "next";
@@ -34,7 +33,6 @@ export default function CAODashboardLayout({
       <TenderSummaryModal />
       <ConfirmApprovalModal />
       <ConfirmRejectionModal />
-      <AssignOfficersModal />
       <OfficerDetailsModal />
 
       {/* Toast notifications */}

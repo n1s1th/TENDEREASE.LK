@@ -12,7 +12,6 @@ export type TenderTab =
   | 'pending'
   | 'approved'
   | 'rejected'
-  | 'cancelled'
   | 'recent-awards'
   | 'audit-logs';
 
@@ -32,6 +31,7 @@ export interface DashboardTender {
   smeIndicator?: boolean;
   createdBy?: string;
   createdByRole?: string;
+  createdByEmail?: string;
   rejectionReason?: string;
 }
 
@@ -83,6 +83,7 @@ export interface Award {
   status: string;
   createdBy?: string;
   createdByRole?: string;
+  createdByEmail?: string;
 }
 
 // ── Audit Log ────────────────────────────────────────────────

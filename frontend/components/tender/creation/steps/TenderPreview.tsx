@@ -34,15 +34,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TenderPreview() {
-  const {
-    formData,
-    isSubmitting,
-    error,
-    setShowPreview,
-    submitTender,
-    reset,
-  } = useTenderCreationStore();
+export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly?: boolean }) {
+  const store = useTenderCreationStore();
+  
+  const formData = data || store.formData;
+  const isSubmitting = store.isSubmitting;
+  const error = store.error;
+  const setShowPreview = store.setShowPreview;
+  const submitTender = store.submitTender;
+  const reset = store.reset;
 
   const handleSubmit = async () => {
     // 1. Create tender and upload files (handled by store's submitTender)
@@ -68,20 +68,22 @@ export function TenderPreview() {
   return (
     <div className="space-y-5">
       {/* ── Warning banner ─────────────────────────────── */}
-      <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
-        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-semibold text-foreground">
-            Please review carefully
-          </p>
-          <p className="text-xs text-grey-5 mt-0.5">
-            You cannot edit after submission.
-          </p>
+      {!readOnly && (
+        <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
+          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              Please review carefully
+            </p>
+            <p className="text-xs text-grey-5 mt-0.5">
+              You cannot edit after submission.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Error banner ───────────────────────────────── */}
-      {error && (
+      {error && !readOnly && (
         <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
           <span className="font-medium">Error:</span> {error}
         </div>
@@ -262,27 +264,29 @@ export function TenderPreview() {
       {/* ─────────────────────────────────────────────────
           Action Bar
          ───────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-5 border-t border-border">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setShowPreview(false)}
-        >
-          <ArrowLeft data-icon="inline-start" className="size-4" />
-          Edit Details
-        </Button>
+      {!readOnly && (
+        <div className="flex items-center justify-between pt-5 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPreview(false)}
+          >
+            <ArrowLeft data-icon="inline-start" className="size-4" />
+            Edit Details
+          </Button>
 
-        <Button
-          type="button"
-          size="sm"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-        >
-          <SendHorizontal data-icon="inline-start" className="size-4" />
-          {isSubmitting ? "Submitting…" : "Submit for Approval"}
-        </Button>
-      </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <SendHorizontal data-icon="inline-start" className="size-4" />
+            {isSubmitting ? "Submitting…" : "Submit for Approval"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

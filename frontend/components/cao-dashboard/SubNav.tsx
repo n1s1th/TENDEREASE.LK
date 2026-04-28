@@ -35,6 +35,12 @@ export default function SubNav() {
             Tenders
           </Link>
           <Link
+            href="/cao-dashboard/recommendations/pending"
+            className={`dash-subnav-tab ${pathname.startsWith("/cao-dashboard/recommendations") ? "dash-subnav-tab--active" : ""}`}
+          >
+            Recommendation Notes
+          </Link>
+          <Link
             href="/cao-dashboard/registration"
             className={`dash-subnav-tab ${isRegistration ? "dash-subnav-tab--active" : ""}`}
           >
