@@ -25,7 +25,13 @@ export default function TenderTemplatesDashboard() {
     try {
       setLoading(true);
       const data = await templateService.getAllTemplates();
-      setTemplates(data || []);
+      const sortedData = (data || []).sort((a: any, b: any) => {
+        const order: Record<string, number> = { 'PUBLISHED': 1, 'DRAFT': 2, 'ARCHIVED': 3 };
+        const statusA = order[a.status] || 99;
+        const statusB = order[b.status] || 99;
+        return statusA - statusB;
+      });
+      setTemplates(sortedData);
     } catch (error) {
       toast.error("Failed to fetch templates");
       console.error(error);

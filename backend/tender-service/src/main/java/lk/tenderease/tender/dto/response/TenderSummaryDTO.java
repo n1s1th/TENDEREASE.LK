@@ -14,6 +14,7 @@ import java.util.UUID;
 public class TenderSummaryDTO {
 
     private UUID id;
+    private String tenderNumber;
     private String title;
     private String departmentName;
     private BigDecimal estimatedBudget;

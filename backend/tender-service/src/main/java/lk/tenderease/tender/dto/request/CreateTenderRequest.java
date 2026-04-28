@@ -16,6 +16,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -69,4 +71,10 @@ public class CreateTenderRequest {
     @Schema(description = "ID of the funding source (optional)", example = "1")
     @JsonAlias("fundingSource")
     private Long fundingSourceId;
+
+    @Schema(description = "ID of the dynamic template used, if any", example = "123e4567-e89b-12d3-a456-426614174000")
+    private UUID templateId;
+
+    @Schema(description = "Dynamic schema data for custom template fields")
+    private Map<String, Object> dynamicData;
 }
