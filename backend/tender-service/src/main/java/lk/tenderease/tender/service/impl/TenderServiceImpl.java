@@ -36,6 +36,7 @@ import lk.tenderease.tender.repository.TenderClarificationRepository;
 import lk.tenderease.tender.repository.TenderContactRepository;
 import lk.tenderease.tender.repository.TenderDocumentRepository;
 import lk.tenderease.tender.repository.TenderRepository;
+import lk.tenderease.tender.repository.TenderScheduleRepository;
 import lk.tenderease.tender.repository.TenderTimelineRepository;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,7 @@ public class TenderServiceImpl implements TenderService {
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
     private final TenderContactRepository contactRepository;
+    private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
     private final RabbitTemplate rabbitTemplate;
 
@@ -115,6 +117,8 @@ public class TenderServiceImpl implements TenderService {
                 .department(department)
                 .estimatedBudget(request.getEstimatedBudget())
                 .fundingSource(fundingSource)
+                .templateId(request.getTemplateId())
+                .dynamicData(request.getDynamicData())
                 .status(TenderStatus.DRAFT)
                 .build();
 
@@ -236,6 +240,8 @@ public class TenderServiceImpl implements TenderService {
         tender.setDepartment(department);
         tender.setEstimatedBudget(request.getEstimatedBudget());
         tender.setFundingSource(fundingSource);
+        tender.setTemplateId(request.getTemplateId());
+        tender.setDynamicData(request.getDynamicData());
 
         tender.setUpdatedAt(java.time.LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
@@ -416,8 +422,19 @@ public class TenderServiceImpl implements TenderService {
             throw new RuntimeException("Only DRAFT tenders can be submitted for approval. Current status: " + tender.getStatus());
         }
 
-        // 1. Update status to PENDING_APPROVAL
-        tender.setStatus(TenderStatus.PENDING_APPROVAL);
+        // 1. Auto-publish (no approval workflow yet — directly publish)
+        tender.setStatus(TenderStatus.PUBLISHED);
+        tender.setOpeningDate(LocalDateTime.now());
+
+        // Set closingDate from schedule's bid submission deadline if available
+        TenderSchedule schedule = scheduleRepository.findByTenderId(tenderId).orElse(null);
+        if (schedule != null && schedule.getBidSubmissionDeadline() != null) {
+            tender.setClosingDate(schedule.getBidSubmissionDeadline().atStartOfDay());
+        } else {
+            // Default: 14 days from now
+            tender.setClosingDate(LocalDateTime.now().plusDays(14));
+        }
+
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
 
@@ -619,13 +636,21 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private TenderSummaryDTO mapToSummaryDTO(Tender tender) {
+        // Compute effective status: if deadline has passed, override to CLOSED
+        TenderStatus effectiveStatus = tender.getStatus();
+        if (tender.getClosingDate() != null && LocalDateTime.now().isAfter(tender.getClosingDate())) {
+            effectiveStatus = TenderStatus.CLOSED;
+        }
+
         return TenderSummaryDTO.builder()
                 .id(tender.getId())
+                .tenderNumber(tender.getTenderNumber())
                 .title(tender.getTitle())
                 .departmentName(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
                 .estimatedBudget(tender.getEstimatedBudget())
                 .closingDate(tender.getClosingDate())
-                .status(tender.getStatus())
+                .status(effectiveStatus)
+                .procurementType(tender.getProcurementType())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
                 .build();
     }

@@ -2,6 +2,16 @@ spring:
   application:
     name: user-service
   
+  mail:
+    host: localhost
+    port: 2525
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_user_db
     username: ${DB_USERNAME:postgres}
@@ -33,10 +43,16 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
   
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    timeout: 2000ms
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000  # 10 minutes in milliseconds
 
   security:
     oauth2:
@@ -80,6 +96,29 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
+# ──── Application Properties ────
 app:
   name: User Service
   version: 1.0.0
+
+# ──── Officer Service Properties ────
+officer:
+  registration:
+    reference-prefix: "OFF"
+    support-prefix: "ERR-REG"
+  cache:
+    ttl-minutes: 10
+
+# ──── RabbitMQ Exchange/Queue Names ────
+rabbitmq:
+  exchange:
+    officer: officer.exchange
+  queue:
+    officer-registered: officer.registered.queue
+    officer-approved: officer.approved.queue
+    officer-rejected: officer.rejected.queue
+    officer-notification: officer.notification.queue
+  routing-key:
+    officer-registered: officer.registered
+    officer-approved: officer.approved
+    officer-rejected: officer.rejected
