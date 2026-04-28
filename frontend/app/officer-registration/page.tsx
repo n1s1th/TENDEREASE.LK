@@ -168,7 +168,7 @@ export default function OfficerRegistrationPage() {
           </div>
 
           {/* ─── Registration Form ─── */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-0">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-0" method="POST" action="#">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* ── Procuring Entity Type ── */}

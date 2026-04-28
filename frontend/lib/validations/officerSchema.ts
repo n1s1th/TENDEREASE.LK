@@ -14,7 +14,7 @@ export const officerRegistrationSchema = z
     procuringEntityType: z.string().min(1, 'Procuring Entity Type is required'),
     procuringEntityLevel: z.string().min(1, 'Procuring Entity Level is required'),
     provincialCouncil: z.string().optional().or(z.literal('')),
-    headDesignation: z.string().min(1, 'Designation of the Head is required'),
+    headDesignation: z.string().min(1, 'Designation of the Head is required').regex(/^[^0-9]*$/, 'Numbers are not allowed in designation'),
     organizationName: z.string().optional().or(z.literal('')),
 
     // Address
@@ -38,8 +38,8 @@ export const officerRegistrationSchema = z
 
     // Liaison Officer
     liaisonTitle: z.string().min(1, 'Title is required'),
-    liaisonName: z.string().min(1, 'Procurement Liaison Officer Name is required'),
-    liaisonDesignation: z.string().min(1, 'Designation is required'),
+    liaisonName: z.string().min(1, 'Procurement Liaison Officer Name is required').regex(/^[^0-9]*$/, 'Numbers are not allowed in names'),
+    liaisonDesignation: z.string().min(1, 'Designation is required').regex(/^[^0-9]*$/, 'Numbers are not allowed in designation'),
     liaisonNic: z
       .string()
       .min(1, 'NIC is required')
