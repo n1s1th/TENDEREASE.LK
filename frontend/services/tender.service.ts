@@ -1,7 +1,7 @@
 const IS_SERVER = typeof window === "undefined";
 const BASE_URL = IS_SERVER 
-  ? "http://tender-service:8182/api/tenders" 
-  : "http://localhost:8182/api/tenders";
+  ? "http://tender-service:8082/api/tenders" 
+  : "http://localhost:8082/api/tenders";
 
 // 🔐 Get Authorization headers (FIXED)
 function getAuthHeaders(): HeadersInit {
