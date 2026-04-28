@@ -322,7 +322,7 @@ export default function OfficerRegistrationPage() {
             </div>
 
             {/* ─── Details of Liaison Officer ─── */}
-            <div className="mt-8 mb-2 text-center">
+            <div className="mt-16 mb-4 text-center">
               <h2 className="text-lg font-bold text-gray-900">
                 Details of Liaison Officer
               </h2>
