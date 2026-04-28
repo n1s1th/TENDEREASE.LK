@@ -1,0 +1,51 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: tender_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      # We create multiple databases on startup using a shell command
+    command: >
+      bash -c "
+      /usr/local/bin/docker-entrypoint.sh postgres &
+      sleep 10;
+      psql -U postgres -c 'CREATE DATABASE tenderease;';
+      psql -U postgres -c 'CREATE DATABASE tenderease_tender_db;';
+      psql -U postgres -c 'CREATE DATABASE tenderease_officer_dashboard_db;';
+      wait"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tender_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@test.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: tender_rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  pgdata:
+  pgadmin_data:

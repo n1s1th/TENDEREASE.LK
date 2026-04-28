@@ -1,4 +1,7 @@
-const BASE_URL = "http://localhost:8082/api/tenders";
+const IS_SERVER = typeof window === "undefined";
+const BASE_URL = IS_SERVER 
+  ? "http://tender-service:8182/api/tenders" 
+  : "http://localhost:8182/api/tenders";
 
 // 🔐 Get Authorization headers (FIXED)
 function getAuthHeaders(): HeadersInit {
@@ -119,7 +122,11 @@ export async function getAddenda(id: string) {
 
 // 🔥 CLARIFICATIONS
 export async function getClarifications(id: string) {
-  return apiFetch(`${BASE_URL}/${id}/clarifications`);
+  const res = await apiFetch(`${BASE_URL}/${id}/clarifications`);
+  // API returns { value: [...] } — unwrap to plain array
+  if (res && Array.isArray(res.value)) return res.value;
+  if (Array.isArray(res)) return res;
+  return [];
 }
 
 // 🔥 SUBMIT CLARIFICATION (FINAL FIXED)

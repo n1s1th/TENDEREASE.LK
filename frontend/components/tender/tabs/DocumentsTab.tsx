@@ -29,7 +29,7 @@ export default function DocumentsTab({ documents }: any) {
         <button
           onClick={() => {
             window.open(
-              `http://localhost:8082/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
+              `http://localhost:8182/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
               "_blank"
             );
           }}

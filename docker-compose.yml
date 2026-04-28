@@ -1,35 +1,102 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
     container_name: tenderease-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: tenderease
+      POSTGRES_PASSWORD: password
+      # Auto-create all required databases
+    command: >
+      bash -c "
+      /usr/local/bin/docker-entrypoint.sh postgres &
+      sleep 10;
+      psql -U postgres -c 'CREATE DATABASE tenderease;';
+      psql -U postgres -c 'CREATE DATABASE tenderease_tender_db;';
+      psql -U postgres -c 'CREATE DATABASE tenderease_officer_dashboard_db;';
+      wait"
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tenderease-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@test.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: tenderease-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
     container_name: tenderease-backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/tenderease
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/tenderease_officer_dashboard_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_FLYWAY_TABLE: flyway_schema_history_officer
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
     ports:
-      - "8080:8080"
+      - "8193:8193"
+
+  tender-service:
+    build:
+      context: ./backend
+      target: tender-service
+    container_name: tenderease-tender-service
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/tenderease_tender_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_FLYWAY_TABLE: flyway_schema_history_tender
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    ports:
+      - "8182:8182"
+    volumes:
+      - ./backend/tender-service/uploads:/app/uploads
 
   frontend:
     build: ./frontend
     container_name: tenderease-frontend
     depends_on:
       - backend
+      - tender-service
     ports:
       - "3000:3000"
 

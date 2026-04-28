@@ -7,7 +7,7 @@ import {
   Loader2,
   Info,
 } from "lucide-react";
-import { submitClarification } from "@/services/tender.service";
+import { submitClarification, getClarifications } from "@/services/tender.service";
 
 export default function ClarificationsTab({
   clarifications = [],
@@ -25,9 +25,20 @@ export default function ClarificationsTab({
   const [localClarifications, setLocalClarifications] =
     useState<any[]>(clarifications);
 
+  const fetchLatestClarifications = async () => {
+    try {
+      const data = await getClarifications(tenderId);
+      setLocalClarifications(data);
+    } catch (error) {
+      console.error("Failed to fetch clarifications:", error);
+    }
+  };
+
   useEffect(() => {
-    setLocalClarifications(clarifications);
-  }, [clarifications]);
+    if (tenderId) {
+      fetchLatestClarifications();
+    }
+  }, [tenderId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,14 +65,19 @@ export default function ClarificationsTab({
 
     const cachedQuestion = question;
     setQuestion("");
-    setTimeout(() => setShowForm(false), 1000);
 
     try {
       await submitClarification(tenderId, cachedQuestion);
       setSubmitStatus("success");
+      await fetchLatestClarifications(); // ✅ Refresh to get real IDs
+      setTimeout(() => setShowForm(false), 800); // ✅ Close only after data is refreshed
     } catch (error) {
       console.error("Backend failed:", error);
       setSubmitStatus("error");
+      // Roll back optimistic update on failure
+      setLocalClarifications(localClarifications.filter(
+        (c: any) => c.question !== cachedQuestion || c.answer !== null
+      ));
     } finally {
       setIsSubmitting(false);
     }

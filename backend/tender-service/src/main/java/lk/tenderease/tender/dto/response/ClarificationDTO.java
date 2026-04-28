@@ -15,4 +15,12 @@ public class ClarificationDTO {
     private String answer;
     private LocalDateTime askedAt;
     private LocalDateTime answeredAt;
+
+    private String tenderId;
+    private String tenderTitle;
+    private String tenderNumber;
+    private String department;
+    private String category;
+    private LocalDateTime closingDate;
+    private String bidderEmail;
 }

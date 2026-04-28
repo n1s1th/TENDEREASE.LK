@@ -68,7 +68,7 @@ export default function QaPage() {
       setQuestions([]);
       setTotalPages(1);
       setTotalElements(0);
-      setError("Could not load public questions. Make sure qa-service is running on port 8093.");
+      setError("Could not load public questions. Make sure qa-service is running on port 8194.");
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const QA_SERVICE_URL = process.env.QA_SERVICE_URL || "http://localhost:8093";
+const QA_SERVICE_URL = process.env.QA_SERVICE_URL || "http://localhost:8194";
 
 type RouteContext = {
   params: Promise<{
@@ -34,7 +34,7 @@ async function proxyQaRequest(request: NextRequest, context: RouteContext) {
     });
   } catch {
     return NextResponse.json(
-      { message: "Q&A service is unavailable. Start qa-service on port 8093 and try again." },
+      { message: "Q&A service is unavailable. Start qa-service on port 8194 and try again." },
       { status: 503 }
     );
   }
