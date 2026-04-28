@@ -14,10 +14,13 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.mockito.Mockito.mock;
 
 import java.util.UUID;
 
@@ -28,11 +31,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.context.annotation.Import;
+
 /**
  * Integration tests for {@link OfficerRegistrationController}.
  * Uses MockMvc with {@code @WebMvcTest} to test endpoints.
  */
 @WebMvcTest(OfficerRegistrationController.class)
+@Import(OfficerRegistrationControllerTest.OfficerTestConfig.class)
 class OfficerRegistrationControllerTest {
 
     @Autowired
@@ -41,7 +47,15 @@ class OfficerRegistrationControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @TestConfiguration
+    static class OfficerTestConfig {
+        @Bean
+        public OfficerRegistrationService officerRegistrationService() {
+            return mock(OfficerRegistrationService.class);
+        }
+    }
+
+    @Autowired
     private OfficerRegistrationService officerRegistrationService;
 
     private CreateOfficerRegistrationRequest validRequest;
