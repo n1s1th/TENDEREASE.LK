@@ -32,12 +32,12 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     // 🔍 Advanced search WITH status
     @Query("""
         SELECT t FROM Tender t WHERE
-        (:keyword = '' OR
-         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        (CAST(:keyword AS string) = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
         AND t.status = :status
-        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT)
     """)
     Page<Tender> searchWithStatus(
             @Param("keyword") String keyword,
@@ -48,11 +48,11 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     // 🔍 Advanced search WITHOUT status
     @Query("""
         SELECT t FROM Tender t WHERE
-        (:keyword = '' OR
-         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+        (CAST(:keyword AS string) = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT)
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,

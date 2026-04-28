@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Infrastructure
   postgres:
@@ -52,7 +50,10 @@ services:
 
   # Service Discovery
   eureka-server:
-    build: ./eureka-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: eureka-server
     ports:
       - "8761:8761"
     networks:
@@ -60,9 +61,12 @@ services:
 
   # API Gateway
   api-gateway:
-    build: ./api-gateway
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-gateway
     ports:
-      - "8000:8080"
+      - "8000:8000"
     environment:
       EUREKA_SERVER: http://eureka-server:8761/eureka/
       KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/tenderease
@@ -74,7 +78,10 @@ services:
 
   # Microservices
   user-service:
-    build: ./user-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: user-service
     environment:
       DB_HOST: postgres
       RABBITMQ_HOST: rabbitmq
@@ -89,7 +96,46 @@ services:
     networks:
       - tenderease-network
 
-  # Add other services similarly...
+  tender-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tender-service
+    ports:
+      - "8182:8182"
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+      RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/tenderease
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+      - eureka-server
+    networks:
+      - tenderease-network
+
+  officer-dashboard-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: officer-dashboard-service
+    ports:
+      - "8193:8193"
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: postgres
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+    depends_on:
+      - postgres
+      - rabbitmq
+      - eureka-server
+    networks:
+      - tenderease-network
 
 volumes:
   postgres_data:

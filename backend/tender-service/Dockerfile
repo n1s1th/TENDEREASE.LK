@@ -1,7 +1,9 @@
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 COPY pom.xml ../pom.xml
+RUN mvn -f ../pom.xml install -N
 COPY common-library ../common-library
+RUN mvn -f ../common-library/pom.xml clean install -DskipTests
 COPY tender-service/pom.xml .
 COPY tender-service/src ./src
 RUN mvn clean package -DskipTests

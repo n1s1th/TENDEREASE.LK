@@ -1,6 +1,7 @@
 package lk.tenderease.tender.service.impl;
 
 import lk.tenderease.common.dto.PageResponse;
+import lk.tenderease.common.constant.AMQPConstants;
 import lk.tenderease.common.event.NotificationEvent;
 import lk.tenderease.tender.dto.request.ComplianceChecklistRequest;
 import lk.tenderease.tender.dto.request.CreateTenderRequest;
@@ -480,17 +481,35 @@ public class TenderServiceImpl implements TenderService {
     @Override
     public List<ClarificationDTO> getClarifications(UUID tenderId) {
         return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId).stream()
-                .map(clarification -> {
-                    var response = responseRepository.findByClarificationId(clarification.getId());
-                    return ClarificationDTO.builder()
-                            .id(clarification.getId())
-                            .question(clarification.getQuestion())
-                            .answer(response.map(ClarificationResponse::getResponse).orElse(null))
-                            .askedAt(clarification.getAskedAt())
-                            .answeredAt(response.map(ClarificationResponse::getRespondedAt).orElse(null))
-                            .build();
-                })
+                .map(this::mapToClarificationDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ClarificationDTO> getClarificationsForOfficer(String officerId) {
+        return clarificationRepository.findAll().stream()
+                .sorted((c1, c2) -> c2.getAskedAt().compareTo(c1.getAskedAt()))
+                .map(this::mapToClarificationDTO)
+                .collect(Collectors.toList());
+    }
+
+    private ClarificationDTO mapToClarificationDTO(TenderClarification clarification) {
+        var response = responseRepository.findByClarificationId(clarification.getId());
+        Tender tender = clarification.getTender();
+        return ClarificationDTO.builder()
+                .id(clarification.getId())
+                .question(clarification.getQuestion())
+                .answer(response.map(ClarificationResponse::getResponse).orElse(null))
+                .askedAt(clarification.getAskedAt())
+                .answeredAt(response.map(ClarificationResponse::getRespondedAt).orElse(null))
+                .tenderId(tender.getId().toString())
+                .tenderTitle(tender.getTitle())
+                .tenderNumber(tender.getTenderNumber())
+                .department(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .category(null)
+                .closingDate(tender.getClosingDate())
+                .bidderEmail(clarification.getBidderEmail())
+                .build();
     }
 
     @Override
@@ -531,7 +550,26 @@ public class TenderServiceImpl implements TenderService {
                 .askedBy(1L)
                 .build();
 
-        clarificationRepository.save(clarification);
+        TenderClarification savedClarification = clarificationRepository.save(clarification);
+
+        try {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .recipient(resolveOfficerEmail(tender.getCreatedBy()))
+                    .recipientUserId(tender.getCreatedBy())
+                    .type("CLARIFICATION_CREATED")
+                    .subject("New clarification question received")
+                    .message(buildClarificationCreatedMessage(tender, savedClarification))
+                    .tenderId(tender.getId())
+                    .tenderNumber(tender.getTenderNumber())
+                    .tenderTitle(tender.getTitle())
+                    .clarificationId(savedClarification.getId())
+                    .questionPreview(preview(savedClarification.getQuestion()))
+                    .actionUrl("/tenders/" + tender.getId() + "/clarifications")
+                    .createdAt(savedClarification.getAskedAt())
+                    .build(), AMQPConstants.CLARIFICATION_CREATED_ROUTING_KEY);
+        } catch (Exception e) {
+            log.error("Failed to publish notification event: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -558,10 +596,17 @@ public class TenderServiceImpl implements TenderService {
         if (clarification.getBidderEmail() != null && !clarification.getBidderEmail().isBlank()) {
             notificationProducer.sendNotification(NotificationEvent.builder()
                     .recipient(clarification.getBidderEmail())
-                    .type("EMAIL")
+                    .type("CLARIFICATION_ANSWERED")
                     .subject("Tender clarification answered: " + tender.getTenderNumber())
                     .message(buildNotificationMessage(tender, clarification, savedResponse))
-                    .build());
+                    .tenderId(tender.getId())
+                    .tenderNumber(tender.getTenderNumber())
+                    .tenderTitle(tender.getTitle())
+                    .clarificationId(clarification.getId())
+                    .questionPreview(preview(clarification.getQuestion()))
+                    .actionUrl("/tenders/" + tender.getId() + "/clarifications")
+                    .createdAt(savedResponse.getRespondedAt())
+                    .build(), AMQPConstants.CLARIFICATION_ANSWERED_ROUTING_KEY);
         }
 
         return ClarificationDTO.builder()
@@ -613,7 +658,7 @@ public class TenderServiceImpl implements TenderService {
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
-                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
+                .downloadUrl("http://localhost:8182/api/tenders/files/" + document.getS3Key())
                 .build();
     }
 
@@ -625,6 +670,7 @@ public class TenderServiceImpl implements TenderService {
                 .description(amendment.getDescription())
                 .newClosingDate(amendment.getNewClosingDate())
                 .createdAt(amendment.getCreatedAt())
+                .downloadUrl("http://localhost:8182/api/tenders/files/addendum.pdf")
                 .build();
     }
 
@@ -658,6 +704,36 @@ public class TenderServiceImpl implements TenderService {
                 clarification.getQuestion(),
                 response.getResponse()
         );
+    }
+
+    private String buildClarificationCreatedMessage(Tender tender, TenderClarification clarification) {
+        return """
+                New clarification question received.
+
+                Tender: %s
+                Tender ID: %s
+                Tender number: %s
+
+                Question:
+                %s
+                """.formatted(
+                tender.getTitle(),
+                tender.getId(),
+                tender.getTenderNumber(),
+                clarification.getQuestion()
+        );
+    }
+
+    private String preview(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.strip();
+        return normalized.length() <= 120 ? normalized : normalized.substring(0, 117) + "...";
+    }
+
+    private String resolveOfficerEmail(String createdBy) {
+        return createdBy != null && createdBy.contains("@") ? createdBy : null;
     }
 
     // ── Reference Data ──────────────────────────────────────────────────────

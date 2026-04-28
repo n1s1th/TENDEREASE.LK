@@ -1,278 +1,214 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { Download, TrendingUp } from "lucide-react";
-import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
-import DateRangeFilter from "@/components/officer-dashboard/DateRangeFilter";
+import { useState } from "react";
+import { Download, Calendar, Filter, FileText, Share2, TrendingUp, DollarSign } from "lucide-react";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
-  Legend,
-  Filler,
-} from "chart.js";
-import { Line, Doughnut, Bar } from "react-chartjs-2";
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar
+} from "recharts";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-);
+const cycleTimeData = [
+  { label: "XXX", value: 30 },
+  { label: "XXX", value: 55 },
+  { label: "XXX", value: 45 },
+  { label: "XXX", value: 80 },
+  { label: "XXX", value: 70 },
+  { label: "XXX", value: 105 },
+  { label: "XXX", value: 95 },
+  { label: "XXX", value: 110 },
+];
+
+const smeData = [
+  { name: "SME Vendors", value: 35 },
+  { name: "Other", value: 65 },
+];
+
+const awardValueData = [
+  { label: "XXX", value: 2000 },
+  { label: "XXX", value: 3000 },
+  { label: "XXX", value: 1500 },
+  { label: "XXX", value: 4000 },
+  { label: "XXX", value: 2500 },
+  { label: "XXX", value: 5000 },
+  { label: "XXX", value: 3500 },
+  { label: "XXX", value: 6000 },
+  { label: "XXX", value: 4500 },
+  { label: "XXX", value: 7000 },
+];
 
 export default function ReportsPage() {
-  const kpiReport = useOfficerDashboardStore((s) => s.kpiReport);
-  const kpiLoading = useOfficerDashboardStore((s) => s.kpiLoading);
-  const fetchKpiReport = useOfficerDashboardStore((s) => s.fetchKpiReport);
-
-  const [department, setDepartment] = useState("");
-  const [category, setCategory] = useState("");
-
-  useEffect(() => {
-    fetchKpiReport({
-      department: department || undefined,
-      category: category || undefined,
-    });
-  }, [fetchKpiReport, department, category]);
-
-  // Chart data — uses real data when available, shows empty placeholder otherwise
-  const cycleTimeData = {
-    labels: kpiReport?.cycleTimeTrend.map((d) => d.label) ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [
-      {
-        label: "Cycle Time (days)",
-        data: kpiReport?.cycleTimeTrend.map((d) => d.value) ?? [],
-        borderColor: "#953002",
-        backgroundColor: "rgba(149, 48, 2, 0.1)",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: "#953002",
-      },
-    ],
-  };
-
-  const smeData = {
-    labels: ["SME", "Non-SME"],
-    datasets: [
-      {
-        data: kpiReport ? [kpiReport.smeParticipationPercent, 100 - kpiReport.smeParticipationPercent] : [],
-        backgroundColor: ["#953002", "#E5E7EB"],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const awardValueData = {
-    labels: kpiReport?.awardValueTrend.map((d) => d.label) ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    datasets: [
-      {
-        label: "Award Value (Rs. Mn)",
-        data: kpiReport?.awardValueTrend.map((d) => d.value) ?? [],
-        backgroundColor: "#FFB401",
-        borderRadius: 4,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 11 } },
-      },
-      y: {
-        grid: { color: "#F3F4F6" },
-        ticks: { font: { size: 11 } },
-      },
-    },
-  };
-
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom" as const,
-        labels: { font: { size: 12 }, padding: 16 },
-      },
-    },
-    cutout: "65%",
-  };
-
   return (
-    <div className="dash-section">
-      <div className="dash-report" id="kpi-report">
-        {/* Header */}
-        <div className="dash-report-header">
-          <div>
-            <h1 className="dash-report-title">
-              <TrendingUp size={20} style={{ verticalAlign: "middle", marginRight: "0.5rem" }} />
-              KPI Report
-            </h1>
-            <p className="dash-report-subtitle">
-              Performance metrics and analytics for tender management
-            </p>
+    <main className="dash-page">
+      <div className="dash-content">
+        <section className="dash-section">
+          {/* Header */}
+          <div className="dash-report-header">
+            <div>
+              <h1 className="dash-report-title">Detailed KPI Report</h1>
+              <p className="dash-report-subtitle">Cycle time • SME participation • Award value trends</p>
+            </div>
+            <div className="dash-report-export">
+              <button className="dash-btn dash-btn--outline" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                Export PDF
+              </button>
+              <button className="dash-btn dash-btn--outline" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                Export Excel
+              </button>
+            </div>
           </div>
-          <div className="dash-report-export">
-            <button className="dash-btn dash-btn--outline dash-btn--sm">
-              <Download size={14} /> Export PDF
-            </button>
-            <button className="dash-btn dash-btn--outline dash-btn--sm">
-              <Download size={14} /> Export CSV
-            </button>
-          </div>
-        </div>
 
-        {/* Filters */}
-        <div className="dash-report-filters">
-          <DateRangeFilter />
-          <select
-            className="dash-select"
-            style={{ minWidth: 180 }}
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-          >
-            <option value="">Department</option>
-            <option value="Education">Education</option>
-            <option value="Agriculture">Agriculture</option>
-            <option value="Technology">Technology</option>
-            <option value="Health">Health</option>
-          </select>
-          <select
-            className="dash-select"
-            style={{ minWidth: 160 }}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="">Category</option>
-            <option value="goods">Goods</option>
-            <option value="services">Services</option>
-            <option value="works">Works</option>
-            <option value="consulting">Consulting</option>
-          </select>
-        </div>
-
-        {kpiLoading ? (
-          <div style={{ padding: "4rem", textAlign: "center", color: "var(--te-gray-4)" }}>
-            Loading report data…
-          </div>
-        ) : (
-          <>
-            {/* Charts Grid */}
-            <div className="dash-report-grid">
-              {/* Cycle Time Trend */}
-              <div className="dash-report-card">
-                <div className="dash-report-card-header">
-                  <h3 className="dash-report-card-title">Cycle Time Trend</h3>
-                  <span className="dash-report-card-tag">Line Chart</span>
-                </div>
-                <div className="dash-report-chart">
-                  {kpiReport?.cycleTimeTrend && kpiReport.cycleTimeTrend.length > 0 ? (
-                    <Line data={cycleTimeData} options={chartOptions} />
-                  ) : (
-                    <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                      No data — connects to backend
-                    </span>
-                  )}
-                </div>
-                <p className="dash-report-chart-caption">
-                  Cycle time duration over the selected period
-                </p>
+          {/* Filters */}
+          <div className="dash-report-filters" style={{ background: "#fff", padding: "1rem", borderRadius: "12px", border: "1px solid var(--te-border)", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", gap: "1rem", flex: 1 }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <input type="date" className="dash-tab-search-input" style={{ width: "100%", paddingRight: "2.5rem" }} />
+                <Calendar size={16} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--te-gray-4)" }} />
               </div>
-
-              {/* SME Participation */}
-              <div className="dash-report-card">
-                <div className="dash-report-card-header">
-                  <h3 className="dash-report-card-title">SME Participation</h3>
-                  <span className="dash-report-card-tag">Donut Chart</span>
-                </div>
-                <div className="dash-report-chart">
-                  {kpiReport?.smeParticipationPercent != null ? (
-                    <Doughnut data={smeData} options={doughnutOptions} />
-                  ) : (
-                    <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                      No data — connects to backend
-                    </span>
-                  )}
-                </div>
-                <p className="dash-report-chart-caption">
-                  SME vs Non-SME vendor participation percentage
-                </p>
+              <div style={{ position: "relative", flex: 1 }}>
+                <input type="date" className="dash-tab-search-input" style={{ width: "100%", paddingRight: "2.5rem" }} />
+                <Calendar size={16} style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--te-gray-4)" }} />
               </div>
+              <select className="dash-tab-search-input" style={{ flex: 1 }}>
+                <option>All Departments</option>
+              </select>
+              <select className="dash-tab-search-input" style={{ flex: 1 }}>
+                <option>All Categories</option>
+              </select>
+            </div>
+            <button className="dash-btn" style={{ background: "var(--te-gray-2)", color: "#fff", padding: "0.5rem 1.5rem" }}>
+              Generate Report
+            </button>
+          </div>
+
+          {/* Charts Grid */}
+          <div className="dash-report-grid">
+            {/* Cycle Time Trend */}
+            <div className="dash-report-card">
+              <div className="dash-report-card-header">
+                <h3 className="dash-report-card-title">Cycle Time Trend</h3>
+                <span className="dash-report-card-tag">Trend</span>
+              </div>
+              <div className="dash-report-chart" style={{ height: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={cycleTimeData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--te-border-light)" />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--te-gray-4)" }} />
+                    <YAxis hide />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="var(--te-gray-2)"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "var(--te-gray-2)", strokeWidth: 0 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="dash-report-chart-caption">Shows average cycle time (days) for the selected period.</p>
             </div>
 
-            {/* Award Value Trends (full width) */}
-            <div className="dash-report-card" style={{ marginBottom: "1.5rem" }}>
+            {/* SME Participation */}
+            <div className="dash-report-card">
+              <div className="dash-report-card-header">
+                <h3 className="dash-report-card-title">SME Participation</h3>
+                <button className="dash-report-card-tag" style={{ border: "none", background: "var(--te-gray-6)", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                   Share
+                </button>
+              </div>
+              <div className="dash-report-chart" style={{ height: "300px", position: "relative" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={smeData}
+                      innerRadius={80}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      <Cell fill="var(--te-gray-2)" />
+                      <Cell fill="var(--te-gray-7)" />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "2rem", fontWeight: 800, color: "var(--te-gray-1)" }}>35%</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 600 }}>SME Vendors</div>
+                </div>
+              </div>
+              <p className="dash-report-chart-caption">Percentage of bids submitted by SME vendors within the selected period.</p>
+            </div>
+
+            {/* Award Value Trends */}
+            <div className="dash-report-card">
               <div className="dash-report-card-header">
                 <h3 className="dash-report-card-title">Award Value Trends</h3>
-                <span className="dash-report-card-tag">Bar Chart</span>
+                <span className="dash-report-card-tag">Totals</span>
               </div>
-              <div className="dash-report-chart" style={{ height: 280 }}>
-                {kpiReport?.awardValueTrend && kpiReport.awardValueTrend.length > 0 ? (
-                  <Bar data={awardValueData} options={chartOptions} />
-                ) : (
-                  <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                    No data — connects to backend
-                  </span>
-                )}
+              <div className="dash-report-chart" style={{ height: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={awardValueData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--te-border-light)" />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--te-gray-4)" }} />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: "var(--te-gray-4)" }}
+                      tickFormatter={(val) => `$${val/1000}K`}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="var(--te-gray-7)" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <p className="dash-report-chart-caption">
-                Monthly award values over the selected period
-              </p>
+              <p className="dash-report-chart-caption">Displays awarded totals over time for selected filters.</p>
             </div>
 
-            {/* Summary Table */}
+            {/* Summary Sidebar */}
             <div className="dash-report-summary">
               <h3 className="dash-report-summary-title">Summary</h3>
               <div className="dash-report-summary-row">
-                <span className="dash-report-summary-label">Average Cycle Time</span>
-                <span className="dash-report-summary-value">
-                  {kpiReport?.summary.avgCycleTime ?? "—"}
-                </span>
+                <span className="dash-report-summary-label">Avg Cycle Time</span>
+                <span className="dash-report-summary-value">28 days</span>
               </div>
               <div className="dash-report-summary-row">
                 <span className="dash-report-summary-label">SME Participation</span>
-                <span className="dash-report-summary-value">
-                  {kpiReport?.summary.smeParticipation ?? "—"}
-                </span>
+                <span className="dash-report-summary-value">35%</span>
               </div>
               <div className="dash-report-summary-row">
                 <span className="dash-report-summary-label">Total Award Value</span>
-                <span className="dash-report-summary-value">
-                  {kpiReport?.summary.totalAwardValue ?? "—"}
-                </span>
+                <span className="dash-report-summary-value">LKR 18.2M</span>
               </div>
               <div className="dash-report-summary-row">
                 <span className="dash-report-summary-label">Total Awards</span>
-                <span className="dash-report-summary-value">
-                  {kpiReport?.summary.totalAwards ?? "—"}
-                </span>
+                <span className="dash-report-summary-value">12</span>
               </div>
-              <p className="dash-report-footer">
-                Note: The data shown reflects the selected filters and date range.
+              <p className="dash-report-footer" style={{ marginTop: "1.5rem" }}>
+                Export buttons download the report in PDF/Excel format.
               </p>
             </div>
-          </>
-        )}
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

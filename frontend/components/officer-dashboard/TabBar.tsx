@@ -20,6 +20,7 @@ const tabs: TabDef[] = [
   { key: "rejected", label: "Rejected", href: "/officer-dashboard/tenders/rejected" },
   { key: "cancelled", label: "Cancelled", href: "/officer-dashboard/tenders/cancelled" },
   { key: "recent-awards", label: "Recent Awards", href: "/officer-dashboard/tenders/recent-awards" },
+  { key: "drafts", label: "Drafts", href: "/officer-dashboard/tenders/drafts" },
   { key: "audit-logs", label: "Audit Logs", href: "/officer-dashboard/tenders/audit-logs" },
 ];
 

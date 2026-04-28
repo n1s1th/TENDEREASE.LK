@@ -6,7 +6,8 @@ export type OfficerTenderStatus =
   | 'rejected'
   | 'cancelled'
   | 'awarded'
-  | 'awaiting_officer_assignment';
+  | 'awaiting_officer_assignment'
+  | 'draft';
 
 export type TenderTab =
   | 'pending'
@@ -14,7 +15,8 @@ export type TenderTab =
   | 'rejected'
   | 'cancelled'
   | 'recent-awards'
-  | 'audit-logs';
+  | 'audit-logs'
+  | 'drafts';
 
 // ── Dashboard Tender (officer view) ──────────────────────────
 export interface DashboardTender {
@@ -33,6 +35,7 @@ export interface DashboardTender {
   createdBy?: string;
   createdByRole?: string;
   rejectionReason?: string;
+  recommendationStatus?: string;
 }
 
 // ── Officer ──────────────────────────────────────────────────
@@ -103,6 +106,8 @@ export type DashboardNotificationType =
   | 'regret_email_failed'
   | 'regret_letters_sent'
   | 'vendor_notified'
+  | 'clarification_created'
+  | 'clarification_answered'
   | 'general';
 
 export type DashboardNotificationStatus =
@@ -114,10 +119,14 @@ export type DashboardNotificationStatus =
 export interface DashboardNotification {
   id: string;
   tenderId: string;
+  tenderTitle?: string;
+  tenderNumber?: string;
   title: string;
   message: string;
   type: DashboardNotificationType;
   status: DashboardNotificationStatus;
+  questionPreview?: string;
+  actionUrl?: string;
   recipients?: string;
   recipientCount?: number;
   failedCount?: number;
@@ -125,6 +134,7 @@ export interface DashboardNotification {
   time: string;
   performedBy: string;
   isRead: boolean;
+  clarificationId?: number;
 }
 
 export interface NotificationSummary {
@@ -189,10 +199,37 @@ export interface ToastMessage {
   actionLabel?: string;
 }
 
+// ── Procument ────────────────────────────────────────────────
+export interface Procument {
+  id: string;
+  title: string;
+  description: string;
+  procuringEntity: string;
+  department: string;
+  category: string;
+  method: string; // NCB / ICB / RFQ
+}
+
 // ── Pagination ───────────────────────────────────────────────
 export interface PaginationState {
   currentPage: number;
   totalPages: number;
   pageSize: number;
   totalItems: number;
+}
+
+// ── Clarification ────────────────────────────────────────────
+export interface ClarificationItem {
+  id: number;
+  question: string;
+  answer: string | null;
+  askedAt: string;
+  answeredAt: string | null;
+  tenderId: string;
+  tenderTitle?: string;
+  tenderNumber?: string;
+  department?: string;
+  category?: string;
+  closingDate?: string;
+  bidderEmail?: string;
 }

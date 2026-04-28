@@ -22,6 +22,7 @@ interface TenderTableProps<T extends { id: string }> {
   onSelectChange?: (ids: Set<string>) => void;
   onRowAction?: (row: T) => void;
   rowActionLabel?: string;
+  renderRowActionLabel?: (row: T) => string;
   sortColumn?: string;
   sortDirection?: "asc" | "desc";
   onSort?: (column: string) => void;
@@ -39,6 +40,7 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
   onSelectChange,
   onRowAction,
   rowActionLabel,
+  renderRowActionLabel,
   sortColumn,
   sortDirection = "desc",
   onSort,
@@ -109,7 +111,7 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
                 )}
               </th>
             ))}
-            {(rowActionLabel || showMenu) && <th style={{ width: 80 }} />}
+            {(rowActionLabel || renderRowActionLabel || showMenu) && <th style={{ width: 80 }} />}
           </tr>
         </thead>
         <tbody>
@@ -161,12 +163,12 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
                 {(rowActionLabel || showMenu) && (
                   <td style={{ textAlign: "right" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.25rem" }}>
-                      {rowActionLabel && (
+                      {(rowActionLabel || renderRowActionLabel) && (
                         <button
                           className="dash-table-action"
                           onClick={() => onRowAction?.(row)}
                         >
-                          {rowActionLabel}
+                          {renderRowActionLabel ? renderRowActionLabel(row) : rowActionLabel}
                         </button>
                       )}
                       {showMenu && (

@@ -8,6 +8,8 @@ import ConfirmApprovalModal from "@/components/officer-dashboard/modals/ConfirmA
 import ConfirmRejectionModal from "@/components/officer-dashboard/modals/ConfirmRejectionModal";
 import AssignOfficersModal from "@/components/officer-dashboard/modals/AssignOfficersModal";
 import OfficerDetailsModal from "@/components/officer-dashboard/modals/OfficerDetailsModal";
+import EditRecommendationModal from "@/components/officer-dashboard/modals/EditRecommendationModal";
+import CreateRecommendationNoteModal from "@/components/officer-dashboard/modals/CreateRecommendationNoteModal";
 
 import type { Metadata } from "next";
 
@@ -36,6 +38,8 @@ export default function OfficerDashboardLayout({
       <ConfirmRejectionModal />
       <AssignOfficersModal />
       <OfficerDetailsModal />
+      <EditRecommendationModal />
+      <CreateRecommendationNoteModal />
 
       {/* Toast notifications */}
       <Toast />

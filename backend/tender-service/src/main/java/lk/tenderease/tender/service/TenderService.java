@@ -261,4 +261,6 @@ public interface TenderService {
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
 
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
+
+    List<ClarificationDTO> getClarificationsForOfficer(String officerId);
 }

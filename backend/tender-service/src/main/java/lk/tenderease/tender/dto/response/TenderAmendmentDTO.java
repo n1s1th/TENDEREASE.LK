@@ -16,4 +16,5 @@ public class TenderAmendmentDTO {
     private String description;
     private LocalDateTime newClosingDate;
     private LocalDateTime createdAt;
+    private String downloadUrl;
 }

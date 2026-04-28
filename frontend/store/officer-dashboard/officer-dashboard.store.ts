@@ -244,11 +244,18 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
     markNotificationRead: async (id) => {
       try {
         await api.markNotificationRead(id);
-        set((state) => ({
-          notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, isRead: true } : n,
-          ),
-        }));
+        set((state) => {
+          const notification = state.notifications.find((n) => n.id === id);
+          const wasUnread = notification && !notification.isRead;
+          return {
+            notifications: state.notifications.map((n) =>
+              n.id === id ? { ...n, isRead: true } : n,
+            ),
+            notificationSummary: state.notificationSummary && wasUnread
+              ? { ...state.notificationSummary, unread: Math.max(0, state.notificationSummary.unread - 1) }
+              : state.notificationSummary,
+          };
+        });
       } catch {
         // silent
       }
@@ -259,6 +266,9 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
         await api.markAllNotificationsRead();
         set((state) => ({
           notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+          notificationSummary: state.notificationSummary 
+            ? { ...state.notificationSummary, unread: 0 } 
+            : null,
         }));
       } catch {
         // silent

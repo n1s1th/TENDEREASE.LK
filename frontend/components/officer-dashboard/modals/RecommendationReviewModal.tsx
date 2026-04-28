@@ -185,23 +185,9 @@ export default function RecommendationReviewModal() {
                 </div>
               ))
             ) : (
-              <>
-                <div className="dash-timeline-step dash-timeline-step--completed">
-                  <div className="dash-timeline-icon"><Check size={12} /></div>
-                  <div className="dash-timeline-label">Officer – Submitted</div>
-                  <div className="dash-timeline-meta">Time and Date</div>
-                </div>
-                <div className="dash-timeline-step dash-timeline-step--completed">
-                  <div className="dash-timeline-icon"><Check size={12} /></div>
-                  <div className="dash-timeline-label">Technical Head – Approved</div>
-                  <div className="dash-timeline-meta">Time and Date</div>
-                </div>
-                <div className="dash-timeline-step dash-timeline-step--pending">
-                  <div className="dash-timeline-icon"><Circle size={12} /></div>
-                  <div className="dash-timeline-label">CAO – Pending</div>
-                  <div className="dash-timeline-meta">Time and Date</div>
-                </div>
-              </>
+              <div style={{ textAlign: "center", padding: "1rem", color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
+                No timeline data available.
+              </div>
             )}
           </div>
         </div>
