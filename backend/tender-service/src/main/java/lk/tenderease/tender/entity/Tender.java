@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Data
 @Builder
@@ -74,6 +78,13 @@ public class Tender extends BaseEntity {
     @Column(name = "status", nullable = false)
     @Builder.Default
     private TenderStatus status = TenderStatus.DRAFT;
+
+    @Column(name = "template_id")
+    private UUID templateId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "dynamic_data", columnDefinition = "jsonb")
+    private Map<String, Object> dynamicData;
 
     // ✅ Dates from LEFT
     @Column(name = "opening_date")

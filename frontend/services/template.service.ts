@@ -45,5 +45,12 @@ export const templateService = {
       method: "GET",
     });
     return handleResponse(res);
+  },
+
+  async getTemplateById(id: string) {
+    const res = await fetch(`${API_URL}/api/v1/tender-templates/${id}`, {
+      method: "GET",
+    });
+    return handleResponse(res);
   }
 };

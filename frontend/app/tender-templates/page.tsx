@@ -6,13 +6,16 @@ import { templateService } from "@/services/template.service";
 import { useTemplateDesignerStore, getDefaultSections } from "@/store/tender-template/template-designer.store";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
-import { Plus, LayoutTemplate, Clock, Archive, FileText, ChevronRight } from "lucide-react";
+import { Plus, LayoutTemplate, Clock, Archive, FileText, ChevronRight, Eye, Play, Edit2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { TemplatePreviewModal } from "@/components/tender/template/TemplatePreviewModal";
 
 export default function TenderTemplatesDashboard() {
   const router = useRouter();
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     fetchTemplates();
@@ -22,7 +25,13 @@ export default function TenderTemplatesDashboard() {
     try {
       setLoading(true);
       const data = await templateService.getAllTemplates();
-      setTemplates(data || []);
+      const sortedData = (data || []).sort((a: any, b: any) => {
+        const order: Record<string, number> = { 'PUBLISHED': 1, 'DRAFT': 2, 'ARCHIVED': 3 };
+        const statusA = order[a.status] || 99;
+        const statusB = order[b.status] || 99;
+        return statusA - statusB;
+      });
+      setTemplates(sortedData);
     } catch (error) {
       toast.error("Failed to fetch templates");
       console.error(error);
@@ -61,6 +70,17 @@ export default function TenderTemplatesDashboard() {
       selectedSectionId: null
     });
     router.push("/tender-template");
+  };
+
+  const handlePreviewClick = (e: React.MouseEvent, template: any) => {
+    e.stopPropagation();
+    setPreviewTemplate(template);
+    setIsPreviewOpen(true);
+  };
+
+  const handleUseTemplate = (e: React.MouseEvent, template: any) => {
+    e.stopPropagation();
+    router.push(`/tender-creation/dynamic/${template.id}`);
   };
 
   return (
@@ -140,8 +160,7 @@ export default function TenderTemplatesDashboard() {
               {templates.map((template) => (
                 <div 
                   key={template.id} 
-                  className="group bg-white border border-grey-2 rounded-xl p-6 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex flex-col h-full relative overflow-hidden"
-                  onClick={() => handleOpenTemplate(template)}
+                  className="group bg-white border border-grey-2 rounded-xl p-6 hover:border-primary/50 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
                 >
                   {/* Status Ribbon */}
                   <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[10px] font-bold tracking-wider uppercase ${
@@ -164,13 +183,37 @@ export default function TenderTemplatesDashboard() {
                     {template.description || "No description provided format for this template."}
                   </p>
                   
-                  <div className="mt-auto pt-4 border-t border-grey-2 flex items-center justify-between text-xs text-grey-5">
-                    <div className="flex items-center">
+                  {/* Action Buttons Row */}
+                  <div className="mt-auto pt-4 border-t border-grey-2 flex items-center justify-between gap-2">
+                    <div className="flex items-center text-xs text-grey-5">
                       <Clock className="w-3 h-3 mr-1" />
                       V{template.version} • {new Date(template.updatedAt || template.createdAt).toLocaleDateString()}
                     </div>
-                    <div className="flex items-center text-primary font-semibold opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
-                      Edit <ChevronRight className="w-4 h-4 ml-1" />
+                    
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleOpenTemplate(template); }}
+                        className="p-1.5 text-grey-5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
+                        title="Edit Template"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => handlePreviewClick(e, template)}
+                        className="p-1.5 text-grey-5 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                        title="Preview Template"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {template.status === 'PUBLISHED' && (
+                        <button 
+                          onClick={(e) => handleUseTemplate(e, template)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-md shadow-sm transition-colors"
+                          title="Use Template"
+                        >
+                          <Play className="w-3 h-3 fill-current" /> Use
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -179,6 +222,12 @@ export default function TenderTemplatesDashboard() {
           )}
         </div>
       </div>
+
+      <TemplatePreviewModal 
+        template={previewTemplate}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
     </div>
   );
 }

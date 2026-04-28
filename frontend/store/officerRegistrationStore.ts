@@ -12,19 +12,19 @@ export interface OfficerRegistrationResult {
 export interface OfficerFormDraft {
   procuringEntityType: string;
   procuringEntityLevel: string;
-  provincialCouncil: string;
+  provincialCouncil?: string;
   headDesignation: string;
-  organizationName: string;
+  organizationName?: string;
   country: string;
   streetLine1: string;
-  streetLine2: string;
+  streetLine2?: string;
   city: string;
-  province: string;
-  postalCode: string;
+  province?: string;
+  postalCode?: string;
   personalLandPhone: string;
   officialEmail: string;
-  businessRegistrationNumber: string;
-  vatRegistrationNumber: string;
+  businessRegistrationNumber?: string;
+  vatRegistrationNumber?: string;
   liaisonTitle: string;
   liaisonName: string;
   liaisonDesignation: string;
