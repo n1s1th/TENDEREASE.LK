@@ -24,7 +24,6 @@ COPY contract-service/pom.xml contract-service/
 COPY payment-service/pom.xml payment-service/
 COPY document-service/pom.xml document-service/
 COPY notification-service/pom.xml notification-service/
-COPY officer-dashboard-service/pom.xml officer-dashboard-service/
 COPY clarification-service/pom.xml clarification-service/
 COPY qa-service/pom.xml qa-service/
 COPY appeal-service/pom.xml appeal-service/
@@ -64,8 +63,8 @@ COPY --from=build /app/tender-service/target/*.jar app.jar
 EXPOSE 8182
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
-FROM eclipse-temurin:21-jre-alpine AS officer-dashboard-service
+FROM eclipse-temurin:21-jre-alpine AS reporting-service
 WORKDIR /app
-COPY --from=build /app/officer-dashboard-service/target/*.jar app.jar
-EXPOSE 8193
+COPY --from=build /app/reporting-service/target/*.jar app.jar
+EXPOSE 8092
 ENTRYPOINT ["java", "-jar", "app.jar"]

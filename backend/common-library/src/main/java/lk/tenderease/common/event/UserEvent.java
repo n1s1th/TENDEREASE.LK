@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TenderEvent {
-    private String tenderId;
-    private String eventType; // CREATED, PUBLISHED, CLOSED, STATUS_CHANGED
-    private String status;    // DRAFT, PENDING_APPROVAL, PUBLISHED, etc.
+public class UserEvent {
+    private String userId;
+    private String eventType; // REGISTERED, ACCEPTED, DELETED
+    private String status;    // PENDING, ACTIVE, etc.
+    private String role;      // OFFICER, CAO, BIDDER
     private String triggerBy;
 }

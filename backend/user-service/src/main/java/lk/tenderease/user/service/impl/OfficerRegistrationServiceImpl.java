@@ -22,6 +22,8 @@ import lk.tenderease.user.repository.RegistrationAuditRepository;
 import lk.tenderease.user.service.EmailService;
 import lk.tenderease.user.service.OfficerRegistrationService;
 import lk.tenderease.user.util.ReferenceIdGenerator;
+import lk.tenderease.user.producer.UserEventProducer;
+import lk.tenderease.common.event.UserEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -63,6 +65,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     private final RegistrationAuditRepository registrationAuditRepository;
     private final ReferenceIdGenerator referenceIdGenerator;
     private final OfficerEventPublisher eventPublisher;
+    private final UserEventProducer userEventProducer;
     private final EmailService emailService;
 
     // ────────────────────────────────────────────────────────
@@ -116,8 +119,16 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         // 5. Create success audit
         createAuditRecord(referenceId, "PENDING", null, null, "REGISTER");
 
-        // 6. Publish event
+        // 6. Publish event for internal workflow
         publishOfficerEvent(savedOfficer, "REGISTERED");
+
+        // 7. Emit KPI Event for Reporting Service
+        userEventProducer.sendUserEvent(UserEvent.builder()
+                .userId(savedOfficer.getId().toString())
+                .eventType("REGISTERED")
+                .role("OFFICER")
+                .triggerBy("system")
+                .build());
 
         // 7. Send asynchronous-like mock email
         try {
@@ -201,6 +212,15 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
         createAuditRecord(officer.getRegistrationReference(), "APPROVED", null, null, "APPROVE");
         publishOfficerEvent(officer, "APPROVED");
+
+        // Emit KPI Event
+        userEventProducer.sendUserEvent(UserEvent.builder()
+                .userId(officer.getId().toString())
+                .eventType("ACCEPTED")
+                .status("APPROVED")
+                .role("OFFICER")
+                .triggerBy("cao-user")
+                .build());
 
         log.info("Officer {} approved (ref: {})", id, officer.getRegistrationReference());
         return mapToProfileResponse(officer);

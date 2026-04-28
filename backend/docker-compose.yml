@@ -118,21 +118,24 @@ services:
     networks:
       - tenderease-network
 
-  officer-dashboard-service:
+  reporting-service:
     build:
       context: .
       dockerfile: Dockerfile
-      target: officer-dashboard-service
+      target: reporting-service
     ports:
-      - "8193:8193"
+      - "8092:8092"
     environment:
       DB_HOST: postgres
       DB_PASSWORD: postgres
       RABBITMQ_HOST: rabbitmq
+      REDIS_HOST: redis
       EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/tenderease
     depends_on:
       - postgres
       - rabbitmq
+      - redis
       - eureka-server
     networks:
       - tenderease-network

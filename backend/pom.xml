@@ -44,7 +44,6 @@
         <module>payment-service</module>
         <module>document-service</module>
         <module>notification-service</module>
-        <module>officer-dashboard-service</module>
         <module>clarification-service</module>
         <module>qa-service</module>
         <module>appeal-service</module>
