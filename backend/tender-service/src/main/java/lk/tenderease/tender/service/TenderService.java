@@ -60,6 +60,7 @@ public interface TenderService {
      * @throws lk.tenderease.tender.exception.TenderNotFoundException if tender is not found
      */
     TenderDetailResponse getTenderById(UUID id);
+    java.util.Map<String, Long> getKPIs();
 
     /**
      * Updates a DRAFT tender.

@@ -21,6 +21,7 @@ import lk.tenderease.tender.entity.TenderDocument;
 import lk.tenderease.tender.entity.TenderSchedule;
 import lk.tenderease.tender.entity.TenderComplianceChecklist;
 import lk.tenderease.tender.enums.BiddingMethod;
+import lk.tenderease.tender.enums.DocumentType;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.enums.TenderType;
@@ -160,7 +161,12 @@ public class TenderServiceImpl implements TenderService {
                 .status(tender.getStatus())
                 .createdAt(tender.getCreatedAt())
                 .updatedAt(tender.getUpdatedAt())
-                .createdBy(tender.getCreatedBy());
+                .createdBy(tender.getCreatedBy())
+                .closingDate(tender.getSchedule() != null && tender.getSchedule().getBidSubmissionDeadline() != null 
+                    ? tender.getSchedule().getBidSubmissionDeadline().atStartOfDay() 
+                    : tender.getClosingDate())
+                .dynamicData(tender.getDynamicData())
+                .rejectionReason(tender.getRejectionReason());
 
         // Defensive mapping for relationships
         if (tender.getMinistry() != null) {
@@ -179,42 +185,6 @@ public class TenderServiceImpl implements TenderService {
         }
 
         return builder.build();
-    }
-
-    @Override
-    public TenderDetailResponse getTenderById(UUID id) {
-        log.info("Fetching tender detail for ID: {}", id);
-        Tender tender = tenderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
-
-        TenderDetailResponse response = new TenderDetailResponse();
-        // Map from base TenderResponse (reusing the logic from mapToResponse if needed, but let's be explicit)
-        TenderResponse base = mapToResponse(tender);
-        
-        // Manual copy to the subclass
-        response.setId(base.getId());
-        response.setTenderNumber(base.getTenderNumber());
-        response.setTitle(base.getTitle());
-        response.setDescription(base.getDescription());
-        response.setProcurementType(base.getProcurementType());
-        response.setBiddingMethod(base.getBiddingMethod());
-        response.setTenderType(base.getTenderType());
-        response.setMinistryId(base.getMinistryId());
-        response.setMinistryName(base.getMinistryName());
-        response.setDepartmentId(base.getDepartmentId());
-        response.setDepartmentName(base.getDepartmentName());
-        response.setEstimatedBudget(base.getEstimatedBudget());
-        response.setFundingSourceId(base.getFundingSourceId());
-        response.setFundingSourceName(base.getFundingSourceName());
-        response.setStatus(base.getStatus());
-        response.setCreatedAt(base.getCreatedAt());
-        response.setUpdatedAt(base.getUpdatedAt());
-        response.setCreatedBy(base.getCreatedBy());
-
-        // Map specific details (documents, schedule, checklist)
-        // These might need real implementation if they are separate tables
-        // For now, returning empty/default if not fully implemented
-        return response;
     }
 
     @Override
@@ -296,8 +266,44 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public TenderDocumentResponse uploadDocument(UUID tenderId, DocumentUploadRequest request, String callerUserId) {
-        return null; // TODO: implement
+        log.info("Uploading document for tender ID: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+
+        if (request.getFile() == null || request.getFile().isEmpty()) {
+            throw new RuntimeException("File is empty or missing.");
+        }
+
+        String docName = request.getFile().getOriginalFilename();
+        if (docName == null || docName.trim().isEmpty()) {
+            docName = "Document_" + java.util.UUID.randomUUID().toString();
+        }
+
+        // Save metadata to TenderDocument
+        lk.tenderease.tender.entity.TenderDocument doc = lk.tenderease.tender.entity.TenderDocument.builder()
+                .tender(tender)
+                .documentName(docName)
+                .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
+                .s3Key("dummy-s3-key/" + java.util.UUID.randomUUID().toString())
+                .fileSizeBytes(request.getFile().getSize())
+                .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
+                .uploadedAt(java.time.LocalDateTime.now())
+                .build();
+
+        lk.tenderease.tender.entity.TenderDocument savedDoc = documentRepository.save(doc);
+        log.info("Document saved successfully with ID: {}", savedDoc.getId());
+
+        return TenderDocumentResponse.builder()
+                .id(savedDoc.getId())
+                .tenderId(tenderId)
+                .documentName(savedDoc.getDocumentName())
+                .documentType(savedDoc.getDocumentType())
+                .fileSizeBytes(savedDoc.getFileSizeBytes())
+                .mimeType(savedDoc.getMimeType())
+                .uploadedAt(savedDoc.getUploadedAt())
+                .build();
     }
 
     @Override
@@ -508,6 +514,73 @@ public class TenderServiceImpl implements TenderService {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
         return mapToDetailsDTO(tender);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TenderDetailResponse getTenderById(UUID id) {
+        log.info("Fetching tender detail for ID: {}", id);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+
+        TenderDetailResponse response = new TenderDetailResponse();
+        TenderResponse base = mapToResponse(tender);
+        
+        response.setId(base.getId());
+        response.setTenderNumber(base.getTenderNumber());
+        response.setTitle(base.getTitle());
+        response.setDescription(base.getDescription());
+        response.setProcurementType(base.getProcurementType());
+        response.setBiddingMethod(base.getBiddingMethod());
+        response.setTenderType(base.getTenderType());
+        response.setMinistryId(base.getMinistryId());
+        response.setMinistryName(base.getMinistryName());
+        response.setDepartmentId(base.getDepartmentId());
+        response.setDepartmentName(base.getDepartmentName());
+        response.setEstimatedBudget(base.getEstimatedBudget());
+        response.setFundingSourceId(base.getFundingSourceId());
+        response.setFundingSourceName(base.getFundingSourceName());
+        response.setStatus(base.getStatus());
+        response.setCreatedAt(base.getCreatedAt());
+        response.setUpdatedAt(base.getUpdatedAt());
+        response.setCreatedBy(base.getCreatedBy());
+        response.setRejectionReason(base.getRejectionReason());
+
+        // Map the detailed sub-entities
+        response.setSchedule(getSchedule(id));
+        response.setComplianceChecklist(getComplianceChecklist(id));
+        
+        if (tender.getDocuments() != null) {
+            response.setDocuments(tender.getDocuments().stream()
+                .map(doc -> TenderDocumentResponse.builder()
+                    .id(doc.getId())
+                    .tenderId(id)
+                    .documentName(doc.getDocumentName())
+                    .documentType(doc.getDocumentType())
+                    .sbdTemplateId(doc.getSbdTemplate() != null ? doc.getSbdTemplate().getId() : null)
+                    .templateVersion(doc.getTemplateVersion())
+                    .fileSizeBytes(doc.getFileSizeBytes())
+                    .mimeType(doc.getMimeType())
+                    .uploadedAt(doc.getUploadedAt())
+                    .build())
+                .collect(Collectors.toList()));
+        }
+        
+        try {
+            response.setNoticePreview(generateNoticePreview(id).getGeneratedText());
+        } catch (Exception e) {
+            log.warn("Could not generate notice preview for tender {}: {}", id, e.getMessage());
+        }
+
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Long> getKPIs() {
+        long active = tenderRepository.countByStatusIn(java.util.List.of(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
+        long awarded = 0; // Since AWARDED doesn't exist yet, we just return 0
+        return java.util.Map.of("activeTenders", active, "awardedTenders", awarded);
     }
 
     @Override

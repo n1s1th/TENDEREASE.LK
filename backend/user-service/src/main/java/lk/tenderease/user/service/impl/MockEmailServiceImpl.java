@@ -26,15 +26,12 @@ public class MockEmailServiceImpl implements EmailService {
     public void sendRegistrationSuccessEmail(String toEmail, String officerName, String referenceId) {
         log.info("Preparing Registration Success Email for: {}", toEmail);
 
-        // 1. Setup Thymeleaf context variables
         Context context = new Context();
         context.setVariable("officerName", officerName != null ? officerName : "Officer");
         context.setVariable("referenceId", referenceId);
 
-        // 2. Render the HTML using the template in resources/templates/emails/officer-registration-success.html
         String htmlContent = templateEngine.process("emails/officer-registration-success", context);
 
-        // 3. Log it instead of sending over network
         log.info("\n================ MOCK EMAIL GENERATED ================\n" +
                  "TO: {}\n" +
                  "SUBJECT: Registration Received successfully - TenderEase\n" +
@@ -42,5 +39,60 @@ public class MockEmailServiceImpl implements EmailService {
                  "{}\n" +
                  "=======================================================", 
                  toEmail, htmlContent);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void sendRegistrationApprovalEmail(String toEmail, String officerName, String referenceId) {
+        log.info("\n" +
+                "╔══════════════════════════════════════════════════════════════╗\n" +
+                "║              📧 REGISTRATION APPROVAL EMAIL                ║\n" +
+                "╠══════════════════════════════════════════════════════════════╣\n" +
+                "║ TO:      {}                                                \n" +
+                "║ SUBJECT: Registration Approved - TenderEase                ║\n" +
+                "╠══════════════════════════════════════════════════════════════╣\n" +
+                "║                                                            ║\n" +
+                "║ Dear {},                                                   \n" +
+                "║                                                            ║\n" +
+                "║ Congratulations! Your officer registration has been        ║\n" +
+                "║ APPROVED by the Chief Accounting Officer (CAO).            ║\n" +
+                "║                                                            ║\n" +
+                "║ Registration Reference: {}                                 \n" +
+                "║                                                            ║\n" +
+                "║ You can now log in to TenderEase.lk and start creating     ║\n" +
+                "║ and managing government tenders.                           ║\n" +
+                "║                                                            ║\n" +
+                "║ Best regards,                                              ║\n" +
+                "║ TenderEase Team                                            ║\n" +
+                "╚══════════════════════════════════════════════════════════════╝",
+                toEmail, officerName, referenceId);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void sendRegistrationRejectionEmail(String toEmail, String officerName, String referenceId, String reason) {
+        log.info("\n" +
+                "╔══════════════════════════════════════════════════════════════╗\n" +
+                "║              📧 REGISTRATION REJECTION EMAIL               ║\n" +
+                "╠══════════════════════════════════════════════════════════════╣\n" +
+                "║ TO:      {}                                                \n" +
+                "║ SUBJECT: Registration Rejected - TenderEase                ║\n" +
+                "╠══════════════════════════════════════════════════════════════╣\n" +
+                "║                                                            ║\n" +
+                "║ Dear {},                                                   \n" +
+                "║                                                            ║\n" +
+                "║ We regret to inform you that your officer registration     ║\n" +
+                "║ has been REJECTED by the Chief Accounting Officer (CAO).   ║\n" +
+                "║                                                            ║\n" +
+                "║ Registration Reference: {}                                 \n" +
+                "║ Reason: {}                                                 \n" +
+                "║                                                            ║\n" +
+                "║ If you believe this is an error, please contact the CAO    ║\n" +
+                "║ office for further assistance.                             ║\n" +
+                "║                                                            ║\n" +
+                "║ Best regards,                                              ║\n" +
+                "║ TenderEase Team                                            ║\n" +
+                "╚══════════════════════════════════════════════════════════════╝",
+                toEmail, officerName, referenceId, reason);
     }
 }

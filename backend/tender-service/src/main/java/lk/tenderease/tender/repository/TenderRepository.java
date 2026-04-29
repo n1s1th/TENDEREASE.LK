@@ -23,6 +23,9 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
 
     boolean existsByTenderNumber(String tenderNumber);
 
+    long countByStatus(TenderStatus status);
+    long countByStatusIn(java.util.Collection<TenderStatus> statuses);
+
     Page<Tender> findByStatus(TenderStatus status, Pageable pageable);
 
     Page<Tender> findByStatusIn(java.util.Collection<TenderStatus> statuses, Pageable pageable);
@@ -39,7 +42,7 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
         AND t.status = :status
-        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT)
+        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT, lk.tenderease.tender.enums.TenderStatus.REJECTED)
     """)
     Page<Tender> searchWithStatus(
             @Param("keyword") String keyword,
@@ -54,7 +57,7 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
-        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT)
+        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT, lk.tenderease.tender.enums.TenderStatus.REJECTED)
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,

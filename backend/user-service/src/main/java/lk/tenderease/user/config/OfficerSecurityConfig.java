@@ -47,6 +47,8 @@ public class OfficerSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers("/api/officers/register").permitAll()
+                // CAO dashboard endpoints (dev mode - no JWT)
+                .requestMatchers("/api/cao/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // Actuator

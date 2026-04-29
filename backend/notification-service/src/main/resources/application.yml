@@ -7,19 +7,6 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:1234}
     driver-class-name: org.postgresql.Driver
-
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${nisith.graphics@gmail.com}
-    password: ${5Kuq^RpE#%bF5ZTM@NXC}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
     hikari:
       maximum-pool-size: 10
       minimum-idle: 5

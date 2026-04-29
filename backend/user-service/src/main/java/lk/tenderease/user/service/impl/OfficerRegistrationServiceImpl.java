@@ -223,6 +223,16 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
                 .build());
 
         log.info("Officer {} approved (ref: {})", id, officer.getRegistrationReference());
+
+        // Send approval email
+        try {
+            String officerName = officer.getLiaisonOfficer() != null ? officer.getLiaisonOfficer().getName() : "Officer";
+            emailService.sendRegistrationApprovalEmail(
+                officer.getOfficialEmail(), officerName, officer.getRegistrationReference());
+        } catch (Exception e) {
+            log.error("Failed to send approval email to {}: {}", officer.getOfficialEmail(), e.getMessage());
+        }
+
         return mapToProfileResponse(officer);
     }
 
@@ -238,12 +248,23 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         }
 
         officer.setStatus(OfficerStatus.REJECTED);
+        officer.setRejectionReason(reason);
         officerRepository.save(officer);
 
         createAuditRecord(officer.getRegistrationReference(), "REJECTED", reason, null, "REJECT");
         publishOfficerEvent(officer, "REJECTED");
 
         log.info("Officer {} rejected (ref: {})", id, officer.getRegistrationReference());
+
+        // Send rejection email
+        try {
+            String officerName = officer.getLiaisonOfficer() != null ? officer.getLiaisonOfficer().getName() : "Officer";
+            emailService.sendRegistrationRejectionEmail(
+                officer.getOfficialEmail(), officerName, officer.getRegistrationReference(), reason);
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to {}: {}", officer.getOfficialEmail(), e.getMessage());
+        }
+
         return mapToProfileResponse(officer);
     }
 
@@ -413,6 +434,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
                 .keycloakUserId(officer.getKeycloakUserId())
                 .createdAt(officer.getCreatedAt())
                 .updatedAt(officer.getUpdatedAt())
+                .rejectionReason(officer.getRejectionReason())
                 .build();
     }
 }

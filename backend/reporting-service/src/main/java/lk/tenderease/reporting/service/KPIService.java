@@ -73,4 +73,49 @@ public class KPIService {
                         .updatedAt(LocalDateTime.now())
                         .build());
     }
+
+    public java.util.Map<String, Object> getReportData(String period, String type) {
+        DashboardKPI kpi = getOrCreateSummary();
+        
+        // Fetch accurate count from tender-service
+        long exactActiveTenders = kpi.getApprovedTenders();
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            java.util.Map<String, Integer> response = restTemplate.getForObject("http://localhost:8082/api/cao/tenders/kpi", java.util.Map.class);
+            if (response != null && response.containsKey("activeTenders")) {
+                exactActiveTenders = response.get("activeTenders");
+                // Update local KPI to keep it in sync
+                kpi.setApprovedTenders((int) exactActiveTenders);
+                kpiRepository.save(kpi);
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch accurate KPIs from tender-service", e);
+        }
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        
+        java.util.List<java.util.Map<String, Object>> cycleTimeTrend = new java.util.ArrayList<>();
+        response.put("cycleTimeTrend", cycleTimeTrend);
+        
+        response.put("smeParticipationPercent", null);
+        
+        java.util.List<java.util.Map<String, Object>> awardValueTrend = new java.util.ArrayList<>();
+        response.put("awardValueTrend", awardValueTrend);
+        
+        java.util.List<java.util.Map<String, Object>> activeTendersTrend = new java.util.ArrayList<>();
+        String currentMonth = java.time.LocalDate.now().getMonth().name().substring(0, 1) + 
+                              java.time.LocalDate.now().getMonth().name().substring(1, 3).toLowerCase();
+        activeTendersTrend.add(java.util.Map.of("label", currentMonth, "value", exactActiveTenders));
+        response.put("activeTendersTrend", activeTendersTrend);
+        
+        java.util.Map<String, Object> summary = new java.util.HashMap<>();
+        summary.put("avgCycleTime", "—");
+        summary.put("smeParticipation", "—");
+        summary.put("totalAwardValue", "—");
+        summary.put("totalAwards", 0); // No awards yet
+        summary.put("activeTenders", exactActiveTenders);
+        response.put("summary", summary);
+        
+        return response;
+    }
 }

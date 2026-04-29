@@ -3,6 +3,7 @@ package lk.tenderease.tender.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lk.tenderease.common.dto.PageResponse;
+import lk.tenderease.tender.dto.response.TenderDetailResponse;
 import lk.tenderease.tender.dto.response.TenderResponse;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.TenderService;
@@ -36,6 +37,19 @@ public class CAOTenderController {
         // Spring Data Pageable is 0-indexed, frontend is 1-indexed
         Pageable pageable = PageRequest.of(page - 1, size);
         return ResponseEntity.ok(tenderService.listAllTenders(status, pageable));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get tender details", description = "Fetches a single tender by ID for CAO review.")
+    public ResponseEntity<TenderDetailResponse> getTenderById(@PathVariable UUID id) {
+        log.info("CAO fetching tender details: {}", id);
+        return ResponseEntity.ok(tenderService.getTenderById(id));
+    }
+
+    @GetMapping("/kpi")
+    @Operation(summary = "Get tender KPIs", description = "Fetches precise counts of active and awarded tenders from the database.")
+    public ResponseEntity<java.util.Map<String, Long>> getKPIs() {
+        return ResponseEntity.ok(tenderService.getKPIs());
     }
 
     @PostMapping("/{id}/approve")
