@@ -64,6 +64,18 @@ export default function ReportsPage() {
     ],
   };
 
+  const activeTendersData = {
+    labels: kpiReport?.activeTendersTrend.map((d) => d.label) ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [
+      {
+        label: "Active Tenders",
+        data: kpiReport?.activeTendersTrend.map((d) => d.value) ?? [],
+        backgroundColor: "#10b981", // Emerald green to represent active
+        borderRadius: 4,
+      },
+    ],
+  };
+
   const smeData = {
     labels: ["SME", "Non-SME"],
     datasets: [
@@ -189,7 +201,7 @@ export default function ReportsPage() {
                     <Line data={cycleTimeData} options={chartOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                      No data — connects to backend
+                      No data received yet.
                     </span>
                   )}
                 </div>
@@ -209,7 +221,7 @@ export default function ReportsPage() {
                     <Doughnut data={smeData} options={doughnutOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                      No data — connects to backend
+                      No data received yet.
                     </span>
                   )}
                 </div>
@@ -219,25 +231,50 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Award Value Trends (full width) */}
-            <div className="dash-report-card" style={{ marginBottom: "1.5rem" }}>
-              <div className="dash-report-card-header">
-                <h3 className="dash-report-card-title">Award Value Trends</h3>
-                <span className="dash-report-card-tag">Bar Chart</span>
+            {/* Middle Grid: Award Value & Active Tenders */}
+            <div className="dash-report-grid" style={{ marginBottom: "1.5rem" }}>
+              {/* Award Value Trends */}
+              <div className="dash-report-card">
+                <div className="dash-report-card-header">
+                  <h3 className="dash-report-card-title">Award Value Trends</h3>
+                  <span className="dash-report-card-tag">Bar Chart</span>
+                </div>
+                <div className="dash-report-chart" style={{ height: 280 }}>
+                  {kpiReport?.awardValueTrend && kpiReport.awardValueTrend.length > 0 ? (
+                    <Bar data={awardValueData} options={chartOptions} />
+                  ) : (
+                    <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
+                      No data received yet.
+                    </span>
+                  )}
+                </div>
+                <p className="dash-report-chart-caption">
+                  Monthly award values over the selected period
+                </p>
               </div>
-              <div className="dash-report-chart" style={{ height: 280 }}>
-                {kpiReport?.awardValueTrend && kpiReport.awardValueTrend.length > 0 ? (
-                  <Bar data={awardValueData} options={chartOptions} />
-                ) : (
-                  <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
-                    No data — connects to backend
-                  </span>
-                )}
+
+              {/* Active Tenders Trend */}
+              <div className="dash-report-card">
+                <div className="dash-report-card-header">
+                  <h3 className="dash-report-card-title">Active Tenders Growth</h3>
+                  <span className="dash-report-card-tag">Bar Chart</span>
+                </div>
+                <div className="dash-report-chart" style={{ height: 280 }}>
+                  {kpiReport?.activeTendersTrend && kpiReport.activeTendersTrend.length > 0 ? (
+                    <Bar data={activeTendersData} options={chartOptions} />
+                  ) : (
+                    <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
+                      No data received yet.
+                    </span>
+                  )}
+                </div>
+                <p className="dash-report-chart-caption">
+                  Number of active tenders over the selected period
+                </p>
               </div>
-              <p className="dash-report-chart-caption">
-                Monthly award values over the selected period
-              </p>
             </div>
+
+
 
             {/* Summary Table */}
             <div className="dash-report-summary">
@@ -258,6 +295,12 @@ export default function ReportsPage() {
                 <span className="dash-report-summary-label">Total Award Value</span>
                 <span className="dash-report-summary-value">
                   {kpiReport?.summary.totalAwardValue ?? "—"}
+                </span>
+              </div>
+              <div className="dash-report-summary-row">
+                <span className="dash-report-summary-label">Active Tenders</span>
+                <span className="dash-report-summary-value">
+                  {kpiReport?.summary.activeTenders ?? "—"}
                 </span>
               </div>
               <div className="dash-report-summary-row">

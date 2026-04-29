@@ -38,7 +38,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
   return (
     <div className="dash-pagination" id="pagination">
       <button
-        className="dash-pagination-nav"
+        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:not-disabled:text-[#FFB401] hover:not-disabled:border-[#FFB401]"
         disabled={currentPage <= 1}
         onClick={() => onPageChange(currentPage - 1)}
       >
@@ -47,13 +47,13 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
 
       {getPageNumbers().map((page, i) =>
         page === "..." ? (
-          <span key={`ellipsis-${i}`} className="dash-pagination-ellipsis">
+          <span key={`ellipsis-${i}`} className="px-2 text-slate-400">
             …
           </span>
         ) : (
           <button
             key={page}
-            className={`dash-pagination-btn ${page === currentPage ? "dash-pagination-btn--active" : ""}`}
+            className={`px-3 py-1.5 text-sm font-bold rounded-lg border transition-all duration-200 ${page === currentPage ? "bg-[#FFB401] text-slate-900 border-[#FFB401] shadow-sm" : "bg-white text-slate-600 border-slate-200 hover:text-[#FFB401] hover:border-[#FFB401]"}`}
             onClick={() => onPageChange(page)}
           >
             {page}
@@ -62,7 +62,7 @@ export default function Pagination({ pagination, onPageChange }: PaginationProps
       )}
 
       <button
-        className="dash-pagination-nav"
+        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-600 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:not-disabled:text-[#FFB401] hover:not-disabled:border-[#FFB401]"
         disabled={currentPage >= totalPages}
         onClick={() => onPageChange(currentPage + 1)}
       >

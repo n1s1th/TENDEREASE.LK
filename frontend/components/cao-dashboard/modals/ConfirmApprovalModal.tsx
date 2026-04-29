@@ -1,6 +1,6 @@
 "use client";
 
-import { X, FileText, Calendar, Wallet, Building2 } from "lucide-react";
+import { X } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 
 export default function ConfirmApprovalModal() {
@@ -13,96 +13,32 @@ export default function ConfirmApprovalModal() {
 
   const tender = modalData?.tender;
   const tenderId = tender?.id;
-  const tenderTitle = tender?.title ?? "XXXXXX";
-  const closingDate = tender?.closingDate ?? "Dec 22, 2025";
-  const estimatedBudget = tender?.estimatedBudget 
-    ? `RS. ${tender.estimatedBudget.toLocaleString()}` 
-    : "RS. 5,000,000";
-  const department = tender?.department ?? "Ministry of Infrastructure";
 
   return (
-    <div className="dash-modal-overlay" onClick={closeModal}>
-      <div className="dash-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
-        <div className="dash-modal-header" style={{ borderBottom: "none", paddingBottom: 0, position: "relative" }}>
-          <h2 className="dash-modal-title" style={{ width: "100%", textAlign: "center", fontSize: "1.25rem", marginTop: "1.5rem", fontWeight: 700 }}>
-            Are you sure you want to approve this tender?
-          </h2>
-          <button 
-            className="dash-modal-close" 
-            onClick={closeModal}
-            style={{ position: "absolute", top: "1rem", right: "1rem" }}
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="dash-modal-body" style={{ padding: "1.5rem 2.5rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-            
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <FileText size={20} className="text-gray-400" style={{ marginTop: "2px" }} />
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 500, textTransform: "uppercase" }}>Tender Title</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--te-gray-1)" }}>{tenderTitle}</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <Calendar size={20} className="text-gray-400" style={{ marginTop: "2px" }} />
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 500, textTransform: "uppercase" }}>Closing Date</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--te-gray-1)" }}>{closingDate}</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <Wallet size={20} className="text-gray-400" style={{ marginTop: "2px" }} />
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 500, textTransform: "uppercase" }}>Estimated Budget</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--te-gray-1)" }}>{estimatedBudget}</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "0.75rem" }}>
-              <Building2 size={20} className="text-gray-400" style={{ marginTop: "2px" }} />
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 500, textTransform: "uppercase" }}>Department</div>
-                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--te-gray-1)" }}>{department}</div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div className="dash-modal-footer" style={{ borderTop: "none", padding: "1rem 2.5rem 2.5rem 2.5rem", display: "flex", gap: "1rem" }}>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn" onClick={closeModal}>
+      <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl border-t-8 border-[#953002] transform transition-all animate-scaleIn relative" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">
+          Approve Tender
+        </h3>
+        
+        <p className="text-base text-slate-600 mb-8 leading-relaxed">
+          Are you sure you want to approve this tender?
+        </p>
+        
+        <div className="flex items-center justify-end gap-4">
           <button
-            className="dash-btn"
-            style={{ 
-              flex: 1, 
-              background: "#111827", 
-              color: "#FFF", 
-              fontWeight: 700, 
-              height: "44px",
-              borderRadius: "6px"
-            }}
-            onClick={() => tenderId && approveTender(tenderId)}
-          >
-            Yes,confirm
-          </button>
-          <button 
-            className="dash-btn"
-            style={{ 
-              flex: 1, 
-              background: "#FFF", 
-              border: "1px solid var(--te-border)", 
-              color: "var(--te-gray-2)", 
-              fontWeight: 700,
-              height: "44px",
-              borderRadius: "6px"
-            }} 
+            className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm"
             onClick={closeModal}
           >
             Cancel
+          </button>
+          <button
+            className="px-6 py-3 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md flex items-center gap-2 border border-[#953002]"
+            onClick={() => {
+              if (tenderId) approveTender(tenderId);
+            }}
+          >
+            Yes, Confirm Approval
           </button>
         </div>
       </div>

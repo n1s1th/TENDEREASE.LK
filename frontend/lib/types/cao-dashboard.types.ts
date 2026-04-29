@@ -12,8 +12,7 @@ export type TenderTab =
   | 'pending'
   | 'approved'
   | 'rejected'
-  | 'recent-awards'
-  | 'audit-logs';
+  | 'recent-awards';
 
 // ── Dashboard Tender (officer view) ──────────────────────────
 export interface DashboardTender {
@@ -48,7 +47,7 @@ export interface Officer {
   avatarUrl?: string;
 }
 
-// ── Recommendation ───────────────────────────────────────────
+// ── Recommendation (kept for future backend development) ─────
 export interface Recommendation {
   tenderId: string;
   bidderName: string;
@@ -73,7 +72,7 @@ export interface ApprovalStep {
   timestamp?: string;
 }
 
-// ── Award ────────────────────────────────────────────────────
+// ── Award (kept for future backend development) ──────────────
 export interface Award {
   id: string;
   tenderId: string;
@@ -87,7 +86,7 @@ export interface Award {
   createdByEmail?: string;
 }
 
-// ── Audit Log ────────────────────────────────────────────────
+// ── Audit Log (kept for compatibility) ───────────────────────
 export interface AuditLogEntry {
   id: string;
   tenderId: string;
@@ -101,39 +100,32 @@ export interface AuditLogEntry {
 
 // ── Dashboard Notification ───────────────────────────────────
 export type DashboardNotificationType =
-  | 'award_letter_generated'
-  | 'regret_email_failed'
-  | 'regret_letters_sent'
-  | 'vendor_notified'
-  | 'general';
+  | 'tender_submitted'
+  | 'officer_registered'
+  | 'recommendation_received'
+  | 'awards_notification';
 
 export type DashboardNotificationStatus =
-  | 'pdf_generated'
-  | 'failed'
-  | 'sent'
+  | 'info'
+  | 'success'
+  | 'warning'
   | 'pending';
 
 export interface DashboardNotification {
   id: string;
-  tenderId: string;
   title: string;
   message: string;
   type: DashboardNotificationType;
   status: DashboardNotificationStatus;
-  recipients?: string;
-  recipientCount?: number;
-  failedCount?: number;
-  sentCount?: number;
   time: string;
-  performedBy: string;
   isRead: boolean;
+  targetId?: string;
 }
 
 export interface NotificationSummary {
   unread: number;
-  failedDeliveries: number;
-  awardLettersGenerated: number;
-  date: string;
+  totalToday: number;
+  pendingActions: number;
 }
 
 // ── KPI ──────────────────────────────────────────────────────
@@ -152,32 +144,50 @@ export interface KpiReportData {
   cycleTimeTrend: { label: string; value: number }[];
   smeParticipationPercent: number;
   awardValueTrend: { label: string; value: number }[];
+  activeTendersTrend: { label: string; value: number }[];
   summary: {
     avgCycleTime: string;
     smeParticipation: string;
     totalAwardValue: string;
     totalAwards: number;
+    activeTenders: number;
   };
 }
 
 // ── Registration Request ─────────────────────────────────────
-export interface RegistrationRequest {
-  id: string;
-  name: string;
-  designation: string;
-  email: string;
-  description: string;
-  department: string;
-  avatarUrl?: string;
-}
+export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-// ── Assigned Officer ─────────────────────────────────────────
-export interface AssignedOfficer {
-  id: string;
-  name: string;
-  designation: string;
-  email: string;
-  role?: string;
+export interface RegistrationRequest {
+  officerId: string;
+  registrationReference: string;
+  status: RegistrationStatus;
+  procuringEntityType: string;
+  headDesignation: string;
+  organizationName: string;
+  address?: {
+    country: string;
+    streetLine1: string;
+    streetLine2?: string;
+    city: string;
+    province: string;
+    postalCode: string;
+  };
+  personalLandPhone: string;
+  officialEmail: string;
+  businessRegistrationNumber?: string;
+  vatRegistrationNumber?: string;
+  liaisonOfficer?: {
+    title: string;
+    name: string;
+    designation: string;
+    nic: string;
+    mobile: string;
+    email: string;
+  };
+  termsAccepted: boolean;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ── Toast ────────────────────────────────────────────────────

@@ -23,80 +23,37 @@ export default function ConfirmRejectionModal() {
   };
 
   return (
-    <div className="dash-modal-overlay" onClick={closeModal}>
-      <div className="dash-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
-        <div className="dash-modal-header" style={{ borderBottom: "none", paddingBottom: 0, position: "relative" }}>
-          <h2 className="dash-modal-title" style={{ width: "100%", textAlign: "center", fontSize: "1.5rem", marginTop: "1.5rem", fontWeight: 700 }}>
-            Confirm Rejection?
-          </h2>
-          <button 
-            className="dash-modal-close" 
-            onClick={closeModal}
-            style={{ position: "absolute", top: "1rem", right: "1rem" }}
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn" onClick={closeModal}>
+      <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl border-t-8 border-[#953002] transform transition-all animate-scaleIn relative" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">
+          Confirm Rejection?
+        </h3>
+        
+        <p className="text-base text-slate-600 mb-4 leading-relaxed">
+          Enter the reason for rejection
+        </p>
 
-        <div className="dash-modal-body" style={{ padding: "1.5rem 2.5rem" }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: "0.875rem",
-              fontWeight: 600,
-              color: "var(--te-gray-2)",
-              marginBottom: "0.75rem",
-            }}
-          >
-            Enter the reason for rejection
-          </label>
-          <textarea
-            className="dash-textarea"
-            placeholder="Reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            style={{
-              width: "100%",
-              minHeight: "150px",
-              padding: "1rem",
-              borderRadius: "8px",
-              border: "1px solid var(--te-gray-2)",
-              outline: "none",
-              fontSize: "1rem"
-            }}
-          />
-        </div>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Please provide a clear explanation for the rejection..."
+          rows={4}
+          className="w-full p-4 rounded-xl border-2 border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:ring-4 focus:ring-[#953002]/10 focus:border-[#953002] outline-none transition-all resize-none mb-8 font-sans"
+        />
 
-        <div className="dash-modal-footer" style={{ borderTop: "none", padding: "0 2.5rem 2.5rem 2.5rem", display: "flex", gap: "1rem" }}>
+        <div className="flex items-center justify-end gap-4">
           <button
-            className="dash-btn"
-            style={{ 
-              flex: 1, 
-              background: "#111827", 
-              color: "#FFF", 
-              fontWeight: 700, 
-              height: "44px",
-              borderRadius: "6px"
-            }}
+            className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm"
+            onClick={closeModal}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-6 py-3 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md flex items-center gap-2 border border-[#953002]"
             onClick={handleConfirm}
             disabled={!reason.trim()}
           >
             Confirm
-          </button>
-          <button 
-            className="dash-btn"
-            style={{ 
-              flex: 1, 
-              background: "#FFF", 
-              border: "1px solid var(--te-border)", 
-              color: "var(--te-gray-2)", 
-              fontWeight: 700,
-              height: "44px",
-              borderRadius: "6px"
-            }} 
-            onClick={closeModal}
-          >
-            Cancel
           </button>
         </div>
       </div>

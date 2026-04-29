@@ -43,7 +43,7 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
   sortDirection = "desc",
   onSort,
   emptyMessage = "No data available. Data will appear once the backend is connected.",
-  showMenu = true,
+  showMenu = false,
   onMenuClick,
 }: TenderTableProps<T>) {
   const allSelected = data.length > 0 && selectedIds.size === data.length;
@@ -124,9 +124,13 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
             </tr>
           ) : (
             data.map((row) => (
-              <tr key={row.id}>
+              <tr 
+                key={row.id}
+                onClick={() => onRowAction?.(row)}
+                className={onRowAction ? "cursor-pointer transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md hover:bg-slate-50/60" : ""}
+              >
                 {selectable && (
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       className="dash-table-checkbox"

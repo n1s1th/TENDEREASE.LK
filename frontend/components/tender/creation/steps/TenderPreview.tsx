@@ -170,18 +170,32 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
                 Attached Files ({formData.pendingFiles.length})
               </p>
               <ul className="space-y-1">
-                {formData.pendingFiles.map((file, idx) => (
-                  <li
-                    key={`${file.name}-${idx}`}
-                    className="flex items-center gap-2 text-sm text-foreground"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{file.name}</span>
-                    <span className="text-xs text-grey-4">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </li>
-                ))}
+                {formData.pendingFiles.map((file, idx) => {
+                  const isRealFile = file instanceof File;
+                  const fileUrl = isRealFile 
+                    ? typeof window !== 'undefined' ? URL.createObjectURL(file) : '#'
+                    : `https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`;
+
+                  return (
+                    <li
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center gap-2 text-sm text-foreground"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <a 
+                        href={fileUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="truncate text-primary hover:underline font-medium"
+                      >
+                        {file.name}
+                      </a>
+                      <span className="text-xs text-grey-4">
+                        ({(file.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

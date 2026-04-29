@@ -1508,11 +1508,12 @@
   border: 1px solid var(--te-border);
   border-radius: var(--te-radius);
   border-left: 4px solid var(--te-primary);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .dash-kpi-card:hover {
-  box-shadow: var(--te-shadow-sm);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-4px) scale(1.02);
 }
 
 .dash-kpi-card:nth-child(1) { border-left-color: var(--te-primary); }

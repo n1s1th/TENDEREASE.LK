@@ -1,21 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Eye, RotateCcw, ChevronDown } from "lucide-react";
-import SearchInput from "@/components/cao-dashboard/SearchInput";
+import { RefreshCw, Bell, CheckCircle, XCircle, FileText, UserPlus, ChevronDown, Filter, Trophy } from "lucide-react";
 import EmptyState from "@/components/cao-dashboard/EmptyState";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
-import type { DashboardNotification } from "@/lib/types/cao-dashboard.types";
+import type { DashboardNotification, DashboardNotificationType } from "@/lib/types/cao-dashboard.types";
+import { useRouter } from "next/navigation";
 
-function getStatusTag(status: DashboardNotification["status"]) {
-  const map: Record<string, { label: string; className: string }> = {
-    pdf_generated: { label: "PDF Generated", className: "dash-notif-item-tag--generated" },
-    failed: { label: "Failed", className: "dash-notif-item-tag--failed" },
-    sent: { label: "Sent", className: "dash-notif-item-tag--sent" },
-    pending: { label: "Pending", className: "dash-notif-item-tag--generated" },
-  };
-  const tag = map[status] ?? { label: status, className: "dash-notif-item-tag--generated" };
-  return tag;
+const typeIcons: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  tender_submitted: { icon: <FileText size={16} />, color: "#3b82f6", label: "Pending Tenders" },
+  officer_registered: { icon: <UserPlus size={16} />, color: "#8b5cf6", label: "Registration Received" },
+  recommendation_received: { icon: <Bell size={16} />, color: "#10b981", label: "Recommendation Notes Received" },
+  awards_notification: { icon: <Trophy size={16} />, color: "#FFB401", label: "Awards Notifications" },
+  general: { icon: <Bell size={16} />, color: "#6b7280", label: "General" },
+};
+
+const statusBadge: Record<string, { bg: string; text: string; label: string }> = {
+  info: { bg: "#dbeafe", text: "#1e40af", label: "Info" },
+  success: { bg: "#d1fae5", text: "#065f46", label: "Success" },
+  warning: { bg: "#fef3c7", text: "#92400e", label: "Warning" },
+  pending: { bg: "#e0e7ff", text: "#3730a3", label: "Pending" },
+};
+
+function formatTime(isoString: string) {
+  const d = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return d.toLocaleDateString();
 }
 
 export default function NotificationsPage() {
@@ -25,15 +41,36 @@ export default function NotificationsPage() {
   const fetchNotifications = useCAODashboardStore((s) => s.fetchNotifications);
   const fetchNotificationSummary = useCAODashboardStore((s) => s.fetchNotificationSummary);
   const markAllNotificationsRead = useCAODashboardStore((s) => s.markAllNotificationsRead);
+  const markNotificationRead = useCAODashboardStore((s) => s.markNotificationRead);
+  const setRegistrationSearch = useCAODashboardStore((s) => s.setRegistrationSearch);
+  const setRegistrationStatusFilter = useCAODashboardStore((s) => s.setRegistrationStatusFilter);
 
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const router = useRouter();
 
   useEffect(() => {
-    fetchNotifications(search || undefined, typeFilter || undefined, statusFilter || undefined);
+    fetchNotifications();
     fetchNotificationSummary();
-  }, [fetchNotifications, fetchNotificationSummary, search, typeFilter, statusFilter]);
+  }, [fetchNotifications, fetchNotificationSummary]);
+
+  // Filter notifications by type
+  const filtered = typeFilter === "all"
+    ? notifications
+    : notifications.filter(n => n.type === typeFilter);
+
+  const handleNotificationClick = (notif: DashboardNotification) => {
+    markNotificationRead(notif.id);
+    if (notif.targetId) {
+      if (notif.type === "tender_submitted") {
+        const refId = encodeURIComponent(notif.targetId.replace(/\//g, "-"));
+        router.push(`/cao-dashboard/tenders/${refId}/review`);
+      } else if (notif.type === "officer_registered") {
+        setRegistrationSearch(notif.targetId);
+        setRegistrationStatusFilter("ALL");
+        router.push(`/cao-dashboard/registration`);
+      }
+    }
+  };
 
   return (
     <div className="dash-section">
@@ -43,10 +80,7 @@ export default function NotificationsPage() {
         <div className="dash-notif-actions">
           <button
             className="dash-btn dash-btn--outline dash-btn--sm"
-            onClick={() => {
-              fetchNotifications(search || undefined, typeFilter || undefined, statusFilter || undefined);
-              fetchNotificationSummary();
-            }}
+            onClick={() => { fetchNotifications(); fetchNotificationSummary(); }}
           >
             <RefreshCw size={14} /> Refresh
           </button>
@@ -59,38 +93,20 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="dash-notif-filters">
-        <div className="dash-notif-search">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Search notifications..."
-          />
-        </div>
+      {/* Filter */}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+        <Filter size={14} style={{ color: "var(--te-gray-4)" }} />
         <select
           className="dash-select"
-          style={{ minWidth: 160 }}
+          style={{ minWidth: 200 }}
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
         >
-          <option value="">Notification Type</option>
-          <option value="award_letter_generated">Award Letter Generated</option>
-          <option value="regret_email_failed">Regret Email Failed</option>
-          <option value="regret_letters_sent">Regret Letters Sent</option>
-          <option value="vendor_notified">Vendor Notified</option>
-        </select>
-        <select
-          className="dash-select"
-          style={{ minWidth: 120 }}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">Status</option>
-          <option value="pdf_generated">PDF Generated</option>
-          <option value="failed">Failed</option>
-          <option value="sent">Sent</option>
-          <option value="pending">Pending</option>
+          <option value="all">All Notification Types</option>
+          <option value="tender_submitted">Pending Tenders</option>
+          <option value="officer_registered">Registration Received</option>
+          <option value="recommendation_received">Recommendation Notes Received</option>
+          <option value="awards_notification">Awards Notifications</option>
         </select>
       </div>
 
@@ -102,66 +118,64 @@ export default function NotificationsPage() {
               Recent Notifications{" "}
               <ChevronDown size={14} style={{ verticalAlign: "middle" }} />
             </span>
-            <span className="dash-notif-list-links">
-              <button className="dash-btn dash-btn--ghost dash-btn--sm" style={{ fontSize: "0.8rem" }}>
-                All Notifications
-              </button>
+            <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)" }}>
+              {filtered.length} notification{filtered.length !== 1 ? "s" : ""}
             </span>
           </div>
 
           {notificationsLoading ? (
             <div style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>
-              Loading…
+              Loading...
             </div>
-          ) : notifications.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <EmptyState
               title="No notifications"
-              description="Notifications will appear here once the backend is connected."
+              description="Notifications will appear here when you approve, reject tenders or officer registrations."
             />
           ) : (
-            notifications.map((notif) => {
-              const tag = getStatusTag(notif.status);
+            filtered.map((notif) => {
+              const typeInfo = typeIcons[notif.type] || typeIcons.general;
+              const badge = statusBadge[notif.status] || statusBadge.info;
               return (
-                <div key={notif.id} className="dash-notif-item">
-                  <div
-                    className={`dash-notif-dot ${notif.isRead ? "dash-notif-dot--read" : ""}`}
-                  />
-                  <div className="dash-notif-content">
-                    <div className="dash-notif-item-title">
+                <div
+                  key={notif.id}
+                  className="dash-notif-item hover:bg-slate-50/80 hover:shadow-sm transition-all duration-200"
+                  onClick={() => handleNotificationClick(notif)}
+                  style={{ 
+                    cursor: "pointer", 
+                    opacity: 1,
+                    borderLeft: notif.isRead ? "4px solid #e2e8f0" : "4px solid #953002",
+                    paddingLeft: "1rem"
+                  }}
+                >
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: `${typeInfo.color}15`, display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    color: typeInfo.color, flexShrink: 0,
+                  }}>
+                    {typeInfo.icon}
+                  </div>
+                  <div className="dash-notif-content" style={{ flex: 1 }}>
+                    <div className="dash-notif-item-title" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       {notif.title}
-                      <span className={`dash-notif-item-tag ${tag.className}`}>
-                        {tag.label}
+                      <span style={{
+                        background: badge.bg, color: badge.text,
+                        padding: "0.15rem 0.5rem", borderRadius: 10,
+                        fontSize: "0.65rem", fontWeight: 600,
+                      }}>
+                        {badge.label}
                       </span>
-                    </div>
-                    <div className="dash-notif-item-meta">
-                      Tender ID: {notif.tenderId} · {notif.time} · By {notif.performedBy}
+                      {!notif.isRead && (
+                        <span style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: "#3b82f6", display: "inline-block",
+                        }} />
+                      )}
                     </div>
                     <div className="dash-notif-item-desc">{notif.message}</div>
-
-                    {(notif.sentCount != null || notif.failedCount != null) && (
-                      <div className="dash-notif-item-badges">
-                        {notif.sentCount != null && (
-                          <span className="dash-notif-count-badge dash-notif-count-badge--success">
-                            {notif.sentCount} Sent
-                          </span>
-                        )}
-                        {notif.failedCount != null && notif.failedCount > 0 && (
-                          <span className="dash-notif-count-badge dash-notif-count-badge--failed">
-                            {notif.failedCount} Failed
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="dash-notif-item-actions">
-                      <button className="dash-btn dash-btn--outline dash-btn--sm">
-                        <Eye size={12} /> View Details
-                      </button>
-                      {notif.status === "failed" && (
-                        <button className="dash-btn dash-btn--primary dash-btn--sm">
-                          <RotateCcw size={12} /> Retry Send
-                        </button>
-                      )}
+                    <div style={{ fontSize: "0.72rem", color: "var(--te-gray-4)", marginTop: "0.25rem" }}>
+                      {formatTime(notif.time)}
                     </div>
                   </div>
                 </div>
@@ -173,44 +187,26 @@ export default function NotificationsPage() {
         {/* Summary sidebar */}
         <div className="dash-notif-summary">
           <div className="dash-notif-summary-title">Summary</div>
-          <div className="dash-notif-summary-date">
-            {notificationSummary?.date ?? "—"}
-          </div>
 
           <div className="dash-notif-summary-stat">
             <div className="dash-notif-summary-label">Unread</div>
             <div className="dash-notif-summary-value">
-              {notificationSummary?.unread ?? "—"}
+              {notificationSummary?.unread ?? 0}
             </div>
           </div>
 
           <div className="dash-notif-summary-stat">
-            <div className="dash-notif-summary-label">Failed Deliveries</div>
+            <div className="dash-notif-summary-label">Today</div>
             <div className="dash-notif-summary-value">
-              {notificationSummary?.failedDeliveries ?? "—"}
+              {notificationSummary?.totalToday ?? 0}
             </div>
           </div>
 
           <div className="dash-notif-summary-stat">
-            <div className="dash-notif-summary-label">Award Letters Generated</div>
+            <div className="dash-notif-summary-label">Pending Actions</div>
             <div className="dash-notif-summary-value">
-              {notificationSummary?.awardLettersGenerated ?? "—"}
+              {notificationSummary?.pendingActions ?? 0}
             </div>
-          </div>
-
-          <div className="dash-notif-quick-actions">
-            <div className="dash-notif-quick-title">Quick Actions</div>
-            <ul className="dash-notif-quick-list">
-              <li>
-                <strong>Retry All Failed</strong> — Resend all failed notifications
-              </li>
-              <li>
-                <strong>Export Logs</strong> — Download notification history
-              </li>
-              <li>
-                <strong>Settings</strong> — Configure notification preferences
-              </li>
-            </ul>
           </div>
         </div>
       </div>

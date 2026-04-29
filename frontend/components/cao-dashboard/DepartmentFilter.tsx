@@ -7,13 +7,16 @@ interface DepartmentFilterProps {
 }
 
 const defaultDepartments = [
-  "Education",
-  "Agriculture",
-  "Technology",
-  "Health",
-  "Transportation",
-  "Finance",
-  "Ministry of Infrastructure",
+  "Planning Division",
+  "Procurement Unit",
+  "Infrastructure Development",
+  "Supplies Division",
+  "Logistics Division",
+  "Engineering Branch",
+  "Roads Development",
+  "Public Transport Division",
+  "Irrigation & Water Management",
+  "Research & Development",
 ];
 
 export default function DepartmentFilter({

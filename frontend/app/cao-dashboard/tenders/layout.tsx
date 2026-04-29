@@ -4,9 +4,8 @@ import TabBar from "@/components/cao-dashboard/TabBar";
 import DepartmentFilter from "@/components/cao-dashboard/DepartmentFilter";
 import KpiCards from "@/components/cao-dashboard/KpiCards";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-
-import DateRangeFilter from "@/components/cao-dashboard/DateRangeFilter";
 
 export default function TendersLayout({
   children,
@@ -22,12 +21,18 @@ export default function TendersLayout({
     fetchKpiSummary();
   }, [fetchKpiSummary]);
 
+  const pathname = usePathname();
+  const isReviewPage = pathname?.includes('/review');
+
+  if (isReviewPage) {
+    return <div className="dash-section">{children}</div>;
+  }
+
   return (
     <div className="dash-section">
       <TabBar />
       <DepartmentFilter value={department} onChange={setDepartment} />
       {children}
-      <DateRangeFilter />
       <KpiCards data={kpiSummary} />
     </div>
   );

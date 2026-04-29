@@ -1,12 +1,11 @@
 const IS_SERVER = typeof window === "undefined";
 const BASE_URL = IS_SERVER 
-  ? "http://tender-service:8082/api/tenders" 
-  : "http://localhost:8082/api/tenders";
-
-// 🔐 Get Authorization headers (FIXED)
+   ? "http://localhost:8082/api/tenders" 
+   : "http://localhost:8082/api/tenders";
+//  Get Authorization headers (FIXED)
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
-    "Content-Type": "application/json", // ✅ ALWAYS include this
+    "Content-Type": "application/json", 
   };
 
   if (typeof window !== "undefined") {
@@ -29,7 +28,7 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
-// 🔥 Helper function to handle responses
+//  Helper function to handle responses
 async function handleResponse(response: Response) {
   if (!response.ok) {
     const text = await response.text().catch(() => "");
@@ -70,7 +69,7 @@ async function apiFetch(url: string, options: RequestInit = {}) {
     cache: "no-store",
     ...options,
     headers: {
-      ...getAuthHeaders(), // ✅ now always includes Content-Type
+      ...getAuthHeaders(), // now always includes Content-Type
       ...(options.headers || {}),
     },
   });
@@ -78,7 +77,7 @@ async function apiFetch(url: string, options: RequestInit = {}) {
   return handleResponse(res);
 }
 
-// 🔥 GET SINGLE TENDER
+//  GET SINGLE TENDER
 export async function getTenderById(id: string) {
   try {
     const res = await apiFetch(`${BASE_URL}/${id}`);
@@ -89,7 +88,7 @@ export async function getTenderById(id: string) {
   }
 }
 
-// 🔥 GET ALL TENDERS
+//  GET ALL TENDERS
 export async function getTenders(page = 0, size = 10, filters: any = {}) {
   try {
     const params = new URLSearchParams({
@@ -110,17 +109,17 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
   }
 }
 
-// 🔥 DOCUMENTS
+//  DOCUMENTS
 export async function getDocuments(id: string) {
   return apiFetch(`${BASE_URL}/${id}/documents`);
 }
 
-// 🔥 ADDENDA
+//  ADDENDA
 export async function getAddenda(id: string) {
   return apiFetch(`${BASE_URL}/${id}/addenda`);
 }
 
-// 🔥 CLARIFICATIONS
+//  CLARIFICATIONS
 export async function getClarifications(id: string) {
   const res = await apiFetch(`${BASE_URL}/${id}/clarifications`);
   // API returns { value: [...] } — unwrap to plain array
@@ -129,7 +128,7 @@ export async function getClarifications(id: string) {
   return [];
 }
 
-// 🔥 SUBMIT CLARIFICATION (FINAL FIXED)
+//  SUBMIT CLARIFICATION (FINAL FIXED)
 export async function submitClarification(
   tenderId: string,
   question: string
@@ -138,7 +137,7 @@ export async function submitClarification(
     return await apiFetch(`${BASE_URL}/${tenderId}/clarifications`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json", // ✅ explicitly ensure
+        "Content-Type": "application/json", //  explicitly ensure
       },
       body: JSON.stringify({ question }),
     });
@@ -160,12 +159,12 @@ export async function answerClarification(
   });
 }
 
-// 🔥 TIMELINE
+//  TIMELINE
 export async function getTimeline(id: string) {
   return apiFetch(`${BASE_URL}/${id}/timeline`);
 }
 
-// 🔥 CONTACT
+//  CONTACT
 export async function getContact(id: string) {
   return apiFetch(`${BASE_URL}/${id}/contact`);
 }

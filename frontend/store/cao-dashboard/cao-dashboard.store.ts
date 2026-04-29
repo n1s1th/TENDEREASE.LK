@@ -2,14 +2,12 @@
 import { create } from 'zustand';
 import type {
   DashboardTender,
-  Officer,
-  AuditLogEntry,
-  Award,
   DashboardNotification,
   NotificationSummary,
   KpiSummary,
   KpiReportData,
   RegistrationRequest,
+  RegistrationStatus,
   TenderTab,
   ToastMessage,
   ToastType,
@@ -28,18 +26,12 @@ interface CAODashboardState {
   pagination: PaginationState;
   tendersLoading: boolean;
 
-  // Officers
-  officers: Officer[];
-  officersLoading: boolean;
-
-  // Audit Logs
-  auditLogs: AuditLogEntry[];
-  auditLogsLoading: boolean;
-  auditLogFilter: string;
-
-  // Awards
-  awards: Award[];
-  awardsLoading: boolean;
+  // Registration
+  registrations: RegistrationRequest[];
+  registrationsLoading: boolean;
+  registrationStatusFilter: RegistrationStatus | 'ALL';
+  registrationSearch: string;
+  registrationPagination: PaginationState;
 
   // Notifications
   notifications: DashboardNotification[];
@@ -50,10 +42,6 @@ interface CAODashboardState {
   kpiSummary: KpiSummary | null;
   kpiReport: KpiReportData | null;
   kpiLoading: boolean;
-
-  // Registration
-  registrations: RegistrationRequest[];
-  registrationsLoading: boolean;
 
   // UI
   toasts: ToastMessage[];
@@ -68,31 +56,25 @@ interface CAODashboardState {
   setSelectedTender: (tender: DashboardTender | null) => void;
 
   fetchTenders: () => Promise<void>;
-  fetchOfficers: (department?: string, search?: string) => Promise<void>;
-  fetchAuditLogs: () => Promise<void>;
-  setAuditLogFilter: (tenderId: string) => void;
-  fetchAwards: () => Promise<void>;
-  fetchNotifications: (search?: string, type?: string, status?: string) => Promise<void>;
+  fetchKpiSummary: () => Promise<void>;
+  fetchKpiReport: (params: { startDate?: string; endDate?: string }) => Promise<void>;
+
+  // Registration
+  setRegistrationStatusFilter: (status: RegistrationStatus | 'ALL') => void;
+  setRegistrationSearch: (q: string) => void;
+  fetchRegistrations: () => Promise<void>;
+  acceptRegistration: (id: string) => Promise<void>;
+  rejectRegistration: (id: string, reason: string) => Promise<void>;
+
+  // Notifications
+  fetchNotifications: () => Promise<void>;
   fetchNotificationSummary: () => Promise<void>;
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
-  fetchKpiSummary: () => Promise<void>;
-  fetchKpiReport: (params: {
-    startDate?: string;
-    endDate?: string;
-    department?: string;
-    category?: string;
-  }) => Promise<void>;
-  fetchRegistrations: (department?: string, search?: string) => Promise<void>;
-  acceptRegistration: (id: string) => Promise<void>;
-  deleteRegistration: (id: string) => Promise<void>;
 
+  // Tender Actions
   approveTender: (id: string) => Promise<void>;
   rejectTender: (id: string, reason: string) => Promise<void>;
-  assignOfficers: (
-    tenderId: string,
-    assignments: { officerId: string; role: string }[],
-  ) => Promise<void>;
 
   // UI Actions
   showToast: (type: ToastType, message: string, actionLabel?: string) => void;
@@ -113,15 +95,11 @@ export const useCAODashboardStore = create<CAODashboardState>(
     pagination: { currentPage: 1, totalPages: 1, pageSize: 10, totalItems: 0 },
     tendersLoading: false,
 
-    officers: [],
-    officersLoading: false,
-
-    auditLogs: [],
-    auditLogsLoading: false,
-    auditLogFilter: '',
-
-    awards: [],
-    awardsLoading: false,
+    registrations: [],
+    registrationsLoading: false,
+    registrationStatusFilter: 'PENDING',
+    registrationSearch: '',
+    registrationPagination: { currentPage: 1, totalPages: 1, pageSize: 20, totalItems: 0 },
 
     notifications: [],
     notificationSummary: null,
@@ -130,9 +108,6 @@ export const useCAODashboardStore = create<CAODashboardState>(
     kpiSummary: null,
     kpiReport: null,
     kpiLoading: false,
-
-    registrations: [],
-    registrationsLoading: false,
 
     toasts: [],
     activeModal: null,
@@ -161,69 +136,91 @@ export const useCAODashboardStore = create<CAODashboardState>(
         );
         set({ tenders: result.data, pagination: result.pagination });
       } catch {
-        // API not connected yet — will silently fail
         set({ tenders: [] });
       } finally {
         set({ tendersLoading: false });
       }
     },
 
-    // ── Fetch Officers ─────────────────────────────────────────
-    fetchOfficers: async (department, search) => {
-      set({ officersLoading: true });
+    // ── Registration ───────────────────────────────────────────
+    setRegistrationStatusFilter: (status) => set({ registrationStatusFilter: status }),
+    setRegistrationSearch: (q) => set({ registrationSearch: q }),
+
+    fetchRegistrations: async () => {
+      const { registrationStatusFilter, registrationPagination } = get();
+      set({ registrationsLoading: true });
       try {
-        const data = await api.fetchOfficers(department, search);
-        set({ officers: data });
+        if (registrationStatusFilter === 'ALL') {
+          const [pending, approved, rejected] = await Promise.all([
+            api.fetchRegistrations('PENDING', 1, 100),
+            api.fetchRegistrations('APPROVED', 1, 100),
+            api.fetchRegistrations('REJECTED', 1, 100),
+          ]);
+          const allData = [...pending.data, ...approved.data, ...rejected.data];
+          set({ 
+            registrations: allData, 
+            registrationPagination: {
+              currentPage: 1,
+              totalPages: 1,
+              pageSize: 100,
+              totalItems: allData.length
+            } 
+          });
+        } else {
+          const result = await api.fetchRegistrations(
+            registrationStatusFilter as any,
+            registrationPagination.currentPage,
+            registrationPagination.pageSize,
+          );
+          set({ registrations: result.data, registrationPagination: result.pagination });
+        }
       } catch {
-        set({ officers: [] });
+        set({ registrations: [] });
       } finally {
-        set({ officersLoading: false });
+        set({ registrationsLoading: false });
       }
     },
 
-    // ── Fetch Audit Logs ───────────────────────────────────────
-    fetchAuditLogs: async () => {
-      const { auditLogFilter, pagination } = get();
-      set({ auditLogsLoading: true });
+    acceptRegistration: async (id) => {
       try {
-        const result = await api.fetchAuditLogs(
-          auditLogFilter || undefined,
-          pagination.currentPage,
-          pagination.pageSize,
-        );
-        set({ auditLogs: result.data, pagination: result.pagination });
+        await api.acceptRegistration(id);
+        get().showToast('success', 'Registration approved successfully. Approval email sent.');
+        // Add notification
+        api.addNotification({
+          title: 'Registration Approved',
+          message: `Officer registration has been approved.`,
+          type: 'registration_approved',
+          status: 'success',
+        });
+        get().fetchRegistrations();
+        get().fetchKpiSummary();
       } catch {
-        set({ auditLogs: [] });
-      } finally {
-        set({ auditLogsLoading: false });
+        get().showToast('error', 'Failed to approve registration.');
       }
     },
 
-    setAuditLogFilter: (tenderId) => set({ auditLogFilter: tenderId }),
-
-    // ── Fetch Awards ───────────────────────────────────────────
-    fetchAwards: async () => {
-      const { department, pagination } = get();
-      set({ awardsLoading: true });
+    rejectRegistration: async (id, reason) => {
       try {
-        const result = await api.fetchRecentAwards(
-          department || undefined,
-          pagination.currentPage,
-          pagination.pageSize,
-        );
-        set({ awards: result.data, pagination: result.pagination });
+        await api.rejectRegistration(id, reason);
+        get().showToast('success', 'Registration rejected. Rejection email sent.');
+        api.addNotification({
+          title: 'Registration Rejected',
+          message: `Officer registration rejected. Reason: ${reason}`,
+          type: 'registration_rejected',
+          status: 'warning',
+        });
+        get().closeModal();
+        get().fetchRegistrations();
       } catch {
-        set({ awards: [] });
-      } finally {
-        set({ awardsLoading: false });
+        get().showToast('error', 'Failed to reject registration.');
       }
     },
 
     // ── Notifications ──────────────────────────────────────────
-    fetchNotifications: async (search, type, status) => {
+    fetchNotifications: async () => {
       set({ notificationsLoading: true });
       try {
-        const data = await api.fetchDashboardNotifications(search, type, status);
+        const data = await api.fetchDashboardNotifications();
         set({ notifications: data });
       } catch {
         set({ notifications: [] });
@@ -290,50 +287,20 @@ export const useCAODashboardStore = create<CAODashboardState>(
       }
     },
 
-    // ── Registration ───────────────────────────────────────────
-    fetchRegistrations: async (department, search) => {
-      set({ registrationsLoading: true });
-      try {
-        const data = await api.fetchRegistrations(department, search);
-        set({ registrations: data });
-      } catch {
-        set({ registrations: [] });
-      } finally {
-        set({ registrationsLoading: false });
-      }
-    },
-
-    acceptRegistration: async (id) => {
-      try {
-        await api.acceptRegistration(id);
-        set((state) => ({
-          registrations: state.registrations.filter((r) => r.id !== id),
-        }));
-        get().showToast('success', 'Registration accepted successfully.');
-      } catch {
-        get().showToast('error', 'Failed to accept registration.');
-      }
-    },
-
-    deleteRegistration: async (id) => {
-      try {
-        await api.deleteRegistration(id);
-        set((state) => ({
-          registrations: state.registrations.filter((r) => r.id !== id),
-        }));
-        get().showToast('success', 'Registration deleted.');
-      } catch {
-        get().showToast('error', 'Failed to delete registration.');
-      }
-    },
-
     // ── Tender Actions ─────────────────────────────────────────
     approveTender: async (id) => {
       try {
         await api.approveTender(id);
-        get().showToast('success', 'Tender Approved Successfully.');
+        get().showToast('success', 'Tender approved and published successfully.');
+        api.addNotification({
+          title: 'Tender Approved',
+          message: `Tender has been approved and published to the portal.`,
+          type: 'tender_approved',
+          status: 'success',
+        });
         get().closeModal();
         get().fetchTenders();
+        get().fetchKpiSummary();
       } catch {
         get().showToast('error', 'Failed to approve tender.');
       }
@@ -342,24 +309,18 @@ export const useCAODashboardStore = create<CAODashboardState>(
     rejectTender: async (id, reason) => {
       try {
         await api.rejectTender(id, reason);
-        get().showToast('success', 'Tender Rejected Successfully.');
+        get().showToast('success', 'Tender rejected successfully.');
+        api.addNotification({
+          title: 'Tender Rejected',
+          message: `Tender has been rejected. Reason: ${reason}`,
+          type: 'tender_rejected',
+          status: 'warning',
+        });
         get().closeModal();
         get().fetchTenders();
+        get().fetchKpiSummary();
       } catch {
         get().showToast('error', 'Failed to reject tender.');
-      }
-    },
-
-    assignOfficers: async (tenderId, assignments) => {
-      try {
-        await api.assignOfficers(tenderId, assignments);
-        get().showToast(
-          'success',
-          `Officer Assigned Successfully.\nTender ID ${tenderId}.`,
-        );
-        get().closeModal();
-      } catch {
-        get().showToast('error', 'Failed to assign officers.');
       }
     },
 
@@ -369,7 +330,6 @@ export const useCAODashboardStore = create<CAODashboardState>(
       set((state) => ({
         toasts: [...state.toasts, { id, type, message, actionLabel }],
       }));
-      // auto-dismiss after 5s
       setTimeout(() => {
         set((state) => ({
           toasts: state.toasts.filter((t) => t.id !== id),
