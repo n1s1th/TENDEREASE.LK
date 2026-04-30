@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tender Review</title>
+    <style>
+        body { font-family: 'Helvetica', sans-serif; margin: 40px; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #0056b3; margin-bottom: 30px; padding-bottom: 10px; }
+        .header h1 { color: #0056b3; margin: 0; }
+        .section { margin-bottom: 25px; }
+        .section-title { font-weight: bold; font-size: 1.2em; color: #0056b3; border-bottom: 1px solid #ccc; margin-bottom: 10px; padding-bottom: 5px; }
+        .row { display: flex; margin-bottom: 8px; }
+        .label { font-weight: bold; width: 200px; display: inline-block; }
+        .value { display: inline-block; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        .footer { margin-top: 50px; font-size: 0.8em; text-align: center; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Tender Review Document</h1>
+        <p th:text="${tender.tenderNumber} + ' - ' + ${tender.title}">Tender Number - Title</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">General Information</div>
+        <div class="row"><span class="label">Tender Number:</span> <span class="value" th:text="${tender.tenderNumber}"></span></div>
+        <div class="row"><span class="label">Title:</span> <span class="value" th:text="${tender.title}"></span></div>
+        <div class="row"><span class="label">Procurement Type:</span> <span class="value" th:text="${tender.procurementType}"></span></div>
+        <div class="row"><span class="label">Bidding Method:</span> <span class="value" th:text="${tender.biddingMethod}"></span></div>
+        <div class="row"><span class="label">Tender Type:</span> <span class="value" th:text="${tender.tenderType}"></span></div>
+        <div class="row"><span class="label">Estimated Budget:</span> <span class="value" th:text="${tender.estimatedBudget} + ' LKR'"></span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Organization Details</div>
+        <div class="row"><span class="label">Ministry:</span> <span class="value" th:text="${tender.ministryName}"></span></div>
+        <div class="row"><span class="label">Department:</span> <span class="value" th:text="${tender.departmentName}"></span></div>
+        <div class="row"><span class="label">Funding Source:</span> <span class="value" th:text="${tender.fundingSourceName}"></span></div>
+    </div>
+
+    <div class="section" th:if="${tender.schedule != null}">
+        <div class="section-title">Schedule</div>
+        <div class="row"><span class="label">Publication Date:</span> <span class="value" th:text="${tender.schedule.publicationDate}"></span></div>
+        <div class="row"><span class="label">Doc Issue Start:</span> <span class="value" th:text="${tender.schedule.documentIssueStart}"></span></div>
+        <div class="row"><span class="label">Doc Issue End:</span> <span class="value" th:text="${tender.schedule.documentIssueEnd}"></span></div>
+        <div class="row"><span class="label">Pre-bid Meeting:</span> <span class="value" th:text="${tender.schedule.preBidMeetingDate}"></span></div>
+        <div class="row"><span class="label">Submission Deadline:</span> <span class="value" th:text="${tender.schedule.bidSubmissionDeadline}"></span></div>
+        <div class="row"><span class="label">Bid Opening:</span> <span class="value" th:text="${tender.schedule.bidOpeningDate}"></span></div>
+    </div>
+
+    <div class="section" th:if="${tender.documents != null and !tender.documents.isEmpty()}">
+        <div class="section-title">Attached Documents</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Document Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="doc : ${tender.documents}">
+                    <td th:text="${doc.fileName}"></td>
+                    <td th:text="${doc.documentType}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>This is an automatically generated document for Tender Review.</p>
+        <p th:text="'Generated on: ' + ${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd HH:mm:ss')}"></p>
+    </div>
+</body>
+</html>

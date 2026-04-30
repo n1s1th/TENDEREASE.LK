@@ -1,0 +1,264 @@
+tenderease-backend/
+├── src/main/java/lk/tenderease/
+│   ├── TenderEaseApplication.java
+│   │
+│   ├── config/
+│   │   ├── SecurityConfig.java
+│   │   ├── JwtConfig.java
+│   │   ├── RedisConfig.java
+│   │   ├── RabbitMQConfig.java
+│   │   ├── SwaggerConfig.java
+│   │   └── S3Config.java
+│   │
+│   ├── common/
+│   │   ├── audit/
+│   │   │   ├── Auditable.java
+│   │   │   ├── AuditLog.java
+│   │   │   └── AuditService.java
+│   │   ├── dto/
+│   │   │   ├── ApiResponse.java
+│   │   │   ├── PageResponse.java
+│   │   │   └── ErrorResponse.java
+│   │   ├── enums/
+│   │   │   ├── UserRole.java
+│   │   │   ├── TenderStatus.java
+│   │   │   ├── BidStatus.java
+│   │   │   └── EvaluationStatus.java
+│   │   ├── exceptions/
+│   │   │   ├── GlobalExceptionHandler.java
+│   │   │   ├── ResourceNotFoundException.java
+│   │   │   ├── UnauthorizedException.java
+│   │   │   └── BusinessException.java
+│   │   └── utils/
+│   │       ├── DateUtils.java
+│   │       └── ValidationUtils.java
+│   │
+│   ├── user/
+│   │   ├── controller/UserController.java
+│   │   ├── service/
+│   │   │   ├── UserService.java
+│   │   │   └── UserServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── UserRepository.java
+│   │   │   └── RoleRepository.java
+│   │   ├── entity/
+│   │   │   ├── User.java
+│   │   │   ├── Role.java
+│   │   │   └── Permission.java
+│   │   └── dto/
+│   │       ├── UserDTO.java
+│   │       ├── CreateUserRequest.java
+│   │       └── UpdateUserRequest.java
+│   │
+│   ├── auth/
+│   │   ├── controller/AuthController.java
+│   │   ├── service/
+│   │   │   ├── AuthService.java
+│   │   │   └── JwtService.java
+│   │   ├── dto/
+│   │   │   ├── LoginRequest.java
+│   │   │   ├── LoginResponse.java
+│   │   │   ├── RegisterRequest.java
+│   │   │   └── RefreshTokenRequest.java
+│   │   └── filter/
+│   │       └── JwtAuthenticationFilter.java
+│   │
+│   ├── tender/
+│   │   ├── controller/TenderController.java
+│   │   ├── service/
+│   │   │   ├── TenderService.java
+│   │   │   └── TenderServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── TenderRepository.java
+│   │   │   └── TenderDocumentRepository.java
+│   │   ├── entity/
+│   │   │   ├── Tender.java
+│   │   │   ├── TenderDocument.java
+│   │   │   └── TenderAmendment.java
+│   │   └── dto/
+│   │       ├── TenderDTO.java
+│   │       ├── CreateTenderRequest.java
+│   │       ├── UpdateTenderRequest.java
+│   │       └── TenderSearchCriteria.java
+│   │
+│   ├── bid/                    # Renamed from vendor
+│   │   ├── controller/BidController.java
+│   │   ├── service/
+│   │   │   ├── BidService.java
+│   │   │   └── BidServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── BidRepository.java
+│   │   │   └── BidDocumentRepository.java
+│   │   ├── entity/
+│   │   │   ├── Bid.java
+│   │   │   ├── BidDocument.java
+│   │   │   ├── BidSecurity.java
+│   │   │   └── BidOpening.java
+│   │   └── dto/
+│   │       ├── BidDTO.java
+│   │       ├── SubmitBidRequest.java
+│   │       └── BidSummaryDTO.java
+│   │
+│   ├── vendor/                 # Vendor/Contractor profiles
+│   │   ├── controller/VendorController.java
+│   │   ├── service/
+│   │   │   ├── VendorService.java
+│   │   │   └── VendorServiceImpl.java
+│   │   ├── repository/VendorRepository.java
+│   │   ├── entity/
+│   │   │   ├── Vendor.java
+│   │   │   ├── VendorDocument.java
+│   │   │   └── VendorExperience.java
+│   │   └── dto/
+│   │       ├── VendorDTO.java
+│   │       └── VendorRegistrationRequest.java
+│   │
+│   ├── evaluation/
+│   │   ├── controller/EvaluationController.java
+│   │   ├── service/
+│   │   │   ├── EvaluationService.java
+│   │   │   └── EvaluationServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── EvaluationRepository.java
+│   │   │   └── EvaluationScoreRepository.java
+│   │   ├── entity/
+│   │   │   ├── Evaluation.java
+│   │   │   ├── EvaluationCommittee.java
+│   │   │   ├── EvaluationCriteria.java
+│   │   │   └── EvaluationScore.java
+│   │   └── dto/
+│   │       ├── EvaluationDTO.java
+│   │       ├── SubmitScoreRequest.java
+│   │       └── EvaluationReportDTO.java
+│   │
+│   ├── workflow/
+│   │   ├── controller/WorkflowController.java
+│   │   ├── service/
+│   │   │   ├── WorkflowService.java
+│   │   │   └── WorkflowServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── WorkflowRepository.java
+│   │   │   └── ApprovalRepository.java
+│   │   ├── entity/
+│   │   │   ├── Workflow.java
+│   │   │   ├── WorkflowStep.java
+│   │   │   └── Approval.java
+│   │   └── dto/
+│   │       ├── WorkflowDTO.java
+│   │       ├── ApproveRequest.java
+│   │       └── RejectRequest.java
+│   │
+│   ├── contract/
+│   │   ├── controller/ContractController.java
+│   │   ├── service/
+│   │   │   ├── ContractService.java
+│   │   │   └── ContractServiceImpl.java
+│   │   ├── repository/
+│   │   │   ├── ContractRepository.java
+│   │   │   └── MilestoneRepository.java
+│   │   ├── entity/
+│   │   │   ├── Contract.java
+│   │   │   ├── ContractAmendment.java
+│   │   │   ├── Milestone.java
+│   │   │   └── PerformanceBond.java
+│   │   └── dto/
+│   │       ├── ContractDTO.java
+│   │       └── CreateContractRequest.java
+│   │
+│   ├── payment/
+│   │   ├── controller/PaymentController.java
+│   │   ├── service/
+│   │   │   ├── PaymentService.java
+│   │   │   └── PaymentServiceImpl.java
+│   │   ├── repository/PaymentRepository.java
+│   │   ├── entity/
+│   │   │   ├── Payment.java
+│   │   │   ├── BidSecurity.java
+│   │   │   └── PerformanceBond.java
+│   │   └── dto/
+│   │       ├── PaymentDTO.java
+│   │       └── ProcessPaymentRequest.java
+│   │
+│   ├── clarification/
+│   │   ├── controller/ClarificationController.java
+│   │   ├── service/
+│   │   │   ├── ClarificationService.java
+│   │   │   └── ClarificationServiceImpl.java
+│   │   ├── repository/ClarificationRepository.java
+│   │   ├── entity/
+│   │   │   ├── Clarification.java
+│   │   │   └── PreBidMeeting.java
+│   │   └── dto/
+│   │       ├── ClarificationDTO.java
+│   │       ├── AskQuestionRequest.java
+│   │       └── AnswerQuestionRequest.java
+│   │
+│   ├── appeal/
+│   │   ├── controller/AppealController.java
+│   │   ├── service/
+│   │   │   ├── AppealService.java
+│   │   │   └── AppealServiceImpl.java
+│   │   ├── repository/AppealRepository.java
+│   │   ├── entity/
+│   │   │   ├── Appeal.java
+│   │   │   └── Investigation.java
+│   │   └── dto/
+│   │       ├── AppealDTO.java
+│   │       └── SubmitAppealRequest.java
+│   │
+│   ├── notification/
+│   │   ├── service/
+│   │   │   ├── EmailService.java
+│   │   │   ├── SmsService.java
+│   │   │   └── NotificationService.java
+│   │   ├── event/
+│   │   │   ├── TenderPublishedEvent.java
+│   │   │   ├── BidSubmittedEvent.java
+│   │   │   └── EventPublisher.java
+│   │   ├── listener/
+│   │   │   └── NotificationEventListener.java
+│   │   └── dto/
+│   │       ├── EmailDTO.java
+│   │       └── SmsDTO.java
+│   │
+│   ├── document/
+│   │   ├── controller/DocumentController.java
+│   │   ├── service/
+│   │   │   ├── DocumentService.java
+│   │   │   ├── S3Service.java
+│   │   │   └── DocumentServiceImpl.java
+│   │   ├── repository/DocumentRepository.java
+│   │   ├── entity/
+│   │   │   ├── Document.java
+│   │   │   └── DocumentVersion.java
+│   │   └── dto/
+│   │       └── DocumentDTO.java
+│   │
+│   └── reporting/
+│       ├── controller/ReportController.java
+│       ├── service/
+│       │   ├── ReportService.java
+│       │   └── ReportServiceImpl.java
+│       └── dto/
+│           ├── TenderReportDTO.java
+│           └── EvaluationReportDTO.java
+│
+├── src/main/resources/
+│   ├── application.yml
+│   ├── application-dev.yml
+│   ├── application-prod.yml
+│   └── db/migration/
+│       ├── V1__create_users_table.sql
+│       ├── V2__create_tenders_table.sql
+│       ├── V3__create_bids_table.sql
+│       └── ...
+│
+├── src/test/java/lk/tenderease/
+│   ├── user/
+│   ├── tender/
+│   ├── bid/
+│   └── ...
+│
+├── pom.xml
+├── docker-compose.yml
+└── README.md
