@@ -7,9 +7,10 @@ interface SchedulePanelProps {
 }
 
 export default function SchedulePanel({ scheduledTime }: SchedulePanelProps) {
-  const [currentTime, setCurrentTime] = React.useState(new Date());
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
+    setCurrentTime(new Date());
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -20,8 +21,8 @@ export default function SchedulePanel({ scheduledTime }: SchedulePanelProps) {
   const timeStr = date ? date.toTimeString().split(' ')[0] : "--:--:--";
   const dateStr = date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "-- --- ----";
 
-  const curTimeStr = currentTime.toTimeString().split(' ')[0];
-  const curDateStr = currentTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const curTimeStr = currentTime ? currentTime.toTimeString().split(' ')[0] : "--:--:--";
+  const curDateStr = currentTime ? currentTime.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "-- --- ----";
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full">

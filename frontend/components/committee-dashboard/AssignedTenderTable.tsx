@@ -1,200 +1,242 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useEvaluationStore, selectAssignedTenders, selectEvaluationLoading } from "@/store/evaluation/evaluation.store";
-import { Search, ChevronDown, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { 
+  Search, 
+  Filter, 
+  ChevronLeft, 
+  ChevronRight, 
+  Eye, 
+  MoreVertical,
+  Calendar,
+  Edit2,
+  Download,
+  Link,
+  Trash2
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import EvaluationModal from "./EvaluationModal";
-import SubmissionsModal from "./SubmissionsModal";
-import { AssignedTender } from "@/lib/types/evaluation.types";
 
-const ITEMS_PER_PAGE = 5;
+import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+
+type StatusFilter = "ALL" | "PENDING_OPENING" | "OPEN" | "EVALUATION" | "COMPLETED";
+
+interface Tender {
+  id: string;
+  tenderNo: string;
+  title: string;
+  category: string;
+  status: string;
+  closingDate: string;
+  role: string;
+}
 
 export default function AssignedTenderTable() {
-  const fetchAssignedTenders = useEvaluationStore((s) => s.fetchAssignedTenders);
-  const tenders = useEvaluationStore(selectAssignedTenders);
-  const isLoading = useEvaluationStore(selectEvaluationLoading);
   const router = useRouter();
-
+  const { assignedTenders, fetchAssignedTenders, isLoading } = useEvaluationStore();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Tenders");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Modal state
-  const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
-  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
-  const [selectedTender, setSelectedTender] = useState<AssignedTender | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     fetchAssignedTenders();
   }, [fetchAssignedTenders]);
 
-  // Filtering Logic
-  const filteredTenders = useMemo(() => {
-    return tenders.filter((tender) => {
-      const matchesSearch = 
-        tender.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.title.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = 
-        statusFilter === "All Tenders" || 
-        tender.status.toUpperCase() === statusFilter.replace(" Tenders", "").toUpperCase();
+  // Handle click outside to close menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
+  const filteredTenders = useMemo(() => {
+    return (assignedTenders as unknown as Tender[]).filter(tender => {
+      const matchesSearch = 
+        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tender.tenderNo.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "ALL" || tender.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [tenders, searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, assignedTenders]);
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredTenders.length / ITEMS_PER_PAGE);
-  const paginatedTenders = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredTenders.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredTenders, currentPage]);
+  const totalPages = Math.ceil(filteredTenders.length / itemsPerPage) || 1;
+  const paginatedTenders = filteredTenders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toUpperCase()) {
+  const getStatusStyle = (status: string) => {
+    switch (status) {
       case "OPEN":
-        return <span className="px-3 py-1 text-xs font-semibold text-blue-600 bg-white border border-blue-200 rounded-md">Open</span>;
-      case "AWARDED":
-        return <span className="px-3 py-1 text-xs font-semibold text-green-600 bg-white border border-green-200 rounded-md">Awarded</span>;
+        return "bg-green-50 text-green-700 border-green-100";
       case "PENDING_OPENING":
-        return <span className="px-3 py-1 text-xs font-semibold text-purple-600 bg-white border border-purple-200 rounded-md">Pending Opening</span>;
+        return "bg-orange-50 text-[#9A3B12] border-orange-100";
+      case "EVALUATION":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      case "COMPLETED":
+        return "bg-gray-50 text-gray-700 border-gray-100";
       default:
-        return <span className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-md border border-gray-200">{status}</span>;
+        return "bg-gray-50 text-gray-600 border-gray-100";
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    return <span className="text-sm text-gray-600 font-medium uppercase">{role}</span>;
-  };
-
-  const getBidsBadge = (count: number) => {
-    return <span className="px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-50 border border-yellow-200 rounded">{count}</span>;
+  const formatStatus = (status: string) => {
+    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm mt-8 p-6">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-xl font-black uppercase tracking-tight text-gray-900">ASSIGNED TENDER STATUS</h2>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mt-1">WORKSPACE REAL-TIME DATA</p>
-        </div>
-        <div className="bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-xs font-bold tracking-wider">
-          SHOWING {filteredTenders.length} TOTAL MATCHES
-        </div>
-      </div>
-
-      <div className="flex justify-between gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      {/* Header Actions */}
+      <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search by tender reference or title..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-full text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#9A3B12]/20"
+            placeholder="Search by tender ID or title..."
+            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="relative w-64 z-20">
+        
+        <div className="flex items-center gap-3 relative">
           <button 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="w-full bg-white border border-gray-200 text-gray-900 font-bold text-sm rounded-xl px-5 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-[#9A3B12]/20 flex items-center justify-between shadow-sm"
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl border transition-all font-bold text-xs uppercase tracking-widest ${
+              isFilterOpen 
+                ? "bg-[#953002]/5 text-[#953002] border-[#953002]/20" 
+                : "border-gray-200 text-gray-600 hover:border-[#953002]/20 hover:bg-gray-50"
+            }`}
           >
-            <span>{statusFilter}</span>
-            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+            <Filter className="w-4 h-4" />
+            <span>{statusFilter === "ALL" ? "All Status" : formatStatus(statusFilter)}</span>
           </button>
 
           {isFilterOpen && (
-            <div className="absolute top-full left-0 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="py-1">
-                {["All Tenders", "Open Tenders", "Awarded Tenders", "Pending Opening Tenders"].map((option) => (
-                  <button
-                    key={option}
-                    className={`w-full text-left px-5 py-3 text-sm font-bold transition-colors ${
-                      statusFilter === option 
-                        ? 'bg-[#9A3B12] text-white' 
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                    onClick={() => {
-                      setStatusFilter(option);
-                      setIsFilterOpen(false);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200">
+              {["ALL", "PENDING_OPENING", "OPEN", "EVALUATION", "COMPLETED"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setStatusFilter(status as StatusFilter);
+                    setIsFilterOpen(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-between ${
+                    statusFilter === status 
+                      ? "bg-[#953002]/5 text-[#953002]" 
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  {status === "ALL" ? "All Status" : formatStatus(status)}
+                  {statusFilter === status && <div className="w-1.5 h-1.5 rounded-full bg-[#953002]" />}
+                </button>
+              ))}
             </div>
           )}
         </div>
       </div>
 
-      <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left border-collapse">
+      {/* Table - Removed overflow-x-auto to prevent clipping of absolute menu */}
+      <div className="relative min-w-[1000px]">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-4 rounded-tl-lg">REFERENCE</th>
-              <th className="py-4 px-4">TENDER TITLE</th>
-              <th className="py-4 px-4 text-center">STATUS</th>
-              <th className="py-4 px-4 text-center">OPENING DATE</th>
-              <th className="py-4 px-4 text-center">ROLE</th>
-              <th className="py-4 px-4 text-center">BIDS</th>
-              <th className="py-4 px-4 text-center rounded-tr-lg">ACTION</th>
+            <tr className="bg-[#F8FAFC]">
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Tender ID</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[30%]">Tender Title</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Category</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Status</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Opening Date</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Role</th>
+              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[5%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="text-center py-20 text-gray-500 font-bold italic">Loading latest procurement data...</td>
+                <td colSpan={7} className="px-6 py-20 text-center">
+                  <div className="w-8 h-8 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                </td>
               </tr>
             ) : paginatedTenders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-20 text-slate-500 font-bold italic tracking-wide">No tenders found matching your criteria...</td>
+                <td colSpan={7} className="text-center py-20 text-slate-500 font-bold italic tracking-wide">No tenders found matching your criteria...</td>
               </tr>
             ) : paginatedTenders.map((tender, idx) => (
-              <tr key={tender.id} className={`border-b border-gray-100 hover:bg-gray-50/80 transition-all ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F2F4F7]'}`}>
-                <td className="py-4 px-4">
-                  <div className="font-bold text-sm text-gray-900">{tender.reference}</div>
-                  <div className="text-[10px] text-gray-400 mt-1 uppercase font-semibold tracking-wider">REF ID</div>
+              <tr key={tender.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all group">
+                <td className="px-6 py-6 text-center">
+                  <span className="font-mono text-[12px] font-black text-gray-500 bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200 whitespace-nowrap">
+                    {tender.tenderNo}
+                  </span>
                 </td>
-                <td className="py-4 px-4">
-                  <div className="font-bold text-sm text-gray-900">{tender.title}</div>
+                <td className="px-6 py-6 text-center">
+                  <span className="text-[14px] font-bold text-gray-900 group-hover:text-[#9A3B12] transition-colors">{tender.title}</span>
                 </td>
-                <td className="py-4 px-4 text-center">{getStatusBadge(tender.status)}</td>
-                <td className="py-4 px-4 text-center text-sm text-gray-600 font-medium">{tender.openingDate}</td>
-                <td className="py-4 px-4 text-center">{getRoleBadge(tender.role)}</td>
-                <td className="py-4 px-4 text-center">{getBidsBadge(tender.bidsCount)}</td>
-                <td className="py-4 px-4 text-center">
-                  <div className="flex items-center justify-center">
+                <td className="px-6 py-6 text-center font-bold text-[13px] text-gray-500">{tender.category}</td>
+                <td className="px-6 py-6 text-center">
+                  <span className={`inline-flex px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border ${getStatusStyle(tender.status)} whitespace-nowrap`}>
+                    {formatStatus(tender.status)}
+                  </span>
+                </td>
+                <td className="px-6 py-6 text-center">
+                  <div className="flex items-center justify-center gap-2.5 text-gray-600 whitespace-nowrap">
+                    <Calendar className="w-4 h-4 text-[#953002]" />
+                    <span className="text-[14px] font-bold">{tender.closingDate}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-6 text-center text-xs font-black text-gray-400 uppercase tracking-tight whitespace-nowrap">{tender.role}</td>
+                <td className="px-6 py-6 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
                     <button 
-                      className="bg-[#9A3B12] text-white text-xs font-bold tracking-wider px-5 py-2 rounded-full shadow hover:bg-[#7a2f0e] transition-colors whitespace-nowrap min-w-[140px] text-center"
-                      onClick={() => {
-                        if (tender.status.toUpperCase() === "PENDING_OPENING") {
-                          router.push(`/tenders/${tender.id}/bid-opening`);
-                        } else {
-                          setSelectedTender(tender);
-                          if (tender.status.toUpperCase() === "AWARDED") {
-                            setIsEvalModalOpen(true);
-                          } else {
-                            setIsSubModalOpen(true);
-                          }
-                        }
-                      }}
+                      onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all"
+                      title="View Details"
                     >
-                      {tender.status.toUpperCase() === "AWARDED" ? "Evaluate Bids" : 
-                       tender.status.toUpperCase() === "PENDING_OPENING" ? "Open Bids" : "View Submissions"}
+                      <Eye className="w-5 h-5" />
                     </button>
+                    
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === tender.id ? null : tender.id);
+                        }}
+                        className={`p-2 rounded-xl transition-all ${
+                          openMenuId === tender.id 
+                            ? "bg-orange-100 text-[#9A3B12] ring-2 ring-[#9A3B12]/20" 
+                            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                        }`}
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+
+                      {openMenuId === tender.id && (
+                        <div 
+                          ref={menuRef}
+                          className="absolute right-0 mt-3 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200"
+                          style={{ top: '100%' }}
+                        >
+                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
+                            <Edit2 className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
+                            <Download className="w-4 h-4" />
+                            Specs
+                          </button>
+                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
+                            <Link className="w-4 h-4" />
+                            Copy ID
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -203,50 +245,18 @@ export default function AssignedTenderTable() {
         </table>
       </div>
 
-      <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-100">
-        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-          SHOWING {paginatedTenders.length} OF {filteredTenders.length} ENTRIES
+      {/* Pagination */}
+      {filteredTenders.length > 0 && (
+        <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+            Showing <span className="text-gray-900">{paginatedTenders.length}</span> of <span className="text-gray-900">{filteredTenders.length}</span> tenders
+          </p>
+          <div className="flex items-center gap-2">
+            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronLeft className="w-5 h-5" /></button>
+            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronRight className="w-5 h-5" /></button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button 
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 transition-all ${currentPage === 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:bg-gray-50'}`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button 
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg text-[13px] font-black transition-all ${currentPage === page ? 'bg-[#9A3B12] text-white shadow-lg shadow-[#9A3B12]/20' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button 
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-            className={`w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 transition-all ${currentPage === totalPages || totalPages === 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:bg-gray-50'}`}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <EvaluationModal 
-        tender={selectedTender}
-        isOpen={isEvalModalOpen}
-        onClose={() => setIsEvalModalOpen(false)}
-      />
-
-      <SubmissionsModal 
-        tender={selectedTender}
-        isOpen={isSubModalOpen}
-        onClose={() => setIsSubModalOpen(false)}
-      />
+      )}
     </div>
   );
 }

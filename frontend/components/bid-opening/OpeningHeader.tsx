@@ -24,7 +24,7 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
     <div className="mb-3">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-gray-900 leading-none mb-1.5">
+          <h1 className="text-3xl font-black tracking-tight text-gray-900 leading-none mb-4">
             Bid Opening & Attendance
           </h1>
           <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
@@ -37,11 +37,10 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
         </div>
         
         <div className="flex gap-2">
-          <div className="bg-white border border-gray-200 rounded-lg px-5 py-2.5 flex flex-col items-center">
-            <span className="text-[11px] font-black text-gray-400 uppercase tracking-tighter leading-none mb-1.5">SESSION DATA</span>
-            <div className="flex gap-2">
-              <span className="bg-[#EBF1F4] text-[#4F626C] text-[12px] font-black px-2.5 py-1 rounded uppercase">{bidsCount}</span>
-              <span className="bg-[#EBF1F4] text-[#4F626C] text-[12px] font-black px-2.5 py-1 rounded uppercase">{scheduledDate}</span>
+          <div className="bg-white border border-gray-100 rounded-2xl px-10 py-5 flex flex-col items-center shadow-sm">
+            <span className="text-[12px] font-black text-gray-400 uppercase tracking-[0.15em] mb-3">SESSION DATA</span>
+            <div className="flex gap-3">
+              <span className="bg-[#F8F9FA] text-gray-400 text-[13px] font-black px-6 py-2.5 rounded-xl uppercase tracking-widest border border-gray-100 italic">DATA UNAVAILABLE</span>
             </div>
           </div>
         </div>

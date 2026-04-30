@@ -31,7 +31,7 @@ export const useOpeningStore = create<OpeningState>()(
           const res = await fetchOpeningSession(tenderId);
           set({ session: res.data, isLoading: false });
         } catch (err: any) {
-          set({ error: err.message, isLoading: false });
+          set({ error: err.message, isLoading: false, session: null });
         }
       },
 
@@ -41,7 +41,6 @@ export const useOpeningStore = create<OpeningState>()(
           const res = await fetchAttendance(sessionId);
           set({ attendance: res.data, isLoading: false });
         } catch (err: any) {
-          // Keep dummy data if fetch fails
           set({ isLoading: false });
         }
       },
@@ -103,9 +102,17 @@ export const useOpeningStore = create<OpeningState>()(
             const res = await startOpeningSession(sessionId);
             set({ session: res.data, isLoading: false });
           } catch (e) {
-            // Fallback for demo
+            // Fallback for demo: ensure session exists and is OPEN
             set(state => ({
-              session: state.session ? { ...state.session, status: 'OPEN' } : null,
+              session: state.session 
+                ? { ...state.session, status: 'OPEN' } 
+                : { 
+                    id: sessionId, 
+                    tenderId: "DEMO-TENDER", 
+                    status: 'OPEN', 
+                    scheduledOpeningTime: new Date().toISOString(),
+                    bidsCount: 0 
+                  } as OpeningSession,
               isLoading: false
             }));
           }

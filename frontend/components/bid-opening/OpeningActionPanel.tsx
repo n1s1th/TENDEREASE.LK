@@ -7,7 +7,7 @@ import { useOpeningStore } from "@/store/opening/opening.store";
 
 export default function OpeningActionPanel() {
   const { session, attendance, startOpening, isLoading } = useOpeningStore();
-  const canOpen = attendance.length >= 3 && (session?.status === 'SCHEDULED' || session?.status === 'PENDING_OPENING');
+  const canOpen = attendance.length >= 3 && (!session || session.status === 'SCHEDULED' || session.status === 'PENDING_OPENING');
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = React.useState(false);
   const [pin, setPin] = React.useState("");
@@ -16,7 +16,7 @@ export default function OpeningActionPanel() {
 
   const handleOpenBids = () => {
     if (!canOpen) {
-      alert("Minimum 3 committee members must be present to open bids.");
+      alert(`Quorum not met: ${attendance.length}/3 members present.`);
       return;
     }
     setIsUnlockModalOpen(true);
@@ -28,15 +28,14 @@ export default function OpeningActionPanel() {
       return;
     }
     
-    if (session?.id) {
-      if (pin === "ABC123") {
-        await startOpening(session.id);
-        setIsUnlockModalOpen(false);
-        setPin("");
-        setIsPinError(false);
-      } else {
-        setIsPinError(true);
-      }
+    if (pin === "ABC123") {
+      // Use actual session ID if available, otherwise a fallback for demo
+      await startOpening(session?.id || "TND-0000-SESSION");
+      setIsUnlockModalOpen(false);
+      setPin("");
+      setIsPinError(false);
+    } else {
+      setIsPinError(true);
     }
   };
 
@@ -56,21 +55,21 @@ export default function OpeningActionPanel() {
         <button 
           onClick={handleOpenBids}
           disabled={session?.status === 'OPEN'}
-          className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 ${
+          className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 border ${
             session?.status === 'OPEN' 
-              ? 'bg-[#F5F5F5] text-gray-400 cursor-default border border-gray-200' 
+              ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent' 
               : !canOpen
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
-                : 'bg-[#0D0F10] hover:bg-[#953002] text-white shadow-lg shadow-black/10'
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+                : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
           }`}
         >
           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            session?.status === 'OPEN' || !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
+            session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
           }`}>
-            {session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-gray-500" /> : <Lock className="w-4 h-4" />}
+            {session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
           </div>
           <span className="text-[14px] font-black tracking-[0.15em] uppercase">
-            {isLoading ? "OPENING..." : session?.status === 'OPEN' ? "OPENED" : "OPEN BIDS"}
+            {isLoading ? "OPENING..." : session?.status === 'OPEN' ? "BIDS OPENED" : "OPEN BIDS"}
           </span>
         </button>
       </div>
@@ -151,10 +150,10 @@ export default function OpeningActionPanel() {
               <button 
                 onClick={handleConfirmUnlock}
                 disabled={pin.length < 4 || isLoading}
-                className={`flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-lg ${
+                className={`flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 ${
                   !canOpen 
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
-                    : 'bg-[#953002] text-white hover:bg-[#782402] shadow-[#953002]/20'
+                    : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
                 } disabled:opacity-50`}
               >
                 {isLoading ? "Unlocking..." : !canOpen ? "Quorum Required" : "Confirm & Unlock"}

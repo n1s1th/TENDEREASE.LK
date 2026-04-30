@@ -138,7 +138,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
               Cancel
             </button>
             <button 
-              className="flex-[1.5] py-3 px-4 rounded-xl bg-[#953002] text-white font-bold text-[10px] uppercase tracking-widest shadow-md shadow-[#953002]/20 hover:bg-[#7a2702] transition-all flex items-center justify-center gap-2"
+              className="flex-[1.5] py-3 px-4 rounded-xl bg-[#953002]/5 text-[#953002] border border-[#953002]/10 font-bold text-[10px] uppercase tracking-widest hover:bg-[#953002]/10 transition-all flex items-center justify-center gap-2"
               onClick={() => {
                 alert(`Action: ${content.primaryAction} triggered!`);
                 onClose();

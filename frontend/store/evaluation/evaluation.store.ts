@@ -93,7 +93,11 @@ export const useEvaluationStore = create<EvaluationState>()(
           const res = await fetchMyEvaluations();
           set({ assignedTenders: res.data, isLoading: false });
         } catch (err: any) {
-          set({ error: err.message, isLoading: false, assignedTenders: [] });
+          set({ 
+            error: err.message, 
+            isLoading: false, 
+            assignedTenders: [] 
+          });
         }
       },
 
@@ -109,6 +113,13 @@ export const useEvaluationStore = create<EvaluationState>()(
           });
         } catch (err) {
           console.error("Failed to fetch dashboard metrics", err);
+          set({
+            activeTendersCount: 0,
+            totalBidsCount: 0,
+            underEvaluationCount: 0,
+            awardedProposalsCount: 0,
+            noBidTendersCount: 0
+          });
         }
       }
     }),

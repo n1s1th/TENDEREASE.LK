@@ -1,31 +1,47 @@
 "use client";
 
 import React from "react";
-
-import { useOpeningStore } from "@/store/opening/opening.store";
+import { Package, Hash, CheckCircle2 } from "lucide-react";
 
 export default function OverviewPanel() {
-  const { session, attendance } = useOpeningStore();
-
   const stats = [
-    { label: "BIDS SEALED", value: session?.bidsCount?.toString() || "0", sub: "Awaiting unlock" },
-    { label: "ATTENDANCE LOGGED", value: attendance.length.toString(), sub: "Members present" },
-    { label: "OPENING STATUS", value: session?.status === 'PENDING_OPENING' ? "Pending Opening" : (session?.status || "Pending"), sub: session?.status === 'OPEN' ? "Session Active" : "Not yet commenced", highlight: true },
-    { label: "REPORT GENERATED", value: "\u00A0", sub: "Pending" },
+    {
+      label: "Bids Sealed",
+      value: "0",
+      icon: Package,
+      color: "text-blue-600",
+      bg: "bg-blue-50"
+    },
+    {
+      label: "Bids Opened",
+      value: "0",
+      icon: Hash,
+      color: "text-[#9A3B12]",
+      bg: "bg-[#9A3B12]/5"
+    },
+    {
+      label: "Opening Status",
+      value: "Pending Opening",
+      icon: CheckCircle2,
+      color: "text-amber-600",
+      bg: "bg-amber-50"
+    }
   ];
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full">
-      <h3 className="text-[13px] font-black text-gray-500 uppercase tracking-widest mb-3">Session Overview</h3>
+    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm h-full">
+      <h3 className="text-[15px] font-bold text-gray-900 mb-6 uppercase tracking-wider">Session Overview</h3>
       
-      <div className="grid grid-cols-2 gap-2 flex-1">
+      <div className="flex flex-col gap-6">
         {stats.map((stat, idx) => (
-          <div key={idx} className="bg-white border border-gray-100 rounded-2xl p-2.5 flex flex-col justify-center">
-            <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest mb-1">{stat.label}</span>
-            <span className={`text-[15px] font-black uppercase tracking-tight ${stat.highlight ? 'text-[#953002]' : 'text-gray-900'}`}>
-              {stat.value}
-            </span>
-            <span className="text-[14px] font-bold text-gray-600 mt-0.5">{stat.sub}</span>
+          <div key={idx} className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl ${stat.bg}`}>
+              <stat.icon className={`w-6 h-6 ${stat.color}`} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-500">{stat.label}</span>
+              <span className={`text-lg font-bold ${stat.color}`}>{stat.value}</span>
+            </div>
           </div>
         ))}
       </div>

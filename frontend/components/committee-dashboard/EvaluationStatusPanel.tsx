@@ -11,18 +11,19 @@ export default function EvaluationStatusPanel() {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 w-full">
-      <h3 className="text-xs font-bold uppercase tracking-wider mb-4 border-b pb-2 text-gray-800">
-        EVALUATION STATUS
-      </h3>
-      <div className="flex flex-col gap-6 mt-6">
+    <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 flex flex-col h-full">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">Evaluation Status</h3>
+      </div>
+      
+      <div className="flex flex-col gap-6 flex-1 justify-center">
         {statuses.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${item.color}`}></div>
-              <span className="text-gray-700 font-medium">{item.label}</span>
+          <div key={idx} className="flex items-center justify-between group">
+            <div className="flex items-center gap-4">
+              <div className={`w-2.5 h-2.5 rounded-full ${item.color} shadow-sm ring-4 ring-transparent group-hover:ring-${item.color.split('-')[1]}/10 transition-all`}></div>
+              <span className="text-[14px] font-bold text-gray-700 tracking-tight">{item.label}</span>
             </div>
-            <span className="font-bold text-gray-900">{item.count}</span>
+            <span className="text-[15px] font-black text-gray-900 font-mono tracking-tighter bg-gray-50 px-3 py-1 rounded-lg border border-gray-100">{item.count}</span>
           </div>
         ))}
       </div>

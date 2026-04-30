@@ -158,9 +158,10 @@ export default function ReceivedBidsLog() {
                       setSelectedBid(row);
                       setIsEvalModalOpen(true);
                     }}
-                    className="bg-[#9A3B12] text-white text-[10px] font-bold tracking-widest px-5 py-2 rounded-full shadow hover:bg-[#7a2f0e] transition-colors whitespace-nowrap uppercase"
+                    className="bg-[#953002]/5 text-[#953002] border border-[#953002]/10 text-[10px] font-black tracking-widest px-5 py-2 rounded-full hover:bg-[#953002]/10 transition-all whitespace-nowrap uppercase flex items-center gap-2"
                   >
-                    Evaluate
+                    Evaluate Submission
+                    <ChevronRight className="w-3 h-3" />
                   </button>
                 </td>
               </tr>

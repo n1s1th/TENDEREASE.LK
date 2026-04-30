@@ -100,21 +100,23 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
         <div className="px-6 py-4 bg-white border-t border-gray-100 flex gap-3">
           <button 
             onClick={handleToggleFlag}
-            className="flex-1 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border-2 bg-[#FFFBF0] border-[#FFB401]/30 text-[#FFB401] hover:bg-[#FFF8E6]"
+            className={`flex-1 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 ${
+              bid.isFlagged ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20' : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
+            }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            {bid.isFlagged ? "UNFLAG" : "FLAG BID"}
+            {bid.isFlagged ? "UNFLAG BID" : "FLAG SUBMISSION"}
           </button>
           <button 
             onClick={handleToggleCompliance}
-            className={`flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 shadow-lg ${
+            className={`flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 ${
               isCompliant 
-                ? 'bg-[#953002]/10 text-[#953002] border border-[#953002]/20 hover:bg-[#953002]/20 shadow-none' 
-                : 'bg-[#953002] text-white hover:bg-[#782402] shadow-[#953002]/20'
+                ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20' 
+                : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            {isCompliant ? "UNDO COMPLIANCE" : "MARK COMPLIANT"}
+            {isCompliant ? "UNDO COMPLIANCE" : "MARK AS COMPLIANT"}
           </button>
         </div>
       </div>
