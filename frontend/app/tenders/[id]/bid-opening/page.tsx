@@ -9,8 +9,8 @@ import OverviewPanel from "@/components/bid-opening/OverviewPanel";
 import OpeningActionPanel from "@/components/bid-opening/OpeningActionPanel";
 import AttendanceSection from "@/components/bid-opening/AttendanceSection";
 import ReceivedBidsLog from "@/components/bid-opening/ReceivedBidsLog";
-import { useOpeningStore } from "@/store/opening/opening.store";
 import TenderLayout from "@/components/tender/TenderLayout";
+import Footer from "@/components/common/Footer";
 
 const DEMO_SESSION = {
   id: "TND-0000-SESSION",
@@ -61,8 +61,8 @@ export default function BidOpeningPage() {
 
   return (
     <TenderLayout>
-      <div className="min-h-screen bg-[#F3F5F7] p-8">
-        <div className="max-w-[98%] mx-auto flex flex-col gap-8">
+      <div className="min-h-screen bg-[#F3F5F7] p-8 flex flex-col">
+        <div className="max-w-[98%] mx-auto flex flex-col gap-8 flex-1">
           <OpeningHeader
             tenderId={id || displaySession.tenderId}
             title={displaySession.tenderTitle}
@@ -80,6 +80,9 @@ export default function BidOpeningPage() {
 
           <AttendanceSection sessionId={displaySession.id} />
           <ReceivedBidsLog tenderId={id || displaySession.tenderId} />
+        </div>
+        <div className="mt-8">
+          <Footer />
         </div>
       </div>
     </TenderLayout>
