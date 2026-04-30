@@ -2,8 +2,8 @@
 
 import { FileText, Download, AlertCircle } from "lucide-react";
 
-export default function AddendaSection({ addenda }: { addenda: any[] }) {
-  const displayAddenda = addenda || [];
+export default function AddendaSection({ tender }: any) {
+  const addenda = tender?.addenda || [];
 
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return "N/A";
@@ -18,7 +18,7 @@ export default function AddendaSection({ addenda }: { addenda: any[] }) {
     }
   };
 
-  if (displayAddenda.length === 0) {
+  if (addenda.length === 0) {
     return (
       <div className="py-20 text-center space-y-4 bg-gray-5/50 border border-dashed border-gray-100 rounded-[2rem]">
         <div className="w-16 h-16 bg-gray-5 rounded-full flex items-center justify-center mx-auto text-gray-3">
@@ -44,7 +44,7 @@ export default function AddendaSection({ addenda }: { addenda: any[] }) {
       </div>
 
       <div className="space-y-6">
-        {displayAddenda.map((amendment: any, index: number) => (
+        {addenda.map((amendment: any, index: number) => (
           <div key={index} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">
             
             <div className="flex justify-between items-start mb-4">
@@ -85,10 +85,7 @@ export default function AddendaSection({ addenda }: { addenda: any[] }) {
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => window.open(amendment.downloadUrl, "_blank")}
-                  className="flex items-center gap-2 text-[#fbbd05] text-sm font-bold hover:underline"
-                >
+                <button className="flex items-center gap-2 text-[#fbbd05] text-sm font-bold">
                   <Download size={18} />
                   Download
                 </button>

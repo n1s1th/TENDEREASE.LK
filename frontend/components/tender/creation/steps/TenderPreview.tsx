@@ -34,15 +34,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly?: boolean }) {
-  const store = useTenderCreationStore();
-  
-  const formData = data || store.formData;
-  const isSubmitting = store.isSubmitting;
-  const error = store.error;
-  const setShowPreview = store.setShowPreview;
-  const submitTender = store.submitTender;
-  const reset = store.reset;
+export function TenderPreview() {
+  const {
+    formData,
+    isSubmitting,
+    error,
+    setShowPreview,
+    submitTender,
+    reset,
+  } = useTenderCreationStore();
 
   const handleSubmit = async () => {
     // 1. Create tender and upload files (handled by store's submitTender)
@@ -68,22 +68,20 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
   return (
     <div className="space-y-5">
       {/* ── Warning banner ─────────────────────────────── */}
-      {!readOnly && (
-        <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
-          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              Please review carefully
-            </p>
-            <p className="text-xs text-grey-5 mt-0.5">
-              You cannot edit after submission.
-            </p>
-          </div>
+      <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
+        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            Please review carefully
+          </p>
+          <p className="text-xs text-grey-5 mt-0.5">
+            You cannot edit after submission.
+          </p>
         </div>
-      )}
+      </div>
 
       {/* ── Error banner ───────────────────────────────── */}
-      {error && !readOnly && (
+      {error && (
         <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
           <span className="font-medium">Error:</span> {error}
         </div>
@@ -170,32 +168,18 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
                 Attached Files ({formData.pendingFiles.length})
               </p>
               <ul className="space-y-1">
-                {formData.pendingFiles.map((file, idx) => {
-                  const isRealFile = file instanceof File;
-                  const fileUrl = isRealFile 
-                    ? typeof window !== 'undefined' ? URL.createObjectURL(file) : '#'
-                    : `https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`;
-
-                  return (
-                    <li
-                      key={`${file.name}-${idx}`}
-                      className="flex items-center gap-2 text-sm text-foreground"
-                    >
-                      <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <a 
-                        href={fileUrl} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline font-medium"
-                      >
-                        {file.name}
-                      </a>
-                      <span className="text-xs text-grey-4">
-                        ({(file.size / 1024).toFixed(1)} KB)
-                      </span>
-                    </li>
-                  );
-                })}
+                {formData.pendingFiles.map((file, idx) => (
+                  <li
+                    key={`${file.name}-${idx}`}
+                    className="flex items-center gap-2 text-sm text-foreground"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">{file.name}</span>
+                    <span className="text-xs text-grey-4">
+                      ({(file.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </li>
+                ))}
               </ul>
             </div>
           )}
@@ -278,29 +262,27 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
       {/* ─────────────────────────────────────────────────
           Action Bar
          ───────────────────────────────────────────────── */}
-      {!readOnly && (
-        <div className="flex items-center justify-between pt-5 border-t border-border">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(false)}
-          >
-            <ArrowLeft data-icon="inline-start" className="size-4" />
-            Edit Details
-          </Button>
+      <div className="flex items-center justify-between pt-5 border-t border-border">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPreview(false)}
+        >
+          <ArrowLeft data-icon="inline-start" className="size-4" />
+          Edit Details
+        </Button>
 
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <SendHorizontal data-icon="inline-start" className="size-4" />
-            {isSubmitting ? "Submitting…" : "Submit for Approval"}
-          </Button>
-        </div>
-      )}
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <SendHorizontal data-icon="inline-start" className="size-4" />
+          {isSubmitting ? "Submitting…" : "Submit for Approval"}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -14,11 +14,60 @@ export interface EvaluationScore {
   submittedAt?: string;
 }
 
+// Backend Entity mapped types
+export interface EvaluationResponse {
+  id: string;
+  tenderId: string;
+  bidId: string;
+  evaluatorId: string;
+  status: string;
+  isFlagged: boolean;
+  complianceStatus: string;
+  totalScore: number;
+  remarks: string;
+  evaluatedAt: string;
+}
+
+export interface EvaluationResultResponse {
+  id: string;
+  tenderId: string;
+  winningBidId: string;
+  finalScore: number;
+  approvedAt: string;
+  status: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+  timestamp: string;
+}
+
+export interface AssignedTender {
+  id: string;
+  reference: string;
+  title: string;
+  status: "Open" | "Awarded" | "PENDING_OPENING" | string;
+  openingDate: string;
+  method: string;
+  role: string;
+  bidsCount: number;
+}
+
 export interface EvaluationState {
   scores: EvaluationScore[];
   criteria: EvaluationCriteria[];
   committeeInputs: EvaluationScore | null;
   isLoading: boolean;
+  
+  // Dashboard state
+  assignedTenders: AssignedTender[];
+  activeTendersCount: number;
+  totalBidsCount: number;
+  underEvaluationCount: number;
+  awardedProposalsCount: number;
+  noBidTendersCount: number;
 
   // Actions
   fetchScores: (tenderId: string) => Promise<void>;
@@ -26,4 +75,12 @@ export interface EvaluationState {
   submitScore: (score: EvaluationScore) => Promise<void>;
   setCommitteeInputs: (input: Partial<EvaluationScore>) => void;
   resetScores: () => void;
+  
+  fetchAssignedTenders: () => Promise<void>;
+  fetchDashboardMetrics: () => Promise<void>;
+  
+  // Vetting actions
+  fetchEvaluationsByTender: (tenderId: string) => Promise<EvaluationResponse[]>;
+  toggleFlag: (evaluationId: string) => Promise<void>;
+  updateComplianceStatus: (evaluationId: string, status: string) => Promise<void>;
 }
