@@ -1,4 +1,7 @@
-const QA_API_BASE = "/api/qa";
+import { useAuthStore } from "@/store";
+
+// Use environment variable if available, otherwise assume gateway or direct service
+const QA_API_BASE = process.env.NEXT_PUBLIC_QA_SERVICE_URL || "http://localhost:8000/api/qa";
 
 export type QaCategory =
   | "REGISTRATION"
@@ -42,6 +45,21 @@ interface GetQuestionsOptions {
   sort?: string;
 }
 
+function getAuthHeaders(): HeadersInit {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (typeof window !== "undefined") {
+    const { token } = useAuthStore.getState();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+}
+
 async function handleQaResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
   let payload: any = {};
@@ -77,6 +95,7 @@ export async function getQaQuestions({
 
   const response = await fetch(`${QA_API_BASE}/questions?${params.toString()}`, {
     cache: "no-store",
+    headers: getAuthHeaders(),
   });
 
   return handleQaResponse<QaPage>(response);
@@ -85,11 +104,7 @@ export async function getQaQuestions({
 export async function createQaQuestion(questionText: string, category: QaCategory) {
   const response = await fetch(`${QA_API_BASE}/questions`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-User-Id": "vendor-123",
-      "X-Roles": "ROLE_USER",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ questionText, category }),
   });
 

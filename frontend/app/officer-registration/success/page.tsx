@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Navbar from '../../../components/home/Navbar';
 import { useOfficerStore } from '../../../store/officerRegistrationStore';
 
 export default function OfficerSuccessPage() {
@@ -12,8 +11,6 @@ export default function OfficerSuccessPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-xl w-full text-center py-16">
           {/* ─── Green Check Icon ─── */}

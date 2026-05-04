@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
-
 export default function HomePage() {
-  redirect("/tenders");
+  return (
+    <div className="home-page">
+      {/* Hero, Features, and other sections will go here */}
+    </div>
+  );
 }

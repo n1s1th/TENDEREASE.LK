@@ -1,25 +1,22 @@
+import { useAuthStore } from "@/store";
+
 const BASE_URL = "http://localhost:8082/api/tenders";
 
 // 🔐 Get Authorization headers (FIXED)
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
-    "Content-Type": "application/json", // ✅ ALWAYS include this
+    "Content-Type": "application/json",
   };
 
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    const userEmail =
-      localStorage.getItem("userEmail") ||
-      localStorage.getItem("email");
+    const { token, user } = useAuthStore.getState();
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
-    } else {
-      console.warn("⚠️ No token found in localStorage");
     }
 
-    if (userEmail) {
-      headers["X-User-Email"] = userEmail;
+    if (user?.email) {
+      headers["X-User-Email"] = user.email;
     }
   }
 
