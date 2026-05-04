@@ -56,13 +56,7 @@ export default function OfficerSuccessPage() {
           </div>
 
           {/* ─── Buttons ─── */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center px-12 py-3 text-base font-semibold rounded-md text-white bg-[#953002] hover:bg-[#782500] transition-colors shadow-sm min-w-[220px]"
-            >
-              Go to Login
-            </Link>
+          <div className="flex items-center justify-center">
             <Link
               href="/"
               className="inline-flex items-center justify-center px-12 py-3 text-base font-semibold rounded-md text-white bg-[#953002] hover:bg-[#782500] transition-colors shadow-sm min-w-[220px]"
