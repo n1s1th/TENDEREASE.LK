@@ -226,9 +226,8 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
         // Send approval email
         try {
-            String officerName = officer.getLiaisonOfficer() != null ? officer.getLiaisonOfficer().getName() : "Officer";
             emailService.sendRegistrationApprovalEmail(
-                officer.getOfficialEmail(), officerName, officer.getRegistrationReference());
+                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference());
         } catch (Exception e) {
             log.error("Failed to send approval email to {}: {}", officer.getOfficialEmail(), e.getMessage());
         }
@@ -258,9 +257,8 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
         // Send rejection email
         try {
-            String officerName = officer.getLiaisonOfficer() != null ? officer.getLiaisonOfficer().getName() : "Officer";
             emailService.sendRegistrationRejectionEmail(
-                officer.getOfficialEmail(), officerName, officer.getRegistrationReference(), reason);
+                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference(), reason);
         } catch (Exception e) {
             log.error("Failed to send rejection email to {}: {}", officer.getOfficialEmail(), e.getMessage());
         }
@@ -288,11 +286,6 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         final String nic = request.getLiaisonOfficer().getNic();
         if (!isValidNIC(nic)) {
             errors.add("NIC format incorrect");
-        }
-
-        // NIC uniqueness
-        if (liaisonOfficerRepository.existsByNic(nic)) {
-            errors.add("NIC already registered for another liaison officer");
         }
 
         return errors;

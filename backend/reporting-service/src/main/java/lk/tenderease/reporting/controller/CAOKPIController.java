@@ -7,11 +7,7 @@ import lk.tenderease.reporting.service.KPIService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -23,7 +19,6 @@ public class CAOKPIController {
     private final KPIService kpiService;
 
     @GetMapping("/summary")
-
     @Operation(summary = "Get dashboard summary", description = "Returns aggregated counts for tenders and officers.")
     public ResponseEntity<DashboardKPI> getSummary() {
         log.info("CAO request for KPI summary");
@@ -31,11 +26,13 @@ public class CAOKPIController {
     }
 
     @GetMapping("/report")
-
     @Operation(summary = "Get KPI report data", description = "Returns report data for charts")
     public ResponseEntity<java.util.Map<String, Object>> getReport(
             @RequestParam(required = false) String period,
-            @RequestParam(required = false) String type) {
-        return ResponseEntity.ok(kpiService.getReportData(period, type));
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String category) {
+        log.info("CAO request for KPI report. period: {}, dept: {}, cat: {}", period, department, category);
+        return ResponseEntity.ok(kpiService.getReportData(period, type, department, category));
     }
 }

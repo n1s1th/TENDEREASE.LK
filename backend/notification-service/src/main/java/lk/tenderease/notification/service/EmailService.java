@@ -34,8 +34,9 @@ public class EmailService {
             log.info("Successfully sent email to {}", to);
 
         } catch (Exception ex) {
-            log.error("Failed to send email to {}: {}", to, ex.getMessage());
-            throw new RuntimeException("Email sending failed", ex);
+            log.error("Failed to send email to {}. [MOCK LOG] Subject: {} | Body: {}", to, subject, body);
+            log.error("Error Detail: {}. Ensure mail server is running.", ex.getMessage());
+            // We catch and log but don't re-throw to avoid RabbitMQ retry loops in local dev
         }
     }
 
@@ -54,8 +55,9 @@ public class EmailService {
             log.info("HTML email sent successfully to {}", to);
 
         } catch (MessagingException e) {
-            log.error("Failed to send HTML email to {}: {}", to, e.getMessage());
-            throw new RuntimeException("Email sending failed", e);
+            log.error("Failed to send HTML email to {}. [MOCK LOG] Subject: {} | Content: {}", to, subject, htmlBody);
+            log.error("Error Detail: {}. Ensure mail server is running.", e.getMessage());
+            // We catch and log but don't re-throw to avoid RabbitMQ retry loops in local dev
         }
     }
 
@@ -77,8 +79,9 @@ public class EmailService {
             log.info("Email with attachment sent to {}", to);
 
         } catch (Exception e) {
-            log.error("Failed to send email with attachment: {}", e.getMessage());
-            throw new RuntimeException("Email sending failed", e);
+            log.error("Failed to send email with attachment to {}. [MOCK LOG] Subject: {} | Body: {}", to, subject, body);
+            log.error("Error Detail: {}. Ensure mail server is running.", e.getMessage());
+            // We catch and log but don't re-throw to avoid RabbitMQ retry loops in local dev
         }
     }
 }

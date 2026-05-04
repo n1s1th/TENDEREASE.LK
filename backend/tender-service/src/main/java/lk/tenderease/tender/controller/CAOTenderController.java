@@ -48,8 +48,19 @@ public class CAOTenderController {
 
     @GetMapping("/kpi")
     @Operation(summary = "Get tender KPIs", description = "Fetches precise counts of active and awarded tenders from the database.")
-    public ResponseEntity<java.util.Map<String, Long>> getKPIs() {
-        return ResponseEntity.ok(tenderService.getKPIs());
+    public ResponseEntity<java.util.Map<String, Long>> getKPIs(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String month) {
+        return ResponseEntity.ok(tenderService.getKPIs(department, category, month));
+    }
+
+    @GetMapping("/kpi/trend")
+    @Operation(summary = "Get tender KPI trend", description = "Returns monthly counts of active tenders filtered by department and category.")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getKPITrend(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String category) {
+        return ResponseEntity.ok(tenderService.getKPITrend(department, category));
     }
 
     @PostMapping("/{id}/approve")

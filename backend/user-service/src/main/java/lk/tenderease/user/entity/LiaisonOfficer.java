@@ -7,12 +7,12 @@ import lombok.*;
 /**
  * Entity representing the Liaison Officer associated with an {@link Officer} registration.
  *
- * <p>Each officer registration must have one liaison officer. The NIC is unique
- * across the system to enforce one-NIC-one-liaison-officer rule.</p>
+ * <p>Each officer registration must have one liaison officer. A single Liaison Officer
+ * can be associated with multiple officer registrations.</p>
  */
 @Entity
 @Table(name = "liaison_officers", indexes = {
-    @Index(name = "idx_liaison_nic", columnList = "nic", unique = true),
+    @Index(name = "idx_liaison_nic", columnList = "nic"),
     @Index(name = "idx_liaison_officer_id", columnList = "officer_id")
 })
 @Getter
@@ -31,7 +31,7 @@ public class LiaisonOfficer extends BaseEntity {
     @Column(name = "designation")
     private String designation;
 
-    @Column(name = "nic", nullable = false, unique = true)
+    @Column(name = "nic", nullable = false)
     private String nic;
 
     @Column(name = "mobile", nullable = false)
