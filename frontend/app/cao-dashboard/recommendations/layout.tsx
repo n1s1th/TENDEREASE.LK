@@ -5,7 +5,6 @@ import DepartmentFilter from "@/components/cao-dashboard/DepartmentFilter";
 import KpiCards from "@/components/cao-dashboard/KpiCards";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import { useEffect } from "react";
-import DateRangeFilter from "@/components/cao-dashboard/DateRangeFilter";
 
 export default function RecommendationsLayout({
   children,
@@ -26,7 +25,6 @@ export default function RecommendationsLayout({
       <RecommendationsTabBar />
       <DepartmentFilter value={department} onChange={setDepartment} />
       {children}
-      <DateRangeFilter />
       <KpiCards data={kpiSummary} />
     </div>
   );

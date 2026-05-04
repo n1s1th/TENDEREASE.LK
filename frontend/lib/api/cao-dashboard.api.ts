@@ -6,6 +6,7 @@ import type {
   NotificationSummary,
   KpiSummary,
   KpiReportData,
+  KpiReportParams,
   RegistrationRequest,
   RegistrationStatus,
   TenderTab,
@@ -112,10 +113,7 @@ export async function fetchKpiSummary(): Promise<KpiSummary> {
   };
 }
 
-export async function fetchKpiReport(params: {
-  startDate?: string;
-  endDate?: string;
-}): Promise<KpiReportData> {
+export async function fetchKpiReport(params: KpiReportParams): Promise<KpiReportData> {
   const res = await reportApi.get('/cao/kpi/report', { params });
   return res.data;
 }

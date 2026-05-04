@@ -39,13 +39,15 @@ export default function ReportsPage() {
 
   const [department, setDepartment] = useState("");
   const [category, setCategory] = useState("");
+  const [period, setPeriod] = useState("all_time");
 
   useEffect(() => {
     fetchKpiReport({
       department: department || undefined,
       category: category || undefined,
+      period: period || undefined,
     });
-  }, [fetchKpiReport, department, category]);
+  }, [fetchKpiReport, department, category, period]);
 
   // Chart data — uses real data when available, shows empty placeholder otherwise
   const cycleTimeData = {
@@ -54,12 +56,12 @@ export default function ReportsPage() {
       {
         label: "Cycle Time (days)",
         data: kpiReport?.cycleTimeTrend.map((d) => d.value) ?? [],
-        borderColor: "#953002",
-        backgroundColor: "rgba(149, 48, 2, 0.1)",
+        borderColor: "#f0b323",
+        backgroundColor: "rgba(240, 179, 35, 0.1)",
         fill: true,
         tension: 0.4,
         pointRadius: 4,
-        pointBackgroundColor: "#953002",
+        pointBackgroundColor: "#f0b323",
       },
     ],
   };
@@ -70,18 +72,19 @@ export default function ReportsPage() {
       {
         label: "Active Tenders",
         data: kpiReport?.activeTendersTrend.map((d) => d.value) ?? [],
-        backgroundColor: "#10b981", // Emerald green to represent active
+        backgroundColor: "#953002", 
         borderRadius: 4,
       },
     ],
   };
 
+  const smeDataAvailable = kpiReport && kpiReport.smeParticipationPercent !== -1;
   const smeData = {
     labels: ["SME", "Non-SME"],
     datasets: [
       {
-        data: kpiReport ? [kpiReport.smeParticipationPercent, 100 - kpiReport.smeParticipationPercent] : [],
-        backgroundColor: ["#953002", "#E5E7EB"],
+        data: smeDataAvailable ? [kpiReport.smeParticipationPercent, 100 - kpiReport.smeParticipationPercent] : [0, 100],
+        backgroundColor: ["#f0b323", "#E5E7EB"],
         borderWidth: 0,
       },
     ],
@@ -136,10 +139,9 @@ export default function ReportsPage() {
         <div className="dash-report-header">
           <div>
             <h1 className="dash-report-title">
-              <TrendingUp size={20} style={{ verticalAlign: "middle", marginRight: "0.5rem" }} />
               KPI Report
             </h1>
-            <p className="dash-report-subtitle">
+            <p className="dash-report-subtitle" style={{ fontSize: "1.1rem" }}>
               Performance metrics and analytics for tender management
             </p>
           </div>
@@ -155,18 +157,24 @@ export default function ReportsPage() {
 
         {/* Filters */}
         <div className="dash-report-filters">
-          <DateRangeFilter />
+          <DateRangeFilter value={period} onChange={setPeriod} />
           <select
             className="dash-select"
             style={{ minWidth: 180 }}
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
           >
-            <option value="">Department</option>
-            <option value="Education">Education</option>
-            <option value="Agriculture">Agriculture</option>
-            <option value="Technology">Technology</option>
-            <option value="Health">Health</option>
+            <option value="">All Departments</option>
+            <option value="Planning Division">Planning Division</option>
+            <option value="Procurement Unit">Procurement Unit</option>
+            <option value="Infrastructure Development">Infrastructure Development</option>
+            <option value="Supplies Division">Supplies Division</option>
+            <option value="Logistics Division">Logistics Division</option>
+            <option value="Engineering Branch">Engineering Branch</option>
+            <option value="Road Development">Road Development</option>
+            <option value="Public Transport Division">Public Transport Division</option>
+            <option value="Irrigation & Water Management">Irrigation & Water Management</option>
+            <option value="Research & Development">Research & Development</option>
           </select>
           <select
             className="dash-select"
@@ -174,11 +182,11 @@ export default function ReportsPage() {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="">Category</option>
+            <option value="">All Categories</option>
             <option value="goods">Goods</option>
             <option value="services">Services</option>
             <option value="works">Works</option>
-            <option value="consulting">Consulting</option>
+            <option value="consultancy">Consulting</option>
           </select>
         </div>
 
@@ -217,7 +225,7 @@ export default function ReportsPage() {
                   <span className="dash-report-card-tag">Donut Chart</span>
                 </div>
                 <div className="dash-report-chart">
-                  {kpiReport?.smeParticipationPercent != null ? (
+                  {smeDataAvailable ? (
                     <Doughnut data={smeData} options={doughnutOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
