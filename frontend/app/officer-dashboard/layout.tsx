@@ -1,4 +1,3 @@
-import Footer from "@/components/home/Footer";
 import SubNav from "@/components/officer-dashboard/SubNav";
 import Toast from "@/components/officer-dashboard/Toast";
 import RecommendationReviewModal from "@/components/officer-dashboard/modals/RecommendationReviewModal";
@@ -7,7 +6,6 @@ import ConfirmApprovalModal from "@/components/officer-dashboard/modals/ConfirmA
 import ConfirmRejectionModal from "@/components/officer-dashboard/modals/ConfirmRejectionModal";
 import AssignOfficersModal from "@/components/officer-dashboard/modals/AssignOfficersModal";
 import OfficerDetailsModal from "@/components/officer-dashboard/modals/OfficerDetailsModal";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 import type { Metadata } from "next";
 
@@ -25,9 +23,6 @@ export default function OfficerDashboardLayout({
     <div className="dash-page">
       <SubNav />
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
-
-      {/* Same Footer as home page */}
-      <Footer />
 
       {/* Global modals */}
       <RecommendationReviewModal />
