@@ -60,6 +60,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
 import lk.tenderease.common.exception.BusinessException;
 
 @Slf4j
@@ -81,6 +86,10 @@ public class TenderServiceImpl implements TenderService {
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
     private final TenderEventProducer tenderEventProducer;
+
+    @Value("${app.upload-dir:../uploads}")
+    private String uploadDir;
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -285,12 +294,26 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
+        // Save file to local storage
+        String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
+        Path targetPath = Paths.get(uploadDir).resolve(fileName).toAbsolutePath();
+        log.info("Saving uploaded file to: {}", targetPath);
+        
+        try {
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("File successfully saved to disk.");
+        } catch (IOException e) {
+            log.error("CRITICAL: Failed to store file at {}. Error: {}", targetPath, e.getMessage());
+            throw new RuntimeException("Could not store file", e);
+        }
+
         // Save metadata to TenderDocument
         lk.tenderease.tender.entity.TenderDocument doc = lk.tenderease.tender.entity.TenderDocument.builder()
                 .tender(tender)
                 .documentName(docName)
                 .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
-                .s3Key("dummy-s3-key/" + java.util.UUID.randomUUID().toString())
+                .s3Key(fileName) // We use s3Key to store the local filename
                 .fileSizeBytes(request.getFile().getSize())
                 .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
                 .uploadedAt(java.time.LocalDateTime.now())
@@ -308,6 +331,22 @@ public class TenderServiceImpl implements TenderService {
                 .mimeType(savedDoc.getMimeType())
                 .uploadedAt(savedDoc.getUploadedAt())
                 .build();
+    }
+
+    @Override
+    public byte[] viewDocument(UUID docId) {
+        log.info("Fetching document for viewing: {}", docId);
+        TenderDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        
+        Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
+        log.info("Attempting to read file from path: {}", filePath.toAbsolutePath());
+        try {
+            return Files.readAllBytes(filePath);
+        } catch (IOException e) {
+            log.error("Failed to read file: {}", e.getMessage());
+            throw new RuntimeException("Could not read file", e);
+        }
     }
 
     @Override

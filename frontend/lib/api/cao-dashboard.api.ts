@@ -61,6 +61,42 @@ export async function fetchTenderDetails(id: string): Promise<DashboardTender> {
   return res.data;
 }
 
+export async function viewTenderDocument(docId: string): Promise<string> {
+  // Returns a URL to the document that can be opened in a new tab
+  return `${api.defaults.baseURL}/cao/tenders/documents/${docId}/view`;
+}
+
+export async function downloadTenderDocument(docId: string): Promise<Blob> {
+  if (!docId) throw new Error("Document ID is required");
+  
+  const fullUrl = 'http://localhost:8082/api/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  
+  const res = await axios.get(fullUrl, {
+    withCredentials: false
+  });
+  
+  if (!res.data || !res.data.content) {
+    throw new Error("Server returned empty document data");
+  }
+  
+  const base64Data = res.data.content;
+  const mimeType = res.data.mimeType || 'application/pdf';
+  
+  try {
+    // Decode Base64
+    const byteCharacters = atob(base64Data.replace(/\s/g, ''));
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  } catch (e) {
+    console.error("Base64 decoding failed", e);
+    throw new Error("Failed to decode document content. The file might be corrupted.");
+  }
+}
+
 export async function approveTender(id: string): Promise<void> {
   await api.post(`/cao/tenders/${id}/approve`);
 }

@@ -1,7 +1,10 @@
 "use client";
 
+import React from "react";
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
 import { api } from "@/lib/api";
+import { viewTenderDocument, downloadTenderDocument } from "@/lib/api/cao-dashboard.api";
+import { config } from "@/lib/config";
 import {
   Card,
   CardContent,
@@ -20,6 +23,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  X,
 } from "lucide-react";
 
 /* ── tiny helper ──────────────────────────────────────────── */
@@ -60,6 +64,24 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
     } else {
       const currentError = useTenderCreationStore.getState().error;
       alert(`Failed to create tender: ${currentError || "Unknown error occurred"}`);
+    }
+  };
+
+  const handleViewFile = async (e: React.MouseEvent, fileId: string, fileName: string) => {
+    e.preventDefault();
+    
+    try {
+      const blob = await downloadTenderDocument(fileId);
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        alert("Please allow popups for this site to view the document.");
+      }
+    } catch (err) {
+      console.error("Error viewing file:", err);
+      alert("Could not open the document. Please try again.");
     }
   };
 
@@ -172,24 +194,26 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
               <ul className="space-y-1">
                 {formData.pendingFiles.map((file, idx) => {
                   const isRealFile = file instanceof File;
-                  const fileUrl = isRealFile 
-                    ? typeof window !== 'undefined' ? URL.createObjectURL(file) : '#'
-                    : `https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`;
-
+                  
                   return (
                     <li
                       key={`${file.name}-${idx}`}
                       className="flex items-center gap-2 text-sm text-foreground"
                     >
                       <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <a 
-                        href={fileUrl} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="truncate text-primary hover:underline font-medium"
+                      <button 
+                        onClick={(e) => {
+                          if (isRealFile) {
+                            const url = URL.createObjectURL(file);
+                            window.open(url, '_blank');
+                          } else if (file.id) {
+                            handleViewFile(e, file.id, file.name);
+                          }
+                        }}
+                        className="truncate text-primary hover:underline font-medium text-left bg-transparent border-none p-0 cursor-pointer"
                       >
                         {file.name}
-                      </a>
+                      </button>
                       <span className="text-xs text-grey-4">
                         ({(file.size / 1024).toFixed(1)} KB)
                       </span>

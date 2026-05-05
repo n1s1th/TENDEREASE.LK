@@ -21,6 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/cao/tenders")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 @Tag(name = "CAO Tender Management", description = "Dashboard APIs for CAO to review and approve tenders")
 public class CAOTenderController {
 
@@ -61,6 +62,30 @@ public class CAOTenderController {
             @RequestParam(required = false) String department,
             @RequestParam(required = false) String category) {
         return ResponseEntity.ok(tenderService.getKPITrend(department, category));
+    }
+
+    @GetMapping("/documents/{docId}/view")
+    @Operation(summary = "View tender document", description = "Fetches a tender document for viewing (PDF).")
+    public ResponseEntity<byte[]> viewDocument(@PathVariable UUID docId) {
+        byte[] content = tenderService.viewDocument(docId);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"document.pdf\"")
+                .body(content);
+    }
+
+    @GetMapping("/documents/{docId}/base64")
+    @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
+    @Operation(summary = "Get document as Base64 JSON", description = "Bypasses download managers by sending file as a JSON string")
+    public ResponseEntity<java.util.Map<String, String>> getDocumentBase64(@PathVariable java.util.UUID docId) {
+        byte[] content = tenderService.viewDocument(docId);
+        String base64Content = java.util.Base64.getEncoder().encodeToString(content);
+        
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("content", base64Content);
+        response.put("mimeType", "application/pdf");
+        
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/approve")
