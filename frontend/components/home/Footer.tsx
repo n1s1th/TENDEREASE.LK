@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Facebook, Twitter, Linkedin, Youtube, FileText } from "lucide-react";
+import { FileText, Share2 } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -121,7 +121,7 @@ export default function Footer() {
               </p>
               {/* Social Icons */}
               <div style={{ display: "flex", gap: "0.75rem" }}>
-                {[Facebook, Twitter, Linkedin, Youtube].map((Icon, i) => (
+                {[Share2, Share2, Share2, Share2].map((Icon, i) => (
                   <a
                     key={i}
                     href="#"

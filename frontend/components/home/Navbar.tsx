@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Search, X, Menu } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp } from "lucide-react";
 import Link from "next/link";
+
+import { login, logout, signup } from "@/lib/keycloak";
+import { useAuthStore } from "@/store";
+import { useAuth } from "@/providers/AuthProvider";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -11,28 +15,101 @@ const navLinks = [
   { label: "Help / FAQ", href: "/help" },
 ];
 
+const trendingSearches = [
+  "Road Construction",
+  "IT Infrastructure",
+  "Medical Equipment",
+  "Building Renovation",
+  "Water Supply",
+];
+
+const categories = [
+  "All Categories",
+  "Construction",
+  "IT & Technology",
+  "Healthcare",
+  "Education",
+  "Transportation",
+  "Energy",
+  "Agriculture",
+  "Water & Sanitation",
+];
+
 export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("Home");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const { isAuthenticated, user } = useAuthStore();
+  const { initialized, error } = useAuth();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleSearchToggle = () => {
+    setSearchOpen((prev) => {
+      if (!prev) {
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }
+      return !prev;
+    });
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      window.location.href = `/tenders?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(selectedCategory)}`;
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+    if (e.key === "Escape") {
+      setSearchOpen(false);
+      setSearchFocused(false);
+    }
+  };
 
   return (
-    <header className="navbar-header">
+    <header className="te-navbar">
       {/* Main navbar container */}
-      <div className="navbar-container">
-        {/* Logo */}
-        <Link href="/" className="navbar-logo">
-          TenderHub
+      <div className="te-navbar__container">
+        {/* Logo & Brand */}
+        <Link href="/" className="te-navbar__brand">
+          <div className="te-navbar__logo-icon">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-icon.png"
+              alt="TenderEase.lk"
+              width={44}
+              height={44}
+            />
+          </div>
+          <div className="te-navbar__brand-text">
+            <span className="te-navbar__brand-name">TenderEase.lk</span>
+            <span className="te-navbar__brand-tagline">Sri Lanka Government Tendering &amp; Bidding Platform</span>
+          </div>
         </Link>
 
         {/* Desktop Nav links */}
-        <nav className="navbar-links">
+        <nav className="te-navbar__nav">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
               onClick={() => setActiveLink(link.label)}
-              className={`navbar-link ${activeLink === link.label ? "navbar-link--active" : ""}`}
+              className={`te-navbar__link ${activeLink === link.label ? "te-navbar__link--active" : ""}`}
             >
               {link.label}
             </Link>
@@ -40,50 +117,153 @@ export default function Navbar() {
         </nav>
 
         {/* Right side actions */}
-        <div className="navbar-actions">
+        <div className="te-navbar__actions">
           {/* Search toggle */}
           <button
-            className="navbar-search-btn"
+            className="te-navbar__search-toggle"
             aria-label="Toggle search"
-            onClick={() => setSearchOpen((prev) => !prev)}
+            onClick={handleSearchToggle}
           >
             {searchOpen ? <X size={18} /> : <Search size={18} />}
           </button>
 
-          {/* Sign In button */}
-          <Link href="/sign-in" className="navbar-signin-btn">
-            Sign In
-          </Link>
+          {/* Authentication Buttons */}
+          {!initialized ? (
+            <div className="te-navbar__auth-loading">
+              <div className="te-navbar__auth-dot" />
+              <div className="te-navbar__auth-dot" />
+              <div className="te-navbar__auth-dot" />
+            </div>
+          ) : error ? (
+            <div className="te-navbar__auth-error" title={error}>
+              Auth Error
+            </div>
+          ) : !isAuthenticated ? (
+            <>
+              <button onClick={login} className="te-navbar__btn te-navbar__btn--signin">
+                Sign In
+              </button>
+              <button onClick={signup} className="te-navbar__btn te-navbar__btn--signup">
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <div className="te-navbar__user">
+              <div className="te-navbar__user-avatar">
+                {(user?.firstName || user?.name || "U").charAt(0).toUpperCase()}
+              </div>
+              <span className="te-navbar__user-name">
+                {user?.firstName || user?.name}
+              </span>
+              <button onClick={logout} className="te-navbar__btn te-navbar__btn--signout">
+                Sign Out
+              </button>
+            </div>
+          )}
 
           {/* Mobile hamburger */}
           <button
-            className="navbar-hamburger"
+            className="te-navbar__hamburger"
             aria-label="Toggle menu"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
           >
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
         </div>
       </div>
 
-      {/* Expandable search bar */}
-      {searchOpen && (
-        <div className="navbar-search-bar">
-          <div className="navbar-search-inner">
-            <Search size={16} className="navbar-search-icon" />
-            <input
-              type="text"
-              placeholder="Search tenders, categories…"
-              className="navbar-search-input"
-              autoFocus
-            />
+      {/* ── Premium Expandable Search Bar ── */}
+      <div className={`te-search ${searchOpen ? "te-search--open" : ""}`}>
+        <div className="te-search__container" ref={searchBarRef}>
+          <div className={`te-search__bar ${searchFocused ? "te-search__bar--focused" : ""}`}>
+            {/* Search Icon & Input */}
+            <div className="te-search__input-group">
+              <Search size={20} className="te-search__icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onKeyDown={handleKeyDown}
+                placeholder="Search tenders by keyword, ID, or organization..."
+                className="te-search__input"
+              />
+              {searchQuery && (
+                <button
+                  className="te-search__clear"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="te-search__divider" />
+
+            {/* Location / Region */}
+            <div className="te-search__location-group">
+              <MapPin size={16} className="te-search__location-icon" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="te-search__category-select"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Divider */}
+            <div className="te-search__divider" />
+
+            {/* Advanced Filter Button */}
+            <button className="te-search__filter-btn" aria-label="Advanced filters">
+              <SlidersHorizontal size={16} />
+              <span>Filters</span>
+            </button>
+
+            {/* Search Button */}
+            <button className="te-search__submit" onClick={handleSearch}>
+              <Search size={18} />
+              <span>Search</span>
+            </button>
           </div>
+
+          {/* ── Search Suggestions Dropdown ── */}
+          {searchFocused && !searchQuery && (
+            <div className="te-search__dropdown">
+              <div className="te-search__dropdown-section">
+                <div className="te-search__dropdown-header">
+                  <TrendingUp size={14} />
+                  <span>Trending Searches</span>
+                </div>
+                {trendingSearches.map((term) => (
+                  <button
+                    key={term}
+                    className="te-search__suggestion"
+                    onClick={() => {
+                      setSearchQuery(term);
+                      setSearchFocused(false);
+                    }}
+                  >
+                    <Clock size={14} className="te-search__suggestion-icon" />
+                    <span>{term}</span>
+                    <ArrowRight size={12} className="te-search__suggestion-arrow" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <nav className="navbar-mobile-menu">
+        <nav className="te-navbar__mobile-menu">
           {navLinks.map((link) => (
             <Link
               key={link.label}
@@ -92,14 +272,25 @@ export default function Navbar() {
                 setActiveLink(link.label);
                 setMobileMenuOpen(false);
               }}
-              className={`navbar-mobile-link ${activeLink === link.label ? "navbar-mobile-link--active" : ""}`}
+              className={`te-navbar__mobile-link ${activeLink === link.label ? "te-navbar__mobile-link--active" : ""}`}
             >
               {link.label}
             </Link>
           ))}
-          <Link href="/sign-in" className="navbar-mobile-signin">
-            Sign In
-          </Link>
+          {!isAuthenticated ? (
+            <>
+              <button onClick={login} className="te-navbar__mobile-signin">
+                Sign In
+              </button>
+              <button onClick={signup} className="te-navbar__mobile-link">
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <button onClick={logout} className="te-navbar__mobile-signin te-navbar__mobile-signin--out">
+              Sign Out
+            </button>
+          )}
         </nav>
       )}
     </header>

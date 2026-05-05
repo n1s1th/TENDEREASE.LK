@@ -1,0 +1,41 @@
+On branch feature/tender-creation
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    run_output.txt
+	deleted:    run_output_2.txt
+	deleted:    run_output_3.txt
+	deleted:    run_output_4.txt
+	deleted:    run_output_5.txt
+	deleted:    run_output_6.txt
+	deleted:    run_output_7.txt
+	deleted:    src/main/java/lk/tenderease/tender/config/TenderRabbitMQConfig.java
+	deleted:    src/main/java/lk/tenderease/tender/controller/TenderController.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/event/TenderCreatedEvent.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/event/TenderSubmittedEvent.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/request/ComplianceChecklistRequest.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/request/CreateTenderRequest.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/request/DocumentUploadRequest.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/request/TenderScheduleRequest.java
+	deleted:    src/main/java/lk/tenderease/tender/dto/response/ComplianceChecklistResponse.java
+	modified:   ../../frontend/app/layout.tsx
+	modified:   ../../frontend/app/page.tsx
+	modified:   ../../frontend/components/ui/button.tsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	git_status.txt
+	../../frontend/app/create/
+	../../frontend/app/tenders/
+	../../frontend/components/ui/card.tsx
+	../../frontend/components/ui/input.tsx
+	../../frontend/components/ui/label.tsx
+	../../frontend/components/ui/select.tsx
+	../../frontend/components/ui/table.tsx
+	../../frontend/components/ui/tabs.tsx
+	../../frontend/components/ui/textarea.tsx
+	../../frontend/lib/api.ts
+	../../frontend/lib/config.ts
+	../../frontend/store/tenderStore.ts
+
+no changes added to commit (use "git add" and/or "git commit -a")

@@ -1,5 +1,7 @@
-import HomePage from "@/components/home/HomePage";
-
-export default function Page() {
-  return <HomePage />;
+export default function HomePage() {
+  return (
+    <div className="home-page">
+      {/* Hero, Features, and other sections will go here */}
+    </div>
+  );
 }
