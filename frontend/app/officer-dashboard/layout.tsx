@@ -1,4 +1,3 @@
-import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import SubNav from "@/components/officer-dashboard/SubNav";
 import Toast from "@/components/officer-dashboard/Toast";
@@ -8,6 +7,7 @@ import ConfirmApprovalModal from "@/components/officer-dashboard/modals/ConfirmA
 import ConfirmRejectionModal from "@/components/officer-dashboard/modals/ConfirmRejectionModal";
 import AssignOfficersModal from "@/components/officer-dashboard/modals/AssignOfficersModal";
 import OfficerDetailsModal from "@/components/officer-dashboard/modals/OfficerDetailsModal";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 import type { Metadata } from "next";
 
@@ -22,23 +22,25 @@ export default function OfficerDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dash-page">
-      <SubNav />
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
+    <ProtectedRoute>
+      <div className="dash-page">
+        <SubNav />
+        <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
 
-      {/* Same Footer as home page */}
-      <Footer />
+        {/* Same Footer as home page */}
+        <Footer />
 
-      {/* Global modals */}
-      <RecommendationReviewModal />
-      <TenderSummaryModal />
-      <ConfirmApprovalModal />
-      <ConfirmRejectionModal />
-      <AssignOfficersModal />
-      <OfficerDetailsModal />
+        {/* Global modals */}
+        <RecommendationReviewModal />
+        <TenderSummaryModal />
+        <ConfirmApprovalModal />
+        <ConfirmRejectionModal />
+        <AssignOfficersModal />
+        <OfficerDetailsModal />
 
-      {/* Toast notifications */}
-      <Toast />
-    </div>
+        {/* Toast notifications */}
+        <Toast />
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -11,14 +11,16 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Development security configuration for the Tender Service.
- * Permits all requests and configures CORS for the frontend.
- * TODO: Re-enable JWT/Keycloak authentication for production.
+ * Security configuration for the Tender Service.
+ * Configures CORS for the frontend and enforces JWT authentication.
  */
 @Configuration
 @EnableWebSecurity
@@ -26,14 +28,18 @@ public class TenderSecurityConfig {
 
     @Bean
     @Primary
-    public SecurityFilterChain tenderFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain tenderFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // For development: permit all requests (no Keycloak running)
-                .anyRequest().permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/tenders/**").permitAll() // Allow PublicTenderController
+                .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
             );
 
         return http.build();

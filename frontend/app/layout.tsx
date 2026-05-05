@@ -15,6 +15,9 @@ export const metadata: Metadata = {
     "TenderEase.lk is Sri Lanka's digital government tender management platform for transparent and efficient procurement.",
 };
 
+import { AuthProvider } from "@/providers/AuthProvider";
+import Navbar from "@/components/home/Navbar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,7 +25,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">{children}</body>
+      <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
+        <AuthProvider>
+          <Navbar />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
