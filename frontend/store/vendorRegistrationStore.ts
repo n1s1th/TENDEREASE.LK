@@ -9,7 +9,7 @@ export interface OrgData {
   registrationAddress: string;
   city: string;
   province: string;
-  website: string;
+  website?: string;
   officialEmail: string;
   officialTelephone: string;
 }
@@ -20,7 +20,8 @@ export interface OfficerData {
   designation: string;
   mobilePhone: string;
   email: string;
-  password?: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface DocInfo {
