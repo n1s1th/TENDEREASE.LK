@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { User, Check, X, Mail, Phone, Building2, MapPin, Search } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import EmptyState from "@/components/cao-dashboard/EmptyState";
+import KpiCards from "@/components/cao-dashboard/KpiCards";
 import type { RegistrationStatus, RegistrationRequest } from "@/lib/types/cao-dashboard.types";
 import { useSearchParams } from "next/navigation";
 
@@ -24,6 +25,8 @@ export default function RegistrationPage() {
   const setRegistrationStatusFilter = useCAODashboardStore((s) => s.setRegistrationStatusFilter);
   const registrationSearch = useCAODashboardStore((s) => s.registrationSearch);
   const setRegistrationSearch = useCAODashboardStore((s) => s.setRegistrationSearch);
+  const kpiSummary = useCAODashboardStore((s) => s.kpiSummary);
+  const fetchKpiSummary = useCAODashboardStore((s) => s.fetchKpiSummary);
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<RegistrationRequest | null>(null);
@@ -49,7 +52,8 @@ export default function RegistrationPage() {
 
   useEffect(() => {
     fetchRegistrations();
-  }, [fetchRegistrations, registrationStatusFilter]);
+    fetchKpiSummary();
+  }, [fetchRegistrations, fetchKpiSummary, registrationStatusFilter]);
 
   const handleApproveClick = (reg: RegistrationRequest) => {
     setApproveTarget(reg);
@@ -292,6 +296,8 @@ export default function RegistrationPage() {
           })}
         </div>
       )}
+
+      <KpiCards data={kpiSummary} />
 
       {/* Approve Confirmation Modal */}
       {approveModalOpen && (

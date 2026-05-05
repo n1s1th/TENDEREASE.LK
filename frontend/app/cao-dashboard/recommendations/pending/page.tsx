@@ -14,7 +14,6 @@ export default function PendingRecommendationsPage() {
   const activeModal = useCAODashboardStore((s) => s.activeModal);
 
   useEffect(() => {
-    // For now we use the tenders mock data array to render recommendation cards
     fetchTenders();
   }, [fetchTenders, department]);
 

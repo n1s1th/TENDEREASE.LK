@@ -24,6 +24,11 @@ public class DashboardKPI {
     private long approvedTenders;
     private long activeOfficers;
     private long pendingRegistrations;
+    
+    private double smeParticipation;
+    private long awardedTenders;
+    private double averageCycleTime;
 
     private LocalDateTime updatedAt;
+    private LocalDateTime createdAt;
 }

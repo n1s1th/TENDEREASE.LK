@@ -47,11 +47,15 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.criteria.Predicate;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -577,10 +581,87 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.Map<String, Long> getKPIs() {
-        long active = tenderRepository.countByStatusIn(java.util.List.of(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
+    public java.util.Map<String, Long> getKPIs(String department, String category, String month) {
+        log.info("Fetching KPIs with department: {}, category: {}, month: {}", department, category, month);
+        
+        Specification<Tender> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // Active statuses
+            predicates.add(root.get("status").in(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
+            
+            if (department != null && !department.isEmpty()) {
+                predicates.add(cb.equal(cb.trim(cb.lower(root.get("department").get("name"))), department.toLowerCase().trim()));
+            }
+            
+            if (category != null && !category.isEmpty()) {
+                try {
+                    predicates.add(cb.equal(root.get("procurementType"), ProcurementType.valueOf(category.toUpperCase())));
+                } catch (Exception e) { /* ignore */ }
+            }
+            
+            if (month != null && month.startsWith("month_")) {
+                try {
+                    int monthInt = Integer.parseInt(month.substring(6));
+                    LocalDateTime startOfMonth = LocalDateTime.now().withMonth(monthInt).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+                    LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
+                    predicates.add(cb.between(root.get("createdAt"), startOfMonth, endOfMonth));
+                } catch (Exception e) { /* ignore */ }
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        long active = tenderRepository.count(spec);
+        long smeActive = tenderRepository.count(spec.and((root, query, cb) -> cb.isTrue(root.get("smeIndicator"))));
         long awarded = 0; // Since AWARDED doesn't exist yet, we just return 0
-        return java.util.Map.of("activeTenders", active, "awardedTenders", awarded);
+        
+        double smeParticipation = active > 0 ? (smeActive * 100.0 / active) : 0;
+        
+        return java.util.Map.of(
+            "activeTenders", active, 
+            "awardedTenders", awarded,
+            "smeParticipation", (long)smeParticipation
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<java.util.Map<String, Object>> getKPITrend(String department, String category) {
+        log.info("Calculating KPI trend for department: {}, category: {}", department, category);
+        List<java.util.Map<String, Object>> trend = new ArrayList<>();
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        for (int i = 5; i >= 0; i--) {
+            LocalDateTime monthStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
+            
+            final LocalDateTime start = monthStart;
+            final LocalDateTime end = monthEnd;
+            
+            Specification<Tender> spec = (root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(root.get("status").in(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
+                predicates.add(cb.between(root.get("createdAt"), start, end));
+                
+                if (department != null && !department.isEmpty()) {
+                    predicates.add(cb.equal(cb.trim(cb.lower(root.get("department").get("name"))), department.toLowerCase().trim()));
+                }
+                if (category != null && !category.isEmpty()) {
+                    try {
+                        predicates.add(cb.equal(root.get("procurementType"), ProcurementType.valueOf(category.toUpperCase())));
+                    } catch (Exception e) { }
+                }
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
+            
+            long count = tenderRepository.count(spec);
+            String label = monthStart.getMonth().name().substring(0, 3);
+            trend.add(java.util.Map.of("label", label, "value", count));
+        }
+        
+        return trend;
     }
 
     @Override

@@ -33,8 +33,24 @@ export const officerRegistrationSchema = z
     officialEmail: z.string().min(1, 'Official Email is required').regex(/^[^A-Z]*$/, 'Invalid email: uppercase letters are not allowed').email('Enter a valid email address'),
 
     // Business Info (optional)
-    businessRegistrationNumber: z.string().optional().or(z.literal('')),
-    vatRegistrationNumber: z.string().optional().or(z.literal('')),
+    businessRegistrationNumber: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .transform((val) => val?.trim().toUpperCase())
+      .refine((val) => !val || /^([A-Z]{1,4}[\s/]?|)\d{4,10}$/.test(val), {
+        message: 'Invalid format. Use patterns like PV 12345, W/12345, or digits only.',
+      })
+      .refine((val) => !val || (val.length >= 5 && val.length <= 20), {
+        message: 'Business Registration Number must be between 5 and 20 characters.',
+      }),
+    vatRegistrationNumber: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine((val) => !val || /^\d{9}7000$/.test(val), {
+        message: 'VAT number should be 13 digits ending with 7000 (e.g., 1234567897000)',
+      }),
 
     // Liaison Officer
     liaisonTitle: z.string().min(1, 'Title is required'),

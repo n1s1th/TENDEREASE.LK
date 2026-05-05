@@ -8,7 +8,7 @@ import ConfirmRejectionModal from "@/components/cao-dashboard/modals/ConfirmReje
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "CAO Dashboard - TenderEase.lk",
+  title: "TenderEase.lk - CAO Dashboard",
   description: "Chief Accounting Officer dashboard for managing government tenders, approvals, and officer assignments.",
 };
 

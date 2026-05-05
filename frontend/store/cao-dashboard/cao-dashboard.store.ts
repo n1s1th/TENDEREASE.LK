@@ -6,6 +6,7 @@ import type {
   NotificationSummary,
   KpiSummary,
   KpiReportData,
+  KpiReportParams,
   RegistrationRequest,
   RegistrationStatus,
   TenderTab,
@@ -57,7 +58,7 @@ interface CAODashboardState {
 
   fetchTenders: () => Promise<void>;
   fetchKpiSummary: () => Promise<void>;
-  fetchKpiReport: (params: { startDate?: string; endDate?: string }) => Promise<void>;
+  fetchKpiReport: (params: KpiReportParams) => Promise<void>;
 
   // Registration
   setRegistrationStatusFilter: (status: RegistrationStatus | 'ALL') => void;

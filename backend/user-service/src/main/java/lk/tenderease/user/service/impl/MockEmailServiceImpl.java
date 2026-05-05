@@ -52,7 +52,7 @@ public class MockEmailServiceImpl implements EmailService {
                 "║ SUBJECT: Registration Approved - TenderEase                ║\n" +
                 "╠══════════════════════════════════════════════════════════════╣\n" +
                 "║                                                            ║\n" +
-                "║ Dear {},                                                   \n" +
+                "║ Dear Officer,                                              \n" +
                 "║                                                            ║\n" +
                 "║ Congratulations! Your officer registration has been        ║\n" +
                 "║ APPROVED by the Chief Accounting Officer (CAO).            ║\n" +
@@ -65,7 +65,7 @@ public class MockEmailServiceImpl implements EmailService {
                 "║ Best regards,                                              ║\n" +
                 "║ TenderEase Team                                            ║\n" +
                 "╚══════════════════════════════════════════════════════════════╝",
-                toEmail, officerName, referenceId);
+                toEmail, referenceId);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class MockEmailServiceImpl implements EmailService {
                 "║ SUBJECT: Registration Rejected - TenderEase                ║\n" +
                 "╠══════════════════════════════════════════════════════════════╣\n" +
                 "║                                                            ║\n" +
-                "║ Dear {},                                                   \n" +
+                "║ Dear Officer,                                              \n" +
                 "║                                                            ║\n" +
                 "║ We regret to inform you that your officer registration     ║\n" +
                 "║ has been REJECTED by the Chief Accounting Officer (CAO).   ║\n" +
@@ -93,6 +93,6 @@ public class MockEmailServiceImpl implements EmailService {
                 "║ Best regards,                                              ║\n" +
                 "║ TenderEase Team                                            ║\n" +
                 "╚══════════════════════════════════════════════════════════════╝",
-                toEmail, officerName, referenceId, reason);
+                toEmail, referenceId, reason);
     }
 }

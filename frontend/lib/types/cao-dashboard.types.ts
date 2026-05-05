@@ -154,6 +154,14 @@ export interface KpiReportData {
   };
 }
 
+export interface KpiReportParams {
+  startDate?: string;
+  endDate?: string;
+  period?: string;
+  department?: string;
+  category?: string;
+}
+
 // ── Registration Request ─────────────────────────────────────
 export type RegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 

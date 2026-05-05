@@ -116,7 +116,6 @@ export default function NotificationsPage() {
           <div className="dash-notif-list-header">
             <span className="dash-notif-list-title">
               Recent Notifications{" "}
-              <ChevronDown size={14} style={{ verticalAlign: "middle" }} />
             </span>
             <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)" }}>
               {filtered.length} notification{filtered.length !== 1 ? "s" : ""}
@@ -141,8 +140,8 @@ export default function NotificationsPage() {
                   key={notif.id}
                   className="dash-notif-item hover:bg-slate-50/80 hover:shadow-sm transition-all duration-200"
                   onClick={() => handleNotificationClick(notif)}
-                  style={{ 
-                    cursor: "pointer", 
+                  style={{
+                    cursor: "pointer",
                     opacity: 1,
                     borderLeft: notif.isRead ? "4px solid #e2e8f0" : "4px solid #953002",
                     paddingLeft: "1rem"
