@@ -23,18 +23,34 @@ export const officerRegistrationSchema = z
     streetLine2: z.string().optional().or(z.literal('')),
     city: z.string().min(1, 'City is required'),
     province: z.string().optional().or(z.literal('')),
-    postalCode: z.string().optional().or(z.literal('')),
+    postalCode: z.string().regex(/^\d*$/, 'Postal Code must contain numbers only').optional().or(z.literal('')),
 
     // Contact Info
     personalLandPhone: z
       .string()
       .min(1, 'Personal Land Phone is required')
-      .regex(/^([0-9]{10}|\+[0-9]{12})$/, 'Enter 10 digits, or 13 digits with + country code (e.g. +94771234567)'),
-    officialEmail: z.string().min(1, 'Official Email is required').email('Enter a valid email address'),
+      .regex(/^([0-9]{10}|\+[0-9]{11})$/, 'Enter 10 digits, or 12 digits with + country code (e.g. +94771234567)'),
+    officialEmail: z.string().min(1, 'Official Email is required').regex(/^[^A-Z]*$/, 'Invalid email: uppercase letters are not allowed').email('Enter a valid email address'),
 
     // Business Info (optional)
-    businessRegistrationNumber: z.string().optional().or(z.literal('')),
-    vatRegistrationNumber: z.string().optional().or(z.literal('')),
+    businessRegistrationNumber: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .transform((val) => val?.trim().toUpperCase())
+      .refine((val) => !val || /^([A-Z]{1,4}[\s/]?|)\d{4,10}$/.test(val), {
+        message: 'Invalid format. Use patterns like PV 12345, W/12345, or digits only.',
+      })
+      .refine((val) => !val || (val.length >= 5 && val.length <= 20), {
+        message: 'Business Registration Number must be between 5 and 20 characters.',
+      }),
+    vatRegistrationNumber: z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine((val) => !val || /^\d{9}7000$/.test(val), {
+        message: 'VAT number should be 13 digits ending with 7000 (e.g., 1234567897000)',
+      }),
 
     // Liaison Officer
     liaisonTitle: z.string().min(1, 'Title is required'),
@@ -47,8 +63,8 @@ export const officerRegistrationSchema = z
     liaisonMobile: z
       .string()
       .min(1, 'Mobile Phone with Country Code is required')
-      .regex(/^([0-9]{10}|\+[0-9]{12})$/, 'Enter 10 digits, or 13 digits with + country code (e.g. +94771234567)'),
-    liaisonEmail: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+      .regex(/^([0-9]{10}|\+[0-9]{11})$/, 'Enter 10 digits, or 12 digits with + country code (e.g. +94771234567)'),
+    liaisonEmail: z.string().min(1, 'Email is required').regex(/^[^A-Z]*$/, 'Invalid email: uppercase letters are not allowed').email('Enter a valid email address'),
 
     // Terms
     termsAccepted: z.boolean().refine((val) => val === true, {

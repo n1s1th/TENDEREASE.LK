@@ -1,5 +1,5 @@
 server:
-  port: ${PORT:8093}
+  port: ${PORT:8194}
   error:
     include-message: always
     include-binding-errors: always

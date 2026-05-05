@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, User, Search } from "lucide-react";
+import Footer from "@/components/home/Footer";
 
 export default function TenderLayout({ children }: any) {
   return (
@@ -27,6 +28,8 @@ export default function TenderLayout({ children }: any) {
           {children}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

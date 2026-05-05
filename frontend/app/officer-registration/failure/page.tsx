@@ -14,7 +14,6 @@ export default function OfficerFailurePage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-xl w-full text-center py-16">
-          {/* ─── Red X Icon ─── */}
           <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-400 mb-6">
             <svg
               className="h-10 w-10 text-white"
@@ -64,7 +63,6 @@ export default function OfficerFailurePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/officer-registration"
-              onClick={() => reset()}
               className="inline-flex items-center justify-center px-8 py-3 text-sm font-semibold rounded-md text-white bg-[#953002] hover:bg-[#782500] transition-colors shadow-sm min-w-[220px]"
             >
               Review &amp; Edit Application

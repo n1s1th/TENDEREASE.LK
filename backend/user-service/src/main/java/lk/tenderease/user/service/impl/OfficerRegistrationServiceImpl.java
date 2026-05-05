@@ -19,8 +19,11 @@ import lk.tenderease.user.exception.OfficerRegistrationException;
 import lk.tenderease.user.repository.LiaisonOfficerRepository;
 import lk.tenderease.user.repository.OfficerRepository;
 import lk.tenderease.user.repository.RegistrationAuditRepository;
+import lk.tenderease.user.service.EmailService;
 import lk.tenderease.user.service.OfficerRegistrationService;
 import lk.tenderease.user.util.ReferenceIdGenerator;
+import lk.tenderease.user.producer.UserEventProducer;
+import lk.tenderease.common.event.UserEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -62,6 +65,8 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     private final RegistrationAuditRepository registrationAuditRepository;
     private final ReferenceIdGenerator referenceIdGenerator;
     private final OfficerEventPublisher eventPublisher;
+    private final UserEventProducer userEventProducer;
+    private final EmailService emailService;
 
     // ────────────────────────────────────────────────────────
     //  PUBLIC REGISTRATION
@@ -114,10 +119,29 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         // 5. Create success audit
         createAuditRecord(referenceId, "PENDING", null, null, "REGISTER");
 
-        // 6. Publish event
+        // 6. Publish event for internal workflow
         publishOfficerEvent(savedOfficer, "REGISTERED");
 
-        // 7. Return success response
+        // 7. Emit KPI Event for Reporting Service
+        userEventProducer.sendUserEvent(UserEvent.builder()
+                .userId(savedOfficer.getId().toString())
+                .eventType("REGISTERED")
+                .role("OFFICER")
+                .triggerBy("system")
+                .build());
+
+        // 7. Send asynchronous-like mock email
+        try {
+            emailService.sendRegistrationSuccessEmail(
+                savedOfficer.getOfficialEmail(),
+                savedOfficer.getLiaisonOfficer() != null ? savedOfficer.getLiaisonOfficer().getName() : "Officer",
+                referenceId
+            );
+        } catch (Exception e) {
+            log.error("Failed to send mock registration email to {}: {}", savedOfficer.getOfficialEmail(), e.getMessage());
+        }
+
+        // 8. Return success response
         return OfficerRegistrationSuccessResponse.builder()
                 .success(true)
                 .message("Registration successful")
@@ -189,7 +213,25 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         createAuditRecord(officer.getRegistrationReference(), "APPROVED", null, null, "APPROVE");
         publishOfficerEvent(officer, "APPROVED");
 
+        // Emit KPI Event
+        userEventProducer.sendUserEvent(UserEvent.builder()
+                .userId(officer.getId().toString())
+                .eventType("ACCEPTED")
+                .status("APPROVED")
+                .role("OFFICER")
+                .triggerBy("cao-user")
+                .build());
+
         log.info("Officer {} approved (ref: {})", id, officer.getRegistrationReference());
+
+        // Send approval email
+        try {
+            emailService.sendRegistrationApprovalEmail(
+                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference());
+        } catch (Exception e) {
+            log.error("Failed to send approval email to {}: {}", officer.getOfficialEmail(), e.getMessage());
+        }
+
         return mapToProfileResponse(officer);
     }
 
@@ -205,12 +247,22 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         }
 
         officer.setStatus(OfficerStatus.REJECTED);
+        officer.setRejectionReason(reason);
         officerRepository.save(officer);
 
         createAuditRecord(officer.getRegistrationReference(), "REJECTED", reason, null, "REJECT");
         publishOfficerEvent(officer, "REJECTED");
 
         log.info("Officer {} rejected (ref: {})", id, officer.getRegistrationReference());
+
+        // Send rejection email
+        try {
+            emailService.sendRegistrationRejectionEmail(
+                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference(), reason);
+        } catch (Exception e) {
+            log.error("Failed to send rejection email to {}: {}", officer.getOfficialEmail(), e.getMessage());
+        }
+
         return mapToProfileResponse(officer);
     }
 
@@ -234,11 +286,6 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         final String nic = request.getLiaisonOfficer().getNic();
         if (!isValidNIC(nic)) {
             errors.add("NIC format incorrect");
-        }
-
-        // NIC uniqueness
-        if (liaisonOfficerRepository.existsByNic(nic)) {
-            errors.add("NIC already registered for another liaison officer");
         }
 
         return errors;
@@ -380,6 +427,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
                 .keycloakUserId(officer.getKeycloakUserId())
                 .createdAt(officer.getCreatedAt())
                 .updatedAt(officer.getUpdatedAt())
+                .rejectionReason(officer.getRejectionReason())
                 .build();
     }
 }

@@ -74,6 +74,9 @@ public class Officer extends BaseEntity {
     @Builder.Default
     private Boolean termsAccepted = false;
 
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
+
     // ──── Relationships ────
 
     @OneToOne(mappedBy = "officer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lk.tenderease.tender.dto.request.ComplianceChecklistRequest;
 import lk.tenderease.tender.dto.request.CreateTenderRequest;
+import lk.tenderease.tender.dto.request.DocumentUploadRequest;
 import lk.tenderease.tender.dto.request.TenderScheduleRequest;
+import org.springframework.http.HttpStatus;
 import lk.tenderease.tender.dto.response.ComplianceChecklistResponse;
 import lk.tenderease.tender.dto.response.DepartmentResponse;
 import lk.tenderease.tender.dto.response.FundingSourceResponse;
@@ -236,9 +238,17 @@ public class TenderController {
     public ResponseEntity<TenderDocumentResponse> uploadDocument(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @RequestParam("file") MultipartFile file,
-            @RequestParam("documentType") DocumentType documentType,
+            @RequestParam(value = "documentType", required = false) DocumentType documentType,
             @RequestParam(value = "sbdTemplateId", required = false) Long sbdTemplateId) {
-        return null; // TODO: implement
+        
+        DocumentUploadRequest request = DocumentUploadRequest.builder()
+                .file(file)
+                .documentType(documentType != null ? documentType : DocumentType.OTHER)
+                .sbdTemplateId(sbdTemplateId)
+                .build();
+                
+        TenderDocumentResponse response = tenderService.uploadDocument(id, request, "dev-user");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{id}/documents/{docId}")

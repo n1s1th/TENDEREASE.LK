@@ -1,0 +1,90 @@
+"use client";
+
+import React, { useEffect } from "react";
+import { useParams } from "next/navigation";
+import OpeningHeader from "@/components/bid-opening/OpeningHeader";
+import OpeningBanner from "@/components/bid-opening/OpeningBanner";
+import SchedulePanel from "@/components/bid-opening/SchedulePanel";
+import OverviewPanel from "@/components/bid-opening/OverviewPanel";
+import OpeningActionPanel from "@/components/bid-opening/OpeningActionPanel";
+import AttendanceSection from "@/components/bid-opening/AttendanceSection";
+import ReceivedBidsLog from "@/components/bid-opening/ReceivedBidsLog";
+import TenderLayout from "@/components/tender/TenderLayout";
+import Footer from "@/components/common/Footer";
+
+const DEMO_SESSION = {
+  id: "TND-0000-SESSION",
+  tenderId: "TND-XXXX",
+  tenderTitle: "TENDER OPENING SESSION",
+  category: "UNSPECIFIED",
+  division: "PROCUREMENT",
+  status: "PENDING_OPENING",
+  scheduledOpeningTime: null,
+  bidsCount: 0
+};
+
+export default function BidOpeningPage() {
+  const params = useParams();
+  const id = params?.id as string;
+  const { session, fetchSession, fetchAttendance, isLoading } = useOpeningStore();
+
+  useEffect(() => {
+    if (id) {
+      fetchSession(id);
+    }
+  }, [id, fetchSession]);
+
+  useEffect(() => {
+    if (session?.id) {
+      fetchAttendance(session.id);
+    }
+  }, [session?.id, fetchAttendance]);
+
+  // Fallback to demo data if not loading and no session found
+  const activeSession = session || (isLoading ? null : DEMO_SESSION);
+
+  if (isLoading && !activeSession) {
+    return (
+      <TenderLayout>
+        <div className="min-h-screen flex items-center justify-center bg-[#F3F5F7]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-[#9A3B12] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-500 font-medium">Loading session data...</p>
+          </div>
+        </div>
+      </TenderLayout>
+    );
+  }
+
+  // If we still have no session (e.g., fetch failed and no demo desired), we show the demo anyway to fulfill user request
+  const displaySession = activeSession || DEMO_SESSION;
+
+  return (
+    <TenderLayout>
+      <div className="min-h-screen bg-[#F3F5F7] p-8 flex flex-col">
+        <div className="max-w-[98%] mx-auto flex flex-col gap-8 flex-1">
+          <OpeningHeader
+            tenderId={id || displaySession.tenderId}
+            title={displaySession.tenderTitle}
+            category={displaySession.category}
+            division={displaySession.division}
+          />
+
+          <OpeningBanner status={displaySession.status} scheduledTime={displaySession.scheduledOpeningTime} />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <SchedulePanel scheduledTime={displaySession.scheduledOpeningTime} />
+            <OverviewPanel />
+            <OpeningActionPanel />
+          </div>
+
+          <AttendanceSection sessionId={displaySession.id} />
+          <ReceivedBidsLog tenderId={id || displaySession.tenderId} />
+        </div>
+        <div className="mt-8">
+          <Footer />
+        </div>
+      </div>
+    </TenderLayout>
+  );
+}

@@ -1,0 +1,17 @@
+target/
+*.log
+.git/
+.mvn/
+mvnw
+mvnw.cmd
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+uploads/
+backend_startup.log
+curl_out.json

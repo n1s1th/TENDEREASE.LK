@@ -51,10 +51,6 @@ const PROV_ENTITY_LEVELS = [
   'Provincial Statutory Enterprise',
 ];
 
-// ────────────────────────────────────────────────────────
-//  Terms & Conditions text (PROMISe → TenderEase)
-// ────────────────────────────────────────────────────────
-
 const TERMS_TEXT = `The officer appointed by the Head of the Organization (Ministry, Department, Special Spending Units or the State Own Enterprise) as the Liaison Officer (LO) to coordinate with Ministry of Finance on e-Procurement activities shall be responsible to enter the correct information to the Government's e-Procurement System (TenderEase). The TenderEase system and Ministry of Finance shall not be responsible for any consequences might take place on inputting wrong, fraudulent or misleading information to the TenderEase system by the LO or/ and the officer(if any) to whom the LO delegates his due functions on managing affairs with TenderEase. However, Head of the Organization is accountable for overall functions in the e-GP system.
 
 LO shall ensure among others to update the Procurement Plan published by the Procurement Entity with most updated procurement-related information into the TenderEase system before floating a bid, using the TenderEase system. Also, LO shall be responsible to upload complete and accurate information to the TenderEase system in the process of registration of the Procurement Entity and thereafter the use of the TenderEase system for public procurement processes. LO shall be responsible to maintain the confidentiality of the information inputted by the LO or/and the officer (if any) to whom the LO delegates his due functions on managing affairs with TenderEase.`;
@@ -81,13 +77,11 @@ export default function OfficerRegistrationPage() {
     defaultValues: EMPTY_DRAFT,
   });
 
-  // ── Hydrate form from persisted draft (once zustand rehydrates) ──
   useEffect(() => {
     if (formDraft && formDraft !== EMPTY_DRAFT) {
       resetForm(formDraft);
     }
     setHydrated(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Save draft on field change via subscription (avoids infinite re-render) ──
@@ -165,7 +159,7 @@ export default function OfficerRegistrationPage() {
           </div>
 
           {/* ─── Registration Form ─── */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-0">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-0" method="POST" action="#">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* ── Procuring Entity Type ── */}
@@ -306,7 +300,10 @@ export default function OfficerRegistrationPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Business registration Number (if applicable)
                 </label>
-                <input {...register('businessRegistrationNumber')} placeholder="Business Registration Number" className={inputCls} />
+                <input {...register('businessRegistrationNumber')} placeholder="PV 12345" className={inputCls} />
+                {errors.businessRegistrationNumber && (
+                  <p className="text-red-500 text-xs">{errors.businessRegistrationNumber.message}</p>
+                )}
               </div>
 
               {/* ── VAT Registration No ── */}
@@ -314,12 +311,17 @@ export default function OfficerRegistrationPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   VAT Registration No (if applicable)
                 </label>
-                <input {...register('vatRegistrationNumber')} placeholder="VAT Registration Number" className={inputCls} />
+                <input {...register('vatRegistrationNumber')} placeholder="1234567897000" className={inputCls} />
+                {errors.vatRegistrationNumber ? (
+                  <p className="text-red-500 text-xs">{errors.vatRegistrationNumber.message}</p>
+                ) : (
+                  <p className="text-gray-400 text-[11px]">Format: 13 digits ending with 7000</p>
+                )}
               </div>
             </div>
 
             {/* ─── Details of Liaison Officer ─── */}
-            <div className="mt-8 mb-2 text-center">
+            <div className="mt-16 mb-4 text-center">
               <h2 className="text-lg font-bold text-gray-900">
                 Details of Liaison Officer
               </h2>
