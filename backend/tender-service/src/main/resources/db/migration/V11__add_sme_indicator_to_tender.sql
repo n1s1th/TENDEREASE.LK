@@ -1,1 +1,2 @@
-ALTER TABLE tender ADD COLUMN sme_indicator BOOLEAN DEFAULT FALSE;
+ALTER TABLE tender
+ADD COLUMN sme_indicator BOOLEAN;
