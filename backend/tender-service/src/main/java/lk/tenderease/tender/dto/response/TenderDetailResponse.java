@@ -26,9 +26,6 @@ public class TenderDetailResponse extends TenderResponse {
     @Schema(description = "Compliance checklist state")
     private ComplianceChecklistResponse complianceChecklist;
 
-    @Schema(description = "List of amendments/addenda issued for this tender")
-    private List<TenderAmendmentResponse> addenda;
-
     @Schema(description = "Auto-generated notice preview text (Invitation for Bids)")
     private String noticePreview;
 }

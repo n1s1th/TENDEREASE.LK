@@ -3,6 +3,10 @@ export type OpeningStatus = 'SCHEDULED' | 'OPEN' | 'CLOSED';
 export interface OpeningSession {
     id: string;
     tenderId: string;
+    tenderTitle?: string;
+    category?: string;
+    division?: string;
+    bidsCount?: number;
     scheduledOpeningTime: string;
     actualOpeningTime?: string;
     status: OpeningStatus;

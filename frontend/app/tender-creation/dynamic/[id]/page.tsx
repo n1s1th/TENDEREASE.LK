@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useDynamicTenderCreationStore } from "@/store/tender-creation/dynamic-creation.store";
 import { templateService } from "@/services/template.service";
 import { StepIndicator } from "@/components/tender/creation/StepIndicator";
+import type { StepIndex } from "@/lib/types/tender-creation.types";
 import { BaseDetailsStep } from "@/components/tender/creation/dynamic/BaseDetailsStep";
 import { DynamicSectionStep } from "@/components/tender/creation/dynamic/DynamicSectionStep";
 import { DynamicTenderPreview } from "@/components/tender/creation/dynamic/DynamicTenderPreview";
@@ -130,7 +131,7 @@ export default function DynamicTenderCreationPage() {
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
         {/* StepIndicator handles max 5 standard steps, we constrain it visually */}
         <StepIndicator
-          currentStep={currentStep > 4 ? 4 : currentStep}
+          currentStep={(currentStep > 4 ? 4 : currentStep) as StepIndex}
           onStepClick={(step) => goToStep(step)}
         />
 

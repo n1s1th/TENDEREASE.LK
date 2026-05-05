@@ -1,4 +1,4 @@
-package lk.tenderease.tender.config;
+package lk.tenderease.evaluation.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,24 +18,19 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Security configuration for the Tender Service.
- * Configures CORS for the frontend and enforces JWT authentication.
- */
 @Configuration
 @EnableWebSecurity
-public class TenderSecurityConfig {
+public class EvaluationSecurityConfig {
 
     @Bean
     @Primary
-    public SecurityFilterChain tenderFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
+    public SecurityFilterChain evaluationFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/tenders/**").permitAll() // Allow PublicTenderController
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
@@ -63,4 +58,3 @@ public class TenderSecurityConfig {
         return source;
     }
 }
-
