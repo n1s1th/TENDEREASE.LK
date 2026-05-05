@@ -7,7 +7,6 @@ import EvaluationStatusPanel from "@/components/committee-dashboard/EvaluationSt
 import AssignedTenderTable from "@/components/committee-dashboard/AssignedTenderTable";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 import TenderLayout from "@/components/tender/TenderLayout";
-import Footer from "@/components/common/Footer";
 
 export default function CommitteeDashboardPage() {
   const { activeTendersCount, fetchDashboardMetrics } = useEvaluationStore();
@@ -18,8 +17,8 @@ export default function CommitteeDashboardPage() {
 
   return (
     <TenderLayout>
-      <div className="min-h-screen bg-[#F3F5F7] p-8 flex flex-col">
-        <div className="max-w-[98%] mx-auto flex-1">
+      <div className="min-h-screen bg-[#F3F5F7] p-8">
+        <div className="max-w-[98%] mx-auto">
           <div className="mb-6">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">WORKSPACE OVERVIEW</h3>
             <div className="flex items-end gap-3 mt-1">
@@ -49,9 +48,6 @@ export default function CommitteeDashboardPage() {
           </div>
 
           <AssignedTenderTable />
-        </div>
-        <div className="mt-8">
-          <Footer />
         </div>
       </div>
     </TenderLayout>
