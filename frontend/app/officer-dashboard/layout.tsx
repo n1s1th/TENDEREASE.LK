@@ -22,25 +22,23 @@ export default function OfficerDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute>
-      <div className="dash-page">
-        <SubNav />
-        <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
+    <div className="dash-page">
+      <SubNav />
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
 
-        {/* Same Footer as home page */}
-        <Footer />
+      {/* Same Footer as home page */}
+      <Footer />
 
-        {/* Global modals */}
-        <RecommendationReviewModal />
-        <TenderSummaryModal />
-        <ConfirmApprovalModal />
-        <ConfirmRejectionModal />
-        <AssignOfficersModal />
-        <OfficerDetailsModal />
+      {/* Global modals */}
+      <RecommendationReviewModal />
+      <TenderSummaryModal />
+      <ConfirmApprovalModal />
+      <ConfirmRejectionModal />
+      <AssignOfficersModal />
+      <OfficerDetailsModal />
 
-        {/* Toast notifications */}
-        <Toast />
-      </div>
-    </ProtectedRoute>
+      {/* Toast notifications */}
+      <Toast />
+    </div>
   );
 }
