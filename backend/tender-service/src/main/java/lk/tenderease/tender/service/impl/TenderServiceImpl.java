@@ -53,7 +53,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
 import lk.tenderease.common.exception.BusinessException;
+import lk.tenderease.tender.enums.DocumentType;
 
 @Slf4j
 @Service
@@ -73,6 +79,10 @@ public class TenderServiceImpl implements TenderService {
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
+
+    @Value("${app.upload-dir:../uploads}")
+    private String uploadDir;
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -265,7 +275,72 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public TenderDocumentResponse uploadDocument(UUID tenderId, DocumentUploadRequest request, String callerUserId) {
-        return null; // TODO: implement
+        log.info("Uploading document for tender ID: {}", tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+
+        if (request.getFile() == null || request.getFile().isEmpty()) {
+            throw new RuntimeException("File is empty or missing.");
+        }
+
+        String docName = request.getFile().getOriginalFilename();
+        if (docName == null || docName.trim().isEmpty()) {
+            docName = "Document_" + java.util.UUID.randomUUID().toString();
+        }
+
+        // Save file to local storage
+        String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
+        Path targetPath = Paths.get(uploadDir).resolve(fileName).toAbsolutePath();
+        log.info("Saving uploaded file to: {}", targetPath);
+        
+        try {
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("File successfully saved to disk.");
+        } catch (IOException e) {
+            log.error("CRITICAL: Failed to store file at {}. Error: {}", targetPath, e.getMessage());
+            throw new RuntimeException("Could not store file", e);
+        }
+
+        // Save metadata to TenderDocument
+        lk.tenderease.tender.entity.TenderDocument doc = lk.tenderease.tender.entity.TenderDocument.builder()
+                .tender(tender)
+                .documentName(docName)
+                .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
+                .s3Key(fileName) // We use s3Key to store the local filename
+                .fileSizeBytes(request.getFile().getSize())
+                .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
+                .uploadedAt(java.time.LocalDateTime.now())
+                .build();
+
+        lk.tenderease.tender.entity.TenderDocument savedDoc = documentRepository.save(doc);
+        log.info("Document saved successfully with ID: {}", savedDoc.getId());
+
+        return TenderDocumentResponse.builder()
+                .id(savedDoc.getId())
+                .tenderId(tenderId)
+                .documentName(savedDoc.getDocumentName())
+                .documentType(savedDoc.getDocumentType())
+                .fileSizeBytes(savedDoc.getFileSizeBytes())
+                .mimeType(savedDoc.getMimeType())
+                .uploadedAt(savedDoc.getUploadedAt())
+                .build();
+    }
+
+    @Override
+    public byte[] viewDocument(UUID docId) {
+        log.info("Fetching document for viewing: {}", docId);
+        TenderDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        
+        Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
+        log.info("Attempting to read file from path: {}", filePath.toAbsolutePath());
+        try {
+            return Files.readAllBytes(filePath);
+        } catch (IOException e) {
+            log.error("Failed to read file: {}", e.getMessage());
+            throw new RuntimeException("Could not read file", e);
+        }
     }
 
     @Override
@@ -766,5 +841,38 @@ public class TenderServiceImpl implements TenderService {
         return Arrays.stream(TenderType.values())
                 .map(Enum::name)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public java.util.Map<String, Long> getKPIs(String department, String category, String month) {
+        log.debug("Fetching KPIs - department: {}, category: {}, month: {}", department, category, month);
+        java.util.Map<String, Long> kpis = new java.util.LinkedHashMap<>();
+        kpis.put("totalTenders", tenderRepository.count());
+        kpis.put("activeTenders", (long) tenderRepository.findByStatus(TenderStatus.PUBLISHED, Pageable.unpaged()).getContent().size());
+        kpis.put("closedTenders", (long) tenderRepository.findByStatus(TenderStatus.CLOSED, Pageable.unpaged()).getContent().size());
+        kpis.put("draftTenders", (long) tenderRepository.findByStatus(TenderStatus.DRAFT, Pageable.unpaged()).getContent().size());
+        return kpis;
+    }
+
+    @Override
+    public java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category) {
+        log.debug("Fetching KPI trend - department: {}, category: {}", department, category);
+        // Return empty list for now — can be enhanced with monthly aggregation queries
+        return java.util.Collections.emptyList();
+    }
+
+    @Override
+    @Transactional
+    public TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId) {
+        log.info("Updating tender {} status to {} by user {}", id, status, callerUserId);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+
+        tender.setStatus(status);
+        tender.setUpdatedAt(LocalDateTime.now());
+        Tender saved = tenderRepository.save(tender);
+
+        log.info("Tender {} status updated to {}", id, status);
+        return mapToResponse(saved);
     }
 }

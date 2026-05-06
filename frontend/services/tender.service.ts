@@ -2,7 +2,7 @@ import { useAuthStore } from "@/store";
 
 const BASE_URL = "http://localhost:8082/api/tenders";
 
-// 🔐 Get Authorization headers (FIXED)
+// Get Authorization headers
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -58,18 +58,31 @@ async function handleResponse(response: Response) {
   }
 }
 
-// 🔥 Common fetch wrapper
+//  Common fetch wrapper with timeout
 async function apiFetch(url: string, options: RequestInit = {}) {
-  const res = await fetch(url, {
-    cache: "no-store",
-    ...options,
-    headers: {
-      ...getAuthHeaders(), // ✅ now always includes Content-Type
-      ...(options.headers || {}),
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-  return handleResponse(res);
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...getAuthHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+
+    return handleResponse(res);
+  } catch (error: any) {
+    if (error.name === "AbortError") {
+      throw new Error(`Request to ${url} timed out after 5 seconds`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // 🔥 GET SINGLE TENDER
@@ -99,7 +112,7 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
 
     return await apiFetch(`${BASE_URL}?${params.toString()}`);
   } catch (error) {
-    console.error("❌ Error fetching tenders:", error);
+    console.error("Error fetching tenders:", error);
     throw error;
   }
 }
