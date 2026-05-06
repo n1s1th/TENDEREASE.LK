@@ -7,3 +7,7 @@ export default function TenderCreationLayout({
 }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;
 }
+
+{/* <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+  {children}
+</ProtectedRoute> */}
