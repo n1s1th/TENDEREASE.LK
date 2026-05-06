@@ -472,12 +472,41 @@ public class TenderServiceImpl implements TenderService {
         return tenderRepository.searchWithoutStatus(keyword, pageable)
                 .map(this::mapToSummaryDTO);
     }
+    
+    @Override
+    public Page<TenderSummaryDTO> getAllTendersForCao(TenderStatus status, Pageable pageable) {
+        if (status != null) {
+            return tenderRepository.findByStatus(status, pageable)
+                    .map(this::mapToSummaryDTO);
+        }
+        return tenderRepository.findAll(pageable).map(this::mapToSummaryDTO);
+    }
 
     @Override
     public TenderDetailsDTO getPublicTenderById(UUID id) {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
         return mapToDetailsDTO(tender);
+    }
+    
+    @Override
+    @Transactional
+    public void approveTender(UUID id, String reason) {
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+        tender.setStatus(TenderStatus.PUBLISHED);
+        tender.setUpdatedAt(LocalDateTime.now());
+        tenderRepository.save(tender);
+    }
+    
+    @Override
+    @Transactional
+    public void rejectTender(UUID id, String reason) {
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+        tender.setStatus(TenderStatus.REJECTED);
+        tender.setUpdatedAt(LocalDateTime.now());
+        tenderRepository.save(tender);
     }
 
     @Override

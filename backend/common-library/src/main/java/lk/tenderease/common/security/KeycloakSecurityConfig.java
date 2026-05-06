@@ -22,6 +22,7 @@ public class KeycloakSecurityConfig {
     private final Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter;
 
     @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
