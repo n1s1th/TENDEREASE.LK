@@ -9,11 +9,9 @@ export const verifyRegistration = async (certificateNo: string) => {
 };
 
 export const registerVendor = async (organization: OrgData, authorizedOfficer: OfficerData) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { confirmPassword, ...officerRest } = authorizedOfficer;
   const response = await axios.post(`${API_BASE_URL}/register`, {
     organization,
-    authorizedOfficer: officerRest
+    authorizedOfficer
   });
   return response.data;
 };

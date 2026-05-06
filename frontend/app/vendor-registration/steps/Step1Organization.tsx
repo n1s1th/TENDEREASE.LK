@@ -1,18 +1,32 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { organizationSchema } from '../../../lib/validations/vendorSchema';
 import { OrgData, useVendorStore } from '../../../store/vendorRegistrationStore';
 import { verifyRegistration } from '../../../lib/api/vendorApi';
+import { MultiSelect } from '@/components/ui/multi-select';
+
+const DEPARTMENT_OPTIONS = [
+  { label: 'Department of the Registrar of Companies', value: 'ROC' },
+  { label: 'Department of National Planning', value: 'DNP' },
+  { label: 'Department of External Resources', value: 'ERD' },
+  { label: 'Department of Inland Revenue', value: 'IRD' },
+  { label: 'Ministry of Finance', value: 'MOF' },
+  { label: 'Education Department', value: 'EDUCATION' },
+  { label: 'Agriculture Department', value: 'AGRICULTURE' },
+  { label: 'Health Department', value: 'HEALTH' },
+  { label: 'Information Technology Department', value: 'IT' },
+  { label: 'Transportation Department', value: 'TRANSPORT' },
+];
 
 export default function Step1Organization() {
   const { organizationData, setOrganizationData, nextStep, setVerified, isVerified, verifiedCompanyName } = useVendorStore();
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<OrgData>({
+  const { register, handleSubmit, watch, control, formState: { errors } } = useForm<OrgData>({
     resolver: zodResolver(organizationSchema),
     defaultValues: organizationData || {
       businessName: '',
@@ -25,7 +39,8 @@ export default function Step1Organization() {
       province: '',
       website: '',
       officialEmail: '',
-      officialTelephone: ''
+      officialTelephone: '',
+      departments: []
     }
   });
 
@@ -105,6 +120,24 @@ export default function Step1Organization() {
           <label className="block text-sm font-medium text-gray-700">Registration Authority *</label>
           <input {...register('registrationAuthority')} className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" />
           {errors.registrationAuthority && <p className="text-red-500 text-xs">{errors.registrationAuthority.message}</p>}
+        </div>
+
+        <div className="space-y-2 col-span-1 md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700">Select Departments *</label>
+          <Controller
+            name="departments"
+            control={control}
+            render={({ field }) => (
+              <MultiSelect
+                options={DEPARTMENT_OPTIONS}
+                selected={field.value || []}
+                onChange={field.onChange}
+                placeholder="Search and select departments..."
+              />
+            )}
+          />
+          <p className="text-xs text-gray-400">Select one or more departments you are registering with.</p>
+          {errors.departments && <p className="text-red-500 text-xs">{errors.departments.message}</p>}
         </div>
 
         <div className="space-y-2">

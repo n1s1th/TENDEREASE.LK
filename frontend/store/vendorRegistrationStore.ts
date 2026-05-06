@@ -12,6 +12,7 @@ export interface OrgData {
   website?: string;
   officialEmail: string;
   officialTelephone: string;
+  departments: string[];
 }
 
 export interface OfficerData {
@@ -20,8 +21,6 @@ export interface OfficerData {
   designation: string;
   mobilePhone: string;
   email: string;
-  password: string;
-  confirmPassword: string;
 }
 
 export interface DocInfo {

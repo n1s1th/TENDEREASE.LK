@@ -28,8 +28,8 @@ export default function VendorRegistrationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      
+      {/* <Navbar /> */}
+
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 mt-16">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
@@ -46,12 +46,12 @@ export default function VendorRegistrationPage() {
             <div className="flex items-center justify-between">
               {[1, 2, 3, 4].map((step) => (
                 <div key={step} className="flex flex-col items-center relative w-1/4">
-                  <div 
+                  <div
                     className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-sm z-10 
-                      ${currentStep === step 
-                        ? 'bg-[#953002] text-white shadow-md ring-4 ring-amber-100' 
-                        : currentStep > step 
-                          ? 'bg-amber-600 text-white' 
+                      ${currentStep === step
+                        ? 'bg-[#953002] text-white shadow-md ring-4 ring-amber-100'
+                        : currentStep > step
+                          ? 'bg-amber-600 text-white'
                           : 'bg-white border-2 border-gray-200 text-gray-400'
                       }`}
                   >
@@ -68,10 +68,10 @@ export default function VendorRegistrationPage() {
 
                   {step < 4 && (
                     <div className="absolute top-5 left-1/2 w-full h-[2px] bg-gray-200 -z-0">
-                       <div 
-                         className="h-full bg-amber-600 transition-all duration-300"
-                         style={{ width: currentStep > step ? '100%' : '0%' }}
-                       />
+                      <div
+                        className="h-full bg-amber-600 transition-all duration-300"
+                        style={{ width: currentStep > step ? '100%' : '0%' }}
+                      />
                     </div>
                   )}
                 </div>

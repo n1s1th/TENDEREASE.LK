@@ -36,6 +36,7 @@ public class VendorRegisterRequest {
         @Email
         private String officialEmail;
         private String officialTelephone;
+        private java.util.List<String> departments;
     }
 
     @Data
@@ -48,7 +49,5 @@ public class VendorRegisterRequest {
         private String mobilePhone;
         @Email
         private String email;
-        @NotBlank
-        private String password;
     }
 }

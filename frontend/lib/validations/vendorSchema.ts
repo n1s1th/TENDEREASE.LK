@@ -11,7 +11,8 @@ export const organizationSchema = z.object({
   province: z.string().min(2, 'Province is required'),
   website: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   officialEmail: z.string().email('Valid email is required'),
-  officialTelephone: z.string().min(9, 'Valid telephone is required')
+  officialTelephone: z.string().min(9, 'Valid telephone is required'),
+  departments: z.array(z.string()).min(1, 'Please select at least one department')
 });
 
 export const officerSchema = z.object({
@@ -20,11 +21,6 @@ export const officerSchema = z.object({
   designation: z.string().min(2, 'Designation is required'),
   mobilePhone: z.string().min(9, 'Mobile phone is required'),
   email: z.string().email('Valid email is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(8, 'Confirm Password is required'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 export const termsSchema = z.object({

@@ -78,4 +78,10 @@ public class VendorProfile {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
+
+    @ElementCollection
+    @CollectionTable(name = "vendor_departments", joinColumns = @JoinColumn(name = "vendor_id"))
+    @Column(name = "department_name")
+    @Builder.Default
+    private List<String> departments = new java.util.ArrayList<>();
 }

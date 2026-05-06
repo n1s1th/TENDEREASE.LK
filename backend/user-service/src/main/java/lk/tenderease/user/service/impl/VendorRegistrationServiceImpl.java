@@ -81,6 +81,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .status(VendorStatus.PENDING_REVIEW)
                 .drcVerified(false)
                 .termsAccepted(false)
+                .departments(request.getOrganization().getDepartments())
                 .build();
 
         profile.setCreatedAt(LocalDateTime.now());
@@ -96,7 +97,6 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .designation(request.getAuthorizedOfficer().getDesignation())
                 .mobilePhone(request.getAuthorizedOfficer().getMobilePhone())
                 .email(request.getAuthorizedOfficer().getEmail())
-                .password(passwordEncoder.encode(request.getAuthorizedOfficer().getPassword()))
                 .build();
         officer.setCreatedAt(LocalDateTime.now());
         officer.setUpdatedAt(LocalDateTime.now());
