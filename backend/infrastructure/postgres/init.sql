@@ -1,0 +1,14 @@
+CREATE DATABASE tenderease_user_db;
+CREATE DATABASE tenderease_tender_db;
+CREATE DATABASE tenderease_bid_db;
+CREATE DATABASE tenderease_contract_db;
+CREATE DATABASE tenderease_evaluation_db;
+CREATE DATABASE tenderease_notification_db;
+CREATE DATABASE tenderease_reporting_db;
+CREATE DATABASE tenderease_appeal_db;
+CREATE DATABASE tenderease_clarification_db;
+CREATE DATABASE tenderease_document_db;
+CREATE DATABASE tenderease_payment_db;
+CREATE DATABASE tenderease_qa_db;
+CREATE DATABASE tenderease_workflow_db;
+CREATE DATABASE tenderease_keycloak_db;
