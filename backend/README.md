@@ -38,7 +38,6 @@ Government e-procurement platform built with Spring Boot microservices architect
 
 - Java 21
 - Maven 3.9+
-- Docker & Docker Compose
 - PostgreSQL 15+
 - Keycloak
 - RabbitMQ
@@ -52,9 +51,7 @@ Government e-procurement platform built with Spring Boot microservices architect
    cd tenderease-backend
    ```
 2. **Start infrastructure**
-   ```bash
-   docker-compose up -d postgres redis rabbitmq keycloak
-   ```
+   Ensure PostgreSQL, Redis, RabbitMQ and Keycloak are running locally.
 3. **Build all services**
    ```bash
    ./scripts/build-all.sh
@@ -80,8 +77,7 @@ tenderease-backend/
 ├── common-library/        # Shared code
 ├── eureka-server/         # Service discovery
 ├── api-gateway/           # API gateway
-├── [service-name]/        # Microservices
-└── infrastructure/        # Docker configs
+└── [service-name]/        # Microservices
 ```
 
 ### Git Workflow
@@ -101,10 +97,6 @@ cd user-service
 mvn test
 ```
 
-### Building Docker Images
-```bash
-./scripts/docker-build.sh
-```
 
 ## Contributing
 See CONTRIBUTING.md

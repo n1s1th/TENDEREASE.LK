@@ -93,6 +93,7 @@ export default function CAOTenderReviewPage() {
       ? new Date(tender.schedule.preBidMeetingDate).toISOString().split('T')[0]
       : "",
     pendingFiles: (tender.documents || []).map((doc: any) => ({
+      id: doc.id,
       name: doc.documentName || doc.name || "Document",
       size: doc.fileSizeBytes || doc.size || 0,
     })),

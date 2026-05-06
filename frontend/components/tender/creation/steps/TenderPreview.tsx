@@ -1,7 +1,10 @@
 "use client";
 
+import React from "react";
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
 import { api } from "@/lib/api";
+import { viewTenderDocument, downloadTenderDocument } from "@/lib/api/cao-dashboard.api";
+import { config } from "@/lib/config";
 import {
   Card,
   CardContent,
@@ -20,6 +23,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+  X,
 } from "lucide-react";
 
 /* ── tiny helper ──────────────────────────────────────────── */
@@ -96,6 +100,24 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
     }
   };
 
+  const handleViewFile = async (e: React.MouseEvent, fileId: string, fileName: string) => {
+    e.preventDefault();
+    
+    try {
+      const blob = await downloadTenderDocument(fileId);
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const newWindow = window.open(blobUrl, '_blank');
+      
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        alert("Please allow popups for this site to view the document.");
+      }
+    } catch (err) {
+      console.error("Error viewing file:", err);
+      alert("Could not open the document. Please try again.");
+    }
+  };
+
   const cl = formData.complianceChecklist ?? {
     procurementPlanApproved: false,
     budgetAvailabilityConfirmed: false,
@@ -141,14 +163,14 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
         </CardHeader>
         <CardContent className="pt-5">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="Tender Title" value={formData.title} />
-            <Field label="Reference Number" value={formData.referenceNumber} />
-            <Field label="Procurement Type" value={formData.procurementType} />
-            <Field label="Bidding Method" value={formData.biddingMethod} />
-            <Field label="Ministry" value={formData.ministryId} />
-            <Field label="Department / Agency" value={formData.departmentAgencyId} />
+            <Field label="Tender Title" value={formData.title || ''} />
+            <Field label="Reference Number" value={formData.referenceNumber || ''} />
+            <Field label="Procurement Type" value={formData.procurementType || ''} />
+            <Field label="Bidding Method" value={formData.biddingMethod || ''} />
+            <Field label="Ministry" value={formData.ministryId || ''} />
+            <Field label="Department / Agency" value={formData.departmentAgencyId || ''} />
             <div className="sm:col-span-2">
-              <Field label="Description" value={formData.description} />
+              <Field label="Description" value={formData.description || ''} />
             </div>
           </dl>
         </CardContent>
@@ -178,8 +200,8 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
                   : ""
               }
             />
-            <Field label="Funding Source" value={formData.fundingSource} />
-            <Field label="Tender Type" value={formData.tenderType} />
+            <Field label="Funding Source" value={formData.fundingSource || ''} />
+            <Field label="Tender Type" value={formData.tenderType || ''} />
           </dl>
         </CardContent>
       </Card>
@@ -198,33 +220,49 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
         </CardHeader>
         <CardContent className="pt-5 space-y-4">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="SBD Template" value={formData.sbdTemplate} />
-            <Field label="Template Version" value={formData.templateVersion} />
+            <Field label="SBD Template" value={formData.sbdTemplate || ''} />
+            <Field label="Template Version" value={formData.templateVersion || ''} />
           </dl>
 
-          {formData.pendingFiles.length > 0 && (
+          {(formData.pendingFiles ?? []).length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-grey-4 uppercase tracking-wider">
-                Attached Files ({formData.pendingFiles.length})
+                Attached Files ({(formData.pendingFiles ?? []).length})
               </p>
               <ul className="space-y-1">
-                {formData.pendingFiles.map((file, idx) => (
-                  <li
-                    key={`${file.name}-${idx}`}
-                    className="flex items-center gap-2 text-sm text-foreground"
-                  >
-                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{file.name}</span>
-                    <span className="text-xs text-grey-4">
-                      ({(file.size / 1024).toFixed(1)} KB)
-                    </span>
-                  </li>
-                ))}
+                {(formData.pendingFiles ?? []).map((file: any, idx: number) => {
+                  const isRealFile = file instanceof File;
+                  
+                  return (
+                    <li
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center gap-2 text-sm text-foreground"
+                    >
+                      <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <button 
+                        onClick={(e) => {
+                          if (isRealFile) {
+                            const url = URL.createObjectURL(file);
+                            window.open(url, '_blank');
+                          } else if (file.id) {
+                            handleViewFile(e, file.id, file.name);
+                          }
+                        }}
+                        className="truncate text-primary hover:underline font-medium text-left bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        {file.name}
+                      </button>
+                      <span className="text-xs text-grey-4">
+                        ({(file.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
 
-          {formData.pendingFiles.length === 0 && (
+          {(formData.pendingFiles ?? []).length === 0 && (
             <p className="text-sm text-grey-4 italic">No files attached.</p>
           )}
         </CardContent>
@@ -281,11 +319,11 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
             <Field
               label="Advertisement Start Date"
-              value={formData.advertisementStartDate}
+              value={formData.advertisementStartDate || ''}
             />
             <Field
               label="Bid Submission Deadline"
-              value={formData.bidSubmissionDeadline}
+              value={formData.bidSubmissionDeadline || ''}
             />
             <Field
               label="Pre-Bid Meeting"

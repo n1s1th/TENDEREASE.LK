@@ -134,6 +134,7 @@ logging:
 app:
   name: Tender Service
   version: 1.0.0
+  upload-dir: "C:\\Users\\Peduru\\Desktop\\TENDEREASE.LK\\backend\\uploads"
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
 

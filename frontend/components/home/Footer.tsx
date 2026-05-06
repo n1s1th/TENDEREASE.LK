@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, Share2 } from "lucide-react";
+import { FileText, Share2, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer style={{ width: "100%", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <footer style={{ width: "100%", fontFamily: "inherit" }}>
       {/* ── Top Newsletter Bar ── */}
       <div
         style={{
@@ -13,6 +13,7 @@ export default function Footer() {
           padding: "2.5rem 1.5rem",
         }}
       >
+
         <div
           style={{
             maxWidth: 1100,
@@ -21,45 +22,41 @@ export default function Footer() {
             flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "1.5rem",
+            gap: "1rem",
           }}
         >
-          {/* Left formatting */}
-          <div style={{ flex: "1 1 300px" }}>
-            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", margin: "0 0 0.4rem 0" }}>
+          <div>
+            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff", margin: 0 }}>
               Stay Updated on Tender Opportunities
             </h3>
-            <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.9rem", margin: 0 }}>
+            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
               Get the latest tenders delivered to your inbox every week.
             </p>
           </div>
-
-          {/* Right Input Group */}
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", flex: "1 1 400px", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
             <input
               type="email"
               placeholder="Your email address"
               style={{
-                flex: "1 1 200px",
-                maxWidth: 320,
-                padding: "0.75rem 1rem",
+                width: 240,
+                padding: "0.5rem 0.75rem",
                 borderRadius: 6,
                 border: "1px solid rgba(255,255,255,0.2)",
                 background: "rgba(255,255,255,0.1)",
                 color: "#fff",
-                fontSize: "0.9rem",
+                fontSize: "0.8rem",
                 outline: "none",
               }}
             />
             <button
               style={{
-                padding: "0.75rem 1.5rem",
+                padding: "0.5rem 1.25rem",
                 borderRadius: 6,
                 border: "none",
-                background: "#FFB401", // yellow hook
-                color: "#111827",      // dark text
+                background: "#FFB401",
+                color: "#111827",
                 fontWeight: 700,
-                fontSize: "0.9rem",
+                fontSize: "0.8rem",
                 cursor: "pointer",
                 transition: "background 0.2s",
               }}
@@ -72,11 +69,11 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* ── Main Footer Area ── */}
+      {/* ── Main Footer ── */}
       <div
         style={{
-          background: "#1b120f", // slate 900
-          padding: "4rem 1.5rem 2rem",
+          background: "#1b120f",
+          padding: "2.5rem 1.5rem 1.5rem",
           color: "#9ca3af",
         }}
       >
@@ -84,20 +81,19 @@ export default function Footer() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "3rem",
-              marginBottom: "4rem",
+              gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+              gap: "2rem",
+              marginBottom: "2rem",
             }}
           >
-            {/* Column 1: Brand Info */}
-            <div style={{ gridColumn: "1 / -1", maxWidth: "300px" }}>
-              {/* Logo */}
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
+                    width: 30,
+                    height: 30,
+                    borderRadius: 6,
                     background: "#FFB401",
                     display: "flex",
                     alignItems: "center",
@@ -105,29 +101,30 @@ export default function Footer() {
                     color: "#1b120f",
                   }}
                 >
-                  <FileText size={20} strokeWidth={2.5} />
+                  <FileText size={16} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1 }}>
+                  <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1 }}>
                     TenderHub
                   </h2>
-                  <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#FFB401", letterSpacing: "0.05em" }}>
+                  <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#FFB401", letterSpacing: "0.05em" }}>
                     .LK
                   </span>
                 </div>
               </div>
-              <p style={{ fontSize: "0.85rem", lineHeight: 1.6, color: "#9ca3af", marginBottom: "1.5rem" }}>
-                Sri Lanka's most trusted digital tendering platform — connecting government procurement with qualified vendors transparently.
+              <p style={{ fontSize: "0.8rem", lineHeight: 1.55, color: "#9ca3af", margin: "0 0 1rem" }}>
+                Sri Lanka&#39;s trusted digital tendering platform — connecting government procurement with qualified vendors.
               </p>
               {/* Social Icons */}
               <div style={{ display: "flex", gap: "0.75rem" }}>
-                {[Share2, Share2, Share2, Share2].map((Icon, i) => (
+                {[Facebook, Twitter, Linkedin, Youtube].map((Icon, i) => (
+
                   <a
                     key={i}
                     href="#"
                     style={{
-                      width: 32,
-                      height: 32,
+                      width: 28,
+                      height: 28,
                       borderRadius: 6,
                       background: "rgba(255,255,255,0.05)",
                       display: "flex",
@@ -139,21 +136,21 @@ export default function Footer() {
                     onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.15)")}
                     onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.05)")}
                   >
-                    <Icon size={16} />
+                    <Icon size={14} />
                   </a>
                 ))}
               </div>
             </div>
 
-            {/* Column 2: Quick Links */}
+            {/* Quick Links */}
             <div>
-              <h4 style={{ color: "#FFB401", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "1.5rem", textTransform: "uppercase" }}>
+              <h4 style={{ color: "#FFB401", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
                 Quick Links
               </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {["Browse Tenders", "How It Works", "Register as Vendor", "Sign In", "Help / FAQ"].map((link) => (
                   <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.85rem", transition: "color 0.2s" }}>
+                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
                       {link}
                     </Link>
                   </li>
@@ -161,15 +158,15 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Column 3: Categories */}
+            {/* Categories */}
             <div>
-              <h4 style={{ color: "#FFB401", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "1.5rem", textTransform: "uppercase" }}>
+              <h4 style={{ color: "#FFB401", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
                 Categories
               </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {["Construction", "IT & Infrastructure", "Healthcare", "Education", "Logistics"].map((link) => (
                   <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.85rem", transition: "color 0.2s" }}>
+                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
                       {link}
                     </Link>
                   </li>
@@ -177,15 +174,15 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Column 4: Resources */}
+            {/* Resources */}
             <div>
-              <h4 style={{ color: "#FFB401", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "1.5rem", textTransform: "uppercase" }}>
+              <h4 style={{ color: "#FFB401", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
                 Resources
               </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {["Tender Guidelines", "Bid Templates", "Procurement Policy", "Vendor Handbook", "Contact Support"].map((link) => (
                   <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.85rem", transition: "color 0.2s" }}>
+                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
                       {link}
                     </Link>
                   </li>
@@ -194,26 +191,26 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* ── Bottom Strip ── */}
+          {/* Bottom Strip */}
           <div
             style={{
-              paddingTop: "2rem",
-              borderTop: "1px solid rgba(255,255,255,0.1)",
+              paddingTop: "1.25rem",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
               justifyContent: "space-between",
-              gap: "1rem",
-              fontSize: "0.75rem",
+              gap: "0.75rem",
+              fontSize: "0.7rem",
             }}
           >
-            <p style={{ margin: 0, color: "rgba(255,255,255,0.4)" }}>
-              &copy; 2026 TenderHub.lk - All rights reserved • Licensed under the Sri Lanka Procurement Act
+            <p style={{ margin: 0, color: "rgba(255,255,255,0.35)" }}>
+              &copy; 2026 TenderHub.lk — All rights reserved
             </p>
-            <div style={{ display: "flex", gap: "1.5rem" }}>
-              <Link href="#" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>Privacy Policy</Link>
-              <Link href="#" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>Terms of Service</Link>
-              <Link href="#" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>Cookie Policy</Link>
+            <div style={{ display: "flex", gap: "1.25rem" }}>
+              <Link href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</Link>
+              <Link href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Terms of Service</Link>
+              <Link href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Cookie Policy</Link>
             </div>
           </div>
         </div>

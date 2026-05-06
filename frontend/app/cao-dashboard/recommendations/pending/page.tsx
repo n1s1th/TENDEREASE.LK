@@ -8,28 +8,45 @@ import ApproveRecommendationModal from "@/components/cao-dashboard/modals/Approv
 import RejectRecommendationModal from "@/components/cao-dashboard/modals/RejectRecommendationModal";
 
 export default function PendingRecommendationsPage() {
-  const tenders = useCAODashboardStore((s) => s.tenders);
-  const department = useCAODashboardStore((s) => s.department);
-  const fetchTenders = useCAODashboardStore((s) => s.fetchTenders);
+  const recommendations = useCAODashboardStore((s) => s.recommendations);
+  const loading = useCAODashboardStore((s) => s.recommendationsLoading);
+  const fetchRecommendations = useCAODashboardStore((s) => s.fetchRecommendations);
   const activeModal = useCAODashboardStore((s) => s.activeModal);
+  const department = useCAODashboardStore((s) => s.department);
+  const searchQuery = useCAODashboardStore((s) => s.searchQuery);
 
   useEffect(() => {
-    fetchTenders();
-  }, [fetchTenders, department]);
+    fetchRecommendations("PENDING");
+  }, [fetchRecommendations]);
 
-  const pending = tenders.filter((t) => t.status === "pending");
+  // Client-side filtering by department and search query
+  const filtered = recommendations.filter((rec) => {
+    if (department) {
+      const deptLower = department.toLowerCase().trim();
+      const recDept = (rec.department || "").toLowerCase().trim();
+      if (recDept !== deptLower) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      const bidder = (rec.bidderName || "").toLowerCase();
+      const tenderId = (rec.tenderId || "").toLowerCase();
+      if (!bidder.includes(q) && !tenderId.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <>
       <div className="dash-kpi-row" style={{ gridTemplateColumns: "1fr", padding: "2rem 0" }}>
-        {pending.length === 0 ? (
-          <EmptyState title="No pending recommendations" description="Recommendations submitted by officers will appear here." />
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "2rem", color: "var(--te-gray-4)" }}>Loading pending recommendations...</div>
+        ) : filtered.length === 0 ? (
+          <EmptyState title="No pending recommendations" description="New recommendations will appear here." />
         ) : (
-          pending.map((tender) => (
+          filtered.map((rec) => (
             <RecommendationCard
-              key={tender.id}
-              tender={tender}
-              status="pending"
+              key={rec.id}
+              recommendation={rec}
             />
           ))
         )}

@@ -49,18 +49,24 @@ export interface Officer {
 }
 
 // ── Recommendation (kept for future backend development) ─────
+// ── Recommendation ───────────────────────────────────────────
+export type RecommendationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface Recommendation {
+  id: number;
   tenderId: string;
+  tenderName: string;
+  department: string;
+  estimatedBudget: number;
   bidderName: string;
-  bidId: string;
-  category: string;
   recommendedValue: number;
-  justification: string;
   finalScore: number;
-  technicalScore: number;
-  financialScore: number;
-  rank: number;
-  isTopRanked: boolean;
+  justification: string;
+  status: RecommendationStatus;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  actionedAt?: string;
 }
 
 // ── Approval Timeline ────────────────────────────────────────

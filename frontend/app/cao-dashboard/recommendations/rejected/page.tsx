@@ -6,29 +6,42 @@ import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store"
 import EmptyState from "@/components/cao-dashboard/EmptyState";
 
 export default function RejectedRecommendationsPage() {
-  const tenders = useCAODashboardStore((s) => s.tenders);
+  const recommendations = useCAODashboardStore((s) => s.recommendations);
+  const loading = useCAODashboardStore((s) => s.recommendationsLoading);
+  const fetchRecommendations = useCAODashboardStore((s) => s.fetchRecommendations);
   const department = useCAODashboardStore((s) => s.department);
-  const fetchTenders = useCAODashboardStore((s) => s.fetchTenders);
+  const searchQuery = useCAODashboardStore((s) => s.searchQuery);
 
   useEffect(() => {
-    fetchTenders();
-  }, [fetchTenders, department]);
+    fetchRecommendations("REJECTED");
+  }, [fetchRecommendations]);
 
-  // Using rejected status for mockup purposes
-  const rejected = tenders.filter((t) => t.status === "rejected");
+  const filtered = recommendations.filter((rec) => {
+    if (department) {
+      const deptLower = department.toLowerCase().trim();
+      const recDept = (rec.department || "").toLowerCase().trim();
+      if (recDept !== deptLower) return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      const bidder = (rec.bidderName || "").toLowerCase();
+      const tenderId = (rec.tenderId || "").toLowerCase();
+      if (!bidder.includes(q) && !tenderId.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="dash-kpi-row" style={{ gridTemplateColumns: "1fr", padding: "2rem 0" }}>
-      {rejected.length === 0 ? (
-        <EmptyState title="No rejected recommendations" description="Recommendations you reject will appear here." />
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "2rem", color: "var(--te-gray-4)" }}>Loading rejected recommendations...</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState title="No rejected recommendations" description="Rejected recommendations will appear here." />
       ) : (
-        rejected.map((tender) => (
+        filtered.map((rec) => (
           <RecommendationCard
-            key={tender.id}
-            tender={tender}
-            status="rejected"
-            timestamp={new Date().toLocaleDateString()}
-            reason={tender.rejectionReason || "Does not meet the financial thresholds required for this procurement block."}
+            key={rec.id}
+            recommendation={rec}
           />
         ))
       )}
