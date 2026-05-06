@@ -49,6 +49,10 @@ services:
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
+    volumes:
+      - ./infrastructure/keycloak/themes/tenderease:/opt/keycloak/themes/tenderease
+    depends_on:
+      - postgres
     networks:
       - tenderease-network
 

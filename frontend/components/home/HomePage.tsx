@@ -10,7 +10,7 @@ import Footer from "@/components/home/Footer";
 export default function HomePage() {
   return (
     <div className="home-page">
-      <Navbar />
+      {/* <Navbar /> */}
       <HeroSection />
       <LatestTenders />
       <HowItWorks />

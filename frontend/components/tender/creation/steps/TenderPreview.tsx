@@ -38,15 +38,48 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly?: boolean }) {
-  const store = useTenderCreationStore();
-  
-  const formData = data || store.formData;
-  const isSubmitting = store.isSubmitting;
-  const error = store.error;
-  const setShowPreview = store.setShowPreview;
-  const submitTender = store.submitTender;
-  const reset = store.reset;
+interface TenderPreviewProps {
+  readOnly?: boolean;
+  data?: {
+    title?: string;
+    referenceNumber?: string;
+    procurementType?: string;
+    biddingMethod?: string;
+    ministryId?: string;
+    departmentAgencyId?: string;
+    description?: string;
+    estimatedBudget?: string;
+    fundingSource?: string;
+    tenderType?: string;
+    sbdTemplate?: string;
+    templateVersion?: string;
+    complianceChecklist?: {
+      procurementPlanApproved?: boolean;
+      budgetAvailabilityConfirmed?: boolean;
+      sbdComplyWithGuidelines?: boolean;
+      evaluationCriteriaDefined?: boolean;
+    };
+    advertisementStartDate?: string;
+    bidSubmissionDeadline?: string;
+    preBidMeetingEnabled?: boolean;
+    preBidMeetingDate?: string;
+    pendingFiles?: { name: string; size: number }[];
+    uploadedFiles?: any[];
+  };
+}
+
+export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {}) {
+  const storeState = useTenderCreationStore();
+  const {
+    isSubmitting,
+    error,
+    setShowPreview,
+    submitTender,
+    reset,
+  } = storeState;
+
+  // Use externally provided data if available, otherwise fall back to store
+  const formData = data ?? storeState.formData;
 
   const handleSubmit = async () => {
     // 1. Create tender and upload files (handled by store's submitTender)
@@ -85,27 +118,32 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
     }
   };
 
-  const cl = formData.complianceChecklist;
+  const cl = formData.complianceChecklist ?? {
+    procurementPlanApproved: false,
+    budgetAvailabilityConfirmed: false,
+    sbdComplyWithGuidelines: false,
+    evaluationCriteriaDefined: false,
+  };
 
   return (
     <div className="space-y-5">
       {/* ── Warning banner ─────────────────────────────── */}
       {!readOnly && (
-        <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
-          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              Please review carefully
-            </p>
-            <p className="text-xs text-grey-5 mt-0.5">
-              You cannot edit after submission.
-            </p>
-          </div>
+      <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
+        <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            Please review carefully
+          </p>
+          <p className="text-xs text-grey-5 mt-0.5">
+            You cannot edit after submission.
+          </p>
         </div>
+      </div>
       )}
 
       {/* ── Error banner ───────────────────────────────── */}
-      {error && !readOnly && (
+      {!readOnly && error && (
         <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
           <span className="font-medium">Error:</span> {error}
         </div>
@@ -125,14 +163,14 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
         </CardHeader>
         <CardContent className="pt-5">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="Tender Title" value={formData.title} />
-            <Field label="Reference Number" value={formData.referenceNumber} />
-            <Field label="Procurement Type" value={formData.procurementType} />
-            <Field label="Bidding Method" value={formData.biddingMethod} />
-            <Field label="Ministry" value={formData.ministryId} />
-            <Field label="Department / Agency" value={formData.departmentAgencyId} />
+            <Field label="Tender Title" value={formData.title || ''} />
+            <Field label="Reference Number" value={formData.referenceNumber || ''} />
+            <Field label="Procurement Type" value={formData.procurementType || ''} />
+            <Field label="Bidding Method" value={formData.biddingMethod || ''} />
+            <Field label="Ministry" value={formData.ministryId || ''} />
+            <Field label="Department / Agency" value={formData.departmentAgencyId || ''} />
             <div className="sm:col-span-2">
-              <Field label="Description" value={formData.description} />
+              <Field label="Description" value={formData.description || ''} />
             </div>
           </dl>
         </CardContent>
@@ -162,8 +200,8 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
                   : ""
               }
             />
-            <Field label="Funding Source" value={formData.fundingSource} />
-            <Field label="Tender Type" value={formData.tenderType} />
+            <Field label="Funding Source" value={formData.fundingSource || ''} />
+            <Field label="Tender Type" value={formData.tenderType || ''} />
           </dl>
         </CardContent>
       </Card>
@@ -182,17 +220,17 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
         </CardHeader>
         <CardContent className="pt-5 space-y-4">
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="SBD Template" value={formData.sbdTemplate} />
-            <Field label="Template Version" value={formData.templateVersion} />
+            <Field label="SBD Template" value={formData.sbdTemplate || ''} />
+            <Field label="Template Version" value={formData.templateVersion || ''} />
           </dl>
 
-          {formData.pendingFiles.length > 0 && (
+          {(formData.pendingFiles ?? []).length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-grey-4 uppercase tracking-wider">
-                Attached Files ({formData.pendingFiles.length})
+                Attached Files ({(formData.pendingFiles ?? []).length})
               </p>
               <ul className="space-y-1">
-                {formData.pendingFiles.map((file, idx) => {
+                {(formData.pendingFiles ?? []).map((file: any, idx: number) => {
                   const isRealFile = file instanceof File;
                   
                   return (
@@ -224,7 +262,7 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
             </div>
           )}
 
-          {formData.pendingFiles.length === 0 && (
+          {(formData.pendingFiles ?? []).length === 0 && (
             <p className="text-sm text-grey-4 italic">No files attached.</p>
           )}
         </CardContent>
@@ -281,11 +319,11 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
             <Field
               label="Advertisement Start Date"
-              value={formData.advertisementStartDate}
+              value={formData.advertisementStartDate || ''}
             />
             <Field
               label="Bid Submission Deadline"
-              value={formData.bidSubmissionDeadline}
+              value={formData.bidSubmissionDeadline || ''}
             />
             <Field
               label="Pre-Bid Meeting"
@@ -303,27 +341,27 @@ export function TenderPreview({ data, readOnly = false }: { data?: any, readOnly
           Action Bar
          ───────────────────────────────────────────────── */}
       {!readOnly && (
-        <div className="flex items-center justify-between pt-5 border-t border-border">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(false)}
-          >
-            <ArrowLeft data-icon="inline-start" className="size-4" />
-            Edit Details
-          </Button>
+      <div className="flex items-center justify-between pt-5 border-t border-border">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPreview(false)}
+        >
+          <ArrowLeft data-icon="inline-start" className="size-4" />
+          Edit Details
+        </Button>
 
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            <SendHorizontal data-icon="inline-start" className="size-4" />
-            {isSubmitting ? "Submitting…" : "Submit for Approval"}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+        >
+          <SendHorizontal data-icon="inline-start" className="size-4" />
+          {isSubmitting ? "Submitting…" : "Submit for Approval"}
+        </Button>
+      </div>
       )}
     </div>
   );

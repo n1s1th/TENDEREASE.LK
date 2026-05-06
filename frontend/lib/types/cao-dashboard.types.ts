@@ -18,6 +18,7 @@ export type TenderTab =
 export interface DashboardTender {
   id: string;
   tenderNumber?: string;
+  referenceNumber?: string;
   title: string;
   category: string;
   type: string;

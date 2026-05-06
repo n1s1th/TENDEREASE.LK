@@ -23,12 +23,7 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
 
     boolean existsByTenderNumber(String tenderNumber);
 
-    long countByStatus(TenderStatus status);
-    long countByStatusIn(java.util.Collection<TenderStatus> statuses);
-
     Page<Tender> findByStatus(TenderStatus status, Pageable pageable);
-
-    Page<Tender> findByStatusIn(java.util.Collection<TenderStatus> statuses, Pageable pageable);
 
     Page<Tender> findByCreatedBy(String createdBy, Pageable pageable);
 
@@ -37,12 +32,12 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     // 🔍 Advanced search WITH status
     @Query("""
         SELECT t FROM Tender t WHERE
-        (CAST(:keyword AS string) = '' OR
-         LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
-         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
-         LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
+        (:keyword = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
         AND t.status = :status
-        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT, lk.tenderease.tender.enums.TenderStatus.REJECTED)
+        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
     """)
     Page<Tender> searchWithStatus(
             @Param("keyword") String keyword,
@@ -53,11 +48,11 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     // 🔍 Advanced search WITHOUT status
     @Query("""
         SELECT t FROM Tender t WHERE
-        (CAST(:keyword AS string) = '' OR
-         LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
-         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
-         LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
-        AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT, lk.tenderease.tender.enums.TenderStatus.REJECTED)
+        (:keyword = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,

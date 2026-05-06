@@ -218,11 +218,7 @@ export const useTenderCreationStore = create<TenderCreationState>()(
             ministryId: Number(rawPayload.ministryId),
             departmentId: Number(rawPayload.departmentAgencyId),
             fundingSourceId: rawPayload.fundingSource ? Number(rawPayload.fundingSource) : null,
-            estimatedBudget: Number(rawPayload.estimatedBudget),
-            dynamicData: {
-              sbdTemplate: rawPayload.sbdTemplate,
-              templateVersion: rawPayload.templateVersion,
-            }
+            estimatedBudget: Number(rawPayload.estimatedBudget)
           };
 
           const result = await api.createTender(payload);

@@ -19,14 +19,18 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * Security configuration for the Officer Registration Service.
  *
- * <p>Overrides the common-library {@code KeycloakSecurityConfig} to:
+ * <p>
+ * Overrides the common-library {@code KeycloakSecurityConfig} to:
  * <ul>
- *   <li>Permit {@code POST /api/officers/register} as a <strong>PUBLIC</strong> endpoint</li>
- *   <li>Permit Swagger/OpenAPI endpoints</li>
- *   <li>Require authentication for all other officer endpoints</li>
+ * <li>Permit {@code POST /api/officers/register} as a <strong>PUBLIC</strong>
+ * endpoint</li>
+ * <li>Permit Swagger/OpenAPI endpoints</li>
+ * <li>Require authentication for all other officer endpoints</li>
  * </ul>
  *
- * <p>Uses {@code @Order(1)} to take precedence over the common config.</p>
+ * <p>
+ * Uses {@code @Order(1)} to take precedence over the common config.
+ * </p>
  */
 @Configuration
 @EnableWebSecurity
@@ -41,28 +45,32 @@ public class OfficerSecurityConfig {
     @Order(1)
     public SecurityFilterChain officerSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(Customizer.withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/officers/register").permitAll()
-                // CAO dashboard endpoints (dev mode - no JWT)
-                .requestMatchers("/api/cao/**").permitAll()
-                // Swagger/OpenAPI
-                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                // Actuator
-                .requestMatchers("/actuator/**").permitAll()
-                // Admin officer management endpoints require authentication
-                .requestMatchers("/api/officers/**").authenticated()
-                // Vendor endpoints (existing) require authentication
-                .requestMatchers("/api/v1/vendors/**").authenticated()
-                // All other requests
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
-            );
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers("/api/officers/register").permitAll()
+                        // CAO dashboard endpoints (dev mode - no JWT)
+                        .requestMatchers("/api/cao/**").permitAll()
+                        // Vendor registration endpoints (Public)
+                        .requestMatchers(
+                                "/api/v1/vendors/verify-registration",
+                                "/api/v1/vendors/register",
+                                "/api/v1/vendors/*/documents",
+                                "/api/v1/vendors/*/documents/**",
+                                "/api/v1/vendors/*/submit"
+                        ).permitAll()
+                        // Swagger/OpenAPI
+                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // Actuator
+                        .requestMatchers("/actuator/**").permitAll()
+                        // Admin officer management endpoints require authentication
+                        .requestMatchers("/api/officers/**").authenticated()
+                        // All other requests
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter)));
 
         return http.build();
     }

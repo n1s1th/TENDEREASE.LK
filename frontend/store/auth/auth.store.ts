@@ -1,67 +1,45 @@
-// ─── Auth Store ─────────────────────────────────────────────
-// persist → survives page refresh  |  devtools → Redux DevTools support
-import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
-import type { AuthState } from "@/lib/types/auth.types";
-import { apiLogin, apiLogout } from "@/lib/api/auth.api";
+import { create } from 'zustand';
+import { persist, devtools } from 'zustand/middleware';
+
+export interface User {
+  id: string;
+  email?: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  roles: string[];
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  token: string | null;
+  user: User | null;
+  isLoading: boolean;
+  setAuth: (token: string, user: User) => void;
+  clearAuth: () => void;
+}
 
 export const useAuthStore = create<AuthState>()(
   devtools(
     persist(
-      (set, get) => ({
-        // ── State ──────────────────────────────────
-        user: null,
-        token: null,
+      (set) => ({
         isAuthenticated: false,
+        token: null,
+        user: null,
         isLoading: false,
-
-        // ── Actions ────────────────────────────────
-        login: async (email, password) => {
-          set({ isLoading: true }, false, "auth/login/pending");
-          try {
-            const { user, token } = await apiLogin({ email, password });
-            set(
-              { user, token, isAuthenticated: true, isLoading: false },
-              false,
-              "auth/login/fulfilled"
-            );
-          } catch (err) {
-            set({ isLoading: false }, false, "auth/login/rejected");
-            throw err;
-          }
-        },
-
-        logout: async () => {
-          const token = get().token;
-          if (token) {
-            try { await apiLogout(token); } catch { /* ignore */ }
-          }
-          set(
-            { user: null, token: null, isAuthenticated: false },
-            false,
-            "auth/logout"
-          );
-        },
-
-        setUser: (user) => set({ user }, false, "auth/setUser"),
-        setToken: (token) =>
-          set({ token, isAuthenticated: true }, false, "auth/setToken"),
+        setAuth: (token, user) => set({ isAuthenticated: true, token, user, isLoading: false }, false, "auth/setAuth"),
+        clearAuth: () => set({ isAuthenticated: false, token: null, user: null, isLoading: false }, false, "auth/clearAuth"),
       }),
       {
-        name: "auth-storage", // key in localStorage
-        partialize: (state) => ({
-          // only persist these fields — never persist loading state
-          user: state.user,
-          token: state.token,
-          isAuthenticated: state.isAuthenticated,
-        }),
+        name: 'tenderease-auth',
       }
     ),
     { name: "AuthStore" }
   )
 );
 
-// ── Selectors (use these to avoid unnecessary re-renders) ──
+// ── Selectors ──
 export const selectUser = (s: AuthState) => s.user;
 export const selectToken = (s: AuthState) => s.token;
 export const selectIsAuthenticated = (s: AuthState) => s.isAuthenticated;

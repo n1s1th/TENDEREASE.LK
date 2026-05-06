@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Navbar from '../../../components/home/Navbar';
 import { useOfficerStore } from '../../../store/officerRegistrationStore';
 
 export default function OfficerFailurePage() {
@@ -13,8 +12,6 @@ export default function OfficerFailurePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-
       <main className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-xl w-full text-center py-16">
           <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-400 mb-6">

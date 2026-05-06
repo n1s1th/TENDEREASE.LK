@@ -95,8 +95,8 @@ export default function TenderTemplatesDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 text-white">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight drop-shadow-sm">Tender Templates</h1>
-            <p className="text-white/80 mt-1 drop-shadow-sm">Manage dynamic forms and structured data configurations for future tenders.</p>
+            <h1 className="text-3xl font-bold tracking-tight drop-shadow-sm text-[#953002]">Tender Templates</h1>
+            <p className="text-[#953002]/80 mt-1 drop-shadow-sm">Manage dynamic forms and structured data configurations for future tenders.</p>
           </div>
           <Button 
             className="bg-white text-[#953002] hover:bg-white/90 shadow-lg shrink-0 h-11 px-6 font-semibold"

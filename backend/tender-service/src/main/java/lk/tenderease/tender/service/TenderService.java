@@ -63,6 +63,7 @@ public interface TenderService {
     byte[] viewDocument(UUID docId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
+    TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId);
 
     /**
      * Updates a DRAFT tender.
@@ -264,17 +265,4 @@ public interface TenderService {
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
 
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
-
-    List<ClarificationDTO> getClarificationsForOfficer(String officerId);
-
-    /**
-     * CAO/Admin: Updates the status of a tender (Approve/Reject).
-     * 
-     * @param id              the tender UUID
-     * @param status          the new status (APPROVED, REJECTED, etc.)
-     * @param rejectionReason optional reason for rejection
-     * @param callerUserId    the username/ID of the CAO
-     * @return the updated tender response
-     */
-    TenderResponse updateTenderStatus(UUID id, TenderStatus status, String rejectionReason, String callerUserId);
 }

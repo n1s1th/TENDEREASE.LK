@@ -1,0 +1,9 @@
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
+export default function TenderTemplatesLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
