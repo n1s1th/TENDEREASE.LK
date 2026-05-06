@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration Received Successfully</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f5;
+            margin: 0;
+            padding: 0;
+            color: #3f3f46;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #953002;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .reference-box {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #92400e;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TenderEase</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong>Officer</strong>,</p>
+            
+            <p>We are writing to acknowledge that your registration application for the TenderEase e-Procurement System has been <strong>successfully received</strong>.</p>
+            
+            <p>Your application is currently under review. You will be notified via email once your account has been approved and activated.</p>
+            
+            <div class="reference-box">
+                Tracking Reference ID: <span th:text="${referenceId}">OFF-XXXXXX-XXXX</span>
+            </div>
+            
+            <p>Please keep this reference ID safe, as you may need it for any future correspondence regarding your registration status.</p>
+            
+            <p>Best regards,<br>
+            The TenderEase Support Team</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2026 TenderEase. All rights reserved.</p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>

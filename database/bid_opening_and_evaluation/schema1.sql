@@ -21,7 +21,7 @@ CREATE TABLE Opening_Session (
     Actual_Opening_Time TIMESTAMP,
 
     Status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
-    -- SCHEDULED | OPEN | CLOSED
+    -- SCHEDULED | PENDING_OPENING | OPEN | CLOSED
 
     Opened_By UUID,
 
@@ -39,7 +39,7 @@ CREATE TABLE Opening_Session (
         ON DELETE SET NULL,
 
     CONSTRAINT chk_opening_status
-        CHECK (Status IN ('SCHEDULED', 'OPEN', 'CLOSED'))
+        CHECK (Status IN ('SCHEDULED', 'PENDING_OPENING', 'OPEN', 'CLOSED'))
 );
 
 -- 1.2 OPENING ATTENDANCE TABLE

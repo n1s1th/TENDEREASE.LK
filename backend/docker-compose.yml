@@ -1,29 +1,31 @@
 version: '3.8'
 
 services:
-  # Infrastructure
   postgres:
     image: postgres:15-alpine
+    container_name: postgres-1
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - tenderease-network
 
   redis:
     image: redis:7-alpine
+    container_name: redis-1
     ports:
       - "6379:6379"
     networks:
       - tenderease-network
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3.12-management-alpine
+    container_name: rabbitmq-1
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -34,66 +36,29 @@ services:
       - tenderease-network
 
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: keycloak-1
     command: start-dev
     environment:
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: postgres
+      KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
+    volumes:
+      - ./infrastructure/keycloak/themes/tenderease:/opt/keycloak/themes/tenderease
     depends_on:
       - postgres
     networks:
       - tenderease-network
-
-  # Service Discovery
-  eureka-server:
-    build: ./eureka-server
-    ports:
-      - "8761:8761"
-    networks:
-      - tenderease-network
-
-  # API Gateway
-  api-gateway:
-    build: ./api-gateway
-    ports:
-      - "8000:8080"
-    environment:
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/tenderease
-    depends_on:
-      - eureka-server
-      - keycloak
-    networks:
-      - tenderease-network
-
-  # Microservices
-  user-service:
-    build: ./user-service
-    environment:
-      DB_HOST: postgres
-      RABBITMQ_HOST: rabbitmq
-      REDIS_HOST: redis
-      EUREKA_SERVER: http://eureka-server:8761/eureka/
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/tenderease
-    depends_on:
-      - postgres
-      - rabbitmq
-      - redis
-      - eureka-server
-    networks:
-      - tenderease-network
-
-  # Add other services similarly...
-
-volumes:
-  postgres_data:
 
 networks:
   tenderease-network:
     driver: bridge
+
+volumes:
+  postgres_data:

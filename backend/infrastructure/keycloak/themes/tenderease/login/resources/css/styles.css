@@ -1,0 +1,259 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --brand-primary: #953002;
+  --brand-primary-light: #c24102;
+  --brand-secondary: #FFB401;
+  --brand-dark: #111827;
+  --brand-navy: #1F1D45;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════
+   NUKE PATTERNFLY & CREATE REVOLUTIONARY BACKGROUND
+   ═══════════════════════════════════════════════════════ */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  min-height: 100vh !important;
+  font-family: 'Inter', sans-serif !important;
+  
+  /* Animated Mesh Gradient Background */
+  background: linear-gradient(-45deg, #0f172a, var(--brand-navy), #4a1801, var(--brand-primary));
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Hide default wrappers */
+.pf-c-login {
+  background: transparent !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.pf-c-login__container {
+  background: transparent !important;
+  width: 100%;
+  max-width: 480px !important;
+  padding: 2rem;
+  display: block !important; /* Overrides PF Grid */
+}
+
+/* ═══════════════════════════════════════════════════════
+   THE GLASSMORPHISM CARD
+   ═══════════════════════════════════════════════════════ */
+.pf-c-login__main {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 28px !important;
+  padding: 3.5rem 3rem !important;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add a subtle top glare to the card */
+.pf-c-login__main::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,1), transparent);
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER & TYPOGRAPHY
+   ═══════════════════════════════════════════════════════ */
+.pf-c-login__main-header {
+  text-align: center;
+  padding-bottom: 2.5rem;
+}
+
+#kc-header-wrapper {
+  font-size: 0; /* Hides default text */
+}
+
+/* Custom Gradient Logo */
+#kc-header-wrapper::before {
+  content: 'TenderEase';
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+#kc-page-title {
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important; /* Muted subtitle */
+  margin-top: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FORM ELEMENTS
+   ═══════════════════════════════════════════════════════ */
+.pf-c-form__label {
+  padding-bottom: 0.5rem;
+}
+
+.pf-c-form__label-text {
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: #374151 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Modern Input Fields */
+.pf-c-form-control {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 14px !important;
+  padding: 1.1rem 1.25rem !important;
+  font-size: 1.05rem !important;
+  font-weight: 500 !important;
+  color: #1f2937 !important;
+  height: auto !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02) inset !important;
+}
+
+.pf-c-form-control:focus,
+.pf-c-form-control:hover {
+  border-color: var(--brand-primary) !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(149, 48, 2, 0.1), 0 4px 10px rgba(0,0,0,0.05) !important;
+  outline: none !important;
+}
+
+.pf-c-form-control::placeholder {
+  color: #9ca3af !important;
+  font-weight: 400 !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIBRANT ACTION BUTTON
+   ═══════════════════════════════════════════════════════ */
+.pf-c-button.pf-m-primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-light)) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 1.1rem !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 1.5rem !important;
+  height: auto !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 8px 20px rgba(149, 48, 2, 0.35) !important;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Shimmer Effect on Button */
+.pf-c-button.pf-m-primary::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transition: all 0.5s ease;
+}
+
+.pf-c-button.pf-m-primary:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 25px rgba(149, 48, 2, 0.5) !important;
+}
+
+.pf-c-button.pf-m-primary:hover::after {
+  left: 100%;
+}
+
+.pf-c-button.pf-m-primary:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 4px 10px rgba(149, 48, 2, 0.3) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LINKS & FOOTER
+   ═══════════════════════════════════════════════════════ */
+.pf-c-login__main-footer-links {
+  margin-top: 1rem !important;
+}
+
+.pf-c-login__main-footer-links a,
+.pf-c-login__main-footer-band a,
+#kc-registration a {
+  color: var(--brand-primary) !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 1px;
+}
+
+.pf-c-login__main-footer-links a:hover,
+.pf-c-login__main-footer-band a:hover,
+#kc-registration a:hover {
+  color: var(--brand-secondary) !important;
+  border-bottom-color: var(--brand-secondary);
+}
+
+/* Checkbox (Remember me) */
+.pf-c-check__label {
+  font-size: 0.9rem !important;
+  color: #4b5563 !important;
+  font-weight: 500 !important;
+}
+
+/* Registration Call-to-action */
+#kc-registration {
+  margin-top: 2.5rem !important;
+  text-align: center !important;
+  padding-top: 1.5rem !important;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+#kc-registration span {
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+#kc-registration a {
+  font-size: 1.05rem;
+  letter-spacing: 0.3px;
+}
+
+/* Hide Redundant PF Elements */
+.pf-c-brand {
+  display: none !important;
+}
