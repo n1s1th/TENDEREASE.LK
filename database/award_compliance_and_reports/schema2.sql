@@ -107,7 +107,6 @@ CREATE TABLE IF NOT EXISTS Recommendation (
         ON DELETE RESTRICT
 );
 
--- Trigger to auto-update Updated_At (core has a similar function; this is module-safe)
 CREATE OR REPLACE FUNCTION update_recommendation_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -172,8 +171,8 @@ CREATE TABLE IF NOT EXISTS Approval_Stage (
     Workflow_ID UUID NOT NULL,
 
     Stage_Name VARCHAR(120) NOT NULL,      -- e.g., "Technical Head", "CAO"
-    Stage_Order INTEGER NOT NULL,          -- 1..n
-    Role_Required user_role NOT NULL,      -- from core: VENDOR/PROCUREMENT_OFFICER/ADMIN/EVALUATOR/APPROVER
+    Stage_Order INTEGER NOT NULL,          
+    Role_Required user_role NOT NULL,     
 
     Is_Required BOOLEAN NOT NULL DEFAULT TRUE,
     Is_Active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -221,7 +220,7 @@ CREATE TABLE IF NOT EXISTS Recommendation_Approval (
     Decision approval_decision NOT NULL DEFAULT 'PENDING',
     Comments TEXT,
 
-    Approved_By UUID,                      -- Officer who decided
+    Approved_By UUID,                     
     Decided_At TIMESTAMP,
 
     Created_At TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -256,11 +255,11 @@ CREATE TABLE IF NOT EXISTS Award_Letter (
     Recommendation_ID UUID NOT NULL UNIQUE,
     Tender_Id UUID NOT NULL,              
     Letter_Subject VARCHAR(255),
-    Letter_Content TEXT,                  -- editable template body
+    Letter_Content TEXT,                  
 
     PDF_Path TEXT,                        
 
-    Generated_By UUID NOT NULL,           -- usually CAO 
+    Generated_By UUID NOT NULL,           
     Generated_At TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     Sent_To_Winner_At TIMESTAMP,
@@ -294,8 +293,8 @@ CREATE TABLE IF NOT EXISTS Award_Notification (
     Tender_Id UUID NOT NULL,
     VendorID UUID NOT NULL,
 
-    Notification_Type award_notification_type NOT NULL,  -- WINNER | REGRET
-    Delivery_Method VARCHAR(10) NOT NULL,                -- EMAIL | SMS
+    Notification_Type award_notification_type NOT NULL,  
+    Delivery_Method VARCHAR(10) NOT NULL,                
     Delivery_Status delivery_status NOT NULL DEFAULT 'PENDING',
 
     Subject VARCHAR(255),
@@ -358,9 +357,6 @@ CREATE TABLE IF NOT EXISTS Audit_Log_AwardModule (
 
 -- ============================================================
 -- SECTION 8: KPI VIEW (for dashboards)
--- Notes:
--- - Cycle time uses: Tender.Submission_Deadline -> Recommendation.Approved_At
--- - Here Vendor.Vendor_Category = 'SME' 
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_award_kpis AS

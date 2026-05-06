@@ -1,13 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Facebook, Twitter, Linkedin, Youtube, FileText } from "lucide-react";
+import { FileText, Share2, Facebook, Twitter, Linkedin, Youtube } from "lucide-react";
 
 export default function Footer() {
   return (
     <footer style={{ width: "100%", fontFamily: "inherit" }}>
-      {/* ── Newsletter Bar ── */}
-      <div style={{ background: "#953002", padding: "1.25rem 1.5rem" }}>
+      {/* ── Top Newsletter Bar ── */}
+      <div
+        style={{
+          background: "#953002", // burnt orange
+          padding: "2.5rem 1.5rem",
+        }}
+      >
+
         <div
           style={{
             maxWidth: 1100,
@@ -109,8 +115,10 @@ export default function Footer() {
               <p style={{ fontSize: "0.8rem", lineHeight: 1.55, color: "#9ca3af", margin: "0 0 1rem" }}>
                 Sri Lanka&#39;s trusted digital tendering platform — connecting government procurement with qualified vendors.
               </p>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              {/* Social Icons */}
+              <div style={{ display: "flex", gap: "0.75rem" }}>
                 {[Facebook, Twitter, Linkedin, Youtube].map((Icon, i) => (
+
                   <a
                     key={i}
                     href="#"
