@@ -12,6 +12,7 @@ import type {
   Officer,
   TenderTab,
   PaginationState,
+  ClarificationItem,
 } from '@/lib/types/officer-dashboard.types';
 
 const api = axios.create({
@@ -149,4 +150,24 @@ export async function acceptRegistration(id: string): Promise<void> {
 
 export async function deleteRegistration(id: string): Promise<void> {
   await api.delete(`/officer/registrations/${id}`);
+}
+
+// ── Clarifications ───────────────────────────────────────────
+export async function fetchAllClarifications(): Promise<ClarificationItem[]> {
+  const res = await api.get('/officer/clarifications');
+  return res.data;
+}
+
+export async function fetchClarifications(tenderId: string): Promise<ClarificationItem[]> {
+  const res = await api.get(`/officer/clarifications/${tenderId}`);
+  return res.data;
+}
+
+export async function answerClarification(
+  tenderId: string,
+  clarificationId: number,
+  answer: string,
+): Promise<ClarificationItem> {
+  const res = await api.post(`/officer/clarifications/${tenderId}/${clarificationId}/answer`, { answer });
+  return res.data;
 }

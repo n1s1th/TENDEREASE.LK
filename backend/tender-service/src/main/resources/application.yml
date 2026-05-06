@@ -72,7 +72,7 @@ server:
 
 eureka:
   client:
-    enabled: true
+    enabled: false   # 👈 ADD THIS LINE
     service-url:
       defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     fetch-registry: true

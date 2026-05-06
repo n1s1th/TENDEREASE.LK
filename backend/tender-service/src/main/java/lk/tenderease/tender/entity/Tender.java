@@ -74,17 +74,10 @@ public class Tender extends BaseEntity {
     @JoinColumn(name = "funding_source_id")
     private FundingSource fundingSource;
 
-    @Column(name = "sme_indicator")
-    @Builder.Default
-    private boolean smeIndicator = false;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private TenderStatus status = TenderStatus.DRAFT;
-
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
-    private String rejectionReason;
 
     @Column(name = "template_id")
     private UUID templateId;

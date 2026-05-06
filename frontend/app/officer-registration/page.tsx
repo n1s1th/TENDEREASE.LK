@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { officerRegistrationSchema, type OfficerRegistrationFormData } from '../../lib/validations/officerSchema';
 import { registerOfficer, extractErrors, extractSupportId } from '../../lib/api/officerApi';
-import { useOfficerStore, EMPTY_DRAFT } from '../../store/officerRegistrationStore';
+import { useOfficerStore, EMPTY_DRAFT, type OfficerFormDraft } from '../../store/officerRegistrationStore';
 import axios from 'axios';
 
 // ────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ export default function OfficerRegistrationPage() {
   useEffect(() => {
     if (!hydrated) return;
     const subscription = watch((values) => {
-      setFormDraft(values as OfficerRegistrationFormData);
+      setFormDraft(values as unknown as OfficerFormDraft);
     });
     return () => subscription.unsubscribe();
   }, [hydrated, watch, setFormDraft]);

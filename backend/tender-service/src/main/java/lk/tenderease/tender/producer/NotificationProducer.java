@@ -16,14 +16,9 @@ public class NotificationProducer {
 
     public void sendNotification(NotificationEvent event) {
         log.info("Sending notification event for recipient: {} to RabbitMQ", event.getRecipient());
-        sendNotification(event, AMQPConstants.NOTIFICATION_ROUTING_KEY);
-    }
-
-    public void sendNotification(NotificationEvent event, String routingKey) {
-        log.info("Sending notification event for recipient: {} with routing key: {}", event.getRecipient(), routingKey);
         rabbitTemplate.convertAndSend(
             AMQPConstants.NOTIFICATION_EXCHANGE,
-            routingKey,
+            AMQPConstants.NOTIFICATION_ROUTING_KEY,
             event
         );
     }

@@ -18,8 +18,8 @@ const DEMO_SESSION = {
   tenderTitle: "TENDER OPENING SESSION",
   category: "UNSPECIFIED",
   division: "PROCUREMENT",
-  status: "PENDING_OPENING",
-  scheduledOpeningTime: null,
+  status: "SCHEDULED" as const,
+  scheduledOpeningTime: new Date().toISOString(),
   bidsCount: 0
 };
 
@@ -65,9 +65,9 @@ export default function BidOpeningPage() {
         <div className="max-w-[98%] mx-auto flex flex-col gap-8">
           <OpeningHeader
             tenderId={id || displaySession.tenderId}
-            title={displaySession.tenderTitle}
-            category={displaySession.category}
-            division={displaySession.division}
+            title={displaySession.tenderTitle || "Tender Opening"}
+            category={displaySession.category || "—"}
+            division={displaySession.division || "—"}
           />
 
           <OpeningBanner status={displaySession.status} scheduledTime={displaySession.scheduledOpeningTime} />
@@ -78,8 +78,8 @@ export default function BidOpeningPage() {
             <OpeningActionPanel />
           </div>
 
-          <AttendanceSection sessionId={displaySession.id} />
-          <ReceivedBidsLog tenderId={id || displaySession.tenderId} />
+          <AttendanceSection />
+          <ReceivedBidsLog />
         </div>
       </div>
     </TenderLayout>

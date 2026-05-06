@@ -34,15 +34,48 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TenderPreview() {
+interface TenderPreviewProps {
+  readOnly?: boolean;
+  data?: {
+    title?: string;
+    referenceNumber?: string;
+    procurementType?: string;
+    biddingMethod?: string;
+    ministryId?: string;
+    departmentAgencyId?: string;
+    description?: string;
+    estimatedBudget?: string;
+    fundingSource?: string;
+    tenderType?: string;
+    sbdTemplate?: string;
+    templateVersion?: string;
+    complianceChecklist?: {
+      procurementPlanApproved?: boolean;
+      budgetAvailabilityConfirmed?: boolean;
+      sbdComplyWithGuidelines?: boolean;
+      evaluationCriteriaDefined?: boolean;
+    };
+    advertisementStartDate?: string;
+    bidSubmissionDeadline?: string;
+    preBidMeetingEnabled?: boolean;
+    preBidMeetingDate?: string;
+    pendingFiles?: { name: string; size: number }[];
+    uploadedFiles?: any[];
+  };
+}
+
+export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {}) {
+  const storeState = useTenderCreationStore();
   const {
-    formData,
     isSubmitting,
     error,
     setShowPreview,
     submitTender,
     reset,
-  } = useTenderCreationStore();
+  } = storeState;
+
+  // Use externally provided data if available, otherwise fall back to store
+  const formData = data ?? storeState.formData;
 
   const handleSubmit = async () => {
     // 1. Create tender and upload files (handled by store's submitTender)
@@ -63,11 +96,17 @@ export function TenderPreview() {
     }
   };
 
-  const cl = formData.complianceChecklist;
+  const cl = formData.complianceChecklist ?? {
+    procurementPlanApproved: false,
+    budgetAvailabilityConfirmed: false,
+    sbdComplyWithGuidelines: false,
+    evaluationCriteriaDefined: false,
+  };
 
   return (
     <div className="space-y-5">
       {/* ── Warning banner ─────────────────────────────── */}
+      {!readOnly && (
       <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
         <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
         <div>
@@ -79,9 +118,10 @@ export function TenderPreview() {
           </p>
         </div>
       </div>
+      )}
 
       {/* ── Error banner ───────────────────────────────── */}
-      {error && (
+      {!readOnly && error && (
         <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
           <span className="font-medium">Error:</span> {error}
         </div>
@@ -262,6 +302,7 @@ export function TenderPreview() {
       {/* ─────────────────────────────────────────────────
           Action Bar
          ───────────────────────────────────────────────── */}
+      {!readOnly && (
       <div className="flex items-center justify-between pt-5 border-t border-border">
         <Button
           type="button"
@@ -283,6 +324,7 @@ export function TenderPreview() {
           {isSubmitting ? "Submitting…" : "Submit for Approval"}
         </Button>
       </div>
+      )}
     </div>
   );
 }
