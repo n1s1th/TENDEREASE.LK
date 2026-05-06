@@ -4,16 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function SubNav() {
   const pathname = usePathname();
   const notificationSummary = useCAODashboardStore((s) => s.notificationSummary);
   const fetchNotificationSummary = useCAODashboardStore((s) => s.fetchNotificationSummary);
+  const hasFetched = useRef(false);
 
+  // Only fetch notification summary ONCE on first mount, never on tab switches
   useEffect(() => {
-    fetchNotificationSummary();
-  }, [fetchNotificationSummary]);
+    if (!hasFetched.current) {
+      hasFetched.current = true;
+      // Fire-and-forget: don't await, don't block rendering
+      fetchNotificationSummary().catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isTenders = pathname.startsWith("/cao-dashboard/tenders");
   const isRegistration = pathname.startsWith("/cao-dashboard/registration");
@@ -23,8 +29,8 @@ export default function SubNav() {
   const unreadCount = notificationSummary?.unread ?? 0;
 
   return (
-    <div className="w-full bg-white border-b border-slate-200/80 shadow-sm sticky top-0 z-20" id="dashboard-subnav">
-      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between h-16">
+    <div className="sticky top-0 z-20" id="dashboard-subnav">
+      <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between h-14 border-b border-slate-200/80">
         <div className="flex items-center gap-8 h-full">
           <Link
             href="/cao-dashboard/tenders/pending"

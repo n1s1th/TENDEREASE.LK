@@ -2522,7 +2522,7 @@
 
 .dash-report-subtitle {
   font-size: 1rem;
-  color: #f0b323;
+  color: var(--te-primary);
   margin-top: 0.125rem;
   font-weight: 500;
 }
@@ -2587,10 +2587,9 @@
 }
 
 .dash-report-chart-caption {
-  font-size: 0.85rem;
-  color: #f0b323;
+  font-size: 0.95rem;
+  color: var(--te-primary);
   margin-top: 0.75rem;
-  font-style: italic;
 }
 
 .dash-report-summary {
@@ -2621,7 +2620,7 @@
 }
 
 .dash-report-summary-label {
-  color: #f0b323;
+  color: #1F2937;
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -2632,9 +2631,8 @@
 }
 
 .dash-report-footer {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--te-gray-1);
-  font-style: italic;
   margin-top: 1rem;
 }
 

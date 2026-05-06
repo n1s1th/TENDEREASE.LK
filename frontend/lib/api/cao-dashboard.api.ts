@@ -11,23 +11,35 @@ import type {
   RegistrationStatus,
   TenderTab,
   PaginationState,
+  Recommendation,
+  RecommendationStatus,
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 5000, // 5s timeout
 });
 
 // Separate axios instance for user-service (port 8081)
 const userApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 5000,
 });
 
 // Separate axios instance for reporting-service (port 8092)
 const reportApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REPORT_API_URL || 'http://localhost:8092/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 10000, // 10s for reports
+});
+
+// Separate axios instance for evaluation-service (port 8084)
+const evaluationApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084/api/v1',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 5000,
 });
 
 // ── Tenders ──────────────────────────────────────────────────
@@ -133,6 +145,20 @@ export async function rejectRegistration(id: string, reason: string): Promise<vo
   await userApi.post(`/cao/registrations/${id}/reject`, null, { params: { reason } });
 }
 
+// ── Recommendations ──────────────────────────────────────────
+export async function fetchRecommendations(status?: RecommendationStatus): Promise<Recommendation[]> {
+  const res = await evaluationApi.get('/recommendations', {
+    params: { status }
+  });
+  return res.data || [];
+}
+
+export async function updateRecommendationStatus(id: number, status: RecommendationStatus, reason?: string): Promise<void> {
+  await evaluationApi.patch(`/recommendations/${id}/status`, null, {
+    params: { status, ...(reason ? { reason } : {}) }
+  });
+}
+
 // ── KPIs ─────────────────────────────────────────────────────
 export async function fetchKpiSummary(): Promise<KpiSummary> {
   const res = await api.get('/cao/tenders/kpi'); // goes to tender-service port 8082
@@ -177,36 +203,60 @@ export async function fetchDashboardNotifications(): Promise<DashboardNotificati
   const notifications: DashboardNotification[] = [];
   
   try {
-    // Fetch pending tenders
-    const tendersRes = await fetchDashboardTenders('pending', undefined, 1, 100);
-    // Fetch pending tenders
-    tendersRes.data.forEach((t, index) => {
-      notifications.push({
-        id: `tender-${t.id}`,
-        title: "Pending Tender",
-        message: `Tender ${t.tenderNumber || t.referenceNumber || t.id} is pending approval.`,
-        type: "tender_submitted",
-        status: "info",
-        time: (t as any).createdAt || (t as any).createdDate || t.closingDate || new Date().toISOString(),
-        isRead: readNotifs.has(`tender-${t.id}`),
-        targetId: t.tenderNumber || t.referenceNumber || t.id
-      });
-    });
+    // Fetch in parallel to avoid sequential blocking
+    const [tendersResult, regResult, recResult] = await Promise.allSettled([
+      fetchDashboardTenders('pending', undefined, 1, 100),
+      fetchRegistrations('PENDING', 1, 100),
+      fetchRecommendations('PENDING')
+    ]);
 
-    // Fetch pending registrations
-    const regRes = await fetchRegistrations('PENDING', 1, 100);
-    regRes.data.forEach((r: any) => {
-      notifications.push({
-        id: `reg-${r.officerId}`,
-        title: "Registration Received",
-        message: `Registration request from ${r.procuringEntityType || "Institution"} is pending.`,
-        type: "officer_registered",
-        status: "pending",
-        time: r.createdAt || new Date().toISOString(),
-        isRead: readNotifs.has(`reg-${r.officerId}`),
-        targetId: r.officerId
+    // Handle Tenders
+    if (tendersResult.status === 'fulfilled') {
+      tendersResult.value.data.forEach((t) => {
+        notifications.push({
+          id: `tender-${t.id}`,
+          title: "Pending Tender",
+          message: `Tender ${t.tenderNumber || t.referenceNumber || t.id} is pending approval.`,
+          type: "tender_submitted",
+          status: "info",
+          time: (t as any).createdAt || (t as any).createdDate || t.closingDate || new Date().toISOString(),
+          isRead: readNotifs.has(`tender-${t.id}`),
+          targetId: t.tenderNumber || t.referenceNumber || t.id
+        });
       });
-    });
+    }
+
+    // Handle Registrations
+    if (regResult.status === 'fulfilled') {
+      regResult.value.data.forEach((r: any) => {
+        notifications.push({
+          id: `reg-${r.officerId}`,
+          title: "Registration Received",
+          message: `Registration request from ${r.procuringEntityType || "Institution"} is pending.`,
+          type: "officer_registered",
+          status: "pending",
+          time: r.createdAt || new Date().toISOString(),
+          isRead: readNotifs.has(`reg-${r.officerId}`),
+          targetId: r.officerId
+        });
+      });
+    }
+
+    // Handle Recommendations
+    if (recResult.status === 'fulfilled') {
+      recResult.value.forEach((r) => {
+        notifications.push({
+          id: `rec-${r.id}`,
+          title: "New Recommendation",
+          message: `Recommendation for ${r.tenderName} is awaiting approval.`,
+          type: "recommendation_received",
+          status: "pending",
+          time: r.createdAt,
+          isRead: readNotifs.has(`rec-${r.id}`),
+          targetId: r.tenderId
+        });
+      });
+    }
 
     // Sort by time descending
     notifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
