@@ -1,15 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
+  /* Primary Brand Colors */
   --brand-primary: #953002;
-  --brand-primary-light: #c24102;
+  --brand-primary-hover: #7a2601;
   --brand-secondary: #FFB401;
-  --text-main: #1f2937;
-  --text-muted: #6b7280;
-  --bg-color: #f3f4f6; /* Very light gray/white blur effect */
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --input-border: #d1d5db;
-  --input-focus: #953002;
+
+  /* Supporting Palette */
+  --brand-navy: #2D2B55;
+  --brand-navy-dark: #1F1D45;
+  --surface-warm: #FDF8F4;
+  --border-soft: #D9C4B4;
+
+  /* Semantic Colors */
+  --success: #16A34A;
+  --warning: #F59E0B;
+  --error: #DC2626;
+  --info: #2563EB;
+
+  /* Background & Neutral Colors */
+  --bg-main: #F7F8FA;
+  --card-bg: #FFFFFF;
+  --text-primary: #1F2937;
+  --text-secondary: #6B7280;
+  --border-main: #E5E7EB;
 }
 
 body {
@@ -17,19 +31,18 @@ body {
   padding: 0 !important;
   min-height: 100vh !important;
   font-family: 'Inter', sans-serif !important;
+  color: var(--text-primary);
   
-  /* Attractive blurry white/gray background */
-  background: var(--bg-color) !important;
-  background-image: radial-gradient(circle at 15% 50%, rgba(255, 180, 1, 0.05), transparent 25%),
-                    radial-gradient(circle at 85% 30%, rgba(149, 48, 2, 0.05), transparent 25%);
-  backdrop-filter: blur(10px);
+  /* Very soft warm-gray background with subtle gradient blending */
+  background: linear-gradient(135deg, var(--bg-main) 0%, var(--surface-warm) 100%) !important;
   
   display: flex;
   align-items: center;
   justify-content: center;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Hide default wrappers */
+/* Hide default PatternFly wrappers and reset layout */
 .pf-c-login {
   background: transparent !important;
   display: flex;
@@ -37,30 +50,28 @@ body {
   align-items: center;
   width: 100%;
   min-height: 100vh;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
 }
 
 .pf-c-login__container {
   background: transparent !important;
   width: 100%;
   max-width: 440px !important;
-  padding: 2rem;
   display: block !important;
 }
 
-/* Minimalist Clean Card */
+/* Premium Enterprise Card */
 .pf-c-login__main {
   background: var(--card-bg) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  border-radius: 24px !important;
+  border: 1px solid rgba(0, 0, 0, 0.04) !important;
+  border-radius: 20px !important;
   padding: 3rem 2.5rem !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
   position: relative;
-  overflow: hidden;
 }
 
-/* Header */
+/* Header & Typography */
 .pf-c-login__main-header {
   text-align: center;
   padding-bottom: 2rem;
@@ -78,47 +89,68 @@ body {
   letter-spacing: -1px;
   color: var(--brand-primary);
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Subtitle under logo */
+#kc-header-wrapper::after {
+  content: 'National Procurement & Tender Management Platform';
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 0.5rem;
 }
 
 #kc-page-title {
-  font-size: 1rem !important;
-  font-weight: 500 !important;
-  color: var(--text-muted) !important;
-  margin-top: 0;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 /* Form Elements */
 .pf-c-form__label {
   padding-bottom: 0.5rem;
+  display: block;
 }
 
 .pf-c-form__label-text {
   font-size: 0.875rem !important;
-  font-weight: 600 !important;
-  color: var(--text-main) !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
 }
 
+/* Inputs */
 .pf-c-form-control {
   background: #ffffff !important;
-  border: 1px solid var(--input-border) !important;
+  border: 1px solid var(--border-main) !important;
   border-radius: 12px !important;
-  padding: 1rem 1.25rem !important;
+  padding: 0 1rem !important;
   font-size: 1rem !important;
-  color: var(--text-main) !important;
-  height: auto !important;
+  color: var(--text-primary) !important;
+  height: 50px !important;
+  width: 100% !important;
   transition: all 0.2s ease !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.02) inset !important;
+  box-sizing: border-box;
+}
+
+.pf-c-form-control:hover {
+  border-color: #cbd5e1 !important;
 }
 
 .pf-c-form-control:focus {
-  border-color: var(--input-focus) !important;
+  border-color: var(--brand-primary) !important;
   box-shadow: 0 0 0 3px rgba(149, 48, 2, 0.1) !important;
   outline: none !important;
 }
 
 .pf-c-form-control::placeholder {
   color: #9ca3af !important;
+  font-weight: 400 !important;
 }
 
 /* Action Button */
@@ -127,44 +159,75 @@ body {
   color: #ffffff !important;
   border: none !important;
   border-radius: 12px !important;
-  padding: 1rem !important;
-  font-size: 1.05rem !important;
+  height: 50px !important;
+  font-size: 1rem !important;
   font-weight: 600 !important;
-  margin-top: 1rem !important;
-  height: auto !important;
+  margin-top: 1.5rem !important;
   transition: all 0.2s ease !important;
-  box-shadow: 0 4px 6px -1px rgba(149, 48, 2, 0.2), 0 2px 4px -1px rgba(149, 48, 2, 0.1) !important;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(149, 48, 2, 0.1);
 }
 
 .pf-c-button.pf-m-primary:hover {
-  background: var(--brand-primary-light) !important;
+  background: var(--brand-primary-hover) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 8px -1px rgba(149, 48, 2, 0.25), 0 4px 6px -1px rgba(149, 48, 2, 0.15) !important;
+  box-shadow: 0 6px 12px rgba(149, 48, 2, 0.15) !important;
+}
+
+.pf-c-button.pf-m-primary:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(149, 48, 2, 0.1) !important;
 }
 
 /* Links & Footer */
 .pf-c-login__main-footer-links {
   margin-top: 1rem !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
 }
 
 .pf-c-login__main-footer-links a,
 #kc-registration a {
   color: var(--brand-primary) !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   text-decoration: none !important;
+  transition: color 0.2s ease;
 }
 
 .pf-c-login__main-footer-links a:hover,
 #kc-registration a:hover {
+  color: var(--brand-primary-hover) !important;
   text-decoration: underline !important;
 }
 
-/* Checkbox (Remember me) */
+/* Checkbox (Remember Me) */
+.pf-c-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pf-c-check__input {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-main);
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
 .pf-c-check__label {
   font-size: 0.875rem !important;
-  color: var(--text-main) !important;
-  font-weight: 500 !important;
+  color: var(--text-secondary) !important;
+  font-weight: 400 !important;
+  cursor: pointer;
 }
 
 /* Registration section */
@@ -172,16 +235,77 @@ body {
   margin-top: 2rem !important;
   text-align: center !important;
   padding-top: 1.5rem !important;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-main);
 }
 
 #kc-registration span {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  display: block;
-  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  display: inline-block;
+  margin-right: 0.25rem;
 }
 
+/* Hide Redundant PF Elements */
 .pf-c-brand {
   display: none !important;
+}
+
+/* Feedback / Alerts */
+.pf-c-alert {
+  border-radius: 12px !important;
+  padding: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 0.875rem !important;
+  border: none !important;
+  display: flex;
+  align-items: flex-start;
+}
+
+.pf-c-alert.pf-m-danger {
+  background-color: #FEF2F2 !important;
+  color: var(--error) !important;
+  box-shadow: 0 0 0 1px #FEE2E2 inset !important;
+}
+
+.pf-c-alert.pf-m-success {
+  background-color: #F0FDF4 !important;
+  color: var(--success) !important;
+  box-shadow: 0 0 0 1px #DCFCE7 inset !important;
+}
+
+.pf-c-alert.pf-m-warning {
+  background-color: #FFFBEB !important;
+  color: var(--warning) !important;
+  box-shadow: 0 0 0 1px #FEF3C7 inset !important;
+}
+
+/* Form layout / grouping for Registration */
+#kc-register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+#kc-register-form .form-group {
+  margin-bottom: 0 !important;
+}
+
+@media (min-width: 640px) {
+  #kc-register-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem 1rem;
+  }
+  
+  /* First Name and Last Name side by side */
+  #kc-register-form .form-group:nth-child(1),
+  #kc-register-form .form-group:nth-child(2) {
+    grid-column: span 1;
+  }
+  
+  /* Rest of fields full width */
+  #kc-register-form .form-group:nth-child(n+3),
+  #kc-register-form #kc-form-buttons {
+    grid-column: span 2;
+  }
 }
