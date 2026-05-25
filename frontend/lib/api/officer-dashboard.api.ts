@@ -20,6 +20,16 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+import { useAuthStore } from '@/store/auth/auth.store';
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // ── Tenders ──────────────────────────────────────────────────
 export async function fetchDashboardTenders(
   tab: TenderTab,
