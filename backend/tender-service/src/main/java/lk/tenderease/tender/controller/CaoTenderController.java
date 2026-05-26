@@ -23,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 @Tag(name = "CAO Tender Management", description = "Dashboard APIs for CAO to review and approve tenders")
-public class CAOTenderController {
+public class CaoTenderController {
 
     private final TenderService tenderService;
 
