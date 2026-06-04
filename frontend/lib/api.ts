@@ -53,9 +53,10 @@ export const api = {
   uploadDocument: (id: string, file: File) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('documentType', 'OTHER'); // Use a valid enum value from the backend
     return apiCall(`/api/v1/tenders/${id}/documents`, { 
       method: 'POST', body: formData, 
-      headers: { 'Content-Type': 'remove_this' } // We will handle this in apiCall by deleting it
+      headers: { 'Content-Type': 'remove_this' } 
     });
   },
   getNoticePreview: (id: string) => apiCall(`/api/v1/tenders/${id}/notice-preview`),

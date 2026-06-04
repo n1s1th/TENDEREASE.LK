@@ -133,12 +133,12 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         // 7. Send asynchronous-like mock email
         try {
             emailService.sendRegistrationSuccessEmail(
-                savedOfficer.getOfficialEmail(),
-                savedOfficer.getLiaisonOfficer() != null ? savedOfficer.getLiaisonOfficer().getName() : "Officer",
+                savedOfficer.getLiaisonOfficer().getEmail(),
+                savedOfficer.getLiaisonOfficer().getName(),
                 referenceId
             );
         } catch (Exception e) {
-            log.error("Failed to send mock registration email to {}: {}", savedOfficer.getOfficialEmail(), e.getMessage());
+            log.error("Failed to send mock registration email to {}: {}", savedOfficer.getLiaisonOfficer().getEmail(), e.getMessage());
         }
 
         // 8. Return success response
@@ -224,13 +224,8 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
         log.info("Officer {} approved (ref: {})", id, officer.getRegistrationReference());
 
-        // Send approval email
-        try {
-            emailService.sendRegistrationApprovalEmail(
-                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference());
-        } catch (Exception e) {
-            log.error("Failed to send approval email to {}: {}", officer.getOfficialEmail(), e.getMessage());
-        }
+        // Send approval emails to both Official and Liaison emails
+        sendNotificationEmails(officer, "APPROVED", null);
 
         return mapToProfileResponse(officer);
     }
@@ -255,13 +250,8 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
         log.info("Officer {} rejected (ref: {})", id, officer.getRegistrationReference());
 
-        // Send rejection email
-        try {
-            emailService.sendRegistrationRejectionEmail(
-                officer.getOfficialEmail(), "Officer", officer.getRegistrationReference(), reason);
-        } catch (Exception e) {
-            log.error("Failed to send rejection email to {}: {}", officer.getOfficialEmail(), e.getMessage());
-        }
+        // Send rejection emails to both Official and Liaison emails
+        sendNotificationEmails(officer, "REJECTED", reason);
 
         return mapToProfileResponse(officer);
     }
@@ -277,15 +267,20 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     private List<String> validateRegistration(CreateOfficerRegistrationRequest request) {
         final List<String> errors = new ArrayList<>();
 
-        // Email uniqueness
-        if (officerRepository.existsByOfficialEmail(request.getOfficialEmail())) {
-            errors.add("Email already registered");
-        }
-
         // NIC format validation
         final String nic = request.getLiaisonOfficer().getNic();
         if (!isValidNIC(nic)) {
             errors.add("NIC format incorrect");
+        }
+
+        // NIC uniqueness
+        if (liaisonOfficerRepository.existsByNic(nic)) {
+            errors.add("NIC already registered for another liaison officer");
+        }
+
+        // LO Email uniqueness
+        if (liaisonOfficerRepository.existsByEmail(request.getLiaisonOfficer().getEmail())) {
+            errors.add("Liaison officer email already registered");
         }
 
         return errors;
@@ -303,8 +298,33 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         return nic.matches("^([0-9]{9}[vVxX]|[0-9]{12})$");
     }
 
+    private void sendNotificationEmails(Officer officer, String type, String reason) {
+        String officialEmail = officer.getOfficialEmail();
+        String loEmail = (officer.getLiaisonOfficer() != null) ? officer.getLiaisonOfficer().getEmail() : null;
+        String name = (officer.getLiaisonOfficer() != null) ? officer.getLiaisonOfficer().getName() : "Officer";
+        String ref = officer.getRegistrationReference();
+
+        try {
+            if ("APPROVED".equals(type)) {
+                log.info("Sending approval emails for ref: {}", ref);
+                emailService.sendRegistrationApprovalEmail(officialEmail, name, ref);
+                if (loEmail != null && !loEmail.equals(officialEmail)) {
+                    emailService.sendRegistrationApprovalEmail(loEmail, name, ref);
+                }
+            } else if ("REJECTED".equals(type)) {
+                log.info("Sending rejection emails for ref: {}", ref);
+                emailService.sendRegistrationRejectionEmail(officialEmail, name, ref, reason);
+                if (loEmail != null && !loEmail.equals(officialEmail)) {
+                    emailService.sendRegistrationRejectionEmail(loEmail, name, ref, reason);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to send {} emails for {}: {}", type, ref, e.getMessage());
+        }
+    }
+
     // ────────────────────────────────────────────────────────
-    //  HELPER METHODS
+    //  VALIDATION
     // ────────────────────────────────────────────────────────
 
     private Officer findOfficerOrThrow(UUID id) {

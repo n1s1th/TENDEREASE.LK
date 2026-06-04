@@ -12,7 +12,8 @@ import lombok.*;
  */
 @Entity
 @Table(name = "liaison_officers", indexes = {
-    @Index(name = "idx_liaison_nic", columnList = "nic"),
+    @Index(name = "idx_liaison_nic", columnList = "nic", unique = true),
+    @Index(name = "idx_liaison_email", columnList = "email", unique = true),
     @Index(name = "idx_liaison_officer_id", columnList = "officer_id")
 })
 @Getter
@@ -31,13 +32,13 @@ public class LiaisonOfficer extends BaseEntity {
     @Column(name = "designation")
     private String designation;
 
-    @Column(name = "nic", nullable = false)
+    @Column(name = "nic", nullable = false, unique = true)
     private String nic;
 
     @Column(name = "mobile", nullable = false)
     private String mobile;
 
-    @Column(name = "email", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @OneToOne(fetch = FetchType.LAZY)
