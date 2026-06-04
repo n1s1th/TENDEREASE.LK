@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
 import { StepIndicator } from "@/components/tender/creation/StepIndicator";
 import { TenderDetailsStep } from "@/components/tender/creation/steps/TenderDetailsStep";
@@ -21,12 +22,59 @@ const STEP_COMPONENTS = [
   ScheduleStep,
 ];
 
+const step0Schema = z.object({
+  title: z.string().min(1, "Title is required"),
+  referenceNumber: z.string().min(1, "Reference Number is required"),
+  procurementType: z.string().min(1, "Procurement Type is required"),
+  biddingMethod: z.string().min(1, "Bidding Method is required"),
+  ministryId: z.string().min(1, "Ministry is required"),
+  departmentAgencyId: z.string().min(1, "Department/Agency is required"),
+  description: z.string().min(1, "Description is required"),
+});
+
+const step1Schema = z.object({
+  estimatedBudget: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Valid Estimated Budget is required"),
+  fundingSource: z.string().min(1, "Funding Source is required"),
+  tenderType: z.string().min(1, "Tender Type is required"),
+});
+
+const step2Schema = z.object({
+  sbdTemplate: z.string().min(1, "SBD Template is required"),
+});
+
+const step3Schema = z.object({
+  complianceChecklist: z.object({
+    procurementPlanApproved: z.boolean().refine((val) => val === true, "Procurement Plan must be approved"),
+    budgetAvailabilityConfirmed: z.boolean().refine((val) => val === true, "Budget Availability must be confirmed"),
+    sbdComplyWithGuidelines: z.boolean().refine((val) => val === true, "SBD must comply with guidelines"),
+    evaluationCriteriaDefined: z.boolean().refine((val) => val === true, "Evaluation Criteria must be defined"),
+  }),
+});
+
+const step4Schema = z.object({
+  advertisementStartDate: z.string().min(1, "Advertisement Start Date is required"),
+  bidSubmissionDeadline: z.string().min(1, "Bid Submission Deadline is required"),
+  preBidMeetingEnabled: z.boolean(),
+  preBidMeetingDate: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.preBidMeetingEnabled && !data.preBidMeetingDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Pre-Bid Meeting Date is required when enabled",
+      path: ["preBidMeetingDate"],
+    });
+  }
+});
+
+const schemas = [step0Schema, step1Schema, step2Schema, step3Schema, step4Schema];
+
 export default function TenderCreationPage() {
   const {
     currentStep,
     showPreview,
     isSubmitting,
     error,
+    formData,
     nextStep,
     prevStep,
     goToStep,
@@ -34,10 +82,17 @@ export default function TenderCreationPage() {
     fetchReferenceData,
     updateFormData,
   } = useTenderCreationStore();
+  
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReferenceData();
   }, [fetchReferenceData]);
+
+  // Clear validation error when step changes
+  useEffect(() => {
+    setValidationError(null);
+  }, [currentStep]);
 
   const ActiveStep = STEP_COMPONENTS[currentStep];
   const isFirstStep = currentStep === 0;
@@ -74,6 +129,34 @@ export default function TenderCreationPage() {
     });
     // Go to the last step and show preview
     goToStep(4);
+    setShowPreview(true);
+  };
+
+  const handleNextStep = () => {
+    const currentSchema = schemas[currentStep];
+    const result = currentSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const firstError = result.error?.issues?.[0]?.message || result.error?.errors?.[0]?.message || "Please fill in all required fields correctly.";
+      setValidationError(firstError);
+      return;
+    }
+    
+    setValidationError(null);
+    nextStep();
+  };
+
+  const handleReviewTender = () => {
+    const currentSchema = schemas[currentStep];
+    const result = currentSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const firstError = result.error?.issues?.[0]?.message || result.error?.errors?.[0]?.message || "Please fill in all required fields correctly.";
+      setValidationError(firstError);
+      return;
+    }
+    
+    setValidationError(null);
     setShowPreview(true);
   };
 
@@ -124,9 +207,9 @@ export default function TenderCreationPage() {
         />
 
         {/* Error banner */}
-        {error && (
+        {(error || validationError) && (
           <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
-            <span className="font-medium">Error:</span> {error}
+            <span className="font-medium">Error:</span> {error || validationError}
           </div>
         )}
 
@@ -174,7 +257,7 @@ export default function TenderCreationPage() {
             </Button>
 
             {!isLastStep && (
-              <Button type="button" size="sm" onClick={nextStep}>
+              <Button type="button" size="sm" onClick={handleNextStep}>
                 Next Step
                 <ChevronRight data-icon="inline-end" className="size-4" />
               </Button>
@@ -184,7 +267,7 @@ export default function TenderCreationPage() {
               <Button
                 type="button"
                 size="sm"
-                onClick={() => setShowPreview(true)}
+                onClick={handleReviewTender}
               >
                 <Eye data-icon="inline-start" className="size-4" />
                 Review Tender
