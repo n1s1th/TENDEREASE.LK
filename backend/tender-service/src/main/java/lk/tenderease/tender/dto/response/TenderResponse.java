@@ -74,4 +74,19 @@ public class TenderResponse {
 
     @Schema(description = "ID/username of the user who created the tender")
     private String createdBy;
+
+    @Schema(description = "Closing date for bid submission")
+    private LocalDateTime closingDate;
+
+    @Schema(description = "Time remaining in seconds until closing date")
+    private Long timeRemaining;
+
+    @Schema(description = "Reason for rejection if the tender was rejected")
+    private String rejectionReason;
+
+    @Schema(description = "SBD Template name")
+    private String sbdTemplate;
+
+    @Schema(description = "SBD Template version")
+    private String templateVersion;
 }

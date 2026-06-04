@@ -1,4 +1,3 @@
-import Navbar from "@/components/home/Navbar";
 import Footer from "@/components/home/Footer";
 import SubNav from "@/components/cao-dashboard/SubNav";
 import Toast from "@/components/cao-dashboard/Toast";
@@ -19,7 +18,6 @@ export default function CAODashboardLayout({
 }) {
   return (
     <div className="dash-page">
-      <Navbar />
 
       {/* Dashboard Identity Header */}
       <div style={{
