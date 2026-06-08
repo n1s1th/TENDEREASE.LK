@@ -65,20 +65,20 @@ export default function BidOpeningPage() {
         <div className="max-w-[98%] mx-auto flex flex-col gap-8">
           <OpeningHeader
             tenderId={id || displaySession.tenderId}
-            title={"tenderTitle" in displaySession ? displaySession.tenderTitle : "TENDER OPENING SESSION"}
-            category={"category" in displaySession ? displaySession.category : "UNSPECIFIED"}
-            division={"division" in displaySession ? displaySession.division : "PROCUREMENT"}
+            title={displaySession.tenderTitle}
+            category={displaySession.category}
+            division={displaySession.division}
           />
 
-          <OpeningBanner 
-            status={displaySession.status} 
-            scheduledTime={displaySession.scheduledOpeningTime} 
+          <OpeningBanner
+            status={displaySession.status}
+            scheduledTime={displaySession.scheduledOpeningTime}
             bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <SchedulePanel 
-              scheduledTime={displaySession.scheduledOpeningTime} 
+            <SchedulePanel
+              scheduledTime={displaySession.scheduledOpeningTime}
               bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
             />
             <OpeningActionPanel />

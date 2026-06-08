@@ -82,4 +82,4 @@ export const officerRegistrationSchema = z
     }
   });
 
-export type OfficerRegistrationFormData = z.infer<typeof officerRegistrationSchema>;
+export type OfficerRegistrationFormData = z.input<typeof officerRegistrationSchema>;

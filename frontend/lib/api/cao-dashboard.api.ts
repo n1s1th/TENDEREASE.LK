@@ -1,5 +1,6 @@
 // ─── CAO Dashboard API Layer ─────────────────────────────
 import axios from 'axios';
+import { useAuthStore } from '@/store/auth/auth.store';
 import type {
   DashboardTender,
   DashboardNotification,
@@ -11,24 +12,51 @@ import type {
   RegistrationStatus,
   TenderTab,
   PaginationState,
+  Recommendation,
+  RecommendationStatus,
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api/v1',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 5000, // 5s timeout
 });
 
 // Separate axios instance for user-service (port 8081)
 const userApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 5000,
 });
 
 // Separate axios instance for reporting-service (port 8092)
 const reportApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_REPORT_API_URL || 'http://localhost:8092/api',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 10000, // 10s for reports
 });
+
+// Separate axios instance for evaluation-service (port 8084)
+const evaluationApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084/api/v1',
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 5000,
+});
+
+const addTokenInterceptor = (instance: typeof axios) => {
+  instance.interceptors.request.use((config) => {
+    const token = useAuthStore.getState().token;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+};
+
+addTokenInterceptor(api as any);
+addTokenInterceptor(userApi as any);
+addTokenInterceptor(reportApi as any);
+
 
 // ── Tenders ──────────────────────────────────────────────────
 export async function fetchDashboardTenders(
@@ -59,6 +87,42 @@ export async function fetchDashboardTenders(
 export async function fetchTenderDetails(id: string): Promise<DashboardTender> {
   const res = await api.get(`/cao/tenders/${id}`);
   return res.data;
+}
+
+export async function viewTenderDocument(docId: string): Promise<string> {
+  // Returns a URL to the document that can be opened in a new tab
+  return `${api.defaults.baseURL}/cao/tenders/documents/${docId}/view`;
+}
+
+export async function downloadTenderDocument(docId: string): Promise<Blob> {
+  if (!docId) throw new Error("Document ID is required");
+  
+  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  
+  const res = await axios.get(fullUrl, {
+    withCredentials: false
+  });
+  
+  if (!res.data || !res.data.content) {
+    throw new Error("Server returned empty document data");
+  }
+  
+  const base64Data = res.data.content;
+  const mimeType = res.data.mimeType || 'application/pdf';
+  
+  try {
+    // Decode Base64
+    const byteCharacters = atob(base64Data.replace(/\s/g, ''));
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  } catch (e) {
+    console.error("Base64 decoding failed", e);
+    throw new Error("Failed to decode document content. The file might be corrupted.");
+  }
 }
 
 export async function approveTender(id: string): Promise<void> {
@@ -95,6 +159,20 @@ export async function acceptRegistration(id: string): Promise<void> {
 
 export async function rejectRegistration(id: string, reason: string): Promise<void> {
   await userApi.post(`/cao/registrations/${id}/reject`, null, { params: { reason } });
+}
+
+// ── Recommendations ──────────────────────────────────────────
+export async function fetchRecommendations(status?: RecommendationStatus): Promise<Recommendation[]> {
+  const res = await evaluationApi.get('/recommendations', {
+    params: { status }
+  });
+  return res.data || [];
+}
+
+export async function updateRecommendationStatus(id: number, status: RecommendationStatus, reason?: string): Promise<void> {
+  await evaluationApi.patch(`/recommendations/${id}/status`, null, {
+    params: { status, ...(reason ? { reason } : {}) }
+  });
 }
 
 // ── KPIs ─────────────────────────────────────────────────────
@@ -141,36 +219,60 @@ export async function fetchDashboardNotifications(): Promise<DashboardNotificati
   const notifications: DashboardNotification[] = [];
   
   try {
-    // Fetch pending tenders
-    const tendersRes = await fetchDashboardTenders('pending', undefined, 1, 100);
-    // Fetch pending tenders
-    tendersRes.data.forEach((t, index) => {
-      notifications.push({
-        id: `tender-${t.id}`,
-        title: "Pending Tender",
-        message: `Tender ${t.tenderNumber || t.referenceNumber || t.id} is pending approval.`,
-        type: "tender_submitted",
-        status: "info",
-        time: (t as any).createdAt || (t as any).createdDate || t.closingDate || new Date().toISOString(),
-        isRead: readNotifs.has(`tender-${t.id}`),
-        targetId: t.tenderNumber || t.referenceNumber || t.id
-      });
-    });
+    // Fetch in parallel to avoid sequential blocking
+    const [tendersResult, regResult, recResult] = await Promise.allSettled([
+      fetchDashboardTenders('pending', undefined, 1, 100),
+      fetchRegistrations('PENDING', 1, 100),
+      fetchRecommendations('PENDING')
+    ]);
 
-    // Fetch pending registrations
-    const regRes = await fetchRegistrations('PENDING', 1, 100);
-    regRes.data.forEach((r: any) => {
-      notifications.push({
-        id: `reg-${r.officerId}`,
-        title: "Registration Received",
-        message: `Registration request from ${r.procuringEntityType || "Institution"} is pending.`,
-        type: "officer_registered",
-        status: "pending",
-        time: r.createdAt || new Date().toISOString(),
-        isRead: readNotifs.has(`reg-${r.officerId}`),
-        targetId: r.officerId
+    // Handle Tenders
+    if (tendersResult.status === 'fulfilled') {
+      tendersResult.value.data.forEach((t) => {
+        notifications.push({
+          id: `tender-${t.id}`,
+          title: "Pending Tender",
+          message: `Tender ${t.tenderNumber || t.referenceNumber || t.id} is pending approval.`,
+          type: "tender_submitted",
+          status: "info",
+          time: (t as any).createdAt || (t as any).createdDate || t.closingDate || new Date().toISOString(),
+          isRead: readNotifs.has(`tender-${t.id}`),
+          targetId: t.tenderNumber || t.referenceNumber || t.id
+        });
       });
-    });
+    }
+
+    // Handle Registrations
+    if (regResult.status === 'fulfilled') {
+      regResult.value.data.forEach((r: any) => {
+        notifications.push({
+          id: `reg-${r.officerId}`,
+          title: "Registration Received",
+          message: `Registration request from ${r.procuringEntityType || "Institution"} is pending.`,
+          type: "officer_registered",
+          status: "pending",
+          time: r.createdAt || new Date().toISOString(),
+          isRead: readNotifs.has(`reg-${r.officerId}`),
+          targetId: r.officerId
+        });
+      });
+    }
+
+    // Handle Recommendations
+    if (recResult.status === 'fulfilled') {
+      recResult.value.forEach((r) => {
+        notifications.push({
+          id: `rec-${r.id}`,
+          title: "New Recommendation",
+          message: `Recommendation for ${r.tenderName} is awaiting approval.`,
+          type: "recommendation_received",
+          status: "pending",
+          time: r.createdAt,
+          isRead: readNotifs.has(`rec-${r.id}`),
+          targetId: r.tenderId
+        });
+      });
+    }
 
     // Sort by time descending
     notifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());

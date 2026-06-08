@@ -25,12 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
+      <body className={`${inter.className} min-h-full flex flex-col`}>
         <AuthProvider>
           <Navbar />
           {children}
         </AuthProvider>
       </body>
+
     </html>
   );
 }

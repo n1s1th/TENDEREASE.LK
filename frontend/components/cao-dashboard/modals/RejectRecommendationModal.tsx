@@ -2,82 +2,76 @@
 
 import { useState } from "react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
-import { X } from "lucide-react";
-import { DashboardTender, Recommendation } from "@/lib/types/cao-dashboard.types";
+import { X, AlertCircle } from "lucide-react";
+import { Recommendation } from "@/lib/types/cao-dashboard.types";
 
 export default function RejectRecommendationModal() {
   const closeModal = useCAODashboardStore((s) => s.closeModal);
-  const modalData = useCAODashboardStore((s) => s.modalData) as { tender?: DashboardTender; recommendation?: Recommendation };
-  const showToast = useCAODashboardStore((s) => s.showToast);
+  const modalData = useCAODashboardStore((s) => s.modalData) as { recommendation: Recommendation };
+  const updateRecommendationStatus = useCAODashboardStore((s) => s.updateRecommendationStatus);
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
 
-  if (!modalData?.tender) return null;
+  if (!modalData?.recommendation) return null;
 
-  const handleSubmit = () => {
+  const rec = modalData.recommendation;
+
+  const handleSubmit = async () => {
     if (!reason.trim()) {
-      setError("Please enter a reason for cancellation.");
+      setError("Please enter a reason for rejection.");
       return;
     }
-    // In a real app this would call an API with the reason
-    showToast("success", "Recommendation rejected successfully.");
-    closeModal();
+    await updateRecommendationStatus(rec.id, "REJECTED", reason.trim());
   };
 
   return (
-    <div className="dash-modal-overlay" onClick={closeModal}>
-      <div className="dash-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
-        <div className="dash-modal-header" style={{ borderBottom: "none", paddingBottom: 0 }}>
-          <h2 className="dash-modal-title" style={{ width: "100%", textAlign: "center", fontSize: "1.25rem", marginTop: "1rem" }}>
-            Confirm Rejection?
-          </h2>
-          <button className="dash-modal-close" onClick={closeModal} style={{ position: "absolute", top: "1rem", right: "1rem" }}>
-            <X size={20} />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn" onClick={closeModal}>
+      <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl border-t-8 border-[#953002] transform transition-all animate-scaleIn relative" onClick={(e) => e.stopPropagation()}>
+        <button className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors" onClick={closeModal}>
+          <X size={24} />
+        </button>
 
-        <div className="dash-modal-body" style={{ padding: "1.5rem 2rem" }}>
-          
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 600, color: "var(--te-gray-2)", marginBottom: "0.5rem" }}>
-              Enter the reason for rejection
-            </label>
+        <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight flex items-center gap-2">
+          Confirm Rejection?
+        </h3>
+        <p className="text-base text-slate-600 mb-4 font-medium leading-relaxed">
+          Please provide a reason for rejecting the recommendation for <span className="text-slate-900 font-bold">{rec.bidderName}</span>.
+        </p>
+
+        <div className="space-y-4 mb-8">
+          <div className="relative">
             <textarea
               value={reason}
               onChange={(e) => {
                 setReason(e.target.value);
                 if (error) setError("");
               }}
-              placeholder="Reason"
-              style={{
-                width: "100%",
-                minHeight: "120px",
-                padding: "0.75rem",
-                borderRadius: "6px",
-                border: error ? "1px solid var(--te-error)" : "1px solid var(--te-border)",
-                resize: "vertical",
-                fontSize: "0.9rem",
-                outline: "none",
-                fontFamily: "inherit"
-              }}
+              placeholder="Please provide a clear explanation for the rejection..."
+              className={`w-full min-h-[140px] p-5 rounded-xl border-2 transition-all duration-200 outline-none text-slate-700 font-medium leading-relaxed ${
+                error ? "border-red-100 bg-red-50/30 focus:border-red-200" : "border-slate-200 bg-slate-50/30 focus:ring-4 focus:ring-[#953002]/10 focus:border-[#953002]"
+              }`}
             />
-            {error && <div style={{ color: "var(--te-error)", fontSize: "0.8rem", marginTop: "0.25rem" }}>{error}</div>}
+            {error && (
+              <div className="flex items-center gap-1.5 mt-2 ml-1 text-red-500 font-bold text-xs">
+                <AlertCircle size={14} />
+                {error}
+              </div>
+            )}
           </div>
-
         </div>
 
-        <div className="dash-modal-footer" style={{ display: "flex", gap: "1rem", paddingTop: 0, paddingBottom: "2rem", paddingLeft: "2rem", paddingRight: "2rem", borderTop: "none" }}>
+        <div className="flex items-center justify-end gap-4">
           <button
+            className="flex-1 px-8 py-4 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all active:scale-95"
             onClick={closeModal}
-            style={{ flex: 1, padding: "0.75rem", borderRadius: "6px", background: "#FFF", border: "1px solid var(--te-border)", color: "var(--te-gray-2)", fontWeight: 600, cursor: "pointer" }}
           >
             Cancel
           </button>
           <button
+            className="flex-1 px-8 py-4 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 border border-[#953002]"
             onClick={handleSubmit}
-            style={{ flex: 1, padding: "0.75rem", borderRadius: "6px", background: "#111827", color: "#FFF", border: "none", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
           >
-            Submit
+            Confirm Rejection
           </button>
         </div>
       </div>

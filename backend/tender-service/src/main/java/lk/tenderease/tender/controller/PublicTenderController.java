@@ -110,14 +110,6 @@ public class PublicTenderController {
         return tenderService.getContacts(id);
     }
 
-    @GetMapping("/officer/clarifications")
-    public List<ClarificationDTO> getOfficerClarifications(
-            @RequestHeader(value = "X-User-Email", required = false) String officerId) {
-        // Use provided header or default dev user
-        String id = officerId != null ? officerId : "dev-user-id";
-        return tenderService.getClarificationsForOfficer(id);
-    }
-
     @GetMapping("/files/{filename}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
         try {

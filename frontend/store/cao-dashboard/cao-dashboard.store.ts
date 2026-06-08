@@ -13,6 +13,8 @@ import type {
   ToastMessage,
   ToastType,
   PaginationState,
+  Recommendation,
+  RecommendationStatus,
 } from '@/lib/types/cao-dashboard.types';
 import * as api from '@/lib/api/cao-dashboard.api';
 
@@ -43,6 +45,10 @@ interface CAODashboardState {
   kpiSummary: KpiSummary | null;
   kpiReport: KpiReportData | null;
   kpiLoading: boolean;
+
+  // Recommendations
+  recommendations: Recommendation[];
+  recommendationsLoading: boolean;
 
   // UI
   toasts: ToastMessage[];
@@ -77,6 +83,10 @@ interface CAODashboardState {
   approveTender: (id: string) => Promise<void>;
   rejectTender: (id: string, reason: string) => Promise<void>;
 
+  // Recommendation Actions
+  fetchRecommendations: (status?: RecommendationStatus) => Promise<void>;
+  updateRecommendationStatus: (id: number, status: RecommendationStatus, reason?: string) => Promise<void>;
+
   // UI Actions
   showToast: (type: ToastType, message: string, actionLabel?: string) => void;
   dismissToast: (id: string) => void;
@@ -106,9 +116,10 @@ export const useCAODashboardStore = create<CAODashboardState>(
     notificationSummary: null,
     notificationsLoading: false,
 
-    kpiSummary: null,
-    kpiReport: null,
     kpiLoading: false,
+
+    recommendations: [],
+    recommendationsLoading: false,
 
     toasts: [],
     activeModal: null,
@@ -231,9 +242,13 @@ export const useCAODashboardStore = create<CAODashboardState>(
     },
 
     fetchNotificationSummary: async () => {
+      // Prevent fetching more than once every 60 seconds to improve performance
+      const lastFetch = (get() as any).lastNotificationFetch || 0;
+      if (Date.now() - lastFetch < 60000 && get().notificationSummary) return;
+
       try {
         const data = await api.fetchNotificationSummary();
-        set({ notificationSummary: data });
+        set({ notificationSummary: data, lastNotificationFetch: Date.now() } as any);
       } catch {
         set({ notificationSummary: null });
       }
@@ -254,7 +269,16 @@ export const useCAODashboardStore = create<CAODashboardState>(
 
     markAllNotificationsRead: async () => {
       try {
-        await api.markAllNotificationsRead();
+        // Mark all currently loaded notifications as read in localStorage
+        // without re-fetching from 3 services
+        const currentNotifs = get().notifications;
+        const readNotifs = new Set<string>(
+          JSON.parse(typeof window !== 'undefined' ? localStorage.getItem('readNotifications') || '[]' : '[]')
+        );
+        currentNotifs.forEach(n => readNotifs.add(n.id));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('readNotifications', JSON.stringify(Array.from(readNotifs)));
+        }
         set((state) => ({
           notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
         }));
@@ -322,6 +346,32 @@ export const useCAODashboardStore = create<CAODashboardState>(
         get().fetchKpiSummary();
       } catch {
         get().showToast('error', 'Failed to reject tender.');
+      }
+    },
+
+    // ── Recommendations ────────────────────────────────────────
+    fetchRecommendations: async (status) => {
+      set({ recommendationsLoading: true });
+      try {
+        const data = await api.fetchRecommendations(status);
+        set({ recommendations: data });
+      } catch {
+        set({ recommendations: [] });
+      } finally {
+        set({ recommendationsLoading: false });
+      }
+    },
+
+    updateRecommendationStatus: async (id, status, reason) => {
+      try {
+        await api.updateRecommendationStatus(id, status, reason);
+        const msg = status === 'APPROVED' ? 'Recommendation approved successfully.' : 'Recommendation rejected.';
+        get().showToast('success', msg);
+        
+        get().closeModal();
+        get().fetchRecommendations();
+      } catch {
+        get().showToast('error', `Failed to ${status.toLowerCase()} recommendation.`);
       }
     },
 

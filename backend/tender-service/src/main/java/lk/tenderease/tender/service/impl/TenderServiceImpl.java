@@ -1,7 +1,6 @@
 package lk.tenderease.tender.service.impl;
 
 import lk.tenderease.common.dto.PageResponse;
-import lk.tenderease.common.constant.AMQPConstants;
 import lk.tenderease.common.event.NotificationEvent;
 import lk.tenderease.tender.dto.request.ComplianceChecklistRequest;
 import lk.tenderease.tender.dto.request.CreateTenderRequest;
@@ -21,12 +20,10 @@ import lk.tenderease.tender.entity.TenderDocument;
 import lk.tenderease.tender.entity.TenderSchedule;
 import lk.tenderease.tender.entity.TenderComplianceChecklist;
 import lk.tenderease.tender.enums.BiddingMethod;
-import lk.tenderease.tender.enums.DocumentType;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.enums.TenderType;
 import lk.tenderease.tender.producer.NotificationProducer;
-import lk.tenderease.tender.producer.TenderEventProducer;
 import lk.tenderease.tender.repository.ClarificationResponseRepository;
 import lk.tenderease.tender.repository.DepartmentRepository;
 import lk.tenderease.tender.repository.FundingSourceRepository;
@@ -47,20 +44,22 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.criteria.Predicate;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
 import lk.tenderease.common.exception.BusinessException;
+import lk.tenderease.tender.enums.DocumentType;
 
 @Slf4j
 @Service
@@ -80,7 +79,10 @@ public class TenderServiceImpl implements TenderService {
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
-    private final TenderEventProducer tenderEventProducer;
+
+    @Value("${app.upload-dir:../uploads}")
+    private String uploadDir;
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -109,7 +111,8 @@ public class TenderServiceImpl implements TenderService {
         FundingSource fundingSource = null;
         if (request.getFundingSourceId() != null) {
             fundingSource = fundingSourceRepository.findById(request.getFundingSourceId())
-                    .orElseThrow(() -> new RuntimeException("Funding source not found with ID: " + request.getFundingSourceId()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Funding source not found with ID: " + request.getFundingSourceId()));
         }
 
         // Build tender entity
@@ -132,27 +135,28 @@ public class TenderServiceImpl implements TenderService {
         // Set audit fields manually (since AuditorAware is not configured for dev)
         tender.setCreatedBy(createdByUserId != null ? createdByUserId : "dev-user");
         tender.setCreatedAt(LocalDateTime.now());
-        tender.setUpdatedAt(LocalDateTime.now());
+        tender.setEstimatedBudget(request.getEstimatedBudget());
+        tender.setSbdTemplate(request.getSbdTemplate());
+        tender.setTemplateVersion(request.getTemplateVersion());
 
         Tender saved = tenderRepository.save(tender);
         log.info("Tender created with ID: {}", saved.getId());
-
-        // Emit KPI Event
-        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
-                .tenderId(saved.getId().toString())
-                .eventType("CREATED")
-                .status(saved.getStatus().name())
-                .triggerBy(createdByUserId)
-                .build());
 
         return mapToResponse(saved);
     }
 
     private TenderResponse mapToResponse(Tender tender) {
-        if (tender == null) return null;
-        
+        if (tender == null)
+            return null;
+
         log.debug("Mapping tender {} to response", tender.getId());
-        
+
+        LocalDateTime effectiveClosingDate = tender.getClosingDate();
+        if (effectiveClosingDate == null && tender.getSchedule() != null
+                && tender.getSchedule().getBidSubmissionDeadline() != null) {
+            effectiveClosingDate = tender.getSchedule().getBidSubmissionDeadline().atStartOfDay();
+        }
+
         TenderResponse.TenderResponseBuilder<?, ?> builder = TenderResponse.builder()
                 .id(tender.getId())
                 .tenderNumber(tender.getTenderNumber())
@@ -166,11 +170,11 @@ public class TenderServiceImpl implements TenderService {
                 .createdAt(tender.getCreatedAt())
                 .updatedAt(tender.getUpdatedAt())
                 .createdBy(tender.getCreatedBy())
-                .closingDate(tender.getSchedule() != null && tender.getSchedule().getBidSubmissionDeadline() != null 
-                    ? tender.getSchedule().getBidSubmissionDeadline().atStartOfDay() 
-                    : tender.getClosingDate())
-                .dynamicData(tender.getDynamicData())
-                .rejectionReason(tender.getRejectionReason());
+                .closingDate(effectiveClosingDate)
+                .timeRemaining(calculateTimeRemaining(effectiveClosingDate))
+                .rejectionReason(tender.getRejectionReason())
+                .sbdTemplate(tender.getSbdTemplate())
+                .templateVersion(tender.getTemplateVersion());
 
         // Defensive mapping for relationships
         if (tender.getMinistry() != null) {
@@ -189,6 +193,67 @@ public class TenderServiceImpl implements TenderService {
         }
 
         return builder.build();
+    }
+
+    @Override
+    public TenderDetailResponse getTenderById(UUID id) {
+        log.info("Fetching tender detail for ID: {}", id);
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+
+        TenderDetailResponse response = new TenderDetailResponse();
+        // Map from base TenderResponse (reusing the logic from mapToResponse if needed,
+        // but let's be explicit)
+        TenderResponse base = mapToResponse(tender);
+
+        // Manual copy to the subclass
+        response.setId(base.getId());
+        response.setTenderNumber(base.getTenderNumber());
+        response.setTitle(base.getTitle());
+        response.setDescription(base.getDescription());
+        response.setProcurementType(base.getProcurementType());
+        response.setBiddingMethod(base.getBiddingMethod());
+        response.setTenderType(base.getTenderType());
+        response.setMinistryId(base.getMinistryId());
+        response.setMinistryName(base.getMinistryName());
+        response.setDepartmentId(base.getDepartmentId());
+        response.setDepartmentName(base.getDepartmentName());
+        response.setEstimatedBudget(tender.getEstimatedBudget());
+        response.setSbdTemplate(tender.getSbdTemplate());
+        response.setTemplateVersion(tender.getTemplateVersion());
+
+        response.setFundingSourceId(base.getFundingSourceId());
+        response.setFundingSourceName(base.getFundingSourceName());
+        response.setStatus(base.getStatus());
+        response.setCreatedAt(base.getCreatedAt());
+        response.setUpdatedAt(base.getUpdatedAt());
+        response.setCreatedBy(base.getCreatedBy());
+        response.setClosingDate(base.getClosingDate());
+        response.setTimeRemaining(base.getTimeRemaining());
+        response.setRejectionReason(base.getRejectionReason());
+
+        // Map specific details (documents, schedule, checklist)
+        response.setDocuments(documentRepository.findByTenderId(id).stream().map(doc -> TenderDocumentResponse.builder()
+                .id(doc.getId())
+                .tenderId(doc.getTender().getId())
+                .documentName(doc.getDocumentName())
+                .documentType(doc.getDocumentType())
+                .sbdTemplateId(doc.getSbdTemplate() != null ? doc.getSbdTemplate().getId() : null)
+                .templateVersion(doc.getSbdTemplate() != null ? doc.getSbdTemplate().getVersion() : null)
+                .fileSizeBytes(doc.getFileSizeBytes())
+                .mimeType(doc.getMimeType())
+                .uploadedAt(doc.getUploadedAt())
+                .build()).collect(java.util.stream.Collectors.toList()));
+        response.setSchedule(getSchedule(id));
+        response.setComplianceChecklist(getComplianceChecklist(id));
+
+        try {
+            response.setNoticePreview(generateNoticePreview(id).getGeneratedText());
+        } catch (Exception e) {
+            log.warn("Notice preview could not be generated: {}", e.getMessage());
+        }
+
+        return response;
     }
 
     @Override
@@ -211,7 +276,8 @@ public class TenderServiceImpl implements TenderService {
         FundingSource fundingSource = null;
         if (request.getFundingSourceId() != null) {
             fundingSource = fundingSourceRepository.findById(request.getFundingSourceId())
-                    .orElseThrow(() -> new RuntimeException("Funding source not found with ID: " + request.getFundingSourceId()));
+                    .orElseThrow(() -> new RuntimeException(
+                            "Funding source not found with ID: " + request.getFundingSourceId()));
         }
 
         tender.setTenderNumber(request.getTenderNumber());
@@ -229,45 +295,70 @@ public class TenderServiceImpl implements TenderService {
 
         tender.setUpdatedAt(java.time.LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
-        
+
         return mapToResponse(saved);
     }
 
     @Override
     public void deleteTender(UUID id, String callerUserId) {
-        // TODO: implement
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+        tenderRepository.delete(tender);
     }
 
     @Override
     public PageResponse<TenderResponse> listMyTenders(TenderStatus status, Pageable pageable, String callerUserId) {
-        return null; // TODO: implement
+        org.springframework.data.domain.Page<Tender> tenderPage;
+        if (status != null) {
+            tenderPage = tenderRepository.findByCreatedByAndStatus(callerUserId, status, pageable);
+        } else {
+            tenderPage = tenderRepository.findByCreatedBy(callerUserId, pageable);
+        }
+
+        java.util.List<TenderResponse> content = tenderPage.getContent().stream()
+                .map(this::mapToResponse)
+                .toList();
+
+        return PageResponse.<TenderResponse>builder()
+                .content(content)
+                .pageNumber(tenderPage.getNumber())
+                .pageSize(tenderPage.getSize())
+                .totalElements(tenderPage.getTotalElements())
+                .totalPages(tenderPage.getTotalPages())
+                .last(tenderPage.isLast())
+                .build();
     }
 
     @Override
     public PageResponse<TenderResponse> listAllTenders(TenderStatus status, Pageable pageable) {
         log.debug("Listing all tenders with status filter: {}", status);
         Page<Tender> page;
-        
+
         if (status == TenderStatus.APPROVED) {
             // Dashboard "Approved" tab should show both APPROVED and PUBLISHED tenders
-            page = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED), pageable);
+            page = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED),
+                    pageable);
         } else if (status != null) {
             page = tenderRepository.findByStatus(status, pageable);
         } else {
-            page = tenderRepository.findAll(pageable);
+            tenderPage = tenderRepository.findAll(pageable);
         }
-        
+
+        java.util.List<TenderResponse> content = tenderPage.getContent().stream()
+                .map(this::mapToResponse)
+                .toList();
+
         return PageResponse.<TenderResponse>builder()
-                .content(page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .pageNumber(page.getNumber())
-                .pageSize(page.getSize())
+                .content(content)
+                .pageNumber(tenderPage.getNumber())
+                .pageSize(tenderPage.getSize())
+                .totalElements(tenderPage.getTotalElements())
+                .totalPages(tenderPage.getTotalPages())
+                .last(tenderPage.isLast())
                 .build();
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
     public TenderDocumentResponse uploadDocument(UUID tenderId, DocumentUploadRequest request, String callerUserId) {
         log.info("Uploading document for tender ID: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
@@ -282,14 +373,29 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
+        // Save file to local storage
+        String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
+        Path targetPath = Paths.get(uploadDir).resolve(fileName).toAbsolutePath();
+        log.info("Saving uploaded file to: {}", targetPath);
+
+        try {
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("File successfully saved to disk.");
+        } catch (IOException e) {
+            log.error("CRITICAL: Failed to store file at {}. Error: {}", targetPath, e.getMessage());
+            throw new RuntimeException("Could not store file", e);
+        }
+
         // Save metadata to TenderDocument
         lk.tenderease.tender.entity.TenderDocument doc = lk.tenderease.tender.entity.TenderDocument.builder()
                 .tender(tender)
                 .documentName(docName)
                 .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
-                .s3Key("dummy-s3-key/" + java.util.UUID.randomUUID().toString())
+                .s3Key(fileName) // We use s3Key to store the local filename
                 .fileSizeBytes(request.getFile().getSize())
-                .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
+                .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType()
+                        : "application/octet-stream")
                 .uploadedAt(java.time.LocalDateTime.now())
                 .build();
 
@@ -308,8 +414,37 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    public byte[] viewDocument(UUID docId) {
+        log.info("Fetching document for viewing: {}", docId);
+        TenderDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
+        log.info("Attempting to read file from path: {}", filePath.toAbsolutePath());
+        try {
+            return Files.readAllBytes(filePath);
+        } catch (IOException e) {
+            log.error("Failed to read file: {}", e.getMessage());
+            throw new RuntimeException("Could not read file", e);
+        }
+    }
+
+    @Override
     public void deleteDocument(UUID tenderId, UUID docId, String callerUserId) {
-        // TODO: implement
+        lk.tenderease.tender.entity.TenderDocument doc = documentRepository.findById(docId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+        if (!doc.getTender().getId().equals(tenderId)) {
+            throw new RuntimeException("Document does not belong to tender");
+        }
+
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            log.error("Failed to delete file from disk: {}", e.getMessage());
+        }
+
+        documentRepository.delete(doc);
     }
 
     @Override
@@ -317,11 +452,11 @@ public class TenderServiceImpl implements TenderService {
         log.debug("Fetching schedule for tender: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-        
+
         if (tender.getSchedule() == null) {
             return TenderScheduleResponse.builder().build();
         }
-        
+
         TenderSchedule schedule = tender.getSchedule();
         return TenderScheduleResponse.builder()
                 .advertisementStartDate(schedule.getAdvertisementStartDate())
@@ -338,23 +473,23 @@ public class TenderServiceImpl implements TenderService {
         log.debug("Saving schedule for tender: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-        
+
         TenderSchedule schedule = tender.getSchedule();
         if (schedule == null) {
             schedule = new TenderSchedule();
             schedule.setTender(tender);
         }
-        
+
         schedule.setAdvertisementStartDate(request.getAdvertisementStartDate());
         schedule.setBidSubmissionDeadline(request.getBidSubmissionDeadline());
         schedule.setPreBidMeetingEnabled(request.getPreBidMeetingEnabled());
         schedule.setPreBidMeetingDate(request.getPreBidMeetingDate());
         schedule.setPreBidMeetingTime(request.getPreBidMeetingTime());
-        
+
         tender.setSchedule(schedule);
         tender.setUpdatedAt(java.time.LocalDateTime.now());
         tenderRepository.save(tender);
-        
+
         return TenderScheduleResponse.builder()
                 .advertisementStartDate(schedule.getAdvertisementStartDate())
                 .bidSubmissionDeadline(schedule.getBidSubmissionDeadline())
@@ -369,16 +504,16 @@ public class TenderServiceImpl implements TenderService {
         log.debug("Fetching checklist for tender: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-        
+
         if (tender.getComplianceChecklist() == null) {
             return ComplianceChecklistResponse.builder().allComplete(false).build();
         }
-        
+
         TenderComplianceChecklist cl = tender.getComplianceChecklist();
         boolean allComplete = Boolean.TRUE.equals(cl.getProcurementPlanApproved()) &&
-                             Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
-                             Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
-                             Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
+                Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
+                Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
+                Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
 
         return ComplianceChecklistResponse.builder()
                 .id(cl.getId())
@@ -393,31 +528,32 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional
-    public ComplianceChecklistResponse saveComplianceChecklist(UUID tenderId, ComplianceChecklistRequest request, String callerUserId) {
+    public ComplianceChecklistResponse saveComplianceChecklist(UUID tenderId, ComplianceChecklistRequest request,
+            String callerUserId) {
         log.debug("Saving checklist for tender: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-        
+
         TenderComplianceChecklist cl = tender.getComplianceChecklist();
         if (cl == null) {
             cl = new TenderComplianceChecklist();
             cl.setTender(tender);
         }
-        
+
         cl.setProcurementPlanApproved(request.getProcurementPlanApproved());
         cl.setBudgetAvailabilityConfirmed(request.getBudgetAvailabilityConfirmed());
         cl.setSbdsCompliantWithGuidelines(request.getSbdsCompliantWithGuidelines());
         cl.setEvaluationCriteriaDefined(request.getEvaluationCriteriaDefined());
-        
+
         tender.setComplianceChecklist(cl);
         tender.setUpdatedAt(java.time.LocalDateTime.now());
         tenderRepository.save(tender);
-        
+
         boolean allComplete = Boolean.TRUE.equals(cl.getProcurementPlanApproved()) &&
-                             Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
-                             Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
-                             Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
-                             
+                Boolean.TRUE.equals(cl.getBudgetAvailabilityConfirmed()) &&
+                Boolean.TRUE.equals(cl.getSbdsCompliantWithGuidelines()) &&
+                Boolean.TRUE.equals(cl.getEvaluationCriteriaDefined());
+
         return ComplianceChecklistResponse.builder()
                 .id(cl.getId())
                 .tenderId(tenderId)
@@ -434,10 +570,10 @@ public class TenderServiceImpl implements TenderService {
         log.debug("Generating notice preview for tender: {}", tenderId);
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-        
+
         String notice = String.format("INVITATION FOR BIDS\n\nTender: %s\nTitle: %s\nProcurement Type: %s",
                 tender.getTenderNumber(), tender.getTitle(), tender.getProcurementType());
-        
+
         return TenderNoticePreviewResponse.builder()
                 .tenderId(tenderId)
                 .tenderNumber(tender.getTenderNumber())
@@ -457,22 +593,24 @@ public class TenderServiceImpl implements TenderService {
 
         if (tender.getStatus() != TenderStatus.DRAFT) {
             log.warn("Tender {} is in status {}, cannot submit.", tenderId, tender.getStatus());
-            throw new RuntimeException("Only DRAFT tenders can be submitted for approval. Current status: " + tender.getStatus());
+            throw new RuntimeException(
+                    "Only DRAFT tenders can be submitted for approval. Current status: " + tender.getStatus());
         }
 
-        // 1. Move to PENDING_APPROVAL (CAO will approve later)
+        // 1. Set to Pending Approval
         tender.setStatus(TenderStatus.PENDING_APPROVAL);
+
+        // Set closingDate from schedule's bid submission deadline if available
+        lk.tenderease.tender.entity.TenderSchedule schedule = scheduleRepository.findByTenderId(tenderId).orElse(null);
+        if (schedule != null && schedule.getBidSubmissionDeadline() != null) {
+            tender.setClosingDate(schedule.getBidSubmissionDeadline().atStartOfDay());
+        } else {
+            // Default: 14 days from now
+            tender.setClosingDate(LocalDateTime.now().plusDays(14));
+        }
 
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
-
-        // 2. Publish event to RabbitMQ for Reporting Service (KPI)
-        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
-                .tenderId(saved.getId().toString())
-                .eventType("STATUS_CHANGED")
-                .status(saved.getStatus().name())
-                .triggerBy(callerUserId)
-                .build());
 
         // 2. Publish event to RabbitMQ for Notification Service
         try {
@@ -511,6 +649,15 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    public Page<TenderSummaryDTO> getAllTendersForCao(TenderStatus status, Pageable pageable) {
+        if (status != null) {
+            return tenderRepository.findByStatus(status, pageable)
+                    .map(this::mapToSummaryDTO);
+        }
+        return tenderRepository.findAll(pageable).map(this::mapToSummaryDTO);
+    }
+
+    @Override
     public TenderDetailsDTO getPublicTenderById(UUID id) {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
@@ -518,147 +665,23 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public TenderDetailResponse getTenderById(UUID id) {
-        log.info("Fetching tender detail for ID: {}", id);
+    @Transactional
+    public void approveTender(UUID id, String reason) {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
-
-        TenderDetailResponse response = new TenderDetailResponse();
-        TenderResponse base = mapToResponse(tender);
-        
-        response.setId(base.getId());
-        response.setTenderNumber(base.getTenderNumber());
-        response.setTitle(base.getTitle());
-        response.setDescription(base.getDescription());
-        response.setProcurementType(base.getProcurementType());
-        response.setBiddingMethod(base.getBiddingMethod());
-        response.setTenderType(base.getTenderType());
-        response.setMinistryId(base.getMinistryId());
-        response.setMinistryName(base.getMinistryName());
-        response.setDepartmentId(base.getDepartmentId());
-        response.setDepartmentName(base.getDepartmentName());
-        response.setEstimatedBudget(base.getEstimatedBudget());
-        response.setFundingSourceId(base.getFundingSourceId());
-        response.setFundingSourceName(base.getFundingSourceName());
-        response.setStatus(base.getStatus());
-        response.setCreatedAt(base.getCreatedAt());
-        response.setUpdatedAt(base.getUpdatedAt());
-        response.setCreatedBy(base.getCreatedBy());
-        response.setRejectionReason(base.getRejectionReason());
-
-        // Map the detailed sub-entities
-        response.setSchedule(getSchedule(id));
-        response.setComplianceChecklist(getComplianceChecklist(id));
-        
-        if (tender.getDocuments() != null) {
-            response.setDocuments(tender.getDocuments().stream()
-                .map(doc -> TenderDocumentResponse.builder()
-                    .id(doc.getId())
-                    .tenderId(id)
-                    .documentName(doc.getDocumentName())
-                    .documentType(doc.getDocumentType())
-                    .sbdTemplateId(doc.getSbdTemplate() != null ? doc.getSbdTemplate().getId() : null)
-                    .templateVersion(doc.getTemplateVersion())
-                    .fileSizeBytes(doc.getFileSizeBytes())
-                    .mimeType(doc.getMimeType())
-                    .uploadedAt(doc.getUploadedAt())
-                    .build())
-                .collect(Collectors.toList()));
-        }
-        
-        try {
-            response.setNoticePreview(generateNoticePreview(id).getGeneratedText());
-        } catch (Exception e) {
-            log.warn("Could not generate notice preview for tender {}: {}", id, e.getMessage());
-        }
-
-        return response;
+        tender.setStatus(TenderStatus.PUBLISHED);
+        tender.setUpdatedAt(LocalDateTime.now());
+        tenderRepository.save(tender);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public java.util.Map<String, Long> getKPIs(String department, String category, String month) {
-        log.info("Fetching KPIs with department: {}, category: {}, month: {}", department, category, month);
-        
-        Specification<Tender> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            
-            // Active statuses
-            predicates.add(root.get("status").in(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
-            
-            if (department != null && !department.isEmpty()) {
-                predicates.add(cb.equal(cb.trim(cb.lower(root.get("department").get("name"))), department.toLowerCase().trim()));
-            }
-            
-            if (category != null && !category.isEmpty()) {
-                try {
-                    predicates.add(cb.equal(root.get("procurementType"), ProcurementType.valueOf(category.toUpperCase())));
-                } catch (Exception e) { /* ignore */ }
-            }
-            
-            if (month != null && month.startsWith("month_")) {
-                try {
-                    int monthInt = Integer.parseInt(month.substring(6));
-                    LocalDateTime startOfMonth = LocalDateTime.now().withMonth(monthInt).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-                    LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
-                    predicates.add(cb.between(root.get("createdAt"), startOfMonth, endOfMonth));
-                } catch (Exception e) { /* ignore */ }
-            }
-            
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        long active = tenderRepository.count(spec);
-        long smeActive = tenderRepository.count(spec.and((root, query, cb) -> cb.isTrue(root.get("smeIndicator"))));
-        long awarded = 0; // Since AWARDED doesn't exist yet, we just return 0
-        
-        double smeParticipation = active > 0 ? (smeActive * 100.0 / active) : 0;
-        
-        return java.util.Map.of(
-            "activeTenders", active, 
-            "awardedTenders", awarded,
-            "smeParticipation", (long)smeParticipation
-        );
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<java.util.Map<String, Object>> getKPITrend(String department, String category) {
-        log.info("Calculating KPI trend for department: {}, category: {}", department, category);
-        List<java.util.Map<String, Object>> trend = new ArrayList<>();
-        
-        LocalDateTime now = LocalDateTime.now();
-        
-        for (int i = 5; i >= 0; i--) {
-            LocalDateTime monthStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
-            LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
-            
-            final LocalDateTime start = monthStart;
-            final LocalDateTime end = monthEnd;
-            
-            Specification<Tender> spec = (root, query, cb) -> {
-                List<Predicate> predicates = new ArrayList<>();
-                predicates.add(root.get("status").in(TenderStatus.APPROVED, TenderStatus.PUBLISHED));
-                predicates.add(cb.between(root.get("createdAt"), start, end));
-                
-                if (department != null && !department.isEmpty()) {
-                    predicates.add(cb.equal(cb.trim(cb.lower(root.get("department").get("name"))), department.toLowerCase().trim()));
-                }
-                if (category != null && !category.isEmpty()) {
-                    try {
-                        predicates.add(cb.equal(root.get("procurementType"), ProcurementType.valueOf(category.toUpperCase())));
-                    } catch (Exception e) { }
-                }
-                return cb.and(predicates.toArray(new Predicate[0]));
-            };
-            
-            long count = tenderRepository.count(spec);
-            String label = monthStart.getMonth().name().substring(0, 3);
-            trend.add(java.util.Map.of("label", label, "value", count));
-        }
-        
-        return trend;
+    @Transactional
+    public void rejectTender(UUID id, String reason) {
+        Tender tender = tenderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
+        tender.setStatus(TenderStatus.REJECTED);
+        tender.setUpdatedAt(LocalDateTime.now());
+        tenderRepository.save(tender);
     }
 
     @Override
@@ -678,35 +701,17 @@ public class TenderServiceImpl implements TenderService {
     @Override
     public List<ClarificationDTO> getClarifications(UUID tenderId) {
         return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId).stream()
-                .map(this::mapToClarificationDTO)
+                .map(clarification -> {
+                    var response = responseRepository.findByClarificationId(clarification.getId());
+                    return ClarificationDTO.builder()
+                            .id(clarification.getId())
+                            .question(clarification.getQuestion())
+                            .answer(response.map(ClarificationResponse::getResponse).orElse(null))
+                            .askedAt(clarification.getAskedAt())
+                            .answeredAt(response.map(ClarificationResponse::getRespondedAt).orElse(null))
+                            .build();
+                })
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ClarificationDTO> getClarificationsForOfficer(String officerId) {
-        return clarificationRepository.findAll().stream()
-                .sorted((c1, c2) -> c2.getAskedAt().compareTo(c1.getAskedAt()))
-                .map(this::mapToClarificationDTO)
-                .collect(Collectors.toList());
-    }
-
-    private ClarificationDTO mapToClarificationDTO(TenderClarification clarification) {
-        var response = responseRepository.findByClarificationId(clarification.getId());
-        Tender tender = clarification.getTender();
-        return ClarificationDTO.builder()
-                .id(clarification.getId())
-                .question(clarification.getQuestion())
-                .answer(response.map(ClarificationResponse::getResponse).orElse(null))
-                .askedAt(clarification.getAskedAt())
-                .answeredAt(response.map(ClarificationResponse::getRespondedAt).orElse(null))
-                .tenderId(tender.getId().toString())
-                .tenderTitle(tender.getTitle())
-                .tenderNumber(tender.getTenderNumber())
-                .department(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
-                .category(null)
-                .closingDate(tender.getClosingDate())
-                .bidderEmail(clarification.getBidderEmail())
-                .build();
     }
 
     @Override
@@ -747,31 +752,13 @@ public class TenderServiceImpl implements TenderService {
                 .askedBy(1L)
                 .build();
 
-        TenderClarification savedClarification = clarificationRepository.save(clarification);
-
-        try {
-            notificationProducer.sendNotification(NotificationEvent.builder()
-                    .recipient(resolveOfficerEmail(tender.getCreatedBy()))
-                    .recipientUserId(tender.getCreatedBy())
-                    .type("CLARIFICATION_CREATED")
-                    .subject("New clarification question received")
-                    .message(buildClarificationCreatedMessage(tender, savedClarification))
-                    .tenderId(tender.getId())
-                    .tenderNumber(tender.getTenderNumber())
-                    .tenderTitle(tender.getTitle())
-                    .clarificationId(savedClarification.getId())
-                    .questionPreview(preview(savedClarification.getQuestion()))
-                    .actionUrl("/tenders/" + tender.getId() + "/clarifications")
-                    .createdAt(savedClarification.getAskedAt())
-                    .build(), AMQPConstants.CLARIFICATION_CREATED_ROUTING_KEY);
-        } catch (Exception e) {
-            log.error("Failed to publish notification event: {}", e.getMessage());
-        }
+        clarificationRepository.save(clarification);
     }
 
     @Override
     @Transactional
-    public ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request) {
+    public ClarificationDTO answerClarification(UUID tenderId, Long clarificationId,
+            ClarificationAnswerRequestDTO request) {
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
         TenderClarification clarification = clarificationRepository.findByIdAndTenderId(clarificationId, tenderId)
@@ -793,17 +780,10 @@ public class TenderServiceImpl implements TenderService {
         if (clarification.getBidderEmail() != null && !clarification.getBidderEmail().isBlank()) {
             notificationProducer.sendNotification(NotificationEvent.builder()
                     .recipient(clarification.getBidderEmail())
-                    .type("CLARIFICATION_ANSWERED")
+                    .type("EMAIL")
                     .subject("Tender clarification answered: " + tender.getTenderNumber())
                     .message(buildNotificationMessage(tender, clarification, savedResponse))
-                    .tenderId(tender.getId())
-                    .tenderNumber(tender.getTenderNumber())
-                    .tenderTitle(tender.getTitle())
-                    .clarificationId(clarification.getId())
-                    .questionPreview(preview(clarification.getQuestion()))
-                    .actionUrl("/tenders/" + tender.getId() + "/clarifications")
-                    .createdAt(savedResponse.getRespondedAt())
-                    .build(), AMQPConstants.CLARIFICATION_ANSWERED_ROUTING_KEY);
+                    .build());
         }
 
         return ClarificationDTO.builder()
@@ -863,7 +843,7 @@ public class TenderServiceImpl implements TenderService {
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
-                .downloadUrl("http://localhost:8182/api/tenders/files/" + document.getS3Key())
+                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
                 .build();
     }
 
@@ -875,7 +855,6 @@ public class TenderServiceImpl implements TenderService {
                 .description(amendment.getDescription())
                 .newClosingDate(amendment.getNewClosingDate())
                 .createdAt(amendment.getCreatedAt())
-                .downloadUrl("http://localhost:8182/api/tenders/files/addendum.pdf")
                 .build();
     }
 
@@ -886,7 +865,8 @@ public class TenderServiceImpl implements TenderService {
         return Duration.between(LocalDateTime.now(), closingDate).toSeconds();
     }
 
-    private String buildNotificationMessage(Tender tender, TenderClarification clarification, ClarificationResponse response) {
+    private String buildNotificationMessage(Tender tender, TenderClarification clarification,
+            ClarificationResponse response) {
         return """
                 Hello,
 
@@ -907,38 +887,7 @@ public class TenderServiceImpl implements TenderService {
                 tender.getTitle(),
                 tender.getTenderNumber(),
                 clarification.getQuestion(),
-                response.getResponse()
-        );
-    }
-
-    private String buildClarificationCreatedMessage(Tender tender, TenderClarification clarification) {
-        return """
-                New clarification question received.
-
-                Tender: %s
-                Tender ID: %s
-                Tender number: %s
-
-                Question:
-                %s
-                """.formatted(
-                tender.getTitle(),
-                tender.getId(),
-                tender.getTenderNumber(),
-                clarification.getQuestion()
-        );
-    }
-
-    private String preview(String value) {
-        if (value == null) {
-            return "";
-        }
-        String normalized = value.strip();
-        return normalized.length() <= 120 ? normalized : normalized.substring(0, 117) + "...";
-    }
-
-    private String resolveOfficerEmail(String createdBy) {
-        return createdBy != null && createdBy.contains("@") ? createdBy : null;
+                response.getResponse());
     }
 
     // ── Reference Data ──────────────────────────────────────────────────────
@@ -1025,39 +974,82 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    public java.util.Map<String, Long> getKPIs(String department, String category, String month) {
+        log.debug("Fetching KPIs - department: {}, category: {}, month: {}", department, category, month);
+        java.util.Map<String, Long> kpis = new java.util.LinkedHashMap<>();
+        kpis.put("totalTenders", tenderRepository.count());
+        kpis.put("activeTenders",
+                (long) tenderRepository.findByStatus(TenderStatus.PUBLISHED, Pageable.unpaged()).getContent().size());
+        kpis.put("closedTenders",
+                (long) tenderRepository.findByStatus(TenderStatus.CLOSED, Pageable.unpaged()).getContent().size());
+        kpis.put("draftTenders",
+                (long) tenderRepository.findByStatus(TenderStatus.DRAFT, Pageable.unpaged()).getContent().size());
+        return kpis;
+    }
+
+    @Override
+    public java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category) {
+        log.debug("Fetching KPI trend - department: {}, category: {}", department, category);
+        java.util.List<java.util.Map<String, Object>> trend = new java.util.ArrayList<>();
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        for (int i = 5; i >= 0; i--) {
+            java.time.LocalDateTime monthStart = now.minusMonths(i).withDayOfMonth(1).withHour(0).withMinute(0)
+                    .withSecond(0);
+            java.time.LocalDateTime monthEnd = monthStart.plusMonths(1).minusSeconds(1);
+
+            // Count PUBLISHED tenders created in this month with filters
+            long count = tenderRepository.count((root, query, cb) -> {
+                java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+                predicates.add(cb.between(root.get("createdAt"), monthStart, monthEnd));
+                predicates.add(cb.equal(root.get("status"), TenderStatus.PUBLISHED));
+
+                if (department != null && !department.isEmpty() && !"All Departments".equalsIgnoreCase(department)) {
+                    predicates.add(cb.equal(root.get("department").get("name"), department));
+                }
+
+                if (category != null && !category.isEmpty() && !"All Categories".equalsIgnoreCase(category)) {
+                    try {
+                        // Try to match with ProcurementType enum
+                        String typeStr = category.toUpperCase().replace(" ", "_");
+                        lk.tenderease.tender.enums.ProcurementType type = lk.tenderease.tender.enums.ProcurementType
+                                .valueOf(typeStr);
+                        predicates.add(cb.equal(root.get("procurementType"), type));
+                    } catch (IllegalArgumentException e) {
+                        // Fallback to title/description search
+                        predicates.add(cb.or(
+                                cb.like(cb.lower(root.get("title")), "%" + category.toLowerCase() + "%"),
+                                cb.like(cb.lower(root.get("description")), "%" + category.toLowerCase() + "%")));
+                    }
+                }
+
+                return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            });
+
+            java.util.Map<String, Object> dataPoint = new java.util.HashMap<>();
+            dataPoint.put("label", monthStart.getMonth().name().substring(0, 3));
+            dataPoint.put("value", count);
+            trend.add(dataPoint);
+        }
+
+        return trend;
+    }
+
+    @Override
     @Transactional
-    public TenderResponse updateTenderStatus(UUID id, TenderStatus status, String rejectionReason, String callerUserId) {
-        log.info("Updating status for tender {} to {} by {}", id, status, callerUserId);
+    public TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId) {
+        log.info("Updating tender {} status to {} by user {}", id, status, callerUserId);
         Tender tender = tenderRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Tender not found"));
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
 
         tender.setStatus(status);
-        if (status == TenderStatus.REJECTED) {
-            tender.setRejectionReason(rejectionReason);
+        if (reason != null && !reason.isBlank()) {
+            tender.setRejectionReason(reason);
         }
-        
-        // If approved, set opening date and closing date if not already set
-        if (status == TenderStatus.APPROVED || status == TenderStatus.PUBLISHED) {
-            tender.setStatus(TenderStatus.PUBLISHED); // Auto-publish on CAO approval for now
-            if (tender.getOpeningDate() == null) {
-                tender.setOpeningDate(LocalDateTime.now());
-            }
-            if (tender.getClosingDate() == null) {
-                tender.setClosingDate(LocalDateTime.now().plusDays(14));
-            }
-        }
-
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
 
-        // Emit Event for KPI
-        tenderEventProducer.sendTenderStatusEvent(lk.tenderease.common.event.TenderEvent.builder()
-                .tenderId(saved.getId().toString())
-                .eventType("STATUS_CHANGED")
-                .status(saved.getStatus().name())
-                .triggerBy(callerUserId)
-                .build());
-
+        log.info("Tender {} status updated to {}", id, status);
         return mapToResponse(saved);
     }
 }

@@ -72,15 +72,21 @@ public class TenderResponse {
     @Schema(description = "Timestamp when the tender was last updated")
     private LocalDateTime updatedAt;
 
-    @Schema(description = "Tender closing date or submission deadline")
-    private LocalDateTime closingDate;
-
-    @Schema(description = "Dynamic schema data for custom fields")
-    private java.util.Map<String, Object> dynamicData;
-
     @Schema(description = "ID/username of the user who created the tender")
     private String createdBy;
 
-    @Schema(description = "Reason for rejecting the tender")
+    @Schema(description = "Closing date for bid submission")
+    private LocalDateTime closingDate;
+
+    @Schema(description = "Time remaining in seconds until closing date")
+    private Long timeRemaining;
+
+    @Schema(description = "Reason for rejection if the tender was rejected")
     private String rejectionReason;
+
+    @Schema(description = "SBD Template name")
+    private String sbdTemplate;
+
+    @Schema(description = "SBD Template version")
+    private String templateVersion;
 }

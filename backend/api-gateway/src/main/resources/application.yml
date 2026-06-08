@@ -5,18 +5,20 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: user-service
+        - id: user-service-users
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
-          filters:
-            - StripPrefix=1
-        
+
+        - id: user-service-vendors
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/vendors/**
+
         - id: tender-service
           uri: lb://tender-service
           predicates:
             - Path=/api/tenders/**
-        
         - id: cao-tenders
           uri: lb://tender-service
           predicates:
@@ -47,9 +49,20 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
-            allowed-methods: "*"
-            allowed-headers: "*"
+            allowed-origins:
+              - "http://localhost:3000"
+              - "http://localhost:3001"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - "*"
+            allow-credentials: true
+            max-age: 3600
 
   security:
     oauth2:

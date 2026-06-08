@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { officerRegistrationSchema, type OfficerRegistrationFormData } from '../../lib/validations/officerSchema';
 import { registerOfficer, extractErrors, extractSupportId } from '../../lib/api/officerApi';
-import { useOfficerStore, EMPTY_DRAFT } from '../../store/officerRegistrationStore';
+import { useOfficerStore, EMPTY_DRAFT, type OfficerFormDraft } from '../../store/officerRegistrationStore';
 import axios from 'axios';
 
 // ────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ export default function OfficerRegistrationPage() {
   useEffect(() => {
     if (!hydrated) return;
     const subscription = watch((values) => {
-      setFormDraft(values as OfficerRegistrationFormData);
+      setFormDraft(values as unknown as OfficerFormDraft);
     });
     return () => subscription.unsubscribe();
   }, [hydrated, watch, setFormDraft]);
@@ -144,18 +144,22 @@ export default function OfficerRegistrationPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* Page Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
               Officer Registration
             </h1>
+            <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+              Register your organization and liaison officer to manage government procurement processes on TenderEase.lk.
+            </p>
           </div>
 
-          {/* ─── Details of Officer ─── */}
-          <div className="mb-2 text-center">
-            <h2 className="text-lg font-bold text-gray-900">
-              Details of Officer
+          {/* ─── Details of Procuring Entity ─── */}
+          <div className="mb-6 flex items-center justify-center gap-4">
+            <div className="h-px bg-gray-200 flex-1"></div>
+            <h2 className="text-xl font-bold text-[#953002] uppercase tracking-wide px-2">
+              Details of Procuring Entity
             </h2>
+            <div className="h-px bg-gray-200 flex-1"></div>
           </div>
 
           {/* ─── Registration Form ─── */}
@@ -257,20 +261,20 @@ export default function OfficerRegistrationPage() {
                     <input {...register('streetLine1')} placeholder="Street Line 1" className={inputCls} />
                     {errors.streetLine1 && <p className="text-red-500 text-xs mt-1">{errors.streetLine1.message}</p>}
                   </div>
-                  
+
                   <div>
                     <input {...register('streetLine2')} placeholder="Street Line 2" className={inputCls} />
                   </div>
-                  
+
                   <div>
                     <input {...register('city')} placeholder="City" className={inputCls} />
                     {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
                   </div>
-                  
+
                   <div>
                     <input {...register('province')} placeholder="Province" className={inputCls} />
                   </div>
-                  
+
                   <div>
                     <input {...register('postalCode')} placeholder="Postal Code" className={inputCls} />
                   </div>
@@ -321,10 +325,12 @@ export default function OfficerRegistrationPage() {
             </div>
 
             {/* ─── Details of Liaison Officer ─── */}
-            <div className="mt-16 mb-4 text-center">
-              <h2 className="text-lg font-bold text-gray-900">
+            <div className="mt-16 mb-6 flex items-center justify-center gap-4">
+              <div className="h-px bg-gray-200 flex-1"></div>
+              <h2 className="text-xl font-bold text-[#953002] uppercase tracking-wide px-2">
                 Details of Liaison Officer
               </h2>
+              <div className="h-px bg-gray-200 flex-1"></div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">

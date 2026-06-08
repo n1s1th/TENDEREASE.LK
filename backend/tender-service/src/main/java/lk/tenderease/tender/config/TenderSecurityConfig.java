@@ -28,17 +28,18 @@ public class TenderSecurityConfig {
 
     @Bean
     @Primary
-    public SecurityFilterChain tenderFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain tenderFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/tenders/**").permitAll()
-                .requestMatchers("/api/officer/**").permitAll()
-                .requestMatchers("/api/cao/**").permitAll()
+                .requestMatchers("/api/tenders/**").permitAll() // Allow PublicTenderController
                 .anyRequest().permitAll()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
             );
 
         return http.build();
@@ -52,10 +53,7 @@ public class TenderSecurityConfig {
             "http://localhost:3001"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Requested-With", "Accept",
-            "X-User-Id", "X-User-Email"   // ← required by frontend authHeaders()
-        ));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

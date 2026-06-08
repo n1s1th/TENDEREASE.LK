@@ -13,7 +13,11 @@ import org.springframework.stereotype.Component;
 public class EvaluationEventListener {
 
     // For simplicity, we just log the event. In a real system, you'd trigger evaluation logic here.
-    @RabbitListener(queues = "bid.queue")
+    @RabbitListener(bindings = @org.springframework.amqp.rabbit.annotation.QueueBinding(
+            value = @org.springframework.amqp.rabbit.annotation.Queue(value = "bid.queue", durable = "true"),
+            exchange = @org.springframework.amqp.rabbit.annotation.Exchange(value = "bid.exchange", type = "topic", durable = "true"),
+            key = "bid.#"
+    ))
     public void handleBidEvent(BidEvent event) {
         log.info("Received BidEvent: {}", event);
         if ("SUBMITTED".equals(event.getEventType())) {
@@ -22,7 +26,11 @@ public class EvaluationEventListener {
         }
     }
 
-    @RabbitListener(queues = "tender.queue")
+    @RabbitListener(bindings = @org.springframework.amqp.rabbit.annotation.QueueBinding(
+            value = @org.springframework.amqp.rabbit.annotation.Queue(value = "tender.queue", durable = "true"),
+            exchange = @org.springframework.amqp.rabbit.annotation.Exchange(value = "tender.exchange", type = "topic", durable = "true"),
+            key = "tender.#"
+    ))
     public void handleTenderEvent(TenderEvent event) {
         log.info("Received TenderEvent: {}", event);
         if ("CLOSED".equals(event.getEventType())) {

@@ -30,10 +30,6 @@ application-*.yml
 !application-dev.yml
 !application-prod.yml
 
-# Docker
-.env
-docker-compose.override.yml
-
 # Other
 *.swp
 *.swo

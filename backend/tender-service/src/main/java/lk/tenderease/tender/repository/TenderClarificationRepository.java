@@ -12,6 +12,4 @@ public interface TenderClarificationRepository extends JpaRepository<TenderClari
     List<TenderClarification> findByTenderIdOrderByAskedAtDesc(UUID tenderId);
 
     Optional<TenderClarification> findByIdAndTenderId(Long id, UUID tenderId);
-
-    List<TenderClarification> findByTenderCreatedByOrderByAskedAtDesc(String createdBy);
 }

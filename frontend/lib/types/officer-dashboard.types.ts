@@ -33,6 +33,8 @@ export interface DashboardTender {
   createdBy?: string;
   createdByRole?: string;
   rejectionReason?: string;
+  tenderNumber?: string;
+  referenceNumber?: string;
 }
 
 // ── Officer ──────────────────────────────────────────────────
@@ -187,6 +189,33 @@ export interface ToastMessage {
   message: string;
   action?: string;
   actionLabel?: string;
+}
+
+// ── Clarification ────────────────────────────────────────────
+export interface ClarificationItem {
+  id: number;
+  tenderId: string;
+  tenderTitle?: string;
+  tenderNumber?: string;
+  question: string;
+  answer?: string | null;
+  askedAt: string;
+  answeredAt?: string | null;
+  bidderEmail?: string;
+  category?: string;
+  department?: string;
+  closingDate?: string;
+}
+
+// ── Procument ────────────────────────────────────────────────
+export interface Procument {
+  id: string;
+  title: string;
+  description: string;
+  procuringEntity: string;
+  department: string;
+  category: string;
+  method: string;
 }
 
 // ── Pagination ───────────────────────────────────────────────

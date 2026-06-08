@@ -60,8 +60,10 @@ public interface TenderService {
      * @throws lk.tenderease.tender.exception.TenderNotFoundException if tender is not found
      */
     TenderDetailResponse getTenderById(UUID id);
+    byte[] viewDocument(UUID docId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
+    TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId);
 
     /**
      * Updates a DRAFT tender.
@@ -247,8 +249,14 @@ public interface TenderService {
     List<String> listTenderTypes();
 
     Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable);
+    
+    Page<TenderSummaryDTO> getAllTendersForCao(TenderStatus status, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
+    
+    void approveTender(UUID id, String reason);
+    
+    void rejectTender(UUID id, String reason);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);
 
@@ -263,17 +271,4 @@ public interface TenderService {
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
 
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
-
-    List<ClarificationDTO> getClarificationsForOfficer(String officerId);
-
-    /**
-     * CAO/Admin: Updates the status of a tender (Approve/Reject).
-     * 
-     * @param id              the tender UUID
-     * @param status          the new status (APPROVED, REJECTED, etc.)
-     * @param rejectionReason optional reason for rejection
-     * @param callerUserId    the username/ID of the CAO
-     * @return the updated tender response
-     */
-    TenderResponse updateTenderStatus(UUID id, TenderStatus status, String rejectionReason, String callerUserId);
 }

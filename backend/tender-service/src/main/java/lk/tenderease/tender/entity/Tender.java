@@ -76,15 +76,12 @@ public class Tender extends BaseEntity {
 
     @Column(name = "sme_indicator")
     @Builder.Default
-    private Boolean smeIndicator = false;
+    private boolean smeIndicator = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
     private TenderStatus status = TenderStatus.DRAFT;
-
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
-    private String rejectionReason;
 
     @Column(name = "template_id")
     private UUID templateId;
@@ -93,12 +90,21 @@ public class Tender extends BaseEntity {
     @Column(name = "dynamic_data", columnDefinition = "jsonb")
     private Map<String, Object> dynamicData;
 
+    @Column(name = "sbd_template")
+    private String sbdTemplate;
+
+    @Column(name = "template_version")
+    private String templateVersion;
+
     // ✅ Dates from LEFT
     @Column(name = "opening_date")
     private LocalDateTime openingDate;
 
     @Column(name = "closing_date")
     private LocalDateTime closingDate;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 
     // ✅ Relationships from BOTH
     @OneToMany(mappedBy = "tender", cascade = CascadeType.ALL, orphanRemoval = true)

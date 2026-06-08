@@ -77,7 +77,14 @@ server:
 
 eureka:
   client:
-    enabled: false
+    enabled: true
+    service-url:
+      defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
 
 # External service URLs
 services:
@@ -132,6 +139,7 @@ logging:
 app:
   name: Tender Service
   version: 1.0.0
+  upload-dir: "C:\\Users\\Peduru\\Desktop\\TENDEREASE.LK\\backend\\uploads"
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
 
