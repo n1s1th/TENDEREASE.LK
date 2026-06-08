@@ -16,8 +16,9 @@ export default function Footer() {
 
         <div
           style={{
-            maxWidth: 1100,
+            width: "100%",
             margin: "0 auto",
+            padding: "0 1.5rem",
             display: "flex",
             flexWrap: "wrap",
             alignItems: "center",
@@ -25,8 +26,9 @@ export default function Footer() {
             gap: "1rem",
           }}
         >
-          <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+          {/* Left formatting */}
+          <div style={{ flex: "1 1 300px" }}>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", margin: "0 0 0.4rem 0" }}>
               Stay Updated on Tender Opportunities
             </h3>
             <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
@@ -77,7 +79,7 @@ export default function Footer() {
           color: "#9ca3af",
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ width: "100%", margin: "0 auto", padding: "0 1.5rem" }}>
           <div
             style={{
               display: "grid",

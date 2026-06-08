@@ -1,4 +1,4 @@
-export type OpeningStatus = 'SCHEDULED' | 'OPEN' | 'CLOSED';
+export type OpeningStatus = 'SCHEDULED' | 'PENDING_OPENING' | 'OPEN' | 'CLOSED';
 
 export interface OpeningSession {
     id: string;
@@ -9,8 +9,10 @@ export interface OpeningSession {
     bidsCount?: number;
     scheduledOpeningTime: string;
     actualOpeningTime?: string;
+    bidSubmissionDeadline?: string;
     status: OpeningStatus;
     openedBy?: string;
+    attendanceCount?: number;
 }
 
 export interface OpeningAttendance {
@@ -18,6 +20,7 @@ export interface OpeningAttendance {
     officerId: string;
     officerName: string;
     designation: string;
+    email: string;
     attendanceTime: string;
     organisation?: string;
     role?: string;
@@ -27,6 +30,7 @@ export interface OpeningAttendanceRequest {
     officerId: string;
     officerName: string;
     designation: string;
+    email: string;
     organisation?: string;
     role?: string;
 }

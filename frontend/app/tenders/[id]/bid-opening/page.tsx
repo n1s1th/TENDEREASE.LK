@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import OpeningHeader from "@/components/bid-opening/OpeningHeader";
 import OpeningBanner from "@/components/bid-opening/OpeningBanner";
 import SchedulePanel from "@/components/bid-opening/SchedulePanel";
-import OverviewPanel from "@/components/bid-opening/OverviewPanel";
 import OpeningActionPanel from "@/components/bid-opening/OpeningActionPanel";
 import AttendanceSection from "@/components/bid-opening/AttendanceSection";
 import ReceivedBidsLog from "@/components/bid-opening/ReceivedBidsLog";
@@ -18,8 +17,9 @@ const DEMO_SESSION = {
   tenderTitle: "TENDER OPENING SESSION",
   category: "UNSPECIFIED",
   division: "PROCUREMENT",
-  status: "SCHEDULED" as const,
-  scheduledOpeningTime: new Date().toISOString(),
+  status: "PENDING_OPENING" as const,
+  scheduledOpeningTime: null as string | null,
+  bidSubmissionDeadline: null as string | null,
   bidsCount: 0
 };
 
@@ -65,16 +65,22 @@ export default function BidOpeningPage() {
         <div className="max-w-[98%] mx-auto flex flex-col gap-8">
           <OpeningHeader
             tenderId={id || displaySession.tenderId}
-            title={displaySession.tenderTitle || "Tender Opening"}
-            category={displaySession.category || "—"}
-            division={displaySession.division || "—"}
+            title={displaySession.tenderTitle}
+            category={displaySession.category}
+            division={displaySession.division}
           />
 
-          <OpeningBanner status={displaySession.status} scheduledTime={displaySession.scheduledOpeningTime} />
+          <OpeningBanner
+            status={displaySession.status}
+            scheduledTime={displaySession.scheduledOpeningTime}
+            bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
+          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <SchedulePanel scheduledTime={displaySession.scheduledOpeningTime} />
-            <OverviewPanel />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <SchedulePanel
+              scheduledTime={displaySession.scheduledOpeningTime}
+              bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
+            />
             <OpeningActionPanel />
           </div>
 

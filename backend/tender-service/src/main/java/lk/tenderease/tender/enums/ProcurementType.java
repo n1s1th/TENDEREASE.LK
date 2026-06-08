@@ -4,5 +4,7 @@ public enum ProcurementType {
     GOODS,
     WORKS,
     SERVICES,
-    CONSULTANCY
+    CONSULTANCY,
+    CONSULTING_SERVICES,
+    NON_CONSULTING_SERVICES
 }
