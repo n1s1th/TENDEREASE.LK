@@ -5,7 +5,7 @@ import { FileText, Share2 } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer style={{ width: "100%", fontFamily: "system-ui, -apple-system, sans-serif" }}>
+    <footer className="w-full font-sans overflow-hidden">
       {/* ── Top Newsletter Bar ── */}
       <div
         style={{
@@ -15,8 +15,9 @@ export default function Footer() {
       >
         <div
           style={{
-            maxWidth: 1100,
+            width: "100%",
             margin: "0 auto",
+            padding: "0 1.5rem",
             display: "flex",
             flexWrap: "wrap",
             alignItems: "center",
@@ -25,7 +26,7 @@ export default function Footer() {
           }}
         >
           {/* Left formatting */}
-          <div style={{ flex: "1 1 300px" }}>
+          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
             <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#fff", margin: "0 0 0.4rem 0" }}>
               Stay Updated on Tender Opportunities
             </h3>
@@ -35,7 +36,7 @@ export default function Footer() {
           </div>
 
           {/* Right Input Group */}
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", flex: "1 1 400px", justifyContent: "flex-end" }}>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", flex: "1 1 300px", justifyContent: "flex-start", lg: { justifyContent: "flex-end" } }}>
             <input
               type="email"
               placeholder="Your email address"
@@ -80,7 +81,7 @@ export default function Footer() {
           color: "#9ca3af",
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ width: "100%", margin: "0 auto", padding: "0 1.5rem" }}>
           <div
             style={{
               display: "grid",

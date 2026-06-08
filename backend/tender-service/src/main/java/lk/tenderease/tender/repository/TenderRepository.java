@@ -29,6 +29,8 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     Page<Tender> findByStatus(TenderStatus status, Pageable pageable);
 
     Page<Tender> findByStatusIn(java.util.Collection<TenderStatus> statuses, Pageable pageable);
+    @Query("SELECT t FROM Tender t WHERE t.status IN :statuses")
+    java.util.List<Tender> findAllByStatusIn(@org.springframework.data.repository.query.Param("statuses") java.util.Collection<TenderStatus> statuses);
 
     Page<Tender> findByCreatedBy(String createdBy, Pageable pageable);
 
@@ -41,12 +43,12 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))
-        AND t.status = :status
+        AND t.status IN :statuses
         AND t.status NOT IN (lk.tenderease.tender.enums.TenderStatus.PENDING_APPROVAL, lk.tenderease.tender.enums.TenderStatus.DRAFT, lk.tenderease.tender.enums.TenderStatus.REJECTED)
     """)
-    Page<Tender> searchWithStatus(
+    Page<Tender> searchWithStatuses(
             @Param("keyword") String keyword,
-            @Param("status") TenderStatus status,
+            @Param("statuses") java.util.List<TenderStatus> statuses,
             Pageable pageable
     );
 

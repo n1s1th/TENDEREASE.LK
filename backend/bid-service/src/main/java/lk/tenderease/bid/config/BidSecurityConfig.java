@@ -1,4 +1,4 @@
-package lk.tenderease.tender.config;
+package lk.tenderease.bid.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,33 +11,29 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Security configuration for the Tender Service.
- * Configures CORS for the frontend and enforces JWT authentication.
+ * Security configuration for the Bid Service.
+ * All /api/bids/** endpoints are open for local development.
+ * JWT/Keycloak auth is disabled for standalone operation.
  */
 @Configuration
 @EnableWebSecurity
-public class TenderSecurityConfig {
+public class BidSecurityConfig {
 
     @Bean
     @Primary
-    public SecurityFilterChain tenderFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain bidFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/tenders/**").permitAll()
-                .requestMatchers("/api/officer/**").permitAll()
-                .requestMatchers("/api/cao/**").permitAll()
+                .requestMatchers("/api/bids/**").permitAll()
                 .anyRequest().permitAll()
             );
 
@@ -53,8 +49,7 @@ public class TenderSecurityConfig {
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Requested-With", "Accept",
-            "X-User-Id", "X-User-Email"   // ← required by frontend authHeaders()
+            "Authorization", "Content-Type", "X-Requested-With", "Accept"
         ));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
@@ -65,4 +60,3 @@ public class TenderSecurityConfig {
         return source;
     }
 }
-

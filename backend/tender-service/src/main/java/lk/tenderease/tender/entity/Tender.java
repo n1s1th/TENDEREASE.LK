@@ -76,7 +76,7 @@ public class Tender extends BaseEntity {
 
     @Column(name = "sme_indicator")
     @Builder.Default
-    private boolean smeIndicator = false;
+    private Boolean smeIndicator = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

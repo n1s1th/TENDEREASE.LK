@@ -250,9 +250,6 @@ public class TenderServiceImpl implements TenderService {
         
         if (status == TenderStatus.APPROVED) {
             // Dashboard "Approved" tab should show both APPROVED and PUBLISHED tenders
-            page = tenderRepository.searchWithStatus("", status, pageable); // Need a custom query for multiple statuses ideally
-            // But for now, let's just fetch all and filter or use the repository search with status logic
-            // Actually, I'll update the repository to support list of statuses or just handle it here
             page = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED), pageable);
         } else if (status != null) {
             page = tenderRepository.findByStatus(status, pageable);
@@ -505,7 +502,7 @@ public class TenderServiceImpl implements TenderService {
         String keyword = search == null ? "" : search;
 
         if (status != null) {
-            return tenderRepository.searchWithStatus(keyword, status, pageable)
+            return tenderRepository.searchWithStatuses(keyword, Arrays.asList(status), pageable)
                     .map(this::mapToSummaryDTO);
         }
 

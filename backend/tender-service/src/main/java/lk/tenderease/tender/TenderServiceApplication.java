@@ -7,10 +7,20 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
-@SpringBootApplication(scanBasePackages = {
-    "lk.tenderease.tender",
-    "lk.tenderease.common"
-})
+@SpringBootApplication
+@ComponentScan(
+    basePackages = {
+        "lk.tenderease.tender",
+        "lk.tenderease.common"
+    },
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.REGEX,
+        pattern = {
+            "lk\\.tenderease\\.common\\.security\\..*",
+            "lk\\.tenderease\\.common\\.config\\.RedisConfig"
+        }
+    )
+)
 @EnableDiscoveryClient
 public class TenderServiceApplication {
     public static void main(String[] args) {

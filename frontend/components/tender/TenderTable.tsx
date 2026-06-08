@@ -42,28 +42,28 @@ export default function TenderTable({ data }: Props) {
               data.map((tender) => (
                 <tr
                   key={tender.id}
-                  onClick={() => router.push(`/tenders/${tender.id || tender.tenderId}`)}
+                  onClick={() => router.push(`/tenders/${tender.tenderNumber || tender.tenderId || tender.id}`)}
                   className="group cursor-pointer transition-all duration-300 hover:bg-primary/[0.02]"
                 >
                   <td className="px-8 py-6">
                     <span className="font-black text-primary tracking-tight group-hover:underline">
-                      {tender.id || tender.tenderId}
+                      {tender.tenderNumber || tender.tenderId || tender.id}
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-2 font-bold leading-snug">{tender.entity || "Ministry Office"}</p>
+                    <p className="text-black-2 font-bold leading-snug">{tender.departmentName || tender.entity || "Ministry Office"}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.category || "General"}</span>
+                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.procurementType || tender.category || "General"}</span>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-black-2 font-black leading-snug group-hover:text-primary transition-colors line-clamp-2 max-w-xs">{tender.title}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-gray-2 font-bold whitespace-nowrap">{tender.closing || tender.closingDate || "TBA"}</p>
+                    <p className="text-gray-2 font-bold whitespace-nowrap">{tender.closingDate ? new Date(tender.closingDate).toLocaleDateString() : (tender.closing || "TBA")}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-1 font-black whitespace-nowrap">{tender.value || tender.estimatedBudget || "---"}</p>
+                    <p className="text-black-1 font-black whitespace-nowrap">{tender.estimatedBudget ? `LKR ${tender.estimatedBudget.toLocaleString()}` : (tender.value || "---")}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <StatusBadge status={tender.status} />
