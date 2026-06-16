@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Lock, FileText, Download, Trophy, ArrowRight, Loader2, FileDown } from "lucide-react";
-import { getTendersForOpening, getOpeningLogs, getTendersWithBids, getTendersPendingAward } from "@/lib/api/officer.api";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { X, Lock, FileText, Download, Users, Settings, ArrowRight } from "lucide-react";
 
 interface QuickActionModalProps {
   type: string | null;
@@ -12,71 +10,7 @@ interface QuickActionModalProps {
 }
 
 export default function QuickActionModal({ type, isOpen, onClose }: QuickActionModalProps) {
-  const router = useRouter();
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
-  const [tenders, setTenders] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>([]);
-  const [tendersWithBids, setTendersWithBids] = useState<any[]>([]);
-  const [tendersPendingAward, setTendersPendingAward] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (type === "Open Bid Session") {
-        const fetchTenders = async () => {
-          setIsLoading(true);
-          try {
-            const res = await getTendersForOpening();
-            setTenders(res.data);
-          } catch (error) {
-            console.error("Failed to fetch tenders for opening:", error);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        fetchTenders();
-      } else if (type === "View Opening Records") {
-        const fetchLogs = async () => {
-          setIsLoading(true);
-          try {
-            const res = await getOpeningLogs();
-            setLogs(res.data);
-          } catch (error) {
-            console.error("Failed to fetch opening logs:", error);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        fetchLogs();
-      } else if (type === "Download Bid Documents") {
-        const fetchTendersWithBids = async () => {
-          setIsLoading(true);
-          try {
-            const res = await getTendersWithBids();
-            setTendersWithBids(res.data);
-          } catch (error) {
-            console.error("Failed to fetch tenders with bids:", error);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        fetchTendersWithBids();
-      } else if (type === "Award Processing") {
-        const fetchTendersPendingAward = async () => {
-          setIsLoading(true);
-          try {
-            const res = await getTendersPendingAward();
-            setTendersPendingAward(res.data);
-          } catch (error) {
-            console.error("Failed to fetch tenders pending award:", error);
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        fetchTendersPendingAward();
-      }
-    }
-  }, [isOpen, type]);
   
   if (!isOpen || !type) return null;
 
@@ -85,42 +19,15 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
       case "Open Bid Session":
         return {
           icon: <Lock className="w-5 h-5 text-[#953002]" />,
-          title: "Select Tender",
-          desc: "Choose a tender from the list below to initialize a secure bid opening session.",
-          primaryAction: "Close",
+          title: "Secure Bid Opening",
+          desc: "Initialize a new bid opening session. This requires authorized witness PINs.",
+          primaryAction: "Start Session",
           extra: (
-            <div className="space-y-2 mt-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading Tenders...</p>
-                </div>
-              ) : tenders.length === 0 ? (
-                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-                  <p className="text-xs font-medium text-gray-400">No tenders ready for opening</p>
-                </div>
-              ) : (
-                tenders.map((tender) => (
-                  <div key={tender.id} className="p-3 bg-white border border-gray-100 rounded-xl hover:border-[#953002]/20 transition-all group">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-[#953002] uppercase tracking-wider truncate">{tender.tenderNo}</p>
-                        <p className="text-xs font-bold text-gray-900 truncate mt-0.5">{tender.title}</p>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          onClose();
-                          router.push(`/tenders/${tender.tenderNo}/bid-opening`);
-                        }}
-                        className="p-2 bg-gray-50 text-gray-400 hover:bg-[#953002] hover:text-white rounded-lg transition-all"
-                        title="Open Session"
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="space-y-3 mt-4">
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active Witnesses Required</p>
+                <p className="text-sm font-bold text-gray-900 mt-1">3 / 5 Present</p>
+              </div>
             </div>
           )
         };
@@ -131,35 +38,13 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
           desc: "Review the historical records of previously opened bid sessions.",
           primaryAction: "View Full Logs",
           extra: (
-            <div className="space-y-2 mt-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading Logs...</p>
+            <div className="mt-4 space-y-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-xs font-bold text-gray-700">TR-2024-00{i}</p>
+                  <p className="text-[10px] text-gray-400">12 May 2026</p>
                 </div>
-              ) : logs.length === 0 ? (
-                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-                  <p className="text-xs font-medium text-gray-400">No historical logs found</p>
-                </div>
-              ) : (
-                logs.map((log) => (
-                  <div key={log.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-[#953002]/20 transition-all">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-black text-gray-700 uppercase tracking-tighter">{log.tenderNo}</p>
-                      <p className="text-[10px] font-bold text-gray-400">{log.openingDate}</p>
-                    </div>
-                    <p className="text-[10px] font-bold text-gray-900 mt-1 truncate">{log.title}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[#953002] bg-[#953002]/5 px-1.5 py-0.5 rounded border border-[#953002]/10">
-                        {log.category}
-                      </span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 bg-white px-1.5 py-0.5 rounded border border-gray-100">
-                        {log.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
+              ))}
             </div>
           )
         };
@@ -167,92 +52,48 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         return {
           icon: <Download className="w-5 h-5 text-[#953002]" />,
           title: "Document Export",
-          desc: "Select a tender to export all its bid documents and technical specifications in bulk.",
-          primaryAction: "Close",
+          desc: "Export all active bid documents and technical specifications in bulk.",
+          primaryAction: "Download ZIP",
           extra: (
-            <div className="space-y-2 mt-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading Tenders...</p>
-                </div>
-              ) : tendersWithBids.length === 0 ? (
-                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-                  <p className="text-xs font-medium text-gray-400">No tenders with bids found</p>
-                </div>
-              ) : (
-                tendersWithBids.map((tender) => (
-                  <div key={tender.id} className="p-3 bg-white border border-gray-100 rounded-xl hover:border-[#953002]/20 transition-all group">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-[#953002] uppercase tracking-wider truncate">{tender.tenderNo}</p>
-                        <p className="text-xs font-bold text-gray-900 truncate mt-0.5">{tender.title}</p>
-                        <p className="text-[9px] text-gray-400 mt-1 font-bold uppercase tracking-widest">{tender.category}</p>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          alert(`Downloading all bid documents for ${tender.tenderNo} as ZIP...`);
-                        }}
-                        className="p-2.5 bg-orange-50 text-[#953002] hover:bg-[#953002] hover:text-white rounded-lg transition-all border border-orange-100/50"
-                        title="Download ZIP"
-                      >
-                        <FileDown className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-100 rounded-xl">
+              <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">Export Format</p>
+              <p className="text-xs text-orange-700/80 font-medium mt-1">Standardized PDF with Excel Summary</p>
             </div>
           )
         };
-      case "Award Processing":
+      case "Committee Roster":
         return {
-          icon: <Trophy className="w-5 h-5 text-[#953002]" />,
-          title: "Award Finalization",
-          desc: "Review final evaluation scores and process formal award letters to successful bidders.",
-          primaryAction: "Close",
+          icon: <Users className="w-5 h-5 text-[#953002]" />,
+          title: "Member Directory",
+          desc: "View and manage the assigned committee members for current projects.",
+          primaryAction: "Manage Roster",
           extra: (
-            <div className="space-y-2 mt-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-                  <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading Tenders...</p>
-                </div>
-              ) : tendersPendingAward.length === 0 ? (
-                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-                  <p className="text-xs font-medium text-gray-400">No tenders pending award found</p>
-                </div>
-              ) : (
-                tendersPendingAward.map((tender) => (
-                  <div key={tender.id} className="p-3 bg-white border border-gray-100 rounded-xl hover:border-[#953002]/20 transition-all group">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-[#953002] uppercase tracking-wider truncate">{tender.tenderNo}</p>
-                        <p className="text-xs font-bold text-gray-900 truncate mt-0.5">{tender.title}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-[#953002] bg-[#953002]/5 px-1.5 py-0.5 rounded border border-[#953002]/10">
-                            {tender.category}
-                          </span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          onClose();
-                          router.push(`/officer-dashboard/tenders/${tender.tenderNo}/award`);
-                        }}
-                        className="p-2 bg-gray-50 text-gray-400 hover:bg-[#953002] hover:text-white rounded-lg transition-all"
-                        title="Process Award"
-                      >
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="mt-4 -space-y-1">
+              <p className="text-xs font-bold text-gray-700 p-2">Dr. Sarah Jenkins (Chair)</p>
+              <p className="text-xs font-bold text-gray-700 p-2">John Doe (Technical)</p>
             </div>
           )
         };
-
+      case "System Settings":
+        return {
+          icon: <Settings className="w-5 h-5 text-[#953002]" />,
+          title: "Dashboard Config",
+          desc: "Adjust your workspace preferences, notifications, and display settings.",
+          primaryAction: "Save Changes",
+          extra: (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-gray-600">
+                <span>Real-time Updates</span>
+                <button 
+                  onClick={() => setIsRealtimeEnabled(!isRealtimeEnabled)}
+                  className={`w-8 h-4 rounded-full relative transition-all duration-300 ease-in-out outline-none focus:ring-2 focus:ring-[#953002]/20 ${isRealtimeEnabled ? 'bg-[#953002]' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isRealtimeEnabled ? 'left-[1.125rem]' : 'left-0.5'}`}></div>
+                </button>
+              </div>
+            </div>
+          )
+        };
       default:
         return null;
     }
@@ -289,16 +130,18 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
 
           {content.extra}
 
-          <div className="mt-8 flex">
+          <div className="mt-8 flex gap-3">
             <button 
-              className="flex-1 py-3 px-4 rounded-xl bg-[#953002]/5 text-[#953002] border border-[#953002]/10 font-bold text-[10px] uppercase tracking-widest hover:bg-[#953002]/10 transition-all flex items-center justify-center gap-2"
+              onClick={onClose}
+              className="flex-1 py-3 px-4 rounded-xl border border-gray-200 font-bold text-[10px] uppercase tracking-wider text-gray-400 hover:bg-gray-50 transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              className="flex-[1.5] py-3 px-4 rounded-xl bg-[#953002]/5 text-[#953002] border border-[#953002]/10 font-bold text-[10px] uppercase tracking-widest hover:bg-[#953002]/10 transition-all flex items-center justify-center gap-2"
               onClick={() => {
-                if (content.primaryAction === "Close") {
-                  onClose();
-                } else {
-                  alert(`Action: ${content.primaryAction} triggered!`);
-                  onClose();
-                }
+                alert(`Action: ${content.primaryAction} triggered!`);
+                onClose();
               }}
             >
               {content.primaryAction}

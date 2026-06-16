@@ -13,12 +13,5 @@ public enum TenderStatus {
     // Post-approval lifecycle
     PUBLISHED,
     CLOSED,
-    CANCELLED,
-
-    // Officer Dashboard lifecycle
-    PENDING_OPENING,
-    OPEN,
-    EVALUATION,
-    AWARDED,
-    NO_BID
+    CANCELLED
 }
