@@ -1,6 +1,5 @@
 // ─── CAO Dashboard API Layer ─────────────────────────────
 import axios from 'axios';
-import { useAuthStore } from '@/store/auth/auth.store';
 import type {
   DashboardTender,
   DashboardNotification,
@@ -17,7 +16,7 @@ import type {
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 5000, // 5s timeout
 });
@@ -42,21 +41,6 @@ const evaluationApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
   timeout: 5000,
 });
-
-const addTokenInterceptor = (instance: typeof axios) => {
-  instance.interceptors.request.use((config) => {
-    const token = useAuthStore.getState().token;
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
-};
-
-addTokenInterceptor(api as any);
-addTokenInterceptor(userApi as any);
-addTokenInterceptor(reportApi as any);
-
 
 // ── Tenders ──────────────────────────────────────────────────
 export async function fetchDashboardTenders(
@@ -97,7 +81,7 @@ export async function viewTenderDocument(docId: string): Promise<string> {
 export async function downloadTenderDocument(docId: string): Promise<Blob> {
   if (!docId) throw new Error("Document ID is required");
   
-  const fullUrl = 'http://localhost:8082/api/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
   
   const res = await axios.get(fullUrl, {
     withCredentials: false

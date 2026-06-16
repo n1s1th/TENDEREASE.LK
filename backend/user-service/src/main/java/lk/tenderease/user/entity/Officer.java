@@ -46,7 +46,7 @@ public class Officer extends BaseEntity {
     @Column(name = "personal_land_phone", nullable = false)
     private String personalLandPhone;
 
-    @Column(name = "official_email", nullable = false, unique = true)
+    @Column(name = "official_email", nullable = false)
     private String officialEmail;
 
     // ──── Business Info ────

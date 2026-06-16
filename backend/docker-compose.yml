@@ -77,7 +77,14 @@ services:
     image: quay.io/keycloak/keycloak:23.0
     container_name: tenderease-keycloak
     command: start-dev
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
     environment:
+      JAVA_OPTS_APPEND: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m"
       KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"

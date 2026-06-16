@@ -23,6 +23,14 @@ public interface LiaisonOfficerRepository extends JpaRepository<LiaisonOfficer, 
     boolean existsByNic(String nic);
 
     /**
+     * Check if a liaison officer with the given email already exists.
+     *
+     * @param email the email address
+     * @return true if email is already registered
+     */
+    boolean existsByEmail(String email);
+
+    /**
      * Find liaison officer by NIC.
      *
      * @param nic the National Identity Card number

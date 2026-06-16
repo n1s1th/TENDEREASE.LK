@@ -47,7 +47,7 @@ export default function TenderTable({ data }: Props) {
                 >
                   <td className="px-8 py-6">
                     <span className="font-black text-primary tracking-tight group-hover:underline">
-                      {tender.title}
+                      {tender.id || tender.tenderId}
                     </span>
                   </td>
                   <td className="px-8 py-6">
