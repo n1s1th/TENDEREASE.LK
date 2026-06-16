@@ -19,7 +19,6 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/cao/tenders")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")
 @Tag(name = "CAO Tender Management", description = "Dashboard APIs for CAO to review and approve tenders")
@@ -28,6 +27,7 @@ public class CAOTenderController {
     private final TenderService tenderService;
 
     @GetMapping
+    // @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @Operation(summary = "List tenders for CAO", description = "Lists tenders filtered by status for the CAO dashboard.")
     public ResponseEntity<PageResponse<TenderResponse>> listTenders(
@@ -75,6 +75,7 @@ public class CAOTenderController {
     }
 
     @GetMapping("/documents/{docId}/base64")
+    // @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @Operation(summary = "Get document as Base64 JSON", description = "Bypasses download managers by sending file as a JSON string")
     public ResponseEntity<java.util.Map<String, String>> getDocumentBase64(@PathVariable java.util.UUID docId) {
@@ -89,6 +90,7 @@ public class CAOTenderController {
     }
 
     @PostMapping("/{id}/approve")
+    // @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @Operation(summary = "Approve tender", description = "CAO approves a tender, moving it to APPROVED or PUBLISHED status.")
     public ResponseEntity<TenderResponse> approveTender(@PathVariable UUID id) {
@@ -97,6 +99,7 @@ public class CAOTenderController {
     }
 
     @PostMapping("/{id}/reject")
+    // @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @PreAuthorize("hasRole('CAO') or hasRole('ADMIN')")
     @Operation(summary = "Reject tender", description = "CAO rejects a tender with a reason.")
     public ResponseEntity<TenderResponse> rejectTender(

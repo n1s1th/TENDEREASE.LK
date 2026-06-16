@@ -75,7 +75,7 @@ export default function SubmissionsModal({ tender, isOpen, onClose }: Submission
 
             {tender.status.toUpperCase() === "PENDING_OPENING" && (
               <button 
-                onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
+                onClick={() => router.push(`/tenders/${tender.reference}/bid-opening`)}
                 className="w-full mt-2 flex items-center justify-center gap-2.5 p-4 bg-[#1A1D1F] text-white rounded-xl hover:bg-black transition-all shadow-lg shadow-black/20 group"
               >
                 <Lock className="w-4 h-4 text-[#FFB401] group-hover:scale-110 transition-transform" />

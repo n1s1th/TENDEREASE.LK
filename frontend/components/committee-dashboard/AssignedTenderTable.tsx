@@ -7,12 +7,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Eye, 
-  MoreVertical,
-  Calendar,
-  Edit2,
-  Download,
-  Link,
-  Trash2
+  Calendar
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -32,45 +27,38 @@ interface Tender {
 
 export default function AssignedTenderTable() {
   const router = useRouter();
-  const { assignedTenders, fetchAssignedTenders, isLoading } = useEvaluationStore();
+  const { 
+    assignedTenders, 
+    assignedTendersTotalPages,
+    assignedTendersTotalElements,
+    fetchAssignedTenders, 
+    isLoading 
+  } = useEvaluationStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 8;
 
+  // Debounce search term
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  
   useEffect(() => {
-    fetchAssignedTenders();
-  }, [fetchAssignedTenders]);
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Handle click outside to close menu
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+  }, [debouncedSearch, statusFilter]);
 
-  const filteredTenders = useMemo(() => {
-    return (assignedTenders as unknown as Tender[]).filter(tender => {
-      const matchesSearch = 
-        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.tenderNo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "ALL" || tender.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [searchTerm, statusFilter, assignedTenders]);
+  useEffect(() => {
+    // Page is 0-indexed on the backend
+    fetchAssignedTenders(debouncedSearch, statusFilter, currentPage - 1, itemsPerPage);
+  }, [fetchAssignedTenders, debouncedSearch, statusFilter, currentPage]);
 
-  const totalPages = Math.ceil(filteredTenders.length / itemsPerPage) || 1;
-  const paginatedTenders = filteredTenders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalPages = assignedTendersTotalPages || 1;
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -100,7 +88,7 @@ export default function AssignedTenderTable() {
           <input
             type="text"
             placeholder="Search by tender ID or title..."
-            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-gray-700 text-[13px] focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -143,101 +131,63 @@ export default function AssignedTenderTable() {
         </div>
       </div>
 
-      {/* Table - Removed overflow-x-auto to prevent clipping of absolute menu */}
-      <div className="relative min-w-[1000px]">
-        <table className="w-full border-collapse">
+      {/* Table Section */}
+      <div className="w-full overflow-hidden">
+        <table className="w-full table-fixed border-collapse">
           <thead>
             <tr className="bg-[#F8FAFC]">
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Tender ID</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[30%]">Tender Title</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Category</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Status</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Opening Date</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Role</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[5%]">Actions</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">ID</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-left w-[35%]">Tender Title</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[20%]">Category</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[13%]">Status</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[12%]">Closing</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[0%] hidden">Role</th>
+              <th className="px-3 py-4 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-20 text-center">
+                <td colSpan={6} className="px-6 py-20 text-center">
                   <div className="w-8 h-8 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </td>
               </tr>
-            ) : paginatedTenders.length === 0 ? (
+            ) : assignedTenders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-20 text-slate-500 font-bold italic tracking-wide">No tenders found matching your criteria...</td>
+                <td colSpan={6} className="text-center py-20 text-slate-500 font-bold italic tracking-wide">No tenders found matching your criteria...</td>
               </tr>
-            ) : paginatedTenders.map((tender, idx) => (
+            ) : (assignedTenders as unknown as Tender[]).map((tender, idx) => (
               <tr key={tender.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all group">
-                <td className="px-6 py-6 text-center">
-                  <span className="font-mono text-[12px] font-black text-gray-500 bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200 whitespace-nowrap">
+                <td className="px-3 py-4 text-center">
+                  <span className="font-mono text-[10px] font-black text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 truncate block" title={tender.tenderNo}>
                     {tender.tenderNo}
                   </span>
                 </td>
-                <td className="px-6 py-6 text-center">
-                  <span className="text-[14px] font-bold text-gray-900 group-hover:text-[#9A3B12] transition-colors">{tender.title}</span>
-                </td>
-                <td className="px-6 py-6 text-center font-bold text-[13px] text-gray-500">{tender.category}</td>
-                <td className="px-6 py-6 text-center">
-                  <span className={`inline-flex px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border ${getStatusStyle(tender.status)} whitespace-nowrap`}>
-                    {formatStatus(tender.status)}
+                <td className="px-3 py-4 text-left">
+                  <span className="text-[12px] font-bold text-gray-900 group-hover:text-[#9A3B12] transition-colors line-clamp-1 block truncate" title={tender.title}>
+                    {tender.title}
                   </span>
                 </td>
-                <td className="px-6 py-6 text-center">
-                  <div className="flex items-center justify-center gap-2.5 text-gray-600 whitespace-nowrap">
-                    <Calendar className="w-4 h-4 text-[#953002]" />
-                    <span className="text-[14px] font-bold">{tender.closingDate}</span>
+                <td className="px-3 py-4 text-center font-bold text-[11px] text-gray-500" title={tender.category}>{tender.category}</td>
+                <td className="px-3 py-4 text-center">
+                  <span className={`inline-flex px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider border ${getStatusStyle(tender.status)} truncate`}>
+                    {formatStatus(tender.status).replace('Opening', 'Opn.')}
+                  </span>
+                </td>
+                <td className="px-3 py-4 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-gray-600">
+                    <Calendar className="w-3 h-3 text-[#953002]" />
+                    <span className="text-[11px] font-bold whitespace-nowrap">{tender.closingDate}</span>
                   </div>
                 </td>
-                <td className="px-6 py-6 text-center text-xs font-black text-gray-400 uppercase tracking-tight whitespace-nowrap">{tender.role}</td>
-                <td className="px-6 py-6 text-center">
-                  <div className="flex items-center justify-center gap-1.5">
-                    <button 
-                      onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
-                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all"
-                      title="View Details"
-                    >
-                      <Eye className="w-5 h-5" />
-                    </button>
-                    
-                    <div className="relative">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === tender.id ? null : tender.id);
-                        }}
-                        className={`p-2 rounded-xl transition-all ${
-                          openMenuId === tender.id 
-                            ? "bg-orange-100 text-[#9A3B12] ring-2 ring-[#9A3B12]/20" 
-                            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        }`}
-                      >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-
-                      {openMenuId === tender.id && (
-                        <div 
-                          ref={menuRef}
-                          className="absolute right-0 mt-3 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200"
-                          style={{ top: '100%' }}
-                        >
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Edit2 className="w-4 h-4" />
-                            Edit
-                          </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Download className="w-4 h-4" />
-                            Specs
-                          </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Link className="w-4 h-4" />
-                            Copy ID
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <td className="px-3 py-4 text-center">
+                  <button 
+                    onClick={() => router.push(`/tenders/${tender.tenderNo}/bid-opening`)}
+                    className="flex items-center justify-center gap-2 mx-auto px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#9A3B12] hover:bg-orange-50 border border-gray-100 transition-all"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View</span>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -246,14 +196,58 @@ export default function AssignedTenderTable() {
       </div>
 
       {/* Pagination */}
-      {filteredTenders.length > 0 && (
+      {assignedTendersTotalElements > 0 && (
         <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
           <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-            Showing <span className="text-gray-900">{paginatedTenders.length}</span> of <span className="text-gray-900">{filteredTenders.length}</span> tenders
+            Showing <span className="text-gray-900">{assignedTenders.length}</span> of <span className="text-gray-900">{assignedTendersTotalElements}</span> tenders
           </p>
           <div className="flex items-center gap-2">
-            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronLeft className="w-5 h-5" /></button>
-            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronRight className="w-5 h-5" /></button>
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className={`p-2.5 rounded-xl border transition-colors ${currentPage === 1 ? 'border-gray-100 text-gray-300 opacity-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+              // Show first, last, current, and adjacent pages
+              if (
+                page === 1 || 
+                page === totalPages || 
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-xl border font-bold transition-colors flex items-center justify-center text-sm ${
+                      currentPage === page
+                        ? 'bg-[#953002] text-white border-[#953002]'
+                        : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              }
+              // Show ellipsis
+              if (
+                page === currentPage - 2 || 
+                page === currentPage + 2
+              ) {
+                return <span key={page} className="px-1 text-gray-400">...</span>;
+              }
+              return null;
+            })}
+
+            <button 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className={`p-2.5 rounded-xl border transition-colors ${currentPage === totalPages ? 'border-gray-100 text-gray-300 opacity-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300'}`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       )}

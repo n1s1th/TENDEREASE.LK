@@ -35,7 +35,7 @@ public class BidOpeningServiceImpl implements BidOpeningService {
     public OpeningSessionResponse getOpeningSession(UUID tenderId) {
         OpeningSession session = sessionRepository.findByTenderId(tenderId)
                 .orElseGet(() -> createDefaultSession(tenderId));
-        return mapper.toDto(session);
+        return toSessionDto(session);
     }
 
     private OpeningSession createDefaultSession(UUID tenderId) {
@@ -43,7 +43,11 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         OpeningSession session = new OpeningSession();
         session.setTenderId(tenderId);
         // Default to 7 days from now if not specified (in real scenario, get from tender-service)
-        session.setScheduledOpeningTime(LocalDateTime.now().plusDays(7));
+        LocalDateTime scheduledTime = LocalDateTime.now().plusDays(7);
+        session.setScheduledOpeningTime(scheduledTime);
+        // Default bid submission deadline to 2 hours after scheduled opening time
+        // This will be overridden by the tender creation page when it is available
+        session.setBidSubmissionDeadline(scheduledTime.plusHours(2));
         session.setStatus(OpeningStatus.SCHEDULED);
         return sessionRepository.save(session);
     }
@@ -54,8 +58,8 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         OpeningSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BusinessException("Opening session not found"));
 
-        if (session.getStatus() == OpeningStatus.CLOSED) {
-            throw new BusinessException("Cannot mark attendance for a closed session");
+        if (session.getStatus() == OpeningStatus.OPEN || session.getStatus() == OpeningStatus.CLOSED) {
+            throw new BusinessException("Cannot modify attendance after session has been opened");
         }
 
         if (attendanceRepository.existsBySessionIdAndOfficerId(sessionId, request.getOfficerId())) {
@@ -67,6 +71,7 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         attendance.setOfficerId(request.getOfficerId());
         attendance.setOfficerName(request.getOfficerName());
         attendance.setDesignation(request.getDesignation());
+        attendance.setEmail(request.getEmail());
         attendance.setOrganisation(request.getOrganisation());
         attendance.setRole(request.getRole());
 
@@ -105,6 +110,64 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         
         // TODO: Publish event to bid-service to unseal bids
         
-        return mapper.toDto(sessionRepository.save(session));
+        return toSessionDto(sessionRepository.save(session));
+    }
+
+    @Override
+    @Transactional
+    public OpeningAttendanceResponse updateAttendance(UUID sessionId, UUID attendanceId, OpeningAttendanceRequest request) {
+        OpeningSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException("Opening session not found"));
+
+        if (session.getStatus() == OpeningStatus.OPEN || session.getStatus() == OpeningStatus.CLOSED) {
+            throw new BusinessException("Cannot modify attendance after session has been opened");
+        }
+
+        OpeningAttendance attendance = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new BusinessException("Attendance record not found"));
+
+        // Verify the attendance belongs to this session
+        if (!attendance.getSession().getId().equals(sessionId)) {
+            throw new BusinessException("Attendance record does not belong to this session");
+        }
+
+        attendance.setOfficerName(request.getOfficerName());
+        attendance.setDesignation(request.getDesignation());
+        attendance.setEmail(request.getEmail());
+        attendance.setOrganisation(request.getOrganisation());
+        attendance.setRole(request.getRole());
+
+        return mapper.toDto(attendanceRepository.save(attendance));
+    }
+
+    @Override
+    @Transactional
+    public void deleteAttendance(UUID sessionId, UUID attendanceId) {
+        OpeningSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new BusinessException("Opening session not found"));
+
+        if (session.getStatus() == OpeningStatus.OPEN || session.getStatus() == OpeningStatus.CLOSED) {
+            throw new BusinessException("Cannot modify attendance after session has been opened");
+        }
+
+        OpeningAttendance attendance = attendanceRepository.findById(attendanceId)
+                .orElseThrow(() -> new BusinessException("Attendance record not found"));
+
+        if (!attendance.getSession().getId().equals(sessionId)) {
+            throw new BusinessException("Attendance record does not belong to this session");
+        }
+
+        attendanceRepository.delete(attendance);
+        log.info("Deleted attendance record {} from session {}", attendanceId, sessionId);
+    }
+
+    /**
+     * Helper to map OpeningSession to DTO and include attendance count.
+     */
+    private OpeningSessionResponse toSessionDto(OpeningSession session) {
+        OpeningSessionResponse dto = mapper.toDto(session);
+        int count = attendanceRepository.findBySessionId(session.getId()).size();
+        dto.setAttendanceCount(count);
+        return dto;
     }
 }

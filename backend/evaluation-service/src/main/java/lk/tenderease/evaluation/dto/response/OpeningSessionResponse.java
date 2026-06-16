@@ -12,6 +12,8 @@ public class OpeningSessionResponse {
     private UUID tenderId;
     private LocalDateTime scheduledOpeningTime;
     private LocalDateTime actualOpeningTime;
+    private LocalDateTime bidSubmissionDeadline;
     private OpeningStatus status;
     private String openedBy;
+    private int attendanceCount;
 }

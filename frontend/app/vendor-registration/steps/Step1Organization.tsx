@@ -51,7 +51,7 @@ export default function Step1Organization() {
       setVerifyError("Please enter a registration number first.");
       return;
     }
-    
+
     setVerifying(true);
     setVerifyError(null);
     try {
@@ -90,13 +90,13 @@ export default function Step1Organization() {
         <div className="space-y-2 col-span-1 md:col-span-2">
           <label className="block text-sm font-medium text-gray-700">Business Registration Number *</label>
           <div className="flex gap-2">
-            <input 
-              {...register('registrationNumber')} 
+            <input
+              {...register('registrationNumber')}
               className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500 bg-white"
               placeholder="e.g. PV00309389"
             />
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handleVerify}
               disabled={verifying}
               className="px-4 py-2 bg-amber-600 text-white rounded-md text-sm font-medium hover:bg-amber-700 disabled:opacity-50 min-w-[100px]"
@@ -105,7 +105,7 @@ export default function Step1Organization() {
             </button>
           </div>
           {errors.registrationNumber && <p className="text-red-500 text-xs">{errors.registrationNumber.message}</p>}
-          
+
           {verifyError && <p className="text-red-500 text-sm font-medium mt-1">❌ {verifyError}</p>}
           {isVerified && <p className="text-green-600 text-sm font-medium mt-1">✅ Verified: {verifiedCompanyName}</p>}
         </div>
@@ -178,7 +178,7 @@ export default function Step1Organization() {
           <input {...register('province')} className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" />
           {errors.province && <p className="text-red-500 text-xs">{errors.province.message}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Official Email *</label>
           <input {...register('officialEmail')} type="email" className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Lock, FileText, Download, Users, Settings } from "lucide-react";
+import { ArrowRight, Lock, FileText, Download, Trophy, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QuickActionModal from "./QuickActionModal";
 
@@ -14,7 +14,7 @@ export default function QuickActions() {
     { 
       label: "Open Bid Session", 
       icon: Lock,
-      path: "/tenders/TND-2024-001/bid-opening"
+      path: "#"
     },
     { 
       label: "View Opening Records", 
@@ -27,13 +27,8 @@ export default function QuickActions() {
       path: "#"
     },
     { 
-      label: "Committee Roster", 
-      icon: Users,
-      path: "#"
-    },
-    { 
-      label: "System Settings", 
-      icon: Settings,
+      label: "Award Processing", 
+      icon: Trophy,
       path: "#"
     },
   ];
@@ -59,7 +54,7 @@ export default function QuickActions() {
           <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Actions</h3>
         </div>
         
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
           {actions.map((action, idx) => {
             const isSelected = selectedIdx === idx;
             const Icon = action.icon;
