@@ -137,7 +137,7 @@ export default function TenderCreationPage() {
     const result = currentSchema.safeParse(formData);
     
     if (!result.success) {
-      const firstError = result.error?.issues?.[0]?.message || result.error?.errors?.[0]?.message || "Please fill in all required fields correctly.";
+      const firstError = result.error?.issues?.[0]?.message || "Please fill in all required fields correctly.";
       setValidationError(firstError);
       return;
     }
@@ -151,7 +151,7 @@ export default function TenderCreationPage() {
     const result = currentSchema.safeParse(formData);
     
     if (!result.success) {
-      const firstError = result.error?.issues?.[0]?.message || result.error?.errors?.[0]?.message || "Please fill in all required fields correctly.";
+      const firstError = result.error?.issues?.[0]?.message || "Please fill in all required fields correctly.";
       setValidationError(firstError);
       return;
     }

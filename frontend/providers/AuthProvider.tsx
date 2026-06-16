@@ -26,11 +26,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!keycloak || isInitializing.current || initialized) return;
 
     const initKeycloak = async () => {
+      const kc = keycloak;
+      if (!kc) return;
       isInitializing.current = true;
       console.log('🔄 Initializing Keycloak...');
       
       try {
-        const authenticated = await keycloak.init({
+        const authenticated = await kc.init({
           // Removed onLoad: 'check-sso' to prevent CSP and 400 errors
           // Users will now need to click "Sign In" to authenticate
           pkceMethod: 'S256',
@@ -40,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('✅ Keycloak initialized. Authenticated:', authenticated);
 
         if (authenticated) {
-          const token = keycloak.token!;
+          const token = kc.token!;
           const decoded: any = jwtDecode(token);
           
           setAuth(token, {
@@ -54,12 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
           // Token refresh logic
-          keycloak.onTokenExpired = () => {
+          kc.onTokenExpired = () => {
             console.log('⏳ Token expired, refreshing...');
-            keycloak.updateToken(70).then((refreshed) => {
+            kc.updateToken(70).then((refreshed) => {
               if (refreshed) {
                 console.log('🔄 Token refreshed successfully');
-                const newToken = keycloak.token!;
+                const newToken = kc.token!;
                 const newDecoded: any = jwtDecode(newToken);
                 setAuth(newToken, {
                   id: newDecoded.sub,
@@ -77,7 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           };
         } else {
-          clearAuth();
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('code') || urlParams.has('error') || urlParams.has('state')) {
+            clearAuth();
+          }
         }
         setInitialized(true);
       } catch (error: any) {

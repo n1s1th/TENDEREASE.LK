@@ -332,14 +332,14 @@ public class TenderServiceImpl implements TenderService {
     @Override
     public PageResponse<TenderResponse> listAllTenders(TenderStatus status, Pageable pageable) {
         log.debug("Listing all tenders with status filter: {}", status);
-        Page<Tender> page;
+        Page<Tender> tenderPage;
 
         if (status == TenderStatus.APPROVED) {
             // Dashboard "Approved" tab should show both APPROVED and PUBLISHED tenders
-            page = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED),
+            tenderPage = tenderRepository.findByStatusIn(Arrays.asList(TenderStatus.APPROVED, TenderStatus.PUBLISHED),
                     pageable);
         } else if (status != null) {
-            page = tenderRepository.findByStatus(status, pageable);
+            tenderPage = tenderRepository.findByStatus(status, pageable);
         } else {
             tenderPage = tenderRepository.findAll(pageable);
         }
@@ -826,6 +826,8 @@ public class TenderServiceImpl implements TenderService {
                 .scopeOfWork(tender.getScopeOfWork())
                 .estimatedBudget(tender.getEstimatedBudget())
                 .departmentName(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .procurementType(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .dynamicData(tender.getDynamicData())
                 .openingDate(tender.getOpeningDate())
                 .closingDate(tender.getClosingDate())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))

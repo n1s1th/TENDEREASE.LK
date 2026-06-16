@@ -71,6 +71,9 @@ async function handleQaResponse<T>(response: Response): Promise<T> {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearAuth();
+    }
     throw new Error(payload?.message || `Q&A request failed with ${response.status}`);
   }
 

@@ -64,10 +64,10 @@ export default function BidOpeningPage() {
       <div className="min-h-screen bg-[#F3F5F7] p-8">
         <div className="max-w-[98%] mx-auto flex flex-col gap-8">
           <OpeningHeader
-            tenderId={id || displaySession.tenderId}
-            title={displaySession.tenderTitle}
-            category={displaySession.category}
-            division={displaySession.division}
+            tenderId={id || displaySession.tenderId || "TND-XXXX"}
+            title={displaySession.tenderTitle || "Tender Session"}
+            category={displaySession.category || "UNSPECIFIED"}
+            division={displaySession.division || "PROCUREMENT"}
           />
 
           <OpeningBanner

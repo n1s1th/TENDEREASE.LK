@@ -24,6 +24,7 @@ public class VendorProfileResponse {
     private String website;
     private String officialEmail;
     private String officialTelephone;
+    private String cidaGrade;
     private Boolean drcVerified;
     private String drcCompanyName;
     private LocalDate drcIncorporationDate;

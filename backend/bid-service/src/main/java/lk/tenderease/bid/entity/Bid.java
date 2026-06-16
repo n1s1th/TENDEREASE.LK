@@ -3,6 +3,9 @@ package lk.tenderease.bid.entity;
 import jakarta.persistence.*;
 import lk.tenderease.common.entity.BaseEntity;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import java.util.Map;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -58,4 +61,8 @@ public class Bid extends BaseEntity {
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "bid_data", columnDefinition = "jsonb")
+    private Map<String, Object> bidData;
 }

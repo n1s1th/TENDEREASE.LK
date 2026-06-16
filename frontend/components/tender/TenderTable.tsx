@@ -42,7 +42,7 @@ export default function TenderTable({ data }: Props) {
               data.map((tender) => (
                 <tr
                   key={tender.id}
-                  onClick={() => router.push(`/tenders/${tender.tenderNumber || tender.tenderId || tender.id}`)}
+                  onClick={() => router.push(`/tenders/${tender.id || tender.tenderId || tender.tenderNumber}`)}
                   className="group cursor-pointer transition-all duration-300 hover:bg-primary/[0.02]"
                 >
                   <td className="px-8 py-6">
