@@ -7,11 +7,10 @@ import { OpeningStatus } from "@/lib/types/opening.types";
 
 interface OpeningBannerProps {
   status: OpeningStatus;
-  scheduledTime?: string | null;
-  bidSubmissionDeadline?: string | null;
+  scheduledTime?: string;
 }
 
-export default function OpeningBanner({ status, scheduledTime, bidSubmissionDeadline }: OpeningBannerProps) {
+export default function OpeningBanner({ status, scheduledTime }: OpeningBannerProps) {
   const [timeLeft, setTimeLeft] = React.useState({
     days: "00",
     hours: "00",
@@ -19,16 +18,10 @@ export default function OpeningBanner({ status, scheduledTime, bidSubmissionDead
     secs: "00"
   });
 
-  const isStarted = status === 'OPEN';
-  const isClosed = status === 'CLOSED';
-
-  // Use deadline for countdown when session is open, otherwise use scheduled time
-  const countdownTarget = isStarted ? bidSubmissionDeadline : scheduledTime;
-
   React.useEffect(() => {
-    if (!countdownTarget) return;
+    if (!scheduledTime) return;
 
-    const targetDate = new Date(countdownTarget);
+    const targetDate = new Date(scheduledTime);
     
     const calculateTimeLeft = () => {
       const now = new Date();
@@ -55,7 +48,14 @@ export default function OpeningBanner({ status, scheduledTime, bidSubmissionDead
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, [countdownTarget]);
+  }, [scheduledTime]);
+
+  const isStarted = status === 'OPEN';
+  const isClosed = status === 'CLOSED';
+
+  // Secondary Yellow / Amber Theme
+  const activeColor = "#953002"; // Using the brand burnt orange/yellow
+  const activeBg = "#FFF7ED"; // Lighter orange bg
 
   return (
     <div className={`border rounded-3xl p-4 flex items-center justify-between shadow-sm transition-all duration-500 ${
@@ -72,7 +72,7 @@ export default function OpeningBanner({ status, scheduledTime, bidSubmissionDead
             {isStarted ? "Bid opening session is officially active" : isClosed ? "Bid opening has concluded" : "Bid opening has not yet commenced"}
           </h3>
           <p className={`${isStarted ? 'text-[#953002]/80' : 'text-[#4F4F4F]/80'} text-[13px] font-medium mt-0.5`}>
-            {isStarted ? "Bids are being received. Countdown shows time remaining until submission closes." : 
+            {isStarted ? "Bids have been unsealed. The committee is now verifying submissions." : 
              `The "Open Bids" action will become available only at the scheduled opening time.`}
           </p>
         </div>

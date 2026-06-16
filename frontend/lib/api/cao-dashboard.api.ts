@@ -1,6 +1,5 @@
 // ─── CAO Dashboard API Layer ─────────────────────────────
 import axios from 'axios';
-import { useAuthStore } from '@/store/auth/auth.store';
 import type {
   DashboardTender,
   DashboardNotification,
@@ -42,21 +41,6 @@ const evaluationApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
   timeout: 5000,
 });
-
-const addTokenInterceptor = (instance: typeof axios) => {
-  instance.interceptors.request.use((config) => {
-    const token = useAuthStore.getState().token;
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  });
-};
-
-addTokenInterceptor(api as any);
-addTokenInterceptor(userApi as any);
-addTokenInterceptor(reportApi as any);
-
 
 // ── Tenders ──────────────────────────────────────────────────
 export async function fetchDashboardTenders(

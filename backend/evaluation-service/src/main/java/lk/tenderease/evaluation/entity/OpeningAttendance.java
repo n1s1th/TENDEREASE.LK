@@ -38,9 +38,6 @@ public class OpeningAttendance {
     @Column(nullable = false, length = 150)
     private String designation;
 
-    @Column(nullable = false, length = 255)
-    private String email;
-
     @Column(length = 150)
     private String organisation;
 

@@ -1,13 +1,10 @@
 import { config } from "./config";
-import { useAuthStore } from "@/store/auth/auth.store";
 
 export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${config.backendUrl}${endpoint}`;
-  const token = useAuthStore.getState().token;
   
   const headers: Record<string, string> = {
     ...(!options.body || typeof options.body === 'string' ? { 'Content-Type': 'application/json' } : {}),
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers as any),
   };
 
