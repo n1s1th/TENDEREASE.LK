@@ -11,6 +11,7 @@ public class OpeningAttendanceResponse {
     private String officerId;
     private String officerName;
     private String designation;
+    private String email;
     private String organisation;
     private String role;
     private LocalDateTime attendanceTime;

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:1234}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -33,6 +33,11 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+
+  # Disable Redis auto-config for standalone local dev (RabbitMQ kept - connection is lazy)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -72,7 +77,7 @@ server:
 
 eureka:
   client:
-    enabled: false   # 👈 ADD THIS LINE
+    enabled: true
     service-url:
       defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     fetch-registry: true

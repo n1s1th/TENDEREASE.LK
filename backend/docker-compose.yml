@@ -13,6 +13,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: tenderease-postgres
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -46,6 +52,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: tenderease-redis
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
     ports:
       - "6379:6379"
     networks:
@@ -59,6 +71,12 @@ services:
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
     container_name: tenderease-rabbitmq
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -77,7 +95,14 @@ services:
     image: quay.io/keycloak/keycloak:23.0
     container_name: tenderease-keycloak
     command: start-dev
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
     environment:
+      JAVA_OPTS_APPEND: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m"
       KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"

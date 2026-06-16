@@ -10,9 +10,11 @@ import {
   apiFetchScores,
   apiFetchCriteria,
   apiSubmitScore,
-  fetchMyEvaluations,
-  getDashboardMetrics
 } from "@/lib/api/evaluation.api";
+import {
+  getDashboardMetrics,
+  getAssignedTenders,
+} from "@/lib/api/officer.api";
 
 
 
@@ -26,6 +28,8 @@ export const useEvaluationStore = create<EvaluationState>()(
       isLoading: false,
       
       assignedTenders: [],
+      assignedTendersTotalPages: 0,
+      assignedTendersTotalElements: 0,
       activeTendersCount: 0,
       totalBidsCount: 0,
       underEvaluationCount: 0,
@@ -87,16 +91,23 @@ export const useEvaluationStore = create<EvaluationState>()(
           "evaluation/resetScores"
         ),
 
-      fetchAssignedTenders: async () => {
-        set({ isLoading: true, error: null });
+      fetchAssignedTenders: async (keyword: string = "", status: string = "ALL", page: number = 0, size: number = 8) => {
+        set({ isLoading: true });
         try {
-          const res = await fetchMyEvaluations();
-          set({ assignedTenders: res.data, isLoading: false });
-        } catch (err: any) {
+          const res = await getAssignedTenders(keyword, status, page, size);
           set({ 
-            error: err.message, 
+            assignedTenders: res.data.content as unknown as AssignedTender[], 
+            assignedTendersTotalPages: res.data.totalPages,
+            assignedTendersTotalElements: res.data.totalElements,
+            isLoading: false 
+          });
+        } catch (err: any) {
+          console.error("Failed to fetch assigned tenders", err);
+          set({ 
             isLoading: false, 
-            assignedTenders: [] 
+            assignedTenders: [],
+            assignedTendersTotalPages: 0,
+            assignedTendersTotalElements: 0
           });
         }
       },

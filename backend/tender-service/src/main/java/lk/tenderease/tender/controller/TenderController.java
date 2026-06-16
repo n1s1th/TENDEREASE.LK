@@ -198,7 +198,7 @@ public class TenderController {
     public ResponseEntity<lk.tenderease.common.dto.PageResponse<TenderResponse>> listMyTenders(
             @Parameter(description = "Filter by tender status") @RequestParam(required = false) TenderStatus status,
             Pageable pageable) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listMyTenders(status, pageable, "dev-user-id"));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -216,7 +216,7 @@ public class TenderController {
     public ResponseEntity<lk.tenderease.common.dto.PageResponse<TenderResponse>> listAllTenders(
             @Parameter(description = "Filter by tender status") @RequestParam(required = false) TenderStatus status,
             Pageable pageable) {
-        return null; // TODO: implement
+        return ResponseEntity.ok(tenderService.listAllTenders(status, pageable));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -238,7 +238,14 @@ public class TenderController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("documentType") DocumentType documentType,
             @RequestParam(value = "sbdTemplateId", required = false) Long sbdTemplateId) {
-        return null; // TODO: implement
+        
+        lk.tenderease.tender.dto.request.DocumentUploadRequest uploadRequest = new lk.tenderease.tender.dto.request.DocumentUploadRequest();
+        uploadRequest.setFile(file);
+        uploadRequest.setDocumentType(documentType);
+        uploadRequest.setSbdTemplateId(sbdTemplateId);
+        
+        TenderDocumentResponse response = tenderService.uploadDocument(id, uploadRequest, "dev-user-id");
+        return ResponseEntity.status(201).body(response);
     }
 
     @DeleteMapping("/{id}/documents/{docId}")
@@ -253,7 +260,8 @@ public class TenderController {
     public ResponseEntity<Void> deleteDocument(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @Parameter(description = "Document UUID") @PathVariable UUID docId) {
-        return null; // TODO: implement
+        tenderService.deleteDocument(id, docId, "dev-user-id");
+        return ResponseEntity.noContent().build();
     }
 
     // ══════════════════════════════════════════════════════════════════════════

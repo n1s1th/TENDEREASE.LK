@@ -77,4 +77,10 @@ public class CreateTenderRequest {
 
     @Schema(description = "Dynamic schema data for custom template fields")
     private Map<String, Object> dynamicData;
+
+    @Schema(description = "SBD Template name")
+    private String sbdTemplate;
+
+    @Schema(description = "SBD Template version")
+    private String templateVersion;
 }

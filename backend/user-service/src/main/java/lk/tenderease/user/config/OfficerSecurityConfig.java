@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,22 +14,15 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Security configuration for the Officer Registration Service.
- *
- * <p>
- * Overrides the common-library {@code KeycloakSecurityConfig} to:
- * <ul>
- * <li>Permit {@code POST /api/officers/register} as a <strong>PUBLIC</strong>
- * endpoint</li>
- * <li>Permit Swagger/OpenAPI endpoints</li>
- * <li>Require authentication for all other officer endpoints</li>
- * </ul>
- *
- * <p>
- * Uses {@code @Order(1)} to take precedence over the common config.
- * </p>
  */
 @Configuration
 @EnableWebSecurity
@@ -46,14 +38,14 @@ public class OfficerSecurityConfig {
     public SecurityFilterChain officerSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/officers/register").permitAll()
-                        // CAO dashboard endpoints (dev mode - no JWT)
+                        // CAO dashboard endpoints
                         .requestMatchers("/api/cao/**").permitAll()
-                        // Vendor registration endpoints (Public)
+                        // Vendor registration endpoints
                         .requestMatchers(
                                 "/api/v1/vendors/verify-registration",
                                 "/api/v1/vendors/register",
@@ -65,13 +57,29 @@ public class OfficerSecurityConfig {
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Actuator
                         .requestMatchers("/actuator/**").permitAll()
-                        // Admin officer management endpoints require authentication
-                        .requestMatchers("/api/officers/**").authenticated()
-                        // All other requests
-                        .anyRequest().authenticated())
+                        // All other requests - permitAll for dev mode
+                        .anyRequest().permitAll())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter)));
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:3000",
+            "http://localhost:3001"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email"));
+        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

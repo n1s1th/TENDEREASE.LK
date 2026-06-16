@@ -36,6 +36,9 @@ public class OpeningSession {
     @Column(name = "actual_opening_time")
     private LocalDateTime actualOpeningTime;
 
+    @Column(name = "bid_submission_deadline")
+    private LocalDateTime bidSubmissionDeadline;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OpeningStatus status = OpeningStatus.SCHEDULED;
