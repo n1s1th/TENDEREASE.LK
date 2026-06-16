@@ -1,7 +1,7 @@
 # ──────────────────────────────────────────────────────────────
-# TenderEase — Tender Service
+# TenderEase — QA Service
 # Build context: backend/ directory
-# Usage: docker compose up --build tender-service
+# Usage: docker compose up --build qa-service
 # ──────────────────────────────────────────────────────────────
 
 # Stage 1: Build
@@ -10,30 +10,26 @@ WORKDIR /app
 
 COPY pom.xml .
 COPY common-library ./common-library
-COPY tender-service ./tender-service
+COPY qa-service ./qa-service
 
 # Strip <modules> block from parent POM so Maven doesn't look for missing sibling modules
 RUN sed -i '/<modules>/,/<\/modules>/d' pom.xml && \
     mvn install -N && \
     cd common-library && mvn clean install -DskipTests && \
-    cd ../tender-service && mvn clean package -DskipTests
+    cd ../qa-service && mvn clean package -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S spring && adduser -S spring -G spring
-
-# Setup uploads directory with appropriate permissions
-RUN mkdir -p uploads && chown -R spring:spring uploads
-
 USER spring:spring
 
-COPY --from=build --chown=spring:spring /app/tender-service/target/*.jar app.jar
+COPY --from=build --chown=spring:spring /app/qa-service/target/*.jar app.jar
 
-EXPOSE 8082
+EXPOSE 8194
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8194/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-XX:+UseG1GC", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
