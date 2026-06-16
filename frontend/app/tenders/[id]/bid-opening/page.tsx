@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import OpeningHeader from "@/components/bid-opening/OpeningHeader";
 import OpeningBanner from "@/components/bid-opening/OpeningBanner";
@@ -10,6 +10,7 @@ import AttendanceSection from "@/components/bid-opening/AttendanceSection";
 import ReceivedBidsLog from "@/components/bid-opening/ReceivedBidsLog";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import TenderLayout from "@/components/tender/TenderLayout";
+import { getTenders } from "@/services/tender.service";
 
 const DEMO_SESSION = {
   id: "TND-0000-SESSION",
@@ -27,12 +28,29 @@ export default function BidOpeningPage() {
   const params = useParams();
   const id = params?.id as string;
   const { session, fetchSession, fetchAttendance, isLoading } = useOpeningStore();
+  const [tender, setTender] = useState<any | null>(null);
 
   useEffect(() => {
     if (id) {
+      getTenders(0, 10, { keyword: id })
+        .then((res) => {
+          const content = res.content || res;
+          const found = content.find((t: any) => t.tenderNumber === id);
+          if (found) {
+            setTender(found);
+          }
+        })
+        .catch((err) => console.error("Error fetching tender by number:", err));
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (tender?.id) {
+      fetchSession(tender.id);
+    } else if (id && id.length > 10) {
       fetchSession(id);
     }
-  }, [id, fetchSession]);
+  }, [id, tender?.id, fetchSession]);
 
   useEffect(() => {
     if (session?.id) {
@@ -59,29 +77,31 @@ export default function BidOpeningPage() {
   // If we still have no session (e.g., fetch failed and no demo desired), we show the demo anyway to fulfill user request
   const displaySession = activeSession || DEMO_SESSION;
 
+  const deadline = tender?.closingDate || displaySession.bidSubmissionDeadline;
+
   return (
     <TenderLayout>
       <div className="min-h-screen bg-[#F3F5F7] p-8">
         <div className="max-w-[98%] mx-auto flex flex-col gap-8">
           <OpeningHeader
             tenderId={id || displaySession.tenderId}
-            title={displaySession.tenderTitle}
-            category={displaySession.category}
-            division={displaySession.division}
+            title={tender?.title || displaySession.tenderTitle || "Tender Opening Session"}
+            category={tender?.procurementType || displaySession.category || "General"}
+            division={displaySession.division || "Procurement"}
           />
 
           <OpeningBanner
             status={displaySession.status}
             scheduledTime={displaySession.scheduledOpeningTime}
-            bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
+            bidSubmissionDeadline={deadline}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <SchedulePanel
               scheduledTime={displaySession.scheduledOpeningTime}
-              bidSubmissionDeadline={displaySession.bidSubmissionDeadline}
+              bidSubmissionDeadline={deadline}
             />
-            <OpeningActionPanel />
+            <OpeningActionPanel bidSubmissionDeadline={deadline} />
           </div>
 
           <AttendanceSection />

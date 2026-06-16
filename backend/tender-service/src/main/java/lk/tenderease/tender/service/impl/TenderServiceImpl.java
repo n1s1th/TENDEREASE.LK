@@ -341,20 +341,20 @@ public class TenderServiceImpl implements TenderService {
         } else if (status != null) {
             page = tenderRepository.findByStatus(status, pageable);
         } else {
-            tenderPage = tenderRepository.findAll(pageable);
+            page = tenderRepository.findAll(pageable);
         }
 
-        java.util.List<TenderResponse> content = tenderPage.getContent().stream()
+        java.util.List<TenderResponse> content = page.getContent().stream()
                 .map(this::mapToResponse)
                 .toList();
 
         return PageResponse.<TenderResponse>builder()
                 .content(content)
-                .pageNumber(tenderPage.getNumber())
-                .pageSize(tenderPage.getSize())
-                .totalElements(tenderPage.getTotalElements())
-                .totalPages(tenderPage.getTotalPages())
-                .last(tenderPage.isLast())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .last(page.isLast())
                 .build();
     }
 

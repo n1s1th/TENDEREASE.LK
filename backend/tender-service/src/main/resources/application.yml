@@ -27,6 +27,7 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     repair-on-migrate: true
+    ignore-migration-patterns: "*:missing"
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
