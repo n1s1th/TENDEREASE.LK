@@ -76,7 +76,6 @@ public class EvaluationMapper {
         dto.setTenderId(entity.getTenderId());
         dto.setScheduledOpeningTime(entity.getScheduledOpeningTime());
         dto.setActualOpeningTime(entity.getActualOpeningTime());
-        dto.setBidSubmissionDeadline(entity.getBidSubmissionDeadline());
         dto.setStatus(entity.getStatus());
         dto.setOpenedBy(entity.getOpenedBy());
         return dto;
@@ -89,9 +88,6 @@ public class EvaluationMapper {
         dto.setOfficerId(entity.getOfficerId());
         dto.setOfficerName(entity.getOfficerName());
         dto.setDesignation(entity.getDesignation());
-        dto.setEmail(entity.getEmail());
-        dto.setOrganisation(entity.getOrganisation());
-        dto.setRole(entity.getRole());
         dto.setAttendanceTime(entity.getAttendanceTime());
         return dto;
     }

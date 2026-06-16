@@ -1,6 +1,6 @@
 import { OpeningSession, OpeningAttendance, OpeningAttendanceRequest, ApiResponse } from "@/lib/types/opening.types";
 
-const BASE = "http://localhost:8084";
+const BASE = "http://localhost:8095";
 
 function authHeaders(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -29,25 +29,6 @@ export async function markAttendance(sessionId: string, request: OpeningAttendan
     body: JSON.stringify(request)
   });
   if (!res.ok) throw new Error("Failed to mark attendance");
-  return res.json();
-}
-
-export async function updateAttendanceApi(sessionId: string, attendanceId: string, request: OpeningAttendanceRequest, token?: string): Promise<ApiResponse<OpeningAttendance>> {
-  const res = await fetch(`${BASE}/api/v1/opening/session/${sessionId}/attendance/${attendanceId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders(token) },
-    body: JSON.stringify(request)
-  });
-  if (!res.ok) throw new Error("Failed to update attendance");
-  return res.json();
-}
-
-export async function deleteAttendanceApi(sessionId: string, attendanceId: string, token?: string): Promise<ApiResponse<void>> {
-  const res = await fetch(`${BASE}/api/v1/opening/session/${sessionId}/attendance/${attendanceId}`, {
-    method: "DELETE",
-    headers: { ...authHeaders(token) }
-  });
-  if (!res.ok) throw new Error("Failed to delete attendance");
   return res.json();
 }
 

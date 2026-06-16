@@ -11,11 +11,9 @@ import lk.tenderease.evaluation.service.BidOpeningService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,26 +62,5 @@ public class BidOpeningController {
         // Use a dummy officer name for now since Keycloak is disabled
         OpeningSessionResponse response = bidOpeningService.startOpeningSession(sessionId, "ENG. KHALID HAMDAN");
         return ResponseEntity.ok(ApiResponse.success(response, "Bid opening session started successfully"));
-    }
-
-    @PutMapping("/session/{sessionId}/attendance/{attendanceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE')")
-    @Operation(summary = "Update an attendance record (only before session is opened)")
-    public ResponseEntity<ApiResponse<OpeningAttendanceResponse>> updateAttendance(
-            @PathVariable UUID sessionId,
-            @PathVariable UUID attendanceId,
-            @Valid @RequestBody OpeningAttendanceRequest request) {
-        OpeningAttendanceResponse response = bidOpeningService.updateAttendance(sessionId, attendanceId, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Attendance updated successfully"));
-    }
-
-    @DeleteMapping("/session/{sessionId}/attendance/{attendanceId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE')")
-    @Operation(summary = "Delete an attendance record (only before session is opened)")
-    public ResponseEntity<ApiResponse<Void>> deleteAttendance(
-            @PathVariable UUID sessionId,
-            @PathVariable UUID attendanceId) {
-        bidOpeningService.deleteAttendance(sessionId, attendanceId);
-        return ResponseEntity.ok(ApiResponse.success(null, "Attendance deleted successfully"));
     }
 }
