@@ -20,8 +20,6 @@ CREATE TABLE Opening_Session (
     Scheduled_Opening_Time TIMESTAMP NOT NULL,
     Actual_Opening_Time TIMESTAMP,
 
-    Bid_Submission_Deadline TIMESTAMP,
-
     Status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     -- SCHEDULED | PENDING_OPENING | OPEN | CLOSED
 
@@ -52,7 +50,6 @@ CREATE TABLE Opening_Attendance (
     Officer_ID UUID NOT NULL,
 
     Designation VARCHAR(150) NOT NULL,
-    Email VARCHAR(255) NOT NULL,
     Attendance_Time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_attendance_session

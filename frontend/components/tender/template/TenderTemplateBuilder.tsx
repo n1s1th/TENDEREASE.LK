@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 import { useTemplateDesignerStore, FieldType } from "@/store/tender-template/template-designer.store";
 import { DesignerSidebarLeft } from "./DesignerSidebarLeft";
@@ -9,13 +8,12 @@ import { DesignerCanvas } from "./DesignerCanvas";
 import { DesignerSidebarRight } from "./DesignerSidebarRight";
 import { TemplatePreview } from "./TemplatePreview";
 import { Button } from "@/components/ui/button";
-import { Save, Send, Eye, Edit2, ArrowLeft } from "lucide-react";
+import { Save, Send, Eye, Edit2 } from "lucide-react";
 
 import { templateService } from "@/services/template.service";
 import { toast, Toaster } from "sonner";
 
 export function TenderTemplateBuilder() {
-  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
@@ -114,14 +112,6 @@ export function TenderTemplateBuilder() {
       {/* Top Header */}
       <div className="bg-white border-b border-grey-2 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9 text-grey-5 hover:text-primary hover:bg-primary/5 rounded-full"
-            onClick={() => router.push("/tender-templates")}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
           <h1 className="text-xl font-bold tracking-tight text-foreground">Tender Template Designer</h1>
           <div className="flex items-center gap-2">
             <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-md border border-amber-200">
@@ -152,7 +142,7 @@ export function TenderTemplateBuilder() {
             <Save className="w-4 h-4 mr-2" /> Save Draft
           </Button>
           <Button 
-            className="bg-primary hover:bg-primary/90 text-white shadow-md disabled:opacity-50"
+            className="bg-gradient-to-r from-primary to-primary-hover text-white shadow-md disabled:opacity-50"
             onClick={handlePublish}
             disabled={isSaving || status === 'PUBLISHED'}
           >

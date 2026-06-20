@@ -61,7 +61,7 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
       alert("Quorum not met. Minimum 3 members required.");
       return;
     }
-
+    
     if (pin === "ABC123") {
       // Use actual session ID if available, otherwise a fallback for demo
       await startOpening(session?.id || "TND-0000-SESSION");
@@ -75,21 +75,18 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full relative overflow-hidden">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-[12px] font-black text-gray-500 uppercase tracking-widest">
-          BID OPENING ACTION
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-[12px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+          BID OPENING ACTION <span className="text-[#953002] font-black">CHAIR ONLY</span>
         </h3>
-        <span className="text-[#953002] text-[11px] font-black uppercase tracking-widest">
-          CHAIR ONLY
-        </span>
       </div>
-
+      
       <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
         <p className="text-[13px] font-bold text-gray-500 leading-snug mb-4 max-w-[280px]">
           Clicking "Open Bids" will unseal all bids and log the timestamp.
         </p>
-
-        <button
+        
+        <button 
           onClick={handleOpenBids}
           disabled={session?.status === 'OPEN' || isDeadlineReached}
           className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 border ${
@@ -119,7 +116,7 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
           </span>
         </button>
       </div>
-
+      
       <div className="mt-4">
         <div className="w-full py-2 border border-gray-200 rounded-xl flex items-center justify-center gap-2 bg-gray-50">
           <UserCheck className="w-3.5 h-3.5 text-gray-600" />
@@ -139,7 +136,7 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
                 </div>
                 <h3 className="text-lg font-black text-gray-900 tracking-tight">Unlock Received Bids</h3>
               </div>
-              <button
+              <button 
                 onClick={() => setIsUnlockModalOpen(false)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
               >
@@ -158,7 +155,7 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
                   Chair / Deputy Chair PIN
                 </label>
                 <div className="relative">
-                  <input
+                  <input 
                     type={showPin ? "text" : "password"}
                     value={pin}
                     onChange={(e) => {
@@ -166,11 +163,12 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
                       if (isPinError) setIsPinError(false);
                     }}
                     placeholder="••••••••"
-                    className={`w-full bg-[#F9FAFB] border rounded-[16px] px-[16px] py-[14px] text-[15px] font-bold text-gray-900 placeholder:text-gray-300 outline-none transition-all pr-12 focus:ring-2 ${isPinError ? 'border-[#EB5757] focus:ring-[#EB5757]/20' : 'border-gray-200 focus:ring-[#953002]/20 focus:border-[#953002]'
-                      }`}
+                    className={`w-full bg-[#F9FAFB] border rounded-[16px] px-[16px] py-[14px] text-[15px] font-bold text-gray-900 placeholder:text-gray-300 outline-none transition-all pr-12 focus:ring-2 ${
+                      isPinError ? 'border-[#EB5757] focus:ring-[#EB5757]/20' : 'border-gray-200 focus:ring-[#953002]/20 focus:border-[#953002]'
+                    }`}
                     style={isPinError ? { borderColor: '#EB5757', boxShadow: '0 0 0 1px #EB5757' } : {}}
                   />
-                  <button
+                  <button 
                     type="button"
                     onClick={() => setShowPin(!showPin)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -186,19 +184,20 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
 
             {/* Modal Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-              <button
+              <button 
                 onClick={() => setIsUnlockModalOpen(false)}
                 className="flex-1 px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase border border-gray-200 text-gray-500 hover:bg-white hover:text-gray-900 transition-all"
               >
                 Cancel
               </button>
-              <button
+              <button 
                 onClick={handleConfirmUnlock}
                 disabled={pin.length < 4 || isLoading}
-                className={`flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 ${!canOpen
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                  : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
-                  } disabled:opacity-50`}
+                className={`flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 ${
+                  !canOpen 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
+                    : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
+                } disabled:opacity-50`}
               >
                 {isLoading ? "Unlocking..." : !canOpen ? "Quorum Required" : "Confirm & Unlock"}
               </button>

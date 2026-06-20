@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import OpeningHeader from "@/components/bid-opening/OpeningHeader";
 import OpeningBanner from "@/components/bid-opening/OpeningBanner";
 import SchedulePanel from "@/components/bid-opening/SchedulePanel";
+import OverviewPanel from "@/components/bid-opening/OverviewPanel";
 import OpeningActionPanel from "@/components/bid-opening/OpeningActionPanel";
 import AttendanceSection from "@/components/bid-opening/AttendanceSection";
 import ReceivedBidsLog from "@/components/bid-opening/ReceivedBidsLog";
@@ -18,9 +19,8 @@ const DEMO_SESSION = {
   tenderTitle: "TENDER OPENING SESSION",
   category: "UNSPECIFIED",
   division: "PROCUREMENT",
-  status: "PENDING_OPENING" as const,
-  scheduledOpeningTime: null as string | null,
-  bidSubmissionDeadline: null as string | null,
+  status: "SCHEDULED" as const,
+  scheduledOpeningTime: new Date().toISOString(),
   bidsCount: 0
 };
 
