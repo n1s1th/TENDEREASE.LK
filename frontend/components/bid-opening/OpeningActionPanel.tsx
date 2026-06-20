@@ -5,9 +5,35 @@ import { Lock, UserCheck, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 import { useOpeningStore } from "@/store/opening/opening.store";
 
-export default function OpeningActionPanel() {
+interface OpeningActionPanelProps {
+  bidSubmissionDeadline?: string | null;
+}
+
+export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningActionPanelProps) {
   const { session, attendance, startOpening, isLoading } = useOpeningStore();
-  const canOpen = attendance.length >= 3 && (!session || session.status === 'SCHEDULED' || session.status === 'PENDING_OPENING');
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setCurrentTime(new Date());
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const deadlineDate = bidSubmissionDeadline ? new Date(bidSubmissionDeadline) : null;
+  const isDeadlineReached = deadlineDate && currentTime ? currentTime >= deadlineDate : false;
+
+  const canOpen = attendance.length >= 3 && (!session || session.status === 'SCHEDULED' || session.status === 'PENDING_OPENING') && !isDeadlineReached;
+
+  const alertShownRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isDeadlineReached && !alertShownRef.current) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      alertShownRef.current = true;
+    }
+  }, [isDeadlineReached]);
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = React.useState(false);
   const [pin, setPin] = React.useState("");
@@ -15,6 +41,10 @@ export default function OpeningActionPanel() {
   const [isPinError, setIsPinError] = React.useState(false);
 
   const handleOpenBids = () => {
+    if (isDeadlineReached) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      return;
+    }
     if (!canOpen) {
       alert(`Quorum not met: ${attendance.length}/3 members present.`);
       return;
@@ -23,6 +53,10 @@ export default function OpeningActionPanel() {
   };
 
   const handleConfirmUnlock = async () => {
+    if (isDeadlineReached) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      return;
+    }
     if (!canOpen) {
       alert("Quorum not met. Minimum 3 members required.");
       return;
@@ -54,22 +88,31 @@ export default function OpeningActionPanel() {
         
         <button 
           onClick={handleOpenBids}
-          disabled={session?.status === 'OPEN'}
+          disabled={session?.status === 'OPEN' || isDeadlineReached}
           className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 border ${
-            session?.status === 'OPEN' 
-              ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent' 
-              : !canOpen
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-                : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
+            isDeadlineReached
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+              : session?.status === 'OPEN'
+                ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent'
+                : !canOpen
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+                  : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
           }`}
         >
           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
+            isDeadlineReached ? 'bg-gray-200' : session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
           }`}>
-            {session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
+            {isDeadlineReached ? <Lock className="w-4 h-4" /> : session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
           </div>
           <span className="text-[14px] font-black tracking-[0.15em] uppercase">
-            {isLoading ? "OPENING..." : session?.status === 'OPEN' ? "BIDS OPENED" : "OPEN BIDS"}
+            {isLoading 
+              ? "OPENING..." 
+              : isDeadlineReached 
+                ? "BIDS CLOSED" 
+                : session?.status === 'OPEN' 
+                  ? "BIDS OPENED" 
+                  : "OPEN BIDS"
+            }
           </span>
         </button>
       </div>
