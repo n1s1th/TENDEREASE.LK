@@ -104,57 +104,32 @@ public class BidEvaluationMockController {
         return tenderStates.computeIfAbsent(tenderNo, k -> {
             Map<String, BidderEvaluationState> states = new LinkedHashMap<>();
             
-            // 9 Bidders as defined in the wireframes
-            states.put("BID-001", new BidderEvaluationState("BID-001", "Apex Build Ltd.", "Submitted", "PASS"));
-            states.put("BID-002", new BidderEvaluationState("BID-002", "ClearTech Solutions", "In Progress", "PASS"));
-            states.put("BID-003", new BidderEvaluationState("BID-003", "DataSphere Inc.", "Not Started", "PENDING"));
-            states.put("BID-004", new BidderEvaluationState("BID-004", "GridX Enterprise", "Submitted", "PASS"));
-            states.put("BID-005", new BidderEvaluationState("BID-005", "Helix Networks", "Not Started", "PENDING"));
-            states.put("BID-006", new BidderEvaluationState("BID-006", "Innosoft Group", "In Progress", "PENDING"));
-            states.put("BID-007", new BidderEvaluationState("BID-007", "NovaPrime Co.", "Not Started", "PENDING"));
-            states.put("BID-008", new BidderEvaluationState("BID-008", "Omega Management", "Submitted", "PASS"));
-            states.put("BID-009", new BidderEvaluationState("BID-009", "SkyRoute Systems", "Not Started", "PENDING"));
-
-            // Pre-fill some default wireframe values for BID-002
-            BidderEvaluationState bid2 = states.get("BID-002");
-            bid2.technicalCriteria.get(0).score = 72;
-            bid2.technicalCriteria.get(0).comment = "Solution is well-structured. ERP mapping is clear.";
-            bid2.technicalCriteria.get(1).score = 75;
-            bid2.technicalCriteria.get(1).comment = "3 senior engineers with ERP certs provided.";
-            bid2.technicalCriteria.get(2).score = 65;
-            bid2.technicalCriteria.get(2).comment = "Timeline is feasible. Risk register is minimal.";
-            bid2.technicalCriteria.get(3).score = 55;
-            bid2.technicalCriteria.get(3).comment = "Only 2 references. No large-scale government projects.";
+            // Only 1 Bidder for evaluation for display purposes
+            BidderEvaluationState bid1 = new BidderEvaluationState("BID-001", "Apex Build Ltd.", "In Progress", "PASS");
             
-            bid2.financialCriteria.get(0).score = 80;
-            bid2.financialCriteria.get(0).comment = "Price is within 8% of lowest bid. Competitive.";
-            bid2.financialCriteria.get(1).score = 70;
-            bid2.financialCriteria.get(1).comment = "Reasonable milestone split. Advance payment is 20%.";
-            bid2.financialCriteria.get(2).score = 65;
-            bid2.financialCriteria.get(2).comment = "2-year warranty offered. Training for 10 staff.";
-
-            bid2.evaluationNotes = "Overall satisfactory response. Recommended with standard adjustments.";
-            bid2.lastSaved = "11 Feb 2026, 14:32";
+            bid1.technicalCriteria.get(0).score = 70;
+            bid1.technicalCriteria.get(0).comment = "Clear methodology and diagrams.";
+            bid1.technicalCriteria.get(1).score = 68;
+            bid1.technicalCriteria.get(1).comment = "Good experience, lack of senior roles.";
+            bid1.technicalCriteria.get(2).score = 72;
+            bid1.technicalCriteria.get(2).comment = "Feasible schedule.";
+            bid1.technicalCriteria.get(3).score = 64;
+            bid1.technicalCriteria.get(3).comment = "Standard client references.";
             
-            // Pre-fill other submitted bidders' scores to make them realistic
-            fillMockSubmitted(states.get("BID-001"), 68, 70);
-            fillMockSubmitted(states.get("BID-004"), 75, 82);
-            fillMockSubmitted(states.get("BID-008"), 80, 78);
+            bid1.financialCriteria.get(0).score = 75;
+            bid1.financialCriteria.get(0).comment = "Price is competitive.";
+            bid1.financialCriteria.get(1).score = 68;
+            bid1.financialCriteria.get(1).comment = "Standard milestone split.";
+            bid1.financialCriteria.get(2).score = 70;
+            bid1.financialCriteria.get(2).comment = "1-year warranty plus training.";
+
+            bid1.evaluationNotes = "Solid proposal. Compliant with technical specs.";
+            bid1.lastSaved = "10 Feb 2026, 11:00";
+            
+            states.put("BID-001", bid1);
 
             return states;
         });
-    }
-
-    private void fillMockSubmitted(BidderEvaluationState bidder, double techBase, double finBase) {
-        bidder.technicalCriteria.get(0).score = techBase + 2;
-        bidder.technicalCriteria.get(1).score = techBase - 3;
-        bidder.technicalCriteria.get(2).score = techBase + 5;
-        bidder.technicalCriteria.get(3).score = techBase - 1;
-        
-        bidder.financialCriteria.get(0).score = finBase + 1;
-        bidder.financialCriteria.get(1).score = finBase - 2;
-        bidder.financialCriteria.get(2).score = finBase + 4;
-        bidder.lastSaved = "10 Feb 2026, 11:00";
     }
 
     @GetMapping("/{tenderNo}/data")
