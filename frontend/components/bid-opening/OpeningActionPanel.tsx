@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { Lock, UserCheck, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 import { useOpeningStore } from "@/store/opening/opening.store";
@@ -24,7 +25,7 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
   const deadlineDate = bidSubmissionDeadline ? new Date(bidSubmissionDeadline) : null;
   const isDeadlineReached = deadlineDate && currentTime ? currentTime >= deadlineDate : false;
 
-  const canOpen = attendance.length >= 3 && (!session || session.status === 'SCHEDULED' || session.status === 'PENDING_OPENING') && !isDeadlineReached;
+  const canOpen = attendance.length >= 3 && (!session || (session.status as any) === 'SCHEDULED' || (session.status as any) === 'PENDING_OPENING') && !isDeadlineReached;
 
   const alertShownRef = React.useRef(false);
 
@@ -39,6 +40,11 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
   const [pin, setPin] = React.useState("");
   const [showPin, setShowPin] = React.useState(false);
   const [isPinError, setIsPinError] = React.useState(false);
+
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleOpenBids = () => {
     if (isDeadlineReached) {
@@ -125,8 +131,8 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
       </div>
 
       {/* Unlock PIN Modal */}
-      {isUnlockModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isUnlockModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#F9FAFB]">
@@ -203,7 +209,8 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
