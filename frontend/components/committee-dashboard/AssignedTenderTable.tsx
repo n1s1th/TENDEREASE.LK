@@ -100,7 +100,7 @@ export default function AssignedTenderTable() {
           <input
             type="text"
             placeholder="Search by tender ID or title..."
-            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

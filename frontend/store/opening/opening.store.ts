@@ -11,7 +11,7 @@ interface OpeningState {
 
   fetchSession: (tenderId: string) => Promise<void>;
   fetchAttendance: (sessionId: string) => Promise<void>;
-  markAttendance: (sessionId: string, name: string, designation: string, organisation?: string, role?: string, officerId?: string) => Promise<void>;
+  markAttendance: (sessionId: string, name: string, designation: string, email: string, organisation?: string, role?: string, officerId?: string) => Promise<void>;
   updateAttendance: (attendanceId: string, data: Partial<OpeningAttendance>) => Promise<void>;
   deleteAttendance: (attendanceId: string) => Promise<void>;
   startOpening: (sessionId: string) => Promise<void>;
@@ -45,7 +45,7 @@ export const useOpeningStore = create<OpeningState>()(
         }
       },
 
-      markAttendance: async (sessionId: string, name: string, designation: string, organisation?: string, role?: string, officerIdFromForm?: string) => {
+      markAttendance: async (sessionId: string, name: string, designation: string, email: string, organisation?: string, role?: string, officerIdFromForm?: string) => {
         set({ isLoading: true });
         try {
           const officerId = officerIdFromForm || "dev-officer-id-" + Math.random().toString(36).substr(2, 9);
@@ -54,13 +54,14 @@ export const useOpeningStore = create<OpeningState>()(
             officerId,
             officerName: name,
             designation,
+            email,
             organisation,
             role,
             attendanceTime: new Date().toISOString()
           };
           
           try {
-            await markAttendance(sessionId, { officerId, officerName: name, designation, organisation, role });
+            await markAttendance(sessionId, { officerId, officerName: name, designation, email, organisation, role });
             const res = await fetchAttendance(sessionId);
             set({ attendance: res.data, isLoading: false });
           } catch (e) {
