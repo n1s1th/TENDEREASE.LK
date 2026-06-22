@@ -38,7 +38,7 @@ import Footer from "@/components/home/Footer";
 // ─────────────────────────── Types ───────────────────────────
 type ReportStatus = "Finalized" | "In Progress" | "Pending";
 type EnvelopeStatus = "Opened" | "Not Opened";
-type CompletionStatus = "Complete" | "Minor Gap" | "Incomplete" | "N/A";
+type CompletionStatus = "Complete" | "Minor Gap" | "Incomplete" | "N/A" | "Late";
 type AdmissionStatus = "Admitted" | "Rejected" | "Pending";
 type BidderStatus = "Winner" | "Reviewed" | "Pending";
 
@@ -66,6 +66,7 @@ interface EvaluationRow {
   compositeScore: number;
   evaluator: string;
   status: BidderStatus;
+  notes?: string;
 }
 
 interface ConsensusRow {
@@ -98,7 +99,7 @@ const MOCK_BIDS: BidRow[] = [
     id: 1,
     bidderName: "Apex Technologies Ltd.",
     bidReference: "BID-0041-001",
-    submissionDateTime: "15 Mar 2024 · On time",
+    submissionDateTime: "15 Mar 2024 · 09:30 AM",
     envelopeStatus: "Opened",
     quotedValue: "LKR 4,850,000",
     completeness: "Complete",
@@ -110,7 +111,7 @@ const MOCK_BIDS: BidRow[] = [
     id: 2,
     bidderName: "Digital Dynamics (Pvt) Ltd.",
     bidReference: "BID-0041-002",
-    submissionDateTime: "15 Mar 2024 · On time",
+    submissionDateTime: "15 Mar 2024 · 09:42 AM",
     envelopeStatus: "Opened",
     quotedValue: "LKR 5,120,000",
     completeness: "Minor Gap",
@@ -122,7 +123,7 @@ const MOCK_BIDS: BidRow[] = [
     id: 3,
     bidderName: "SynergyNet Solutions",
     bidReference: "BID-0041-003",
-    submissionDateTime: "15 Mar 2024 · On time",
+    submissionDateTime: "15 Mar 2024 · 09:55 AM",
     envelopeStatus: "Opened",
     quotedValue: "LKR 4,630,000",
     completeness: "Incomplete",
@@ -134,10 +135,10 @@ const MOCK_BIDS: BidRow[] = [
     id: 4,
     bidderName: "ProTech Innovations",
     bidReference: "BID-0041-004",
-    submissionDateTime: "16 Mar 2024 · Late",
+    submissionDateTime: "16 Mar 2024 · 02:15 PM",
     envelopeStatus: "Not Opened",
     quotedValue: "—",
-    completeness: "N/A",
+    completeness: "Late",
     admissionStatus: "Rejected",
     notes: "Late submission",
     isLate: true,
@@ -156,6 +157,7 @@ const MOCK_EVALUATIONS: EvaluationRow[] = [
     compositeScore: 87.4,
     evaluator: "John Smith",
     status: "Winner",
+    notes: "Exceptional technical proposal with comprehensive coverage.",
   },
   {
     rank: 2,
@@ -168,6 +170,7 @@ const MOCK_EVALUATIONS: EvaluationRow[] = [
     compositeScore: 78.5,
     evaluator: "John Smith",
     status: "Reviewed",
+    notes: "Strong compliance score, minor gaps in warranty details.",
   },
   {
     rank: 3,
@@ -180,6 +183,7 @@ const MOCK_EVALUATIONS: EvaluationRow[] = [
     compositeScore: 74.2,
     evaluator: "John Smith",
     status: "Reviewed",
+    notes: "Low technical score due to insufficient documentation.",
   },
 ];
 
@@ -193,6 +197,7 @@ const MOCK_CONSENSUS: ConsensusRow[] = [
     varianceType: "neutral",
     weightedAvg: 25.0,
     weightedScore: 7.58,
+    note: "Perfect consensus achieved by all evaluators.",
   },
   {
     criteria: "Financial Proposal",
@@ -252,28 +257,6 @@ const MOCK_AUDIT: AuditRow[] = [
     ipSession: "Cell Text",
     type: "Decision",
   },
-  {
-    id: 4,
-    timestamp: "30 Mar 2024 · 11:45 AM",
-    user: "Jane Doe",
-    userRole: "Chairperson",
-    action: "Decision Locked",
-    tenderRef: "TND-2024-0041",
-    details: "LOCK EVENT: Final decision locked by Chairperson Jane Doe. All evaluation edits disabled system-wide for TND-2024-0041. Outcome: Awarded to BID-0041-001.",
-    ipSession: "Cell Text",
-    type: "Lock",
-  },
-  {
-    id: 5,
-    timestamp: "30 Mar 2024 · 11:46 AM",
-    user: "System",
-    userRole: "System",
-    action: "Report Generated",
-    tenderRef: "TND-2024-0041",
-    details: "Automated report generation triggered post-lock. PDF and Excel exports created for all four report sections.",
-    ipSession: "—",
-    type: "System",
-  },
 ];
 
 // ─────────────────────────── Sub-components ───────────────────────────
@@ -288,6 +271,7 @@ function StatusBadge({ status }: { status: string }) {
     "Minor Gap": "bg-orange-50 text-orange-700 border border-orange-200",
     Incomplete: "bg-red-50 text-red-600 border border-red-200",
     "N/A": "bg-gray-100 text-gray-500 border border-gray-200",
+    Late: "bg-red-50 text-red-600 border border-red-200",
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${styles[status] || "bg-gray-100 text-gray-500 border border-gray-200"}`}>
@@ -323,7 +307,7 @@ function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs font-black text-gray-800 w-8">{value.toFixed(1)}</span>
-      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-300">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#953002] to-[#c94a0a] transition-all duration-500"
           style={{ width: `${pct}%` }}
@@ -630,7 +614,15 @@ export default function ReportsAndAuditPage() {
   const [dateTo, setDateTo] = useState("");
   const [bidder, setBidder] = useState("All Bidders");
   const [reportStatus, setReportStatus] = useState("All Statuses");
+  const [openingPage, setOpeningPage] = useState(1);
+  const [evaluationPage, setEvaluationPage] = useState(1);
+  const [consensusPage, setConsensusPage] = useState(1);
   const [auditPage, setAuditPage] = useState(1);
+  const [noteModal, setNoteModal] = useState<{ isOpen: boolean; title: string; note: string }>({
+    isOpen: false,
+    title: "",
+    note: ""
+  });
 
   const handleResetFilters = () => {
     setTender("TND-2024-0041 - Supply & Delivery of IT Equipment Package");
@@ -640,12 +632,19 @@ export default function ReportsAndAuditPage() {
     setReportStatus("All Statuses");
   };
 
-  const tabs = [
-    { key: "opening", label: "Opening Report", icon: <Package size={13} />, count: "live" },
-    { key: "evaluation", label: "Evaluation Report", icon: <BarChart3 size={13} />, count: 4 },
-    { key: "consensus", label: "Consensus Sheet", icon: <ClipboardList size={13} />, count: "3/3kits" },
-    { key: "audit", label: "Audit Log", icon: <Activity size={13} />, count: 12 },
-  ] as const;
+  interface ReportTab {
+    key: "opening" | "evaluation" | "consensus" | "audit";
+    label: string;
+    icon: React.ReactNode;
+    count?: string | number;
+  }
+
+  const tabs: ReportTab[] = [
+    { key: "opening", label: "Opening Report", icon: <Package size={13} /> },
+    { key: "evaluation", label: "Evaluation Report", icon: <BarChart3 size={13} /> },
+    { key: "consensus", label: "Consensus Sheet", icon: <ClipboardList size={13} /> },
+    { key: "audit", label: "Audit Log", icon: <Activity size={13} /> },
+  ];
 
   return (
     <div className="bg-[#F7F8FA] min-h-screen text-gray-900 font-inter flex flex-col">
@@ -778,11 +777,13 @@ export default function ReportsAndAuditPage() {
                 >
                   {tab.icon}
                   {tab.label}
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
-                    activeTab === tab.key ? "bg-[#953002] text-white" : "bg-gray-100 text-gray-500"
-                  }`}>
-                    {tab.count}
-                  </span>
+                  {tab.count !== undefined && (
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                      activeTab === tab.key ? "bg-[#953002] text-white" : "bg-gray-100 text-gray-500"
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -791,23 +792,52 @@ export default function ReportsAndAuditPage() {
             {activeTab === "opening" && (
               <div className="p-6 space-y-6">
                 {/* KPI Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
                   {[
-                    { value: "6", label: "Bids Received", sub: "Before deadline", color: "text-gray-900" },
-                    { value: "1", label: "Late Submissions", sub: "Excluded from evaluation", color: "text-gray-900" },
-                    { value: "5", label: "Envelopes Opened", sub: "Session date: Cell Text", color: "text-gray-900" },
-                    { value: "2", label: "Committee Members Present", sub: "Quorum met", color: "text-gray-900" },
-                    { value: "Locked", label: "Report Status", sub: "Finalized: Cell Text / Date", color: "text-gray-900", isLock: true },
-                  ].map((kpi, i) => (
-                    <div key={i} className={`bg-[#F7F8FA] border border-gray-100 rounded-2xl p-4 ${i === 4 ? "col-span-1" : ""}`}>
-                      <div className={`${kpi.value === "Locked" ? "text-lg" : "text-2xl"} font-black ${kpi.color} flex items-center gap-2`}>
-                        {kpi.isLock && <Lock size={14} className="text-gray-500" />}
-                        {kpi.value}
+                    { value: "7", label: "Bids Received", sub: "6 before deadline · 1 late", color: "text-gray-900" },
+                    { 
+                      value: "3", 
+                      label: "Committee Members Present", 
+                      sub: "", 
+                      color: "text-gray-900",
+                      details: {
+                        presiding: "Jane Doe",
+                        members: "John Smith, Mary Jones, Robert Chen"
+                      }
+                    },
+                    { value: "Locked", label: "Report Status", sub: "Finalized: 15 Mar 2024 · 10:00 AM", color: "text-gray-900", isLock: true },
+                  ].map((kpi, i) => {
+                    const isQuorumKpi = kpi.label === "Committee Members Present";
+                    const quorumValue = isQuorumKpi ? parseInt(kpi.value, 10) : 0;
+                    const isQuorumMet = !isQuorumKpi || quorumValue >= 3;
+                    const displaySub = isQuorumKpi 
+                      ? (isQuorumMet ? "Quorum met" : "Quorum not met (Min 3)")
+                      : kpi.sub;
+                    const subColor = isQuorumKpi && !isQuorumMet ? "text-red-600 font-bold" : "text-black";
+
+                    return (
+                      <div key={i} className="bg-[#953002]/5 border border-[#953002]/20 rounded-2xl p-3 flex flex-col justify-between h-full min-h-[85px]">
+                        <div>
+                          <div className={`${kpi.value === "Locked" ? "text-lg" : "text-2xl"} font-black text-black flex items-center gap-2`}>
+                            {kpi.isLock && <Lock size={14} className="text-black" />}
+                            {kpi.value}
+                          </div>
+                          <div className="text-[10px] font-black text-[#953002]/70 uppercase tracking-widest mt-1 flex items-center gap-1">
+                            {kpi.label}
+                            {isQuorumKpi && <Check size={12} strokeWidth={3.5} className="text-green-600 shrink-0" />}
+                          </div>
+                        </div>
+                        <div className="mt-1 space-y-1">
+                          {!isQuorumKpi && <div className={`text-[12px] font-semibold ${subColor}`}>{displaySub}</div>}
+                          {kpi.details && (
+                            <div className="text-[12px] text-black font-semibold space-y-0.5 mt-0.5">
+                              <div>Attendees: {kpi.details.members}</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{kpi.label}</div>
-                      <div className="text-[12px] font-semibold text-gray-400 mt-0.5">{kpi.sub}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Report card */}
@@ -821,41 +851,23 @@ export default function ReportsAndAuditPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 text-[10px] font-black text-[#953002] bg-[#FFF7ED] border border-[#953002]/20 px-2.5 py-1.5 rounded-lg">
-                        <Lock size={10} />
-                        Finalized &amp; Locked
-                      </span>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileText size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileText size={13} />
                         PDF
                       </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileSpreadsheet size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileSpreadsheet size={13} />
                         Excel
                       </button>
                     </div>
                   </div>
 
-                  {/* Metadata row */}
-                  <div className="px-5 py-3 bg-white border-b border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                    {[
-                      { label: "Tender No.", value: "TND-2024-0041" },
-                      { label: "Title & Date & Time", value: "Cell Text" },
-                      { label: "Presiding Officer", value: "Jane Doe" },
-                      { label: "Committee Members", value: "John Smith, Mary Jones" },
-                      { label: "Notes Generated", value: "Cell Text / Date" },
-                    ].map((item, i) => (
-                      <div key={i}>
-                        <span className="block text-[9px] font-black text-gray-400 uppercase tracking-widest">{item.label}</span>
-                        <span className="font-semibold text-gray-700">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
+
 
                   {/* Lock notice */}
                   <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
-                    <AlertCircle size={13} className="text-amber-600 shrink-0" />
-                    <p className="text-[10px] font-semibold text-amber-700">
+                    <AlertCircle size={15} className="text-amber-600 shrink-0" />
+                    <p className="text-[12px] font-semibold text-amber-700">
                       This report is <strong>finalized and locked</strong>. No further modifications are permitted. All data reflects the state at time of locking.
                     </p>
                   </div>
@@ -865,35 +877,37 @@ export default function ReportsAndAuditPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-gray-100 bg-[#F7F8FA]">
-                          <th className="text-left px-5 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest w-8">#</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Bidder Name / Company</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Bid Reference</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Submission Date &amp; Time</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Envelope Status</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Quoted Value</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Completeness</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Admission Status</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Notes</th>
+                          <th className="text-center px-5 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest w-8">#</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Bidder Name / Company</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Bid Reference</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Submission Date &amp; Time</th>
+
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Quoted Value</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Completeness</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Admission Status</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Notes</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {MOCK_BIDS.map((bid) => (
                           <tr key={bid.id} className={`hover:bg-gray-50/60 transition-colors ${bid.isLate ? "bg-red-50/30" : ""}`}>
-                            <td className="px-5 py-3.5 font-black text-gray-400">{bid.id}</td>
-                            <td className="px-3 py-3.5">
+                            <td className="px-5 py-3.5 font-black text-gray-400 text-center">{bid.id}</td>
+                            <td className="px-3 py-3.5 text-center">
                               <div className="font-black text-gray-800">{bid.bidderName}</div>
-                              {bid.isLate && <div className="text-[9px] text-red-500 font-black uppercase tracking-wider mt-0.5">Late Submission</div>}
                             </td>
-                            <td className="px-3 py-3.5 font-semibold text-gray-500">{bid.bidReference}</td>
-                            <td className="px-3 py-3.5 font-semibold text-gray-500">
-                              <span className={bid.isLate ? "text-red-500 font-black" : ""}>{bid.submissionDateTime}</span>
+                            <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{bid.bidReference}</td>
+                            <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">
+                              <span className={bid.isLate ? "text-gray-800 font-bold" : ""}>{bid.submissionDateTime}</span>
                             </td>
-                            <td className="px-3 py-3.5"><EnvelopeBadge status={bid.envelopeStatus} /></td>
-                            <td className="px-3 py-3.5 font-semibold text-gray-700">{bid.quotedValue}</td>
-                            <td className="px-3 py-3.5"><StatusBadge status={bid.completeness} /></td>
-                            <td className="px-3 py-3.5"><StatusBadge status={bid.admissionStatus} /></td>
-                            <td className="px-3 py-3.5">
-                              <button className="flex items-center gap-1 text-[10px] font-black text-gray-400 hover:text-[#953002] border border-gray-200 hover:border-[#953002]/30 px-2.5 py-1 rounded-lg transition-all">
+
+                            <td className="px-3 py-3.5 font-semibold text-gray-700 text-center">{bid.quotedValue}</td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={bid.completeness} /></td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={bid.admissionStatus} /></td>
+                            <td className="px-3 py-3.5 text-center">
+                              <button 
+                                onClick={() => setNoteModal({ isOpen: true, title: `Notes for ${bid.bidderName}`, note: bid.notes })}
+                                className="inline-flex items-center justify-center gap-1 text-[10px] font-black text-gray-400 hover:text-[#953002] border border-gray-200 hover:border-[#953002]/30 px-2.5 py-1 rounded-lg transition-all mx-auto"
+                              >
                                 <Eye size={10} />
                                 View
                               </button>
@@ -906,16 +920,24 @@ export default function ReportsAndAuditPage() {
 
                   {/* Table footer */}
                   <div className="px-5 py-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-[#F7F8FA]">
-                    <span className="text-[10px] font-semibold text-gray-400">Showing 4 of 5 submissions - 3 admitted · 1 rejected</span>
-                    <div className="flex gap-2">
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3.5 py-2 rounded-xl transition-all">
-                        <Download size={11} />
-                        Download PDF
-                      </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3.5 py-2 rounded-xl transition-all">
-                        <FileSpreadsheet size={11} />
-                        Download Excel
-                      </button>
+                    <span className="text-[11px] font-semibold text-gray-400">Showing 4 of 4 submissions</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setOpeningPage(p)}
+                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${
+                              openingPage === p
+                                ? "bg-[#953002] text-white"
+                                : "bg-white border border-gray-200 text-gray-500 hover:border-[#953002]/30"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <span className="text-gray-300 text-[10px] font-black px-1">…</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -928,18 +950,18 @@ export default function ReportsAndAuditPage() {
                 <div className="border border-gray-200 rounded-2xl overflow-hidden">
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-base font-black text-gray-800">Evaluation Report - TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· All Evaluator Names</span></h3>
+                      <h3 className="text-base font-black text-gray-800">Evaluation Report - TND-2024-0041</h3>
                       <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         Multi-criteria scores per evaluator assigned today, and final totals are shown here.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileText size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileText size={13} />
                         PDF
                       </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileSpreadsheet size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileSpreadsheet size={13} />
                         Excel
                       </button>
                     </div>
@@ -949,39 +971,42 @@ export default function ReportsAndAuditPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-gray-100 bg-[#F7F8FA]">
-                          <th className="text-left px-5 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Rank</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Bidder</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Technical /70</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Financial /30</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Compliance Passed</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Composite /100</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Evaluator</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Detail</th>
+                          <th className="text-center px-5 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Rank</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Bidder</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Technical /70</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Financial /30</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Compliance Passed</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Composite /100</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Evaluator</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Notes</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {MOCK_EVALUATIONS.map((row) => (
                           <tr key={row.rank} className="hover:bg-gray-50/60 transition-colors">
-                            <td className="px-5 py-3.5">
-                              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black ${row.rank === 1 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
+                            <td className="px-5 py-3.5 text-center">
+                              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black mx-auto ${row.rank === 1 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
                                 {row.rank}
                               </span>
                             </td>
-                            <td className="px-3 py-3.5 font-black text-gray-800">{row.bidder}</td>
-                            <td className="px-3 py-3.5 w-40"><ScoreBar value={row.technicalScore} max={70} /></td>
-                            <td className="px-3 py-3.5 w-40"><ScoreBar value={row.financialScore} max={30} /></td>
-                            <td className="px-3 py-3.5">
-                              <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border ${row.compliancePassed ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-200"}`}>
-                                {row.compliancePassed ? <CheckCircle size={9} /> : <XCircle size={9} />}
-                                Passed
+                            <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.bidder}</td>
+                            <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.technicalScore} max={70} /></div></td>
+                            <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.financialScore} max={30} /></div></td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className={`inline-flex items-center gap-1.5 text-[12px] font-black px-3 py-1 rounded-lg border ${row.compliancePassed ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-200"}`}>
+                                {row.compliancePassed ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                                {row.compliancePassed ? "Passed" : "Failed"}
                               </span>
                             </td>
-                            <td className="px-3 py-3.5 font-black text-[#953002] text-sm">{row.compositeScore.toFixed(1)}</td>
-                            <td className="px-3 py-3.5 font-semibold text-gray-500">{row.evaluator}</td>
-                            <td className="px-3 py-3.5"><StatusBadge status={row.status} /></td>
-                            <td className="px-3 py-3.5">
-                              <button className="flex items-center gap-1 text-[10px] font-black text-gray-400 hover:text-[#953002] border border-gray-200 hover:border-[#953002]/30 px-2.5 py-1 rounded-lg transition-all">
+                            <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(1)}</td>
+                            <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{row.evaluator}</td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={row.status} /></td>
+                            <td className="px-3 py-3.5 text-center">
+                              <button 
+                                onClick={() => setNoteModal({ isOpen: true, title: `Notes for ${row.bidder}`, note: row.notes || "No notes available." })}
+                                className="flex items-center justify-center gap-1 text-[10px] font-black text-gray-400 hover:text-[#953002] border border-gray-200 hover:border-[#953002]/30 px-2.5 py-1 rounded-lg transition-all mx-auto"
+                              >
                                 <Eye size={10} />
                                 View
                               </button>
@@ -991,10 +1016,28 @@ export default function ReportsAndAuditPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="px-5 py-3 border-t border-gray-100 bg-[#F7F8FA]">
-                    <span className="text-[10px] font-semibold text-gray-400">
-                      3 of 3 evaluated bids shown - <button className="underline hover:text-[#953002]">Select tab to view full report</button>
+                  <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-[11px] font-semibold text-gray-400">
+                      Showing 3 of 3 evaluated bids
                     </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setEvaluationPage(p)}
+                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${
+                              evaluationPage === p
+                                ? "bg-[#953002] text-white"
+                                : "bg-white border border-gray-200 text-gray-500 hover:border-[#953002]/30"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <span className="text-gray-300 text-[10px] font-black px-1">…</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1006,18 +1049,18 @@ export default function ReportsAndAuditPage() {
                 <div className="border border-gray-200 rounded-2xl overflow-hidden">
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-base font-black text-gray-800">Consensus / Moderation Sheet - TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· See Consensus Sheet</span></h3>
+                      <h3 className="text-base font-black text-gray-800">Consensus / Moderation Sheet - TND-2024-0041</h3>
                       <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         Per-criteria scores from all evaluations with variance detection and moderated average.
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileText size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileText size={13} />
                         PDF
                       </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileSpreadsheet size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileSpreadsheet size={13} />
                         Excel
                       </button>
                     </div>
@@ -1027,48 +1070,66 @@ export default function ReportsAndAuditPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-gray-100 bg-[#F7F8FA]">
-                          <th className="text-left px-5 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Criteria (BID-001-0041)</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Weight</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Evaluator 1 Score</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Evaluator 2 Score</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Variance</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Weighted Avg.</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Weighted Score</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Note</th>
+                          <th className="text-center px-5 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Criteria (BID-001-0041)</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Weight</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Evaluator 1 Score</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Evaluator 2 Score</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Variance</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Weighted Avg.</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Weighted Score</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Notes</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {MOCK_CONSENSUS.map((row, i) => (
                           <tr key={i} className="hover:bg-gray-50/60 transition-colors">
-                            <td className="px-5 py-3.5 font-black text-gray-800">{row.criteria}</td>
-                            <td className="px-3 py-3.5 font-semibold text-gray-500">{row.weight}</td>
-                            <td className="px-3 py-3.5 font-black text-gray-800">{row.evaluator1Score}</td>
-                            <td className="px-3 py-3.5 font-black text-gray-800">{row.evaluator2Score}</td>
-                            <td className="px-3 py-3.5">
-                              <span className={`text-xs font-black ${row.varianceType === "negative" ? "text-orange-600" : row.varianceType === "positive" ? "text-green-600" : "text-gray-500"}`}>
+                            <td className="px-5 py-3.5 font-black text-gray-800 text-center">{row.criteria}</td>
+                            <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{row.weight}</td>
+                            <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.evaluator1Score}</td>
+                            <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.evaluator2Score}</td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className="text-xs font-black text-gray-500">
                                 {row.variance}
                               </span>
                             </td>
-                            <td className="px-3 py-3.5 font-black text-gray-800">{row.weightedAvg.toFixed(1)}</td>
-                            <td className="px-3 py-3.5 font-black text-[#953002]">{row.weightedScore.toFixed(2)}</td>
-                            <td className="px-3 py-3.5">
-                              {row.note ? (
-                                <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg">
-                                  {row.note}
-                                </span>
-                              ) : (
-                                <button className="text-[10px] font-black text-gray-300 hover:text-gray-500 transition-colors">Select Consensus</button>
-                              )}
+                            <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.weightedAvg.toFixed(1)}</td>
+                            <td className="px-3 py-3.5 font-black text-[#953002] text-center">{row.weightedScore.toFixed(2)}</td>
+                            <td className="px-3 py-3.5 text-center">
+                              <button 
+                                onClick={() => setNoteModal({ isOpen: true, title: `Notes for ${row.criteria}`, note: row.note || "No notes available." })}
+                                className="flex items-center justify-center gap-1 text-[10px] font-black text-gray-400 hover:text-[#953002] border border-gray-200 hover:border-[#953002]/30 px-2.5 py-1 rounded-lg transition-all mx-auto"
+                              >
+                                <Eye size={10} />
+                                View
+                              </button>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className="px-5 py-3 border-t border-gray-100 bg-[#F7F8FA]">
-                    <span className="text-[10px] font-semibold text-gray-400">
-                      3 of 3 criteria shown - <button className="underline hover:text-[#953002]">Click to view full consensus sheet</button>
+                  <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-[11px] font-semibold text-gray-400">
+                      Showing 3 of 3 criteria
                     </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2].map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setConsensusPage(p)}
+                            className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${
+                              consensusPage === p
+                                ? "bg-[#953002] text-white"
+                                : "bg-white border border-gray-200 text-gray-500 hover:border-[#953002]/30"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <span className="text-gray-300 text-[10px] font-black px-1">…</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1087,24 +1148,21 @@ export default function ReportsAndAuditPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1.5 text-[10px] font-black text-[#953002] bg-[#FFF7ED] border border-[#953002]/20 px-2.5 py-1.5 rounded-lg">
-                        🔒 Append Only
-                      </span>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileText size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileText size={13} />
                         PDF
                       </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3 py-1.5 rounded-lg transition-all">
-                        <FileSpreadsheet size={11} />
+                      <button className="flex items-center justify-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black w-24 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm">
+                        <FileSpreadsheet size={13} />
                         Excel
                       </button>
                     </div>
                   </div>
 
                   {/* Append-only notice */}
-                  <div className="px-5 py-2.5 bg-blue-50 border-b border-blue-100 flex items-center gap-2">
-                    <Info size={13} className="text-blue-500 shrink-0" />
-                    <p className="text-[10px] font-semibold text-blue-700">
+                  <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2">
+                    <Info size={15} className="text-amber-600 shrink-0" />
+                    <p className="text-[12px] font-semibold text-amber-700">
                       Audit entries are <strong>automatically generated</strong> by the system. No user can edit, amend or delete log entries. This log forms part of the official tender record.
                     </p>
                   </div>
@@ -1114,30 +1172,26 @@ export default function ReportsAndAuditPage() {
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="border-b border-gray-100 bg-[#F7F8FA]">
-                          <th className="text-left px-5 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest w-8">#</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">User</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Action</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Tender / Bid Ref</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Details</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">IP / Session</th>
-                          <th className="text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">Type</th>
+                          <th className="text-center px-5 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest w-8">#</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Tender / Bid Ref</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">User</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Action</th>
+                          <th className="text-center px-3 py-3 text-[11px] font-black text-gray-400 uppercase tracking-widest">Details</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {MOCK_AUDIT.map((entry) => (
                           <tr key={entry.id} className="hover:bg-gray-50/60 transition-colors align-top">
-                            <td className="px-5 py-4 font-black text-gray-300 text-[10px]">{String(entry.id).padStart(3, "0")}</td>
-                            <td className="px-3 py-4 text-gray-500 font-semibold whitespace-nowrap">{entry.timestamp}</td>
-                            <td className="px-3 py-4">
+                            <td className="px-5 py-4 font-black text-gray-300 text-[10px] text-center">{String(entry.id).padStart(3, "0")}</td>
+                            <td className="px-3 py-4 font-semibold text-gray-500 whitespace-nowrap text-center">{entry.tenderRef}</td>
+                            <td className="px-3 py-4 text-gray-500 font-semibold whitespace-nowrap text-center">{entry.timestamp}</td>
+                            <td className="px-3 py-4 text-center">
                               <div className="font-black text-gray-800">{entry.user}</div>
                               <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{entry.userRole}</div>
                             </td>
-                            <td className="px-3 py-4 font-black text-gray-800 whitespace-nowrap">{entry.action}</td>
-                            <td className="px-3 py-4 font-semibold text-gray-500 whitespace-nowrap">{entry.tenderRef}</td>
-                            <td className="px-3 py-4 text-gray-600 font-semibold max-w-xs leading-relaxed">{entry.details}</td>
-                            <td className="px-3 py-4 font-semibold text-gray-400">{entry.ipSession}</td>
-                            <td className="px-3 py-4"><AuditTypeBadge type={entry.type} /></td>
+                            <td className="px-3 py-4 font-black text-gray-800 whitespace-nowrap text-center">{entry.action}</td>
+                            <td className="px-3 py-4 text-gray-600 font-semibold max-w-xs leading-relaxed text-center">{entry.details}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1146,8 +1200,8 @@ export default function ReportsAndAuditPage() {
 
                   {/* Audit footer */}
                   <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <span className="text-[10px] font-semibold text-gray-400">
-                      Showing 12 of 12 entries - Append-only - no deletions possible
+                    <span className="text-[11px] font-semibold text-gray-400">
+                      Showing 3 of 3 entries
                     </span>
                     <div className="flex items-center gap-2">
                       {/* Pagination */}
@@ -1167,14 +1221,7 @@ export default function ReportsAndAuditPage() {
                         ))}
                         <span className="text-gray-300 text-[10px] font-black px-1">…</span>
                       </div>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3.5 py-2 rounded-xl transition-all">
-                        <Download size={11} />
-                        Download Log
-                      </button>
-                      <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3.5 py-2 rounded-xl transition-all">
-                        <FileSpreadsheet size={11} />
-                        Download Excel
-                      </button>
+
                     </div>
                   </div>
                 </div>
@@ -1183,14 +1230,45 @@ export default function ReportsAndAuditPage() {
           </div>
 
           {/* ─── Footer note ─── */}
-          <div className="flex items-center gap-2 text-[10px] text-gray-400 font-semibold pb-4">
-            <Shield size={12} className="text-gray-300" />
-            All reports are read-only, append-only, and comply with Sri Lanka procurement audit standards. Unauthorized modification attempts are logged.
+          <div className="flex items-center gap-2 text-[12px] text-gray-400 font-semibold pb-4">
+            <Shield size={14} className="text-gray-300" />
+            All reports are read-only, append-only, and comply with Sri Lanka procurement audit standards.
           </div>
 
         </div>
       </main>
       <Footer />
+
+      {/* Notes Modal */}
+      {noteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 transition-opacity">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-100 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-[#953002] shrink-0" />
+                <h4 className="text-sm font-black text-gray-800">{noteModal.title}</h4>
+              </div>
+              <button 
+                onClick={() => setNoteModal({ ...noteModal, isOpen: false })}
+                className="text-gray-400 hover:text-gray-600 font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-xs text-gray-600 leading-relaxed font-semibold bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+              {noteModal.note || "No notes recorded for this item."}
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setNoteModal({ ...noteModal, isOpen: false })}
+                className="bg-[#953002] hover:bg-[#7a2702] text-white text-[12px] font-black px-4 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
