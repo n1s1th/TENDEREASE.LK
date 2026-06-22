@@ -75,9 +75,9 @@ export default function ReceivedBidsLog() {
   const visibleBids = bids.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="mt-4 mb-8 bg-white rounded-[32px] border border-gray-100 p-6 shadow-sm relative overflow-hidden">
+    <div className="mt-4 mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
 
-      <div className="flex justify-between items-start mb-6 relative z-10">
+      <div className="p-6 border-b border-gray-50 flex justify-between items-start relative z-10 bg-white">
         <div>
           <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
             RECEIVED BIDS LOG
@@ -170,7 +170,7 @@ export default function ReceivedBidsLog() {
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-6 relative z-10">
+      <div className="p-6 border-t border-gray-50 flex justify-between items-center bg-white/50 relative z-10">
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
           SHOWING {visibleBids.length} OF {bids.length} ENTRIES
         </span>

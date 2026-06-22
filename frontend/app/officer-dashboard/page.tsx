@@ -51,7 +51,10 @@ export default function OfficerDashboardPage() {
         <EvaluationStatusPanel />
       </div>
 
-      <AssignedTenderTable />
+      <AssignedTenderTable 
+        title="Approved Tenders"
+        subtitle="Log of all officially approved and verified tenders."
+      />
     </div>
   );
 }

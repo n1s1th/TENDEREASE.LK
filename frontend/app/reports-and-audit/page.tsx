@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
+  ChevronLeft,
   ChevronRight,
   ChevronDown,
   FileText,
@@ -29,7 +30,10 @@ import {
   Hash,
   Building2,
   Printer,
+  Check,
 } from "lucide-react";
+
+import Footer from "@/components/home/Footer";
 
 // ─────────────────────────── Types ───────────────────────────
 type ReportStatus = "Finalized" | "In Progress" | "Pending";
@@ -199,7 +203,7 @@ const MOCK_CONSENSUS: ConsensusRow[] = [
     varianceType: "negative",
     weightedAvg: 20.0,
     weightedScore: 1.80,
-    note: "Moderate — evaluate separately",
+    note: "Moderate - evaluate separately",
   },
   {
     criteria: "Legal & Compliance",
@@ -361,7 +365,7 @@ function CustomSelect({ value, onChange, options }: CustomSelectProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 mt-1 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1.5 max-h-60 overflow-y-auto scrollbar-none animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="absolute left-0 mt-1 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 p-1.5 max-h-60 overflow-y-auto scrollbar-none animate-in fade-in slide-in-from-top-1 duration-200">
           {options.map((opt) => {
             const isSelected = value === opt;
             return (
@@ -372,13 +376,14 @@ function CustomSelect({ value, onChange, options }: CustomSelectProps) {
                   onChange(opt);
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3.5 py-2 text-xs font-semibold transition-colors truncate ${
+                className={`w-full text-left px-4 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? "bg-[#953002]/5 text-[#953002]"
                     : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
                 }`}
               >
-                {opt}
+                <span>{opt}</span>
+                {isSelected && <Check className="w-3.5 h-3.5 text-[#953002] shrink-0" />}
               </button>
             );
           })}
@@ -388,15 +393,252 @@ function CustomSelect({ value, onChange, options }: CustomSelectProps) {
   );
 }
 
+interface CustomDatePickerProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}
+
+function CustomDatePicker({ value, onChange, placeholder = "DD / MM / YYYY" }: CustomDatePickerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const today = new Date();
+  const parsedDate = value ? new Date(value) : null;
+
+  const [currentYear, setCurrentYear] = useState(parsedDate ? parsedDate.getFullYear() : today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(parsedDate ? parsedDate.getMonth() : today.getMonth());
+
+  React.useEffect(() => {
+    if (value) {
+      const d = new Date(value);
+      if (!isNaN(d.getTime())) {
+        setCurrentYear(d.getFullYear());
+        setCurrentMonth(d.getMonth());
+      }
+    }
+  }, [value]);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayIndexRaw = new Date(currentYear, currentMonth, 1).getDay();
+  const firstDayIndex = firstDayIndexRaw === 0 ? 6 : firstDayIndexRaw - 1;
+
+  const prevMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const daysInPrevMonth = new Date(prevMonthYear, prevMonth + 1, 0).getDate();
+
+  const days: { day: number; month: number; year: number; isCurrentMonth: boolean }[] = [];
+
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    days.push({
+      day: daysInPrevMonth - i,
+      month: prevMonth,
+      year: prevMonthYear,
+      isCurrentMonth: false,
+    });
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push({
+      day: i,
+      month: currentMonth,
+      year: currentYear,
+      isCurrentMonth: true,
+    });
+  }
+
+  const remaining = 42 - days.length;
+  const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+  const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+  for (let i = 1; i <= remaining; i++) {
+    days.push({
+      day: i,
+      month: nextMonth,
+      year: nextMonthYear,
+      isCurrentMonth: false,
+    });
+  }
+
+  const handleSelectDay = (dayObj: typeof days[0]) => {
+    const y = dayObj.year;
+    const m = String(dayObj.month + 1).padStart(2, "0");
+    const d = String(dayObj.day).padStart(2, "0");
+    onChange(`${y}-${m}-${d}`);
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    onChange("");
+    setIsOpen(false);
+  };
+
+  const handleToday = () => {
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, "0");
+    const d = String(today.getDate()).padStart(2, "0");
+    onChange(`${y}-${m}-${d}`);
+    setIsOpen(false);
+  };
+
+  const getDisplayValue = () => {
+    if (!value) return "";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+    const day = d.getDate();
+    const monthName = d.toLocaleString("default", { month: "short" });
+    const year = d.getFullYear();
+    return `${day} ${monthName} ${year}`;
+  };
+
+  return (
+    <div className="relative text-left w-full" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-[#F7F8FA] border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 outline-none focus:border-[#953002]/40 transition-colors flex items-center justify-between text-left cursor-pointer"
+      >
+        <span className={getDisplayValue() ? "text-gray-700" : "text-gray-400 font-semibold"}>
+          {getDisplayValue() || placeholder}
+        </span>
+        <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1.5 w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs font-black text-gray-800">
+              {months[currentMonth]} {currentYear}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+              <span key={d} className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                {d}
+              </span>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {days.map((dayObj, i) => {
+              const isSelected = parsedDate &&
+                parsedDate.getFullYear() === dayObj.year &&
+                parsedDate.getMonth() === dayObj.month &&
+                parsedDate.getDate() === dayObj.day;
+
+              const isToday = today.getFullYear() === dayObj.year &&
+                today.getMonth() === dayObj.month &&
+                today.getDate() === dayObj.day;
+
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => handleSelectDay(dayObj)}
+                  className={`h-7 w-7 text-xs rounded-lg transition-all flex items-center justify-center mx-auto cursor-pointer ${
+                    !dayObj.isCurrentMonth
+                      ? "text-gray-300 hover:bg-gray-50"
+                      : isSelected
+                      ? "bg-[#953002] text-white font-bold"
+                      : isToday
+                      ? "border border-[#FFB401] text-[#953002] font-bold hover:bg-[#953002]/5"
+                      : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
+                  }`}
+                >
+                  {dayObj.day}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="text-[10px] font-black text-gray-400 hover:text-[#953002] transition-colors cursor-pointer uppercase tracking-widest"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleToday}
+              className="text-[10px] font-black text-[#953002] hover:text-[#7a2702] transition-colors cursor-pointer uppercase tracking-widest"
+            >
+              Today
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────── Main Page ───────────────────────────
 export default function ReportsAndAuditPage() {
   const [activeTab, setActiveTab] = useState<"opening" | "evaluation" | "consensus" | "audit">("opening");
-  const [tender, setTender] = useState("TND-2024-0041 — Supply & Delivery of IT Equipment Package");
+  const [tender, setTender] = useState("TND-2024-0041 - Supply & Delivery of IT Equipment Package");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [bidder, setBidder] = useState("All Bidders");
   const [reportStatus, setReportStatus] = useState("All Statuses");
   const [auditPage, setAuditPage] = useState(1);
+
+  const handleResetFilters = () => {
+    setTender("TND-2024-0041 - Supply & Delivery of IT Equipment Package");
+    setDateFrom("");
+    setDateTo("");
+    setBidder("All Bidders");
+    setReportStatus("All Statuses");
+  };
 
   const tabs = [
     { key: "opening", label: "Opening Report", icon: <Package size={13} />, count: "live" },
@@ -453,39 +695,35 @@ export default function ReportsAndAuditPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Tender */}
               <div className="lg:col-span-2">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Tender</label>
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Tender</label>
                 <CustomSelect
                   value={tender}
                   onChange={setTender}
                   options={[
-                    "TND-2024-0041 — Supply & Delivery of IT Equipment Package",
-                    "TND-2024-0042 — Road Construction Phase II"
+                    "TND-2024-0041 - Supply & Delivery of IT Equipment Package",
+                    "TND-2024-0042 - Road Construction Phase II"
                   ]}
                 />
               </div>
               {/* Date From */}
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date Range — From</label>
-                <input
-                  type="date"
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Date Range - From</label>
+                <CustomDatePicker
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full bg-[#F7F8FA] border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 outline-none focus:border-[#953002]/40 transition-colors cursor-pointer"
+                  onChange={setDateFrom}
                 />
               </div>
               {/* Date To */}
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date Range — To</label>
-                <input
-                  type="date"
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Date Range - To</label>
+                <CustomDatePicker
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full bg-[#F7F8FA] border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-gray-700 outline-none focus:border-[#953002]/40 transition-colors cursor-pointer"
+                  onChange={setDateTo}
                 />
               </div>
               {/* Report Status */}
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Report Status</label>
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Report Status</label>
                 <CustomSelect
                   value={reportStatus}
                   onChange={setReportStatus}
@@ -496,7 +734,7 @@ export default function ReportsAndAuditPage() {
             {/* Second row: Bidder filter + action buttons */}
             <div className="flex flex-col sm:flex-row sm:items-end gap-3 mt-4">
               <div className="flex-1 max-w-xs">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Bidder (Optional)</label>
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Bidder (Optional)</label>
                 <CustomSelect
                   value={bidder}
                   onChange={setBidder}
@@ -509,11 +747,14 @@ export default function ReportsAndAuditPage() {
                 />
               </div>
               <div className="flex items-center gap-2 ml-auto">
-                <button className="flex items-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-xs font-black px-4 py-2.5 rounded-xl transition-colors">
+                <button className="flex items-center gap-1.5 bg-[#953002] hover:bg-[#7a2702] text-white text-xs font-black px-4 py-2.5 rounded-xl transition-colors cursor-pointer">
                   <Filter size={12} />
                   Apply Filters
                 </button>
-                <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-black px-4 py-2.5 rounded-xl transition-colors">
+                <button
+                  onClick={handleResetFilters}
+                  className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-black px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                >
                   <RotateCcw size={12} />
                   Reset
                 </button>
@@ -524,12 +765,12 @@ export default function ReportsAndAuditPage() {
           {/* ─── Tabs ─── */}
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
             {/* Tab headers */}
-            <div className="flex border-b border-gray-100 overflow-x-auto">
+            <div className="flex w-full border-b border-gray-100 overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-5 py-4 text-xs font-black whitespace-nowrap transition-all border-b-2 ${
+                  className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 text-[13px] font-black whitespace-nowrap transition-all border-b-2 cursor-pointer ${
                     activeTab === tab.key
                       ? "border-[#953002] text-[#953002] bg-[#FFF7ED]/40"
                       : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
@@ -553,18 +794,18 @@ export default function ReportsAndAuditPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                   {[
                     { value: "6", label: "Bids Received", sub: "Before deadline", color: "text-gray-900" },
-                    { value: "1", label: "Late Submissions", sub: "Excluded from evaluation", color: "text-red-600" },
-                    { value: "5", label: "Envelopes Opened", sub: "Session date: Cell Text", color: "text-[#953002]" },
-                    { value: "2", label: "Committee Members Present", sub: "Quorum met", color: "text-green-700" },
-                    { value: "Locked", label: "Report Status", sub: "Finalized: Cell Text / Date", color: "text-gray-700", isLock: true },
+                    { value: "1", label: "Late Submissions", sub: "Excluded from evaluation", color: "text-gray-900" },
+                    { value: "5", label: "Envelopes Opened", sub: "Session date: Cell Text", color: "text-gray-900" },
+                    { value: "2", label: "Committee Members Present", sub: "Quorum met", color: "text-gray-900" },
+                    { value: "Locked", label: "Report Status", sub: "Finalized: Cell Text / Date", color: "text-gray-900", isLock: true },
                   ].map((kpi, i) => (
                     <div key={i} className={`bg-[#F7F8FA] border border-gray-100 rounded-2xl p-4 ${i === 4 ? "col-span-1" : ""}`}>
-                      <div className={`text-2xl font-black ${kpi.color} flex items-center gap-2`}>
-                        {kpi.isLock && <Lock size={16} className="text-gray-500" />}
+                      <div className={`${kpi.value === "Locked" ? "text-lg" : "text-2xl"} font-black ${kpi.color} flex items-center gap-2`}>
+                        {kpi.isLock && <Lock size={14} className="text-gray-500" />}
                         {kpi.value}
                       </div>
                       <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{kpi.label}</div>
-                      <div className="text-[10px] font-semibold text-gray-400 mt-0.5">{kpi.sub}</div>
+                      <div className="text-[12px] font-semibold text-gray-400 mt-0.5">{kpi.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -574,8 +815,8 @@ export default function ReportsAndAuditPage() {
                   {/* Card Header */}
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-sm font-black text-gray-800">Bid Opening Session Report — TND-2024-0041</h3>
-                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                      <h3 className="text-base font-black text-gray-800">Bid Opening Session Report - TND-2024-0041</h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         Official record of bid submissions received at close of tender. Read only.
                       </p>
                     </div>
@@ -665,7 +906,7 @@ export default function ReportsAndAuditPage() {
 
                   {/* Table footer */}
                   <div className="px-5 py-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-[#F7F8FA]">
-                    <span className="text-[10px] font-semibold text-gray-400">Showing 4 of 5 submissions — 3 admitted · 1 rejected</span>
+                    <span className="text-[10px] font-semibold text-gray-400">Showing 4 of 5 submissions - 3 admitted · 1 rejected</span>
                     <div className="flex gap-2">
                       <button className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-[#953002] text-gray-600 hover:text-[#953002] text-[10px] font-black px-3.5 py-2 rounded-xl transition-all">
                         <Download size={11} />
@@ -687,8 +928,8 @@ export default function ReportsAndAuditPage() {
                 <div className="border border-gray-200 rounded-2xl overflow-hidden">
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-sm font-black text-gray-800">Evaluation Report — TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· All Evaluator Names</span></h3>
-                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                      <h3 className="text-base font-black text-gray-800">Evaluation Report - TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· All Evaluator Names</span></h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         Multi-criteria scores per evaluator assigned today, and final totals are shown here.
                       </p>
                     </div>
@@ -752,7 +993,7 @@ export default function ReportsAndAuditPage() {
                   </div>
                   <div className="px-5 py-3 border-t border-gray-100 bg-[#F7F8FA]">
                     <span className="text-[10px] font-semibold text-gray-400">
-                      3 of 3 evaluated bids shown — <button className="underline hover:text-[#953002]">Select tab to view full report</button>
+                      3 of 3 evaluated bids shown - <button className="underline hover:text-[#953002]">Select tab to view full report</button>
                     </span>
                   </div>
                 </div>
@@ -765,8 +1006,8 @@ export default function ReportsAndAuditPage() {
                 <div className="border border-gray-200 rounded-2xl overflow-hidden">
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-sm font-black text-gray-800">Ⓔ Consensus / Moderation Sheet — TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· See Consensus Sheet</span></h3>
-                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                      <h3 className="text-base font-black text-gray-800">Consensus / Moderation Sheet - TND-2024-0041 <span className="text-gray-400 font-semibold text-xs">· See Consensus Sheet</span></h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         Per-criteria scores from all evaluations with variance detection and moderated average.
                       </p>
                     </div>
@@ -826,7 +1067,7 @@ export default function ReportsAndAuditPage() {
                   </div>
                   <div className="px-5 py-3 border-t border-gray-100 bg-[#F7F8FA]">
                     <span className="text-[10px] font-semibold text-gray-400">
-                      3 of 3 criteria shown — <button className="underline hover:text-[#953002]">Click to view full consensus sheet</button>
+                      3 of 3 criteria shown - <button className="underline hover:text-[#953002]">Click to view full consensus sheet</button>
                     </span>
                   </div>
                 </div>
@@ -840,8 +1081,8 @@ export default function ReportsAndAuditPage() {
                   {/* Header */}
                   <div className="bg-[#F7F8FA] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200">
                     <div>
-                      <h3 className="text-sm font-black text-gray-800">Audit Log — TND-2024-0041</h3>
-                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                      <h3 className="text-base font-black text-gray-800">Audit Log - TND-2024-0041</h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
                         System-generated append-only log. Entries cannot be edited or deleted.
                       </p>
                     </div>
@@ -906,7 +1147,7 @@ export default function ReportsAndAuditPage() {
                   {/* Audit footer */}
                   <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span className="text-[10px] font-semibold text-gray-400">
-                      Showing 12 of 12 entries — Append-only — no deletions possible
+                      Showing 12 of 12 entries - Append-only - no deletions possible
                     </span>
                     <div className="flex items-center gap-2">
                       {/* Pagination */}
@@ -949,6 +1190,7 @@ export default function ReportsAndAuditPage() {
 
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

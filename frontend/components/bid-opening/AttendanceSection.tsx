@@ -147,9 +147,9 @@ export default function AttendanceSection() {
   };
 
   return (
-    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm flex flex-col h-full relative">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full relative">
       {/* Header */}
-      <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white rounded-t-[32px]">
+      <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white rounded-t-2xl">
         <div>
           <h3 className="text-[14px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
             Committee Attendance <span className="text-[#953002] bg-orange-50 px-2.5 py-1 rounded-lg text-[11px]">{attendance.length} PRESENT</span>
@@ -178,13 +178,13 @@ export default function AttendanceSection() {
       <div className="flex-1 overflow-visible">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-white border-b border-gray-50">
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[25%] align-middle" style={{ textAlign: 'center' }}>Committee Member</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[18%] align-middle" style={{ textAlign: 'center' }}>Designation</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[14%] align-middle" style={{ textAlign: 'center' }}>Status</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[18%] align-middle" style={{ textAlign: 'center' }}>Date</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[20%] align-middle" style={{ textAlign: 'center' }}>Time</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] w-[5%] align-middle" style={{ textAlign: 'center' }}>Actions</th>
+            <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
+              <th className="py-4 px-6 rounded-tl-lg text-center w-[25%] align-middle">Committee Member</th>
+              <th className="py-4 px-6 text-center w-[18%] align-middle">Designation</th>
+              <th className="py-4 px-6 text-center w-[14%] align-middle">Status</th>
+              <th className="py-4 px-6 text-center w-[18%] align-middle">Date</th>
+              <th className="py-4 px-6 text-center w-[20%] align-middle">Time</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[5%] align-middle">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
