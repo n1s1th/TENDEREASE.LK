@@ -65,6 +65,8 @@ export default function ApprovedTendersPage() {
   return (
     <>
       <TenderTable
+        title="Approved Tenders"
+        subtitle="Log of all officially approved and verified tenders."
         columns={columns}
         data={tenders}
         loading={tendersLoading}

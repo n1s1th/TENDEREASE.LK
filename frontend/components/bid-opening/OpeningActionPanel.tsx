@@ -1,20 +1,56 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { Lock, UserCheck, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 import { useOpeningStore } from "@/store/opening/opening.store";
 
-export default function OpeningActionPanel() {
+interface OpeningActionPanelProps {
+  bidSubmissionDeadline?: string | null;
+}
+
+export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningActionPanelProps) {
   const { session, attendance, startOpening, isLoading } = useOpeningStore();
-  const canOpen = attendance.length >= 3 && (!session || session.status === 'SCHEDULED' || session.status === 'PENDING_OPENING');
+  const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
+
+  React.useEffect(() => {
+    setCurrentTime(new Date());
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const deadlineDate = bidSubmissionDeadline ? new Date(bidSubmissionDeadline) : null;
+  const isDeadlineReached = deadlineDate && currentTime ? currentTime >= deadlineDate : false;
+
+  const canOpen = attendance.length >= 3 && (!session || (session.status as any) === 'SCHEDULED' || (session.status as any) === 'PENDING_OPENING') && !isDeadlineReached;
+
+  const alertShownRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isDeadlineReached && !alertShownRef.current) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      alertShownRef.current = true;
+    }
+  }, [isDeadlineReached]);
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = React.useState(false);
   const [pin, setPin] = React.useState("");
   const [showPin, setShowPin] = React.useState(false);
   const [isPinError, setIsPinError] = React.useState(false);
 
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleOpenBids = () => {
+    if (isDeadlineReached) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      return;
+    }
     if (!canOpen) {
       alert(`Quorum not met: ${attendance.length}/3 members present.`);
       return;
@@ -23,6 +59,10 @@ export default function OpeningActionPanel() {
   };
 
   const handleConfirmUnlock = async () => {
+    if (isDeadlineReached) {
+      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
+      return;
+    }
     if (!canOpen) {
       alert("Quorum not met. Minimum 3 members required.");
       return;
@@ -42,9 +82,12 @@ export default function OpeningActionPanel() {
   return (
     <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full relative overflow-hidden">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-[12px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-          BID OPENING ACTION <span className="text-[#953002] font-black">CHAIR ONLY</span>
+        <h3 className="text-[14px] font-black text-gray-500 uppercase tracking-widest">
+          BID OPENING ACTION
         </h3>
+        <span className="text-[#953002] bg-orange-50 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest shrink-0">
+          CHAIR ONLY
+        </span>
       </div>
       
       <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
@@ -54,22 +97,31 @@ export default function OpeningActionPanel() {
         
         <button 
           onClick={handleOpenBids}
-          disabled={session?.status === 'OPEN'}
+          disabled={session?.status === 'OPEN' || isDeadlineReached}
           className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 border ${
-            session?.status === 'OPEN' 
-              ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent' 
-              : !canOpen
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-                : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
+            isDeadlineReached
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+              : session?.status === 'OPEN'
+                ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent'
+                : !canOpen
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
+                  : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
           }`}
         >
           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
+            isDeadlineReached ? 'bg-gray-200' : session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
           }`}>
-            {session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
+            {isDeadlineReached ? <Lock className="w-4 h-4" /> : session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
           </div>
           <span className="text-[14px] font-black tracking-[0.15em] uppercase">
-            {isLoading ? "OPENING..." : session?.status === 'OPEN' ? "BIDS OPENED" : "OPEN BIDS"}
+            {isLoading 
+              ? "OPENING..." 
+              : isDeadlineReached 
+                ? "BIDS CLOSED" 
+                : session?.status === 'OPEN' 
+                  ? "BIDS OPENED" 
+                  : "OPEN BIDS"
+            }
           </span>
         </button>
       </div>
@@ -82,8 +134,8 @@ export default function OpeningActionPanel() {
       </div>
 
       {/* Unlock PIN Modal */}
-      {isUnlockModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isUnlockModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#F9FAFB]">
@@ -160,7 +212,8 @@ export default function OpeningActionPanel() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

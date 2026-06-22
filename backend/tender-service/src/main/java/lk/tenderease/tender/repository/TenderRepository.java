@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,6 +57,27 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    // Officer Dashboard queries
+    long countByStatus(TenderStatus status);
+
+    long countByStatusIn(List<TenderStatus> statuses);
+
+    List<Tender> findAllByStatusIn(List<TenderStatus> statuses);
+
+    @Query("""
+        SELECT t FROM Tender t WHERE
+        (:keyword = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND t.status IN :statuses
+    """)
+    Page<Tender> searchWithStatuses(
+            @Param("keyword") String keyword,
+            @Param("statuses") List<TenderStatus> statuses,
             Pageable pageable
     );
 }

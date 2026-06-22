@@ -20,7 +20,7 @@ services:
     container_name: tenderease-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@tenderease.lk
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: "1234"
     ports:
       - "5050:80"
     depends_on:

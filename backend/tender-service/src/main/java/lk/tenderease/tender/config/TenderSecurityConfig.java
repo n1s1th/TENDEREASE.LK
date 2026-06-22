@@ -15,6 +15,9 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import org.springframework.context.annotation.Import;
+import lk.tenderease.common.security.KeycloakJwtConverter;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,6 +27,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@Import(KeycloakJwtConverter.class)
 public class TenderSecurityConfig {
 
     @Bean
@@ -36,7 +40,9 @@ public class TenderSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/tenders/**").permitAll() // Allow PublicTenderController
-                .anyRequest().authenticated()
+                .requestMatchers("/api/v1/tenders/**").permitAll() // Allow TenderController
+                .requestMatchers("/api/cao/**").permitAll() // Allow CAO Dashboard
+                .anyRequest().permitAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))

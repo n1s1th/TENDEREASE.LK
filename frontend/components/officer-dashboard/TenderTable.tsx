@@ -14,6 +14,8 @@ export interface Column<T> {
 
 // ── Props ────────────────────────────────────────────────────
 interface TenderTableProps<T extends { id: string }> {
+  title?: string;
+  subtitle?: string;
   columns: Column<T>[];
   data: T[];
   loading?: boolean;
@@ -31,6 +33,8 @@ interface TenderTableProps<T extends { id: string }> {
 }
 
 export default function TenderTable<T extends { id: string; createdBy?: string; createdByRole?: string }>({
+  title,
+  subtitle,
   columns,
   data,
   loading = false,
@@ -77,6 +81,20 @@ export default function TenderTable<T extends { id: string; createdBy?: string; 
 
   return (
     <div className="dash-table-wrap" id="tender-table">
+      {(title || subtitle) && (
+        <div className="px-6 py-5 border-b border-gray-100 bg-white">
+          {title && (
+            <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-xs font-bold text-gray-400 mt-2 uppercase tracking-widest">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )}
       <table className="dash-table">
         <thead>
           <tr>

@@ -16,7 +16,7 @@ import type {
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 5000, // 5s timeout
 });
@@ -81,7 +81,7 @@ export async function viewTenderDocument(docId: string): Promise<string> {
 export async function downloadTenderDocument(docId: string): Promise<Blob> {
   if (!docId) throw new Error("Document ID is required");
   
-  const fullUrl = 'http://localhost:8082/api/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
   
   const res = await axios.get(fullUrl, {
     withCredentials: false

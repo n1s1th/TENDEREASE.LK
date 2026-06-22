@@ -1,12 +1,21 @@
-version: '3.8'
+# ──────────────────────────────────────────────────────────────
+# TenderEase — Docker Compose (Development)
+# Usage: docker compose up --build
+# From:  backend/ directory
+# ──────────────────────────────────────────────────────────────
 
 services:
+
+  # ════════════════════════════════════════════════════════════
+  # Infrastructure
+  # ════════════════════════════════════════════════════════════
+
   postgres:
     image: postgres:15-alpine
-    container_name: postgres-1
+    container_name: tenderease-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -14,47 +23,485 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - tenderease-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: tenderease-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tenderease-network
 
   redis:
     image: redis:7-alpine
-    container_name: redis-1
+    container_name: tenderease-redis
     ports:
       - "6379:6379"
     networks:
       - tenderease-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
-    container_name: rabbitmq-1
+    container_name: tenderease-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     networks:
       - tenderease-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   keycloak:
-    image: quay.io/keycloak/keycloak:22.0.1
-    container_name: keycloak-1
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: tenderease-keycloak
     command: start-dev
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
     environment:
+      JAVA_OPTS_APPEND: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=256m"
       KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/tenderease_keycloak_db
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
       - ./infrastructure/keycloak/themes/tenderease:/opt/keycloak/themes/tenderease
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - tenderease-network
+
+  # ════════════════════════════════════════════════════════════
+  # Service Discovery
+  # ════════════════════════════════════════════════════════════
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: tenderease-eureka
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8761:8761"
+    networks:
+      - tenderease-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/" ]
+      interval: 15s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  # ════════════════════════════════════════════════════════════
+  # API Gateway
+  # ════════════════════════════════════════════════════════════
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: tenderease-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8000:8000"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  # ════════════════════════════════════════════════════════════
+  # Microservices
+  # ════════════════════════════════════════════════════════════
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: tenderease-user
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  tender-service:
+    build:
+      context: .
+      dockerfile: tender-service/Dockerfile
+    container_name: tenderease-tender
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      EUREKA_CLIENT_ENABLED: "true"
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+      USER_SERVICE_URL: http://user-service:8081
+      WORKFLOW_SERVICE_URL: http://workflow-service:8085
+      DOCUMENT_SERVICE_URL: http://document-service:8088
+    ports:
+      - "8082:8082"
+    volumes:
+      - tender_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  bid-service:
+    build:
+      context: .
+      dockerfile: bid-service/Dockerfile
+    container_name: tenderease-bid
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  evaluation-service:
+    build:
+      context: .
+      dockerfile: evaluation-service/Dockerfile
+    container_name: tenderease-evaluation
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  workflow-service:
+    build:
+      context: .
+      dockerfile: workflow-service/Dockerfile
+    container_name: tenderease-workflow
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  contract-service:
+    build:
+      context: .
+      dockerfile: contract-service/Dockerfile
+    container_name: tenderease-contract
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: tenderease-payment
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  document-service:
+    build:
+      context: .
+      dockerfile: document-service/Dockerfile
+    container_name: tenderease-document
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8088:8088"
+    volumes:
+      - document_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: tenderease-notification
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8089:8089"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  clarification-service:
+    build:
+      context: .
+      dockerfile: clarification-service/Dockerfile
+    container_name: tenderease-clarification
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  appeal-service:
+    build:
+      context: .
+      dockerfile: appeal-service/Dockerfile
+    container_name: tenderease-appeal
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8091:8091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  reporting-service:
+    build:
+      context: .
+      dockerfile: reporting-service/Dockerfile
+    container_name: tenderease-reporting
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8092:8092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+  qa-service:
+    build:
+      context: .
+      dockerfile: qa-service/Dockerfile
+    container_name: tenderease-qa
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      EUREKA_SERVER: http://eureka-server:8761/eureka/
+      KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/tenderease
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tenderease/protocol/openid-connect/certs
+    ports:
+      - "8194:8194"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    networks:
+      - tenderease-network
+
+# ════════════════════════════════════════════════════════════
+# Networks & Volumes
+# ════════════════════════════════════════════════════════════
 
 networks:
   tenderease-network:
@@ -62,3 +509,5 @@ networks:
 
 volumes:
   postgres_data:
+  tender_uploads:
+  document_uploads:

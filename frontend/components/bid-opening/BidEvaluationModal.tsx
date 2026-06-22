@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X, ShieldCheck, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 
 interface BidEvaluationModalProps {
@@ -11,7 +12,13 @@ interface BidEvaluationModalProps {
 }
 
 export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: BidEvaluationModalProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!isOpen || !bid) return null;
+  if (!mounted) return null;
 
   const isCompliant = bid.status === "COMPLIANT";
 
@@ -34,8 +41,8 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
     { label: "VAT Registration Proof", status: "VERIFIED", icon: <CheckCircle2 className="w-4 h-4 text-[#10B981]" /> },
   ];
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-[32px] w-full max-w-[480px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-start bg-white">
@@ -120,6 +127,7 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

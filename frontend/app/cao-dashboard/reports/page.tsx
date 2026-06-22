@@ -49,7 +49,7 @@ export default function ReportsPage() {
     });
   }, [fetchKpiReport, department, category, period]);
 
-  // Chart data — uses real data when available, shows empty placeholder otherwise
+  // Chart data
   const cycleTimeData = {
     labels: kpiReport?.cycleTimeTrend.map((d) => d.label) ?? ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
     datasets: [
@@ -72,7 +72,7 @@ export default function ReportsPage() {
       {
         label: "Active Tenders",
         data: kpiReport?.activeTendersTrend.map((d) => d.value) ?? [],
-        backgroundColor: "#953002", 
+        backgroundColor: "#953002",
         borderRadius: 4,
       },
     ],
@@ -141,7 +141,7 @@ export default function ReportsPage() {
             <h1 className="dash-report-title">
               KPI Report
             </h1>
-            <p className="dash-report-subtitle" style={{ fontSize: "1.1rem" }}>
+            <p className="dash-report-subtitle" style={{ fontSize: "1.0rem" }}>
               Performance metrics and analytics for tender management
             </p>
           </div>

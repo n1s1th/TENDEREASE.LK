@@ -18,6 +18,7 @@ export interface OpeningAttendance {
     officerId: string;
     officerName: string;
     designation: string;
+    email: string;
     attendanceTime: string;
     organisation?: string;
     role?: string;
@@ -27,6 +28,7 @@ export interface OpeningAttendanceRequest {
     officerId: string;
     officerName: string;
     designation: string;
+    email: string;
     organisation?: string;
     role?: string;
 }
