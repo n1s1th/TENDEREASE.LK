@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   UserCheck, 
   Search, 
@@ -23,6 +24,11 @@ export default function AttendanceSection() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [newMember, setNewMember] = useState({ name: "", designation: "" });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close menu
@@ -218,8 +224,8 @@ export default function AttendanceSection() {
       </div>
 
       {/* Add Member Modal Overlay */}
-      {isAddingMember && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isAddingMember && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]">
               <h3 className="text-lg font-black text-gray-900 tracking-tight">Manual Attendance</h3>
@@ -267,11 +273,12 @@ export default function AttendanceSection() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Edit Member Modal Overlay */}
-      {isEditingMember && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isEditingMember && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]">
               <h3 className="text-lg font-black text-gray-900 tracking-tight">Edit Attendance</h3>
@@ -322,7 +329,8 @@ export default function AttendanceSection() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
