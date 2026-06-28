@@ -39,7 +39,18 @@ export default function TenderTable({ data }: Props) {
                 </td>
               </tr>
             ) : (
-              data.map((tender) => (
+              data.map((tender) => {
+                const closingDate = tender.closingDate
+                  ? new Date(tender.closingDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                  : "TBA";
+                const estValue = tender.estimatedBudget
+                  ? `LKR ${Number(tender.estimatedBudget).toLocaleString("en-LK")}`
+                  : "---";
+                const category = tender.procurementType
+                  ? tender.procurementType.replace(/_/g, " ")
+                  : "General";
+
+                return (
                 <tr
                   key={tender.id}
                   onClick={() => router.push(`/tenders/${tender.id || tender.tenderId}`)}
@@ -47,29 +58,30 @@ export default function TenderTable({ data }: Props) {
                 >
                   <td className="px-8 py-6">
                     <span className="font-black text-primary tracking-tight group-hover:underline">
-                      {tender.id || tender.tenderId}
+                      {tender.tenderNumber || tender.id}
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-2 font-bold leading-snug">{tender.entity || "Ministry Office"}</p>
+                    <p className="text-black-2 font-bold leading-snug">{tender.ministryName || tender.entity || "Ministry Office"}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.category || "General"}</span>
+                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md capitalize">{category}</span>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-black-2 font-black leading-snug group-hover:text-primary transition-colors line-clamp-2 max-w-xs">{tender.title}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-gray-2 font-bold whitespace-nowrap">{tender.closing || tender.closingDate || "TBA"}</p>
+                    <p className="text-gray-2 font-bold whitespace-nowrap">{closingDate}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-1 font-black whitespace-nowrap">{tender.value || tender.estimatedBudget || "---"}</p>
+                    <p className="text-black-1 font-black whitespace-nowrap">{estValue}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <StatusBadge status={tender.status} />
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
