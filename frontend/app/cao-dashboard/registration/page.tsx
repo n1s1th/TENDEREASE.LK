@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { User, Check, X, Mail, Phone, Building2, MapPin, Search } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import EmptyState from "@/components/cao-dashboard/EmptyState";
@@ -14,7 +14,7 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
   REJECTED: { bg: "#fee2e2", text: "#991b1b", label: "Rejected" },
 };
 
-export default function RegistrationPage() {
+function RegistrationContent() {
   const searchParams = useSearchParams();
   const registrations = useCAODashboardStore((s) => s.registrations);
   const registrationsLoading = useCAODashboardStore((s) => s.registrationsLoading);
@@ -375,5 +375,13 @@ export default function RegistrationPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RegistrationPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading...</div>}>
+      <RegistrationContent />
+    </Suspense>
   );
 }
