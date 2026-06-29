@@ -13,5 +13,15 @@ public enum BiddingMethod {
     /** Direct Contracting */
     DC,
     /** Single Source Selection */
-    SSS
+    SSS,
+    /** Request for Quotation */
+    RFQ,
+    /** Quality and Cost Based Selection */
+    QCBS,
+    /** Least Cost Selection */
+    LCS,
+    /** Fixed Budget Selection */
+    FBS,
+    /** Consultants' Qualifications Selection */
+    CQS
 }

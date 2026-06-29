@@ -8,6 +8,10 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 
+# env files (can opt-in for committing if needed)
+.env*
+.env
+
 # IDE
 .idea/
 *.iml
