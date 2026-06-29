@@ -1,4 +1,5 @@
 import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2 } from "lucide-react";
+import Link from "next/link";
 
 export default function TenderHeader({ tender }: any) {
   const formatBudget = (amount: any) => {
@@ -53,9 +54,17 @@ export default function TenderHeader({ tender }: any) {
 
           {/* Action Buttons */}
           <div className="flex flex-row lg:flex-col items-center gap-3 w-full lg:w-auto">
-            <button className="flex-1 lg:w-full bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:shadow-primary shadow-sm active:scale-[0.98]">
-              Apply Now
-            </button>
+            {tender?.id ? (
+              <Link href={`/tenders/${tender.id}/apply`} className="flex-1 lg:w-full">
+                <button className="w-full bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:shadow-primary shadow-sm active:scale-[0.98]">
+                  Apply Now
+                </button>
+              </Link>
+            ) : (
+              <button className="flex-1 lg:w-full bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:shadow-primary shadow-sm active:scale-[0.98] opacity-50 cursor-not-allowed">
+                Apply Now
+              </button>
+            )}
             <button className="p-4 bg-white border border-gray-100 text-gray-3 hover:text-primary hover:border-primary/20 rounded-2xl transition-all shadow-sm active:scale-[0.98]">
               <Share2 size={20} />
             </button>

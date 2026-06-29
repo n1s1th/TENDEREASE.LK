@@ -36,6 +36,7 @@ public class VendorRegisterRequest {
         @Email
         private String officialEmail;
         private String officialTelephone;
+        private String cidaGrade;
         private java.util.List<String> departments;
     }
 
