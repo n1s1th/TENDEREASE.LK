@@ -26,69 +26,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!keycloak || isInitializing.current || initialized) return;
 
     const initKeycloak = async () => {
-      const kc = keycloak;
-      if (!kc) return;
       isInitializing.current = true;
-      console.log('🔄 Initializing Keycloak...');
-      
+
+      // Restore previously stored tokens so Keycloak can re-authenticate silently
+      // without a redirect on every page load/refresh.
+      const stored = useAuthStore.getState();
+
       try {
-        const authenticated = await kc.init({
-          // Removed onLoad: 'check-sso' to prevent CSP and 400 errors
-          // Users will now need to click "Sign In" to authenticate
+        const authenticated = await keycloak.init({
           pkceMethod: 'S256',
           checkLoginIframe: false,
+          token: stored.token ?? undefined,
+          refreshToken: stored.refreshToken ?? undefined,
         });
 
-        console.log('✅ Keycloak initialized. Authenticated:', authenticated);
+        const applyAuth = (token: string) => {
+          const decoded: any = jwtDecode(token);
+          setAuth(
+            token,
+            {
+              id: decoded.sub,
+              email: decoded.email,
+              name: decoded.name,
+              firstName: decoded.given_name,
+              lastName: decoded.family_name,
+              username: decoded.preferred_username,
+              roles: decoded.realm_access?.roles || [],
+            },
+            keycloak.refreshToken,
+          );
+        };
 
         if (authenticated) {
-          const token = kc.token!;
-          const decoded: any = jwtDecode(token);
-          
-          setAuth(token, {
-            id: decoded.sub,
-            email: decoded.email,
-            name: decoded.name,
-            firstName: decoded.given_name,
-            lastName: decoded.family_name,
-            username: decoded.preferred_username,
-            roles: decoded.realm_access?.roles || [],
-          });
+          applyAuth(keycloak.token!);
 
-          // Token refresh logic
-          kc.onTokenExpired = () => {
-            console.log('⏳ Token expired, refreshing...');
-            kc.updateToken(70).then((refreshed) => {
-              if (refreshed) {
-                console.log('🔄 Token refreshed successfully');
-                const newToken = kc.token!;
-                const newDecoded: any = jwtDecode(newToken);
-                setAuth(newToken, {
-                  id: newDecoded.sub,
-                  email: newDecoded.email,
-                  name: newDecoded.name,
-                  firstName: newDecoded.given_name,
-                  lastName: newDecoded.family_name,
-                  username: newDecoded.preferred_username,
-                  roles: newDecoded.realm_access?.roles || [],
-                });
-              }
-            }).catch(err => {
-              console.error('❌ Failed to refresh token', err);
-              clearAuth();
-            });
+          keycloak.onTokenExpired = () => {
+            keycloak.updateToken(70).then((refreshed) => {
+              if (refreshed) applyAuth(keycloak.token!);
+            }).catch(() => clearAuth());
           };
         } else {
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.has('code') || urlParams.has('error') || urlParams.has('state')) {
-            clearAuth();
-          }
+          clearAuth();
         }
         setInitialized(true);
       } catch (error: any) {
         console.error('❌ Keycloak initialization failed:', error);
         setError(error?.message || 'Failed to connect to authentication server');
-        setInitialized(true); // Still set to true to unblock the app, but with error
+        setInitialized(true);
       } finally {
         isInitializing.current = false;
       }

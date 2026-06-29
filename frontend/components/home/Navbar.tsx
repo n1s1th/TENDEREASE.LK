@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { login, logout, signup } from "@/lib/keycloak";
 import { useAuthStore } from "@/store";
@@ -36,9 +37,9 @@ const categories = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState("Home");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -108,8 +109,7 @@ export default function Navbar() {
             <Link
               key={link.label}
               href={link.href}
-              onClick={() => setActiveLink(link.label)}
-              className={`te-navbar__link ${activeLink === link.label ? "te-navbar__link--active" : ""}`}
+              className={`te-navbar__link ${pathname === link.href ? "te-navbar__link--active" : ""}`}
             >
               {link.label}
             </Link>
@@ -268,11 +268,8 @@ export default function Navbar() {
             <Link
               key={link.label}
               href={link.href}
-              onClick={() => {
-                setActiveLink(link.label);
-                setMobileMenuOpen(false);
-              }}
-              className={`te-navbar__mobile-link ${activeLink === link.label ? "te-navbar__mobile-link--active" : ""}`}
+              onClick={() => setMobileMenuOpen(false)}
+              className={`te-navbar__mobile-link ${pathname === link.href ? "te-navbar__mobile-link--active" : ""}`}
             >
               {link.label}
             </Link>

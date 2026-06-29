@@ -249,14 +249,8 @@ public interface TenderService {
     List<String> listTenderTypes();
 
     Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable);
-    
-    Page<TenderSummaryDTO> getAllTendersForCao(TenderStatus status, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
-    
-    void approveTender(UUID id, String reason);
-    
-    void rejectTender(UUID id, String reason);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);
 

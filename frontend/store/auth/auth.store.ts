@@ -14,9 +14,10 @@ export interface User {
 export interface AuthState {
   isAuthenticated: boolean;
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   isLoading: boolean;
-  setAuth: (token: string, user: User) => void;
+  setAuth: (token: string, user: User, refreshToken?: string) => void;
   clearAuth: () => void;
 }
 
@@ -26,10 +27,11 @@ export const useAuthStore = create<AuthState>()(
       (set) => ({
         isAuthenticated: false,
         token: null,
+        refreshToken: null,
         user: null,
         isLoading: false,
-        setAuth: (token, user) => set({ isAuthenticated: true, token, user, isLoading: false }, false, "auth/setAuth"),
-        clearAuth: () => set({ isAuthenticated: false, token: null, user: null, isLoading: false }, false, "auth/clearAuth"),
+        setAuth: (token, user, refreshToken) => set({ isAuthenticated: true, token, refreshToken: refreshToken ?? null, user, isLoading: false }, false, "auth/setAuth"),
+        clearAuth: () => set({ isAuthenticated: false, token: null, refreshToken: null, user: null, isLoading: false }, false, "auth/clearAuth"),
       }),
       {
         name: 'tenderease-auth',

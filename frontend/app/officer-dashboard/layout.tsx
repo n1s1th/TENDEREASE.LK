@@ -1,4 +1,4 @@
-
+import SubNav from "@/components/officer-dashboard/SubNav";
 import Toast from "@/components/officer-dashboard/Toast";
 import RecommendationReviewModal from "@/components/officer-dashboard/modals/RecommendationReviewModal";
 import TenderSummaryModal from "@/components/officer-dashboard/modals/TenderSummaryModal";
@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   description: "Chief Accounting Officer dashboard for managing government tenders, approvals, and officer assignments.",
 };
 
+import Footer from "@/components/home/Footer";
+
 export default function OfficerDashboardLayout({
   children,
 }: {
@@ -21,8 +23,9 @@ export default function OfficerDashboardLayout({
 }) {
   return (
     <div className="dash-page">
-
-      <main>{children}</main>
+      <SubNav />
+      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
+      <Footer />
 
       {/* Global modals */}
       <RecommendationReviewModal />

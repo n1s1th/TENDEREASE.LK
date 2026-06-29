@@ -1,29 +1,35 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { 
   UserCheck, 
+  Search, 
   MoreVertical, 
   Clock, 
   CheckCircle2, 
+  Plus,
   Edit2,
+  Trash2,
   UserPlus,
-  UserX,
-  Lock
+  UserX
 } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 
 export default function AttendanceSection() {
-  const { session, attendance, markAttendance, updateAttendance, deleteAttendance, isLoading } = useOpeningStore();
+  const { attendance, markAttendance, updateAttendance, deleteAttendance, isLoading } = useOpeningStore();
+  const [searchTerm, setSearchTerm] = useState("");
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isEditingMember, setIsEditingMember] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
-  const [newMember, setNewMember] = useState({ name: "", designation: "", email: "" });
-  const [formErrors, setFormErrors] = useState<{ name?: string; designation?: string; email?: string }>({});
+  const [newMember, setNewMember] = useState({ name: "", designation: "" });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
-  const isSessionOpen = session?.status === 'OPEN' || session?.status === 'CLOSED';
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -36,67 +42,37 @@ export default function AttendanceSection() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const validateForm = (isEdit?: boolean): boolean => {
-    const errors: { name?: string; designation?: string; email?: string } = {};
-
-    const emailValue = newMember.email.trim();
-    if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-      errors.email = "Enter a valid email address";
-    } else {
-      // Check for duplicate email (skip the member being edited)
-      const duplicate = attendance.find(a => 
-        a.email?.toLowerCase() === emailValue.toLowerCase() && 
-        (!isEdit || a.id !== editingMemberId)
-      );
-      if (duplicate) {
-        errors.email = "This email is already registered for this session";
-      }
-    }
-
-    if (!newMember.name.trim()) {
-      errors.name = "Name is required";
-    } else if (newMember.name.trim().length < 2) {
-      errors.name = "Name must be at least 2 characters";
-    }
-
-    if (!newMember.designation.trim()) {
-      errors.designation = "Designation is required";
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
+  const filteredAttendance = attendance.filter(a => 
+    a.officerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.officerId.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!newMember.name || !newMember.designation) return;
     
-    await markAttendance("TND-0000-SESSION", newMember.name.trim(), newMember.designation.trim(), newMember.email.trim());
-    setNewMember({ name: "", designation: "", email: "" });
-    setFormErrors({});
+    await markAttendance("TND-0000-SESSION", newMember.name, newMember.designation);
+    setNewMember({ name: "", designation: "" });
     setIsAddingMember(false);
   };
 
   const handleEditMember = (member: any) => {
     setEditingMemberId(member.id);
-    setNewMember({ name: member.officerName, designation: member.designation, email: member.email || "" });
-    setFormErrors({});
+    setNewMember({ name: member.officerName, designation: member.designation });
     setIsEditingMember(true);
     setOpenMenuId(null);
   };
 
   const handleUpdateMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingMemberId || !validateForm(true)) return;
+    if (!editingMemberId || !newMember.name || !newMember.designation) return;
 
     await updateAttendance(editingMemberId, { 
-      officerName: newMember.name.trim(), 
-      designation: newMember.designation.trim(),
-      email: newMember.email.trim()
+      officerName: newMember.name, 
+      designation: newMember.designation 
     });
     
-    setNewMember({ name: "", designation: "", email: "" });
-    setFormErrors({});
+    setNewMember({ name: "", designation: "" });
     setIsEditingMember(false);
     setEditingMemberId(null);
   };
@@ -125,20 +101,27 @@ export default function AttendanceSection() {
           <p className="text-[13px] text-gray-500 mt-1 font-medium italic">Minimum 3 members required for quorum.</p>
         </div>
         
-        {!isSessionOpen ? (
-          <button 
-            onClick={() => { setFormErrors({}); setNewMember({ name: "", designation: "", email: "" }); setIsAddingMember(true); }}
-            className="flex items-center gap-2 px-6 py-3 bg-[#953002]/5 text-[#953002] border border-[#953002]/10 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#953002]/10 transition-all shadow-sm"
-          >
-            <UserPlus className="w-4 h-4" />
-            Mark Attendance
-          </button>
-        ) : (
-          <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-500 rounded-2xl">
-            <Lock className="w-3.5 h-3.5" />
-            <span className="text-[11px] font-black uppercase tracking-widest">ATTENDANCE LOCKED</span>
-          </div>
-        )}
+        <button 
+          onClick={() => setIsAddingMember(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-[#953002]/5 text-[#953002] border border-[#953002]/10 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#953002]/10 transition-all shadow-sm"
+        >
+          <UserPlus className="w-4 h-4" />
+          Mark Attendance
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-50">
+        <div className="relative max-w-md mx-auto">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Filter committee members..."
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-[13px] font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all placeholder:text-gray-400"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Attendance Table */}
@@ -146,27 +129,24 @@ export default function AttendanceSection() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-white border-b border-gray-50">
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[25%]">Committee Member</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Designation</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[20%]">Email</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Status</th>
-              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Time</th>
-              {!isSessionOpen && (
-                <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Actions</th>
-              )}
+              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[30%]">Committee Member</th>
+              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[20%]">Designation</th>
+              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[20%]">Status</th>
+              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[20%]">Time</th>
+              <th className="px-6 py-5 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {attendance.length === 0 ? (
+            {filteredAttendance.length === 0 ? (
               <tr>
-                <td colSpan={isSessionOpen ? 5 : 6} className="py-20 text-center">
+                <td colSpan={5} className="py-20 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <UserCheck className="w-10 h-10 text-gray-200" />
                     <p className="text-sm font-bold text-gray-300 italic tracking-wide">No attendance recorded yet...</p>
                   </div>
                 </td>
               </tr>
-            ) : attendance.map((member, idx) => (
+            ) : filteredAttendance.map((member, idx) => (
               <tr key={member.id} className="hover:bg-gray-50/50 transition-all group">
                 <td className="px-6 py-6">
                   <div className="flex items-center gap-4 justify-start pl-12">
@@ -183,9 +163,6 @@ export default function AttendanceSection() {
                   <span className="text-[14px] font-bold text-gray-500 uppercase tracking-tight">{member.designation || "NOT SPECIFIED"}</span>
                 </td>
                 <td className="px-6 py-6 text-center">
-                  <span className="text-[13px] font-medium text-gray-500">{member.email || "—"}</span>
-                </td>
-                <td className="px-6 py-6 text-center">
                   <div className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-green-50 rounded-xl border border-green-100 w-fit mx-auto">
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
                     <span className="text-[11px] font-black text-green-700 uppercase tracking-widest">VERIFIED</span>
@@ -197,51 +174,49 @@ export default function AttendanceSection() {
                     {formatTime(member.attendanceTime)}
                   </div>
                 </td>
-                {!isSessionOpen && (
-                  <td className="px-6 py-6 text-center">
-                    <div className="relative flex justify-center">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === member.id ? null : member.id);
-                        }}
-                        className={`p-2 rounded-xl transition-all ${
-                          openMenuId === member.id 
-                            ? "bg-gray-100 text-gray-900" 
-                            : "text-gray-900 hover:bg-gray-100"
+                <td className="px-6 py-6 text-center">
+                  <div className="relative flex justify-center">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === member.id ? null : member.id);
+                      }}
+                      className={`p-2 rounded-xl transition-all ${
+                        openMenuId === member.id 
+                          ? "bg-gray-100 text-gray-900" 
+                          : "text-gray-900 hover:bg-gray-100"
+                      }`}
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+
+                    {openMenuId === member.id && (
+                      <div 
+                        ref={menuRef}
+                        className={`absolute left-0 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200 ${
+                          idx >= filteredAttendance.length - 2 ? "bottom-full mb-2" : "top-full mt-2"
                         }`}
                       >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-
-                      {openMenuId === member.id && (
-                        <div 
-                          ref={menuRef}
-                          className={`absolute left-0 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200 ${
-                            idx >= attendance.length - 2 ? "bottom-full mb-2" : "top-full mt-2"
-                          }`}
+                        <button 
+                          onClick={() => handleEditMember(member)}
+                          className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002] transition-colors flex items-center gap-3"
                         >
-                          <button 
-                            onClick={() => handleEditMember(member)}
-                            className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002] transition-colors flex items-center gap-3"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                            Edit Record
-                          </button>
-                          <button 
-                            onClick={() => {
-                              handleDeleteMember(member.id);
-                            }}
-                            className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-3"
-                          >
-                            <UserX className="w-4 h-4" />
-                            Remove Member
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                )}
+                          <Edit2 className="w-4 h-4" />
+                          Edit Record
+                        </button>
+                        <button 
+                          onClick={() => {
+                            handleDeleteMember(member.id);
+                          }}
+                          className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-3"
+                        >
+                          <UserX className="w-4 h-4" />
+                          Remove Member
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -249,57 +224,41 @@ export default function AttendanceSection() {
       </div>
 
       {/* Add Member Modal Overlay */}
-      {isAddingMember && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isAddingMember && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]">
-              <h3 className="text-lg font-black text-gray-900 tracking-tight">Record Attendance</h3>
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">Manual Attendance</h3>
               <p className="text-xs text-gray-500 font-medium mt-1">Record a committee member present for this session.</p>
             </div>
             
             <form onSubmit={handleAddMember} className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address *</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member Name</label>
                 <input 
                   autoFocus
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.email ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
-                  placeholder="e.g. officer@tenderease.lk"
-                  value={newMember.email}
-                  onChange={e => { setNewMember({...newMember, email: e.target.value}); if (formErrors.email) setFormErrors(prev => ({ ...prev, email: undefined })); }}
-                />
-                {formErrors.email && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.email}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member Name *</label>
-                <input 
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.name ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all"
                   placeholder="Enter full name..."
                   value={newMember.name}
-                  onChange={e => { setNewMember({...newMember, name: e.target.value}); if (formErrors.name) setFormErrors(prev => ({ ...prev, name: undefined })); }}
+                  onChange={e => setNewMember({...newMember, name: e.target.value})}
                 />
-                {formErrors.name && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.name}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Designation *</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Designation</label>
                 <input 
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.designation ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all"
                   placeholder="e.g. Technical Officer"
                   value={newMember.designation}
-                  onChange={e => { setNewMember({...newMember, designation: e.target.value}); if (formErrors.designation) setFormErrors(prev => ({ ...prev, designation: undefined })); }}
+                  onChange={e => setNewMember({...newMember, designation: e.target.value})}
                 />
-                {formErrors.designation && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.designation}</p>}
               </div>
               
               <div className="flex gap-3 pt-2">
                 <button 
                   type="button"
-                  onClick={() => { setIsAddingMember(false); setFormErrors({}); }}
+                  onClick={() => setIsAddingMember(false)}
                   className="flex-1 py-3 px-4 rounded-xl border border-gray-200 font-bold text-[10px] uppercase tracking-wider text-gray-400 hover:bg-gray-50 transition-all"
                 >
                   Cancel
@@ -314,11 +273,12 @@ export default function AttendanceSection() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {/* Edit Member Modal Overlay */}
-      {isEditingMember && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {mounted && isEditingMember && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-50 bg-[#F9FAFB]">
               <h3 className="text-lg font-black text-gray-900 tracking-tight">Edit Attendance</h3>
@@ -327,41 +287,25 @@ export default function AttendanceSection() {
             
             <form onSubmit={handleUpdateMember} className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address *</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member Name</label>
                 <input 
                   autoFocus
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.email ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
-                  placeholder="e.g. officer@tenderease.lk"
-                  value={newMember.email}
-                  onChange={e => { setNewMember({...newMember, email: e.target.value}); if (formErrors.email) setFormErrors(prev => ({ ...prev, email: undefined })); }}
-                />
-                {formErrors.email && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.email}</p>}
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Member Name *</label>
-                <input 
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.name ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all"
                   placeholder="Enter full name..."
                   value={newMember.name}
-                  onChange={e => { setNewMember({...newMember, name: e.target.value}); if (formErrors.name) setFormErrors(prev => ({ ...prev, name: undefined })); }}
+                  onChange={e => setNewMember({...newMember, name: e.target.value})}
                 />
-                {formErrors.name && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.name}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Designation *</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Designation</label>
                 <input 
-                  className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 transition-all ${
-                    formErrors.designation ? 'border-red-400 focus:ring-red-200' : 'border-gray-200 focus:ring-[#953002]/10'
-                  }`}
+                  required
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all"
                   placeholder="e.g. Technical Officer"
                   value={newMember.designation}
-                  onChange={e => { setNewMember({...newMember, designation: e.target.value}); if (formErrors.designation) setFormErrors(prev => ({ ...prev, designation: undefined })); }}
+                  onChange={e => setNewMember({...newMember, designation: e.target.value})}
                 />
-                {formErrors.designation && <p className="text-[11px] text-red-500 font-bold ml-1">{formErrors.designation}</p>}
               </div>
               
               <div className="flex gap-3 pt-2">
@@ -369,8 +313,7 @@ export default function AttendanceSection() {
                   type="button"
                   onClick={() => {
                     setIsEditingMember(false);
-                    setNewMember({ name: "", designation: "", email: "" });
-                    setFormErrors({});
+                    setNewMember({ name: "", designation: "" });
                   }}
                   className="flex-1 py-3 px-4 rounded-xl border border-gray-200 font-bold text-[10px] uppercase tracking-wider text-gray-400 hover:bg-gray-50 transition-all"
                 >
@@ -386,7 +329,8 @@ export default function AttendanceSection() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
