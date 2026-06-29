@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { ShieldCheck, FileText, ChevronRight, Lock, AlertTriangle } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+import { getBidsByTender } from "@/services/bid.service";
 import BidEvaluationModal from "./BidEvaluationModal";
 
 export default function ReceivedBidsLog() {
@@ -21,28 +22,54 @@ export default function ReceivedBidsLog() {
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
 
   useEffect(() => {
-    const syncBids = async () => {
+    const loadBids = async () => {
       if (!session?.tenderId) return;
       try {
-        const evaluations = await fetchEvaluationsByTender(session.tenderId);
-        if (evaluations && evaluations.length > 0) {
-          setBids(prev => prev.map(bid => {
-            const evalItem = evaluations.find(e => e.id === bid.id || e.bidId === bid.id);
-            if (evalItem) {
-              return { 
-                ...bid, 
-                isFlagged: evalItem.isFlagged, 
-                status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus 
-              };
-            }
-            return bid;
+        const data = await getBidsByTender(session.tenderId);
+        let mapped: any[] = [];
+        if (data) {
+          mapped = data.map((bid: any, idx: number) => ({
+            id: bid.id,
+            no: (idx + 1).toString(),
+            ref: bid.id.substring(0, 8).toUpperCase(),
+            name: bid.companyName || bid.bidderName,
+            time: bid.submittedAt || "TBA",
+            docs: bid.bidData ? Object.keys(bid.bidData).filter(k => k.endsWith("File") && bid.bidData[k]).length + " Files" : "0 Files",
+            amount: `${bid.currency} ${Number(bid.bidAmount || 0).toLocaleString()}`,
+            status: bid.status,
+            isFlagged: bid.status === "FLAGGED",
+            bidData: bid.bidData,
+            technicalScore: bid.technicalScore,
+            financialScore: bid.financialScore,
+            notes: bid.notes
           }));
         }
+
+        try {
+          const evaluations = await fetchEvaluationsByTender(session.tenderId);
+          if (evaluations && evaluations.length > 0) {
+            mapped = mapped.map(bid => {
+              const evalItem = evaluations.find((e: any) => e.id === bid.id || e.bidId === bid.id);
+              if (evalItem) {
+                return { 
+                  ...bid, 
+                  isFlagged: evalItem.isFlagged, 
+                  status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus 
+                };
+              }
+              return bid;
+            });
+          }
+        } catch (storeErr) {
+          console.warn("Evaluations store sync warning:", storeErr);
+        }
+
+        setBids(mapped);
       } catch (err) {
-        console.error("Sync failed:", err);
+        console.error("Failed to load bids:", err);
       }
     };
-    syncBids();
+    loadBids();
   }, [session?.tenderId, fetchEvaluationsByTender]);
 
   const handleUpdateBid = async (no: string, updates: any) => {

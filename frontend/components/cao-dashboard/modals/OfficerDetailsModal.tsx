@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, User, ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
+import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
 import SearchInput from "@/components/cao-dashboard/SearchInput";
 
 const departmentTabs = [
@@ -18,8 +19,8 @@ const departmentTabs = [
 export default function OfficerDetailsModal() {
   const activeModal = useCAODashboardStore((s) => s.activeModal);
   const closeModal = useCAODashboardStore((s) => s.closeModal);
-  const officers = useCAODashboardStore((s) => s.officers);
-  const fetchOfficers = useCAODashboardStore((s) => s.fetchOfficers);
+  const officers = useOfficerDashboardStore((s) => s.officers);
+  const fetchOfficers = useOfficerDashboardStore((s) => s.fetchOfficers);
 
   const [activeDept, setActiveDept] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");

@@ -26,6 +26,9 @@ function getAuthHeaders(): HeadersInit {
 // 🔥 Helper function to handle responses
 async function handleResponse(response: Response) {
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearAuth();
+    }
     const text = await response.text().catch(() => "");
     throw new Error(
       `API error: ${response.status} ${response.statusText} ${text}`

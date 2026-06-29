@@ -1,0 +1,26 @@
+# ──────────────────────────────────────────────────────────────
+# TenderEase — Backend Environment Variables
+# ──────────────────────────────────────────────────────────────
+
+# --- PostgreSQL ---
+#POSTGRES_USER=postgres
+#POSTGRES_PASSWORD=postgres
+
+POSTGRES_USER=neondb_owner
+POSTGRES_PASSWORD=npg_wR9iIDYGj2ga
+DB_HOST=ep-nameless-haze-ao5zyycp-pooler.c-2.ap-southeast-1.aws.neon.tech
+
+
+# --- pgAdmin ---
+PGADMIN_DEFAULT_EMAIL=admin@tenderease.lk
+PGADMIN_DEFAULT_PASSWORD=1234
+
+# --- RabbitMQ ---
+RABBITMQ_DEFAULT_USER=guest
+RABBITMQ_DEFAULT_PASS=guest
+
+# --- Keycloak (Cloud-IAM) ---
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=admin
+KEYCLOAK_ISSUER_URI=https://lemur-1.cloud-iam.com/auth/realms/tenderease
+KEYCLOAK_JWK_SET_URI=https://lemur-1.cloud-iam.com/auth/realms/tenderease/protocol/openid-connect/certs
