@@ -23,6 +23,8 @@ public class TenderDetailsDTO {
 
     private BigDecimal estimatedBudget;
     private String departmentName;
+    private String procurementType;
+    private java.util.Map<String, Object> dynamicData;
 
     private LocalDateTime openingDate;
     private LocalDateTime closingDate;

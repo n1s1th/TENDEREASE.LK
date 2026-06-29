@@ -48,6 +48,7 @@ public class VendorProfile {
     private String officialEmail;
 
     private String officialTelephone;
+    private String cidaGrade;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

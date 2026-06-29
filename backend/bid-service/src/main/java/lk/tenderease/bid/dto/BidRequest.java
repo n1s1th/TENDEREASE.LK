@@ -1,7 +1,6 @@
 package lk.tenderease.bid.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,18 +8,15 @@ import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BidResponse {
-    private String id;
+public class BidRequest {
     private String tenderId;
-    private String bidderName;
     private String bidderEmail;
+    private String bidderName;
     private String companyName;
     private BigDecimal bidAmount;
-    private String currency;
-    private String status;
-    private String submittedAt;
+    private String currency = "LKR";
+    private String notes;
     private Map<String, Object> bidData;
 }

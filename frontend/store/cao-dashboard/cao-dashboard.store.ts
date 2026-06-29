@@ -116,6 +116,8 @@ export const useCAODashboardStore = create<CAODashboardState>(
     notificationSummary: null,
     notificationsLoading: false,
 
+    kpiSummary: null,
+    kpiReport: null,
     kpiLoading: false,
 
     recommendations: [],

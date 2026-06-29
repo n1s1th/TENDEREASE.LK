@@ -67,6 +67,12 @@ export interface Recommendation {
   createdAt: string;
   updatedAt: string;
   actionedAt?: string;
+  rank?: number;
+  isTopRanked?: boolean;
+  bidId?: string;
+  category?: string;
+  technicalScore?: number;
+  financialScore?: number;
 }
 
 // ── Approval Timeline ────────────────────────────────────────
@@ -110,7 +116,11 @@ export type DashboardNotificationType =
   | 'tender_submitted'
   | 'officer_registered'
   | 'recommendation_received'
-  | 'awards_notification';
+  | 'awards_notification'
+  | 'registration_approved'
+  | 'registration_rejected'
+  | 'tender_approved'
+  | 'tender_rejected';
 
 export type DashboardNotificationStatus =
   | 'info'

@@ -39,49 +39,37 @@ export default function TenderTable({ data }: Props) {
                 </td>
               </tr>
             ) : (
-              data.map((tender) => {
-                const closingDate = tender.closingDate
-                  ? new Date(tender.closingDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                  : "TBA";
-                const estValue = tender.estimatedBudget
-                  ? `LKR ${Number(tender.estimatedBudget).toLocaleString("en-LK")}`
-                  : "---";
-                const category = tender.procurementType
-                  ? tender.procurementType.replace(/_/g, " ")
-                  : "General";
-
-                return (
+              data.map((tender) => (
                 <tr
                   key={tender.id}
-                  onClick={() => router.push(`/tenders/${tender.id || tender.tenderId}`)}
+                  onClick={() => router.push(`/tenders/${tender.id || tender.tenderId || tender.tenderNumber}`)}
                   className="group cursor-pointer transition-all duration-300 hover:bg-primary/[0.02]"
                 >
                   <td className="px-8 py-6">
                     <span className="font-black text-primary tracking-tight group-hover:underline">
-                      {tender.tenderNumber || tender.id}
+                      {tender.tenderNumber || tender.tenderId || tender.id}
                     </span>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-2 font-bold leading-snug">{tender.ministryName || tender.entity || "Ministry Office"}</p>
+                    <p className="text-black-2 font-bold leading-snug">{tender.departmentName || tender.entity || "Ministry Office"}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md capitalize">{category}</span>
+                    <span className="text-xs font-bold text-gray-2 bg-gray-5 px-2 py-1 rounded-md">{tender.procurementType || tender.category || "General"}</span>
                   </td>
                   <td className="px-8 py-6">
                     <p className="text-black-2 font-black leading-snug group-hover:text-primary transition-colors line-clamp-2 max-w-xs">{tender.title}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-gray-2 font-bold whitespace-nowrap">{closingDate}</p>
+                    <p className="text-gray-2 font-bold whitespace-nowrap">{tender.closingDate ? new Date(tender.closingDate).toLocaleDateString() : (tender.closing || "TBA")}</p>
                   </td>
                   <td className="px-8 py-6">
-                    <p className="text-black-1 font-black whitespace-nowrap">{estValue}</p>
+                    <p className="text-black-1 font-black whitespace-nowrap">{tender.estimatedBudget ? `LKR ${tender.estimatedBudget.toLocaleString()}` : (tender.value || "---")}</p>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <StatusBadge status={tender.status} />
                   </td>
                 </tr>
-                );
-              })
+              ))
             )}
           </tbody>
         </table>
