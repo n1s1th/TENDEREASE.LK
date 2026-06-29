@@ -12,6 +12,7 @@ buildNumber.properties
 env
 .env*
 .env
+env
 
 # IDE
 .idea/
