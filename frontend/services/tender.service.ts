@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = "http://localhost:8082/api/tenders";
+const BASE_URL = `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082"}/api/tenders`;
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
