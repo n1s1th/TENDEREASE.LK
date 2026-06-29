@@ -22,7 +22,7 @@ function CountUp({ end, duration = 1500 }: { end: number, duration?: number }) {
   return <>{count}</>;
 }
 
-export default function KpiCards() {
+export default function EvaluationKpiCards() {
   const metrics = useEvaluationStore(useShallow(selectMetrics));
 
   const cards = [

@@ -22,6 +22,7 @@ export default function OpeningBanner({ status, scheduledTime }: OpeningBannerPr
     if (!scheduledTime) return;
 
     const targetDate = new Date(scheduledTime);
+    targetDate.setSeconds(0, 0);
     
     const calculateTimeLeft = () => {
       const now = new Date();

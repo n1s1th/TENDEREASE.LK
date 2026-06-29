@@ -18,7 +18,10 @@ export default function SchedulePanel({ scheduledTime }: SchedulePanelProps) {
   }, []);
 
   const date = scheduledTime ? new Date(scheduledTime) : null;
-  const timeStr = date ? date.toTimeString().split(' ')[0] : "--:--:--";
+  if (date) {
+    date.setSeconds(0, 0);
+  }
+  const timeStr = date ? `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:00` : "--:--:--";
   const dateStr = date ? date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "-- --- ----";
 
   const curTimeStr = currentTime ? currentTime.toTimeString().split(' ')[0] : "--:--:--";

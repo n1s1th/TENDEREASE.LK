@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import KpiCards from "@/components/committee-dashboard/KpiCards";
-import QuickActions from "@/components/committee-dashboard/QuickActions";
-import EvaluationStatusPanel from "@/components/committee-dashboard/EvaluationStatusPanel";
-import AssignedTenderTable from "@/components/committee-dashboard/AssignedTenderTable";
+import EvaluationKpiCards from "@/components/officer-dashboard/EvaluationKpiCards";
+import QuickActions from "@/components/officer-dashboard/QuickActions";
+import EvaluationStatusPanel from "@/components/officer-dashboard/EvaluationStatusPanel";
+import AssignedTenderTable from "@/components/officer-dashboard/AssignedTenderTable";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 
 export default function OfficerDashboardPage() {
@@ -44,7 +44,7 @@ export default function OfficerDashboardPage() {
         </p>
       </div>
 
-      <KpiCards />
+      <EvaluationKpiCards />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-8">
         <QuickActions />

@@ -14,7 +14,7 @@ export default function QuickActions() {
     { 
       label: "Open Bid Session", 
       icon: Lock,
-      path: "/tenders/TND-2024-001/bid-opening"
+      path: "#"
     },
     { 
       label: "View Opening Records", 
