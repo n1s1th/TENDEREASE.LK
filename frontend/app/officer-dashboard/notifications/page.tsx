@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RefreshCw, Eye, RotateCcw, ChevronDown } from "lucide-react";
 import SearchInput from "@/components/officer-dashboard/SearchInput";
 import EmptyState from "@/components/officer-dashboard/EmptyState";
@@ -19,6 +20,7 @@ function getStatusTag(status: DashboardNotification["status"]) {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const notifications = useOfficerDashboardStore((s) => s.notifications);
   const notificationSummary = useOfficerDashboardStore((s) => s.notificationSummary);
   const notificationsLoading = useOfficerDashboardStore((s) => s.notificationsLoading);
@@ -79,6 +81,7 @@ export default function NotificationsPage() {
           <option value="regret_email_failed">Regret Email Failed</option>
           <option value="regret_letters_sent">Regret Letters Sent</option>
           <option value="vendor_notified">Vendor Notified</option>
+          <option value="clarification_received">Clarification Request</option>
         </select>
         <select
           className="dash-select"
@@ -154,7 +157,12 @@ export default function NotificationsPage() {
                     )}
 
                     <div className="dash-notif-item-actions">
-                      <button className="dash-btn dash-btn--outline dash-btn--sm">
+                      <button
+                        className="dash-btn dash-btn--outline dash-btn--sm"
+                        onClick={() => {
+                          if (notif.actionUrl) router.push(notif.actionUrl);
+                        }}
+                      >
                         <Eye size={12} /> View Details
                       </button>
                       {notif.status === "failed" && (

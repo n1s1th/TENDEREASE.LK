@@ -9,6 +9,8 @@ import java.util.UUID;
 
 public interface TenderClarificationRepository extends JpaRepository<TenderClarification, Long> {
 
+    List<TenderClarification> findAllByOrderByAskedAtDesc();
+
     List<TenderClarification> findByTenderIdOrderByAskedAtDesc(UUID tenderId);
 
     Optional<TenderClarification> findByIdAndTenderId(Long id, UUID tenderId);
