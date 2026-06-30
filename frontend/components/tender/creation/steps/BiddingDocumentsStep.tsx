@@ -20,8 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Upload, X, FileText, FolderOpen } from "lucide-react";
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-error mt-1">{message}</p>;
+}
+
 export function BiddingDocumentsStep() {
-  const { formData, referenceData, updateFormData, addPendingFile, removePendingFile } =
+  const { formData, referenceData, formErrors, updateFormData, addPendingFile, removePendingFile } =
     useTenderCreationStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,25 +66,23 @@ export function BiddingDocumentsStep() {
         {/* SBD Template + Version */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
           <div className="space-y-1.5">
-            <Label>Standard Bidding Document (SBD)</Label>
+            <Label>Standard Bidding Document (SBD) <span className="text-error">*</span></Label>
             <Select
               value={formData.sbdTemplate}
               onValueChange={(v) => updateFormData({ sbdTemplate: v })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${formErrors.sbdTemplate ? "border-error" : ""}`}>
                 <SelectValue placeholder="Select SBD" />
               </SelectTrigger>
               <SelectContent>
                 {referenceData.sbdTemplates.map((item) => (
-                  <SelectItem
-                    key={item.id}
-                    value={String(item.code ?? item.id)}
-                  >
+                  <SelectItem key={item.id} value={String(item.code ?? item.id)}>
                     {item.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <FieldError message={formErrors.sbdTemplate} />
           </div>
 
           <div className="space-y-1.5">
@@ -88,9 +91,7 @@ export function BiddingDocumentsStep() {
               id="tc-template-ver"
               placeholder="Auto-populated"
               value={formData.templateVersion}
-              onChange={(e) =>
-                updateFormData({ templateVersion: e.target.value })
-              }
+              onChange={(e) => updateFormData({ templateVersion: e.target.value })}
               readOnly
               className="bg-grey-1"
             />
