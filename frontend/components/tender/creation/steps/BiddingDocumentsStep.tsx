@@ -5,7 +5,12 @@ import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -43,9 +48,18 @@ export function BiddingDocumentsStep() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <Card>
+      <CardHeader className="border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
+            <FolderOpen className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle>Bidding Documents</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-5 space-y-5">
         {/* SBD Template + Version */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
           <div className="space-y-1.5">
             <Label>Standard Bidding Document (SBD)</Label>
             <Select
@@ -144,7 +158,7 @@ export function BiddingDocumentsStep() {
             </ul>
           </div>
         )}
-      </div>
+      </CardContent>
+    </Card>
   );
 }
-

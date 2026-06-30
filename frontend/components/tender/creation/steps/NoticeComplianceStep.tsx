@@ -37,9 +37,21 @@ export function NoticeComplianceStep() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-5">
       {/* Notice Preview */}
-      <div>
+      <Card>
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
+              <Eye className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle>Tender Notice Preview</CardTitle>
+              <CardDescription>Auto-generated from your inputs</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-5">
           <div className="rounded-md border border-border bg-grey-1 p-5">
             <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-primary mb-3">
               INVITATION FOR BIDS
@@ -59,10 +71,20 @@ export function NoticeComplianceStep() {
               </p>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
       {/* Compliance Checklist */}
-      <div>
+      <Card>
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
+              <ClipboardCheck className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle>Compliance Checklist</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-5">
           <div className="space-y-3">
             {checklistItems.map((item) => (
               <label
@@ -90,8 +112,8 @@ export function NoticeComplianceStep() {
               </label>
             ))}
           </div>
-        </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-

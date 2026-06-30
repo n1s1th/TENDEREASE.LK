@@ -7,8 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-// url is set for Cloud Run (no Eureka). Falls back to local tender-service for dev.
-@FeignClient(name = "tender-service", url = "${services.tender.url:http://localhost:8082}", path = "/api/v1/tenders")
+@FeignClient(name = "tender-service", path = "/api/v1/tenders")
 public interface TenderClient {
 
     @GetMapping("/{id}")

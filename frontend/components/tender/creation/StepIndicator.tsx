@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { STEP_LABELS, type StepIndex } from "@/lib/types/tender-creation.types";
+import { Check } from "lucide-react";
 
 interface StepIndicatorProps {
   currentStep: StepIndex;
@@ -10,43 +11,67 @@ interface StepIndicatorProps {
 
 export function StepIndicator({ currentStep, onStepClick }: StepIndicatorProps) {
   return (
-    <nav aria-label="Progress" className="w-full overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-center justify-between p-1.5 rounded-xl bg-grey-1/70 backdrop-blur-sm border border-grey-2 shadow-inner overflow-x-auto overflow-y-hidden no-scrollbar">
+    <nav aria-label="Progress" className="w-full py-2">
+      <ol className="flex items-start justify-between">
         {STEP_LABELS.map((label, index) => {
           const isCompleted = index < currentStep;
           const isCurrent = index === currentStep;
-          // Gradient for active: primary #953002 to secondary #FFB401 (or just primary)
-          const activeClasses = "bg-gradient-to-r from-[#953002] to-[#c44e05] text-white shadow-sm rounded-md px-4 lg:px-5 py-2 whitespace-nowrap";
-          const inactiveClasses = "text-grey-4 hover:text-[#953002] px-3 py-2 transition-colors whitespace-nowrap rounded-md hover:bg-grey-2/50";
-          
+
           return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onStepClick(index as StepIndex)}
-              className={cn(
-                "flex items-center justify-center gap-2 text-sm font-medium outline-none shrink-0",
-                isCurrent ? activeClasses : inactiveClasses
-              )}
-            >
-              {/* Using a small circle for index */}
-              <span
-                className={cn(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                  isCurrent 
-                    ? "bg-white/20 text-white" 
-                    : isCompleted
-                      ? "bg-grey-2 text-grey-4" // Use grey check/number for completed
-                      : "bg-grey-2 text-grey-4"
+            <li key={label} className="flex-1 relative">
+              <div className="flex flex-col items-center gap-2.5">
+                {/* Connector line (left side) */}
+                {index > 0 && (
+                  <div
+                    className={cn(
+                      "absolute top-[18px] right-1/2 w-full h-[2px] -translate-y-1/2",
+                      isCompleted || isCurrent
+                        ? "bg-[#953002]"
+                        : "bg-grey-2"
+                    )}
+                  />
                 )}
-              >
-                {index + 1}
-              </span>
-              <span className="hidden sm:inline">{label}</span>
-            </button>
+
+                {/* Step circle — 36px matching style guide */}
+                <button
+                  type="button"
+                  onClick={() => onStepClick(index as StepIndex)}
+                  className={cn(
+                    "relative z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-bold transition-all",
+                    isCompleted &&
+                      "border-[#953002] bg-[#953002] text-white",
+                    isCurrent &&
+                      "border-[#953002] bg-white text-[#953002] shadow-[0_0_0_3px_rgba(149,48,2,0.15)]",
+                    !isCompleted &&
+                      !isCurrent &&
+                      "border-grey-3 bg-white text-grey-4"
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="h-4 w-4" strokeWidth={3} />
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
+                </button>
+
+                {/* Label — Inter font, 12px */}
+                <span
+                  className={cn(
+                    "text-xs text-center leading-tight max-w-[90px]",
+                    isCurrent
+                      ? "font-semibold text-[#953002]"
+                      : isCompleted
+                        ? "font-medium text-foreground"
+                        : "font-normal text-grey-5"
+                  )}
+                >
+                  {label}
+                </span>
+              </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </nav>
   );
 }

@@ -71,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setInitialized(true);
       } catch (error: any) {
         console.error('❌ Keycloak initialization failed:', error);
-        clearAuth(); // Remove any stale token so API calls don't send an invalid Bearer
         setError(error?.message || 'Failed to connect to authentication server');
         setInitialized(true);
       } finally {
