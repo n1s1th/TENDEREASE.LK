@@ -17,10 +17,6 @@ public class KPIService {
     private final DashboardKPIRepository kpiRepository;
     private static final String SUMMARY_ID = "GLOBAL_SUMMARY";
 
-    // Base URL of tender-service. Overridable via TENDER_SERVICE_URL / services.tender.url for Cloud Run.
-    @org.springframework.beans.factory.annotation.Value("${services.tender.url:http://localhost:8082}")
-    private String tenderServiceUrl;
-
     @Transactional
     public void handleTenderEvent(String eventType, String status) {
         log.info("Processing tender event: {} with status: {}", eventType, status);
@@ -111,7 +107,7 @@ public class KPIService {
         long exactActiveTenders = kpi.getApprovedTenders();
         org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
         try {
-            org.springframework.web.util.UriComponentsBuilder builder = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(tenderServiceUrl + "/api/v1/cao/tenders/kpi");
+            org.springframework.web.util.UriComponentsBuilder builder = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl("http://localhost:8082/api/v1/cao/tenders/kpi");
             if (department != null && !department.isEmpty()) builder.queryParam("department", department);
             if (category != null && !category.isEmpty()) builder.queryParam("category", category);
             if (period != null && period.startsWith("month_")) builder.queryParam("month", period);
@@ -148,7 +144,7 @@ public class KPIService {
         // 3. Active Tenders Growth (Real trend from tender-service)
         java.util.List<java.util.Map<String, Object>> activeTendersTrend = new java.util.ArrayList<>();
         try {
-            org.springframework.web.util.UriComponentsBuilder trendBuilder = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl(tenderServiceUrl + "/api/v1/cao/tenders/kpi/trend");
+            org.springframework.web.util.UriComponentsBuilder trendBuilder = org.springframework.web.util.UriComponentsBuilder.fromHttpUrl("http://localhost:8082/api/v1/cao/tenders/kpi/trend");
             if (department != null && !department.isEmpty()) trendBuilder.queryParam("department", department);
             if (category != null && !category.isEmpty()) trendBuilder.queryParam("category", category);
             

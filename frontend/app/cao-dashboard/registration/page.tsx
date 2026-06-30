@@ -1,6 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
 import { User, Check, X, Mail, Phone, Building2, MapPin, Search } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import EmptyState from "@/components/cao-dashboard/EmptyState";
@@ -378,10 +380,12 @@ function RegistrationPageContent() {
   );
 }
 
+import { Suspense } from "react";
+
 export default function RegistrationPage() {
   return (
-    <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading...</div>}>
-      <RegistrationContent />
+    <Suspense fallback={<div className="dash-section" style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading...</div>}>
+      <RegistrationPageContent />
     </Suspense>
   );
 }
