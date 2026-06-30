@@ -1,11 +1,18 @@
 package lk.tenderease.tender.service;
 
 import lk.tenderease.tender.dto.response.DashboardMetricsResponse;
+import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.OfficerTenderResponse;
 import lk.tenderease.tender.dto.response.OpeningLogResponse;
+import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.entity.Tender;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.repository.TenderRepository;
+import lk.tenderease.tender.service.TenderService;
+import lk.tenderease.tender.repository.ClarificationResponseRepository;
+import lk.tenderease.tender.repository.TenderClarificationRepository;
+import lk.tenderease.tender.entity.ClarificationResponse;
+import lk.tenderease.tender.entity.TenderClarification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +46,9 @@ import java.util.stream.Collectors;
 public class OfficerDashboardService {
 
     private final TenderRepository tenderRepository;
+    private final TenderClarificationRepository clarificationRepository;
+    private final ClarificationResponseRepository responseRepository;
+    private final TenderService tenderService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
@@ -195,6 +206,45 @@ public class OfficerDashboardService {
                 .build();
     }
 
+    public List<ClarificationDTO> getAllClarifications() {
+        return clarificationRepository.findAllByOrderByAskedAtDesc().stream()
+                .map(this::mapToClarificationDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClarificationDTO> getClarifications(UUID tenderId) {
+        return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId).stream()
+                .map(this::mapToClarificationDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, String answer) {
+        ClarificationAnswerRequestDTO request = new ClarificationAnswerRequestDTO();
+        request.setResponse(answer);
+        request.setRespondedBy(1L);
+        return tenderService.answerClarification(tenderId, clarificationId, request);
+    }
+
+    private ClarificationDTO mapToClarificationDTO(TenderClarification clarification) {
+        Tender tender = clarification.getTender();
+        var response = responseRepository.findByClarificationId(clarification.getId());
+
+        return ClarificationDTO.builder()
+                .id(clarification.getId())
+                .tenderId(tender != null ? tender.getId().toString() : null)
+                .tenderTitle(tender != null ? tender.getTitle() : null)
+                .tenderNumber(tender != null ? tender.getTenderNumber() : null)
+                .question(clarification.getQuestion())
+                .answer(response.map(ClarificationResponse::getResponse).orElse(null))
+                .askedAt(clarification.getAskedAt())
+                .answeredAt(response.map(ClarificationResponse::getRespondedAt).orElse(null))
+                .bidderEmail(clarification.getBidderEmail())
+                .category(tender != null && tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .department(tender != null && tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .closingDate(tender != null ? tender.getClosingDate() : null)
+                .build();
+    }
     private String mapToFrontendStatus(TenderStatus status) {
         return switch (status) {
             case PUBLISHED          -> "APPROVED";
