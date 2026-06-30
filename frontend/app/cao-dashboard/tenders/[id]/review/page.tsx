@@ -19,15 +19,34 @@ export default function CAOTenderReviewPage() {
   const openModal = useCAODashboardStore((s) => s.openModal);
   const activeModal = useCAODashboardStore((s) => s.activeModal);
   const activeTab = useCAODashboardStore((s) => s.activeTab);
+  const fetchTenders = useCAODashboardStore((s) => s.fetchTenders);
+  const tendersLoading = useCAODashboardStore((s) => s.tendersLoading);
+
   const [tender, setTender] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [tenderUuid, setTenderUuid] = useState<string | null>(null);
 
-  const isApproved = activeTab === "approved" || (tender && String(tender.status).toUpperCase() === "APPROVED");
+  const isApproved = activeTab === "approved" || (tender && (String(tender.status).toUpperCase() === "APPROVED" || String(tender.status).toUpperCase() === "PUBLISHED"));
   const isRejected = activeTab === "rejected" || (tender && String(tender.status).toUpperCase() === "REJECTED");
 
+  // Auto-fetch tenders list if it's empty (e.g. page refresh)
   useEffect(() => {
-    setLoading(true);
-    
+    if (tenders.length === 0 && !tendersLoading) {
+      fetchTenders();
+    }
+  }, [tenders, tendersLoading, fetchTenders]);
+
+  // Resolve the UUID from parameters/tenders list
+  useEffect(() => {
+    if (tenderUuid) return;
+
+    // Check if the id parameter itself is a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(id)) {
+      setTenderUuid(id);
+      return;
+    }
+
     const found = tenders.find(t => 
       t.id === id || 
       t.tenderNumber === id || 
@@ -35,29 +54,64 @@ export default function CAOTenderReviewPage() {
       (t.tenderNumber && t.tenderNumber.replace(/\//g, "-") === id) ||
       (t.referenceNumber && t.referenceNumber.replace(/\//g, "-") === id)
     );
-    const targetId = found ? found.id : id;
+    if (found) {
+      setTenderUuid(found.id);
+    }
+  }, [id, tenders, tenderUuid]);
 
-    fetchTenderDetails(targetId)
+  // Fetch/re-fetch tender details based on the UUID
+  useEffect(() => {
+    if (!tenderUuid) {
+      if (tenders.length > 0 && !tendersLoading) {
+        // Look up failed, but maybe ID is a UUID. If not, stop loading.
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+          setLoading(false);
+          setTender(null);
+          return;
+        }
+      }
+      return;
+    }
+
+    setLoading(true);
+    fetchTenderDetails(tenderUuid)
       .then(data => setTender(data))
       .catch(() => setTender(null))
       .finally(() => setLoading(false));
-  }, [id, tenders]);
+  }, [tenderUuid, id, tenders, tendersLoading, activeModal]);
 
   if (loading) {
     return (
-      <div style={{ padding: "4rem", textAlign: "center", color: "var(--te-gray-4)" }}>
-        Loading tender details...
+      <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-6 font-sans">
+        <div className="text-slate-500 font-medium">
+          Loading tender details...
+        </div>
       </div>
     );
   }
 
   if (!tender) {
     return (
-      <div style={{ padding: "4rem", textAlign: "center" }}>
-        <h2>Tender not found</h2>
-        <button onClick={() => router.back()} className="dash-btn dash-btn--outline" style={{ marginTop: "1rem" }}>
-          Go Back
-        </button>
+      <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-6 font-sans">
+        <div className="bg-white rounded-3xl p-10 w-full max-w-md text-center shadow-xl border border-slate-100 animate-fadeIn">
+          <div className="w-16 h-16 bg-[#953002]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <XCircle size={32} className="text-[#953002]" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">
+            Tender Not Found
+          </h2>
+          <p className="text-base text-slate-500 mb-8 leading-relaxed">
+            The tender you are looking for could not be retrieved. It may have been processed or the ID is invalid.
+          </p>
+          <Button 
+            className="w-full bg-[#953002] text-white border border-[#953002] hover:bg-[#b03b03] transition-all shadow-md py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+            onClick={() => router.push("/cao-dashboard")}
+          >
+            <ArrowLeft size={16} />
+            Go Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
@@ -154,9 +208,36 @@ export default function CAOTenderReviewPage() {
 
       {/* Main content — reuses the same TenderPreview from tender creation */}
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-6 flex-1 w-full">
-        {isRejected && tender.rejectionReason && (
-          <div className="bg-red-50/80 border-l-4 border-[#953002] text-[#953002] p-5 rounded-r-xl text-sm font-sans shadow-sm">
-            <strong>Rejection Reason:</strong> {tender.rejectionReason}
+        {isApproved && (
+          <div className="bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800 p-5 rounded-r-xl text-sm font-sans shadow-sm flex items-center justify-between">
+            <div>
+              <strong>Tender Approved:</strong> This tender has been approved and published to the portal.
+            </div>
+            <Button 
+              variant="outline" 
+              className="border-emerald-500 text-emerald-800 bg-white hover:bg-emerald-100 hover:text-emerald-900 transition-all font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
+              onClick={() => router.push("/cao-dashboard")}
+            >
+              <ArrowLeft size={14} />
+              Go Back to Dashboard
+            </Button>
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="bg-red-50/80 border-l-4 border-[#953002] text-[#953002] p-5 rounded-r-xl text-sm font-sans shadow-sm flex items-center justify-between">
+            <div>
+              <strong>Tender Rejected:</strong> This tender has been rejected.
+              {tender.rejectionReason && <span> Reason: {tender.rejectionReason}</span>}
+            </div>
+            <Button 
+              variant="outline" 
+              className="border-[#953002] text-[#953002] bg-white hover:bg-[#fdf6f2] transition-all font-bold text-xs px-3 py-1.5 flex items-center gap-1.5"
+              onClick={() => router.push("/cao-dashboard")}
+            >
+              <ArrowLeft size={14} />
+              Go Back to Dashboard
+            </Button>
           </div>
         )}
         
