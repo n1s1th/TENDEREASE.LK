@@ -648,6 +648,20 @@ export default function ReportsAndAuditPage() {
 
   return (
     <div className="bg-[#F7F8FA] min-h-screen text-gray-900 font-inter flex flex-col">
+      {/* --- Breadcrumbs / Sub-Navigation --- */}
+      <nav className="bg-white px-6 sm:px-10 py-4 flex items-center justify-between border-b border-gray-100">
+        <div className="flex items-center gap-6 text-sm font-bold text-gray-500 whitespace-nowrap">
+          <Link href="/officer-dashboard" className="flex items-center gap-2 hover:text-[#953002] transition-colors group">
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Officer Dashboard
+          </Link>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-3">
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+          <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Active Session</span>
+        </div>
+      </nav>
 
       {/* ─── Main Content ─── */}
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-6 py-8">
@@ -669,7 +683,7 @@ export default function ReportsAndAuditPage() {
                   Reports &amp; Audit
                 </h1>
                 <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-2">
-                  <Link href="http://localhost:3000/officer-dashboard" className="hover:text-[#953002] transition-colors">Officer Dashboard</Link>
+                  <Link href="/officer-dashboard" className="hover:text-[#953002] transition-colors">Officer Dashboard</Link>
                   <ChevronRight size={11} className="text-gray-400 shrink-0" />
                   <Link href="/reports-and-audit" className="hover:text-[#953002] transition-colors">Reports &amp; Audit</Link>
                   <ChevronRight size={11} className="text-gray-400 shrink-0" />

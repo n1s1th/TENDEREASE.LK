@@ -6,6 +6,23 @@ import lk.tenderease.common.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lk.tenderease.evaluation.entity.Evaluation;
+import lk.tenderease.evaluation.entity.EvaluationCriteria;
+import lk.tenderease.evaluation.entity.EvaluationScore;
+import lk.tenderease.evaluation.entity.EvaluationResult;
+import lk.tenderease.evaluation.entity.RecommendationNote;
+import lk.tenderease.evaluation.repository.EvaluationRepository;
+import lk.tenderease.evaluation.repository.EvaluationCriteriaRepository;
+import lk.tenderease.evaluation.repository.EvaluationScoreRepository;
+import lk.tenderease.evaluation.repository.EvaluationResultRepository;
+import lk.tenderease.evaluation.repository.RecommendationNoteRepository;
+import lk.tenderease.common.constant.EvaluationStatus;
+import lk.tenderease.common.constant.ComplianceStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,6 +33,21 @@ public class BidEvaluationMockController {
 
     // In-memory database mapping: tenderNo -> (bidderId -> BidderEvaluationState)
     private static final Map<String, Map<String, BidderEvaluationState>> tenderStates = new ConcurrentHashMap<>();
+
+    @Autowired
+    private EvaluationRepository evaluationRepository;
+
+    @Autowired
+    private EvaluationCriteriaRepository evaluationCriteriaRepository;
+
+    @Autowired
+    private EvaluationScoreRepository evaluationScoreRepository;
+
+    @Autowired
+    private EvaluationResultRepository evaluationResultRepository;
+
+    @Autowired
+    private RecommendationNoteRepository recommendationNoteRepository;
 
     // Static structures representing criteria definitions
     public static class Criterion {
@@ -104,30 +136,82 @@ public class BidEvaluationMockController {
         return tenderStates.computeIfAbsent(tenderNo, k -> {
             Map<String, BidderEvaluationState> states = new LinkedHashMap<>();
             
-            // Only 1 Bidder for evaluation for display purposes
-            BidderEvaluationState bid1 = new BidderEvaluationState("BID-001", "Apex Build Ltd.", "In Progress", "PASS");
-            
-            bid1.technicalCriteria.get(0).score = 70;
-            bid1.technicalCriteria.get(0).comment = "Clear methodology and diagrams.";
-            bid1.technicalCriteria.get(1).score = 68;
-            bid1.technicalCriteria.get(1).comment = "Good experience, lack of senior roles.";
-            bid1.technicalCriteria.get(2).score = 72;
-            bid1.technicalCriteria.get(2).comment = "Feasible schedule.";
-            bid1.technicalCriteria.get(3).score = 64;
-            bid1.technicalCriteria.get(3).comment = "Standard client references.";
-            
-            bid1.financialCriteria.get(0).score = 75;
-            bid1.financialCriteria.get(0).comment = "Price is competitive.";
-            bid1.financialCriteria.get(1).score = 68;
-            bid1.financialCriteria.get(1).comment = "Standard milestone split.";
-            bid1.financialCriteria.get(2).score = 70;
-            bid1.financialCriteria.get(2).comment = "1-year warranty plus training.";
+            if (tenderNo.equals("TND-0041")) {
+                // Bidder 1: Technical Passed (Technical scored >= 60, Financial all 0)
+                BidderEvaluationState bid1 = new BidderEvaluationState("BID-001", "Apex Build Ltd.", "In Progress", "PASS");
+                bid1.technicalCriteria.get(0).score = 70;
+                bid1.technicalCriteria.get(0).comment = "Clear methodology and diagrams.";
+                bid1.technicalCriteria.get(1).score = 68;
+                bid1.technicalCriteria.get(1).comment = "Good experience, lack of senior roles.";
+                bid1.technicalCriteria.get(2).score = 72;
+                bid1.technicalCriteria.get(2).comment = "Feasible schedule.";
+                bid1.technicalCriteria.get(3).score = 64;
+                bid1.technicalCriteria.get(3).comment = "Standard client references.";
+                
+                bid1.evaluationNotes = "Solid technical proposal.";
+                bid1.lastSaved = "10 Feb 2026, 11:00";
+                states.put("BID-001", bid1);
 
-            bid1.evaluationNotes = "Solid proposal. Compliant with technical specs.";
-            bid1.lastSaved = "10 Feb 2026, 11:00";
-            
-            states.put("BID-001", bid1);
+                // Bidder 2: Financial Passed (Technical scored >= 60, Financial scored >= 60)
+                BidderEvaluationState bid2 = new BidderEvaluationState("BID-002", "Vertex Solutions", "Submitted", "PASS");
+                bid2.technicalCriteria.get(0).score = 80;
+                bid2.technicalCriteria.get(1).score = 85;
+                bid2.technicalCriteria.get(2).score = 75;
+                bid2.technicalCriteria.get(3).score = 80;
+                
+                bid2.financialCriteria.get(0).score = 85;
+                bid2.financialCriteria.get(0).comment = "Highly competitive pricing.";
+                bid2.financialCriteria.get(1).score = 80;
+                bid2.financialCriteria.get(1).comment = "Acceptable payment milestones.";
+                bid2.financialCriteria.get(2).score = 90;
+                bid2.financialCriteria.get(2).comment = "Excellent warranty and support SLA.";
+                
+                bid2.evaluationNotes = "Excellent in both technical and financial criteria.";
+                bid2.lastSaved = "12 Feb 2026, 14:30";
+                states.put("BID-002", bid2);
+            } else if (tenderNo.equals("TND-0042")) {
+                // Bidder 3: Financial Failed (Technical scored >= 60, Financial scored < 60)
+                BidderEvaluationState bid3 = new BidderEvaluationState("BID-003", "BuildCo", "Submitted", "PASS");
+                bid3.technicalCriteria.get(0).score = 75;
+                bid3.technicalCriteria.get(1).score = 70;
+                bid3.technicalCriteria.get(2).score = 75;
+                bid3.technicalCriteria.get(3).score = 70;
+                
+                bid3.financialCriteria.get(0).score = 40;
+                bid3.financialCriteria.get(0).comment = "Extremely high bid price.";
+                bid3.financialCriteria.get(1).score = 30;
+                bid3.financialCriteria.get(1).comment = "Rigid payment term requirements.";
+                bid3.financialCriteria.get(2).score = 50;
+                bid3.financialCriteria.get(2).comment = "Basic warranty support.";
+                
+                bid3.evaluationNotes = "Technical proposal is good, but pricing is extremely high.";
+                bid3.lastSaved = "15 Feb 2026, 09:15";
+                states.put("BID-003", bid3);
 
+                // Bidder 4: Not Reviewed (Not Started)
+                BidderEvaluationState bid4 = new BidderEvaluationState("BID-004", "Green Spaces Ltd.", "Not Started", "PENDING");
+                states.put("BID-004", bid4);
+            } else {
+                // Bidder 5: Evaluation Failed (Technical scored < 60)
+                BidderEvaluationState bid5 = new BidderEvaluationState("BID-005", "Cloudify", "Submitted", "FAIL");
+                bid5.technicalCriteria.get(0).score = 40;
+                bid5.technicalCriteria.get(0).comment = "Unclear methodology description.";
+                bid5.technicalCriteria.get(1).score = 50;
+                bid5.technicalCriteria.get(1).comment = "Inadequate CV profiles.";
+                bid5.technicalCriteria.get(2).score = 45;
+                bid5.technicalCriteria.get(2).comment = "Schedules are not realistic.";
+                bid5.technicalCriteria.get(3).score = 35;
+                bid5.technicalCriteria.get(3).comment = "Poor references.";
+                
+                bid5.evaluationNotes = "Failed to meet minimum technical threshold.";
+                bid5.lastSaved = "18 Feb 2026, 16:45";
+                states.put("BID-005", bid5);
+
+                // Bidder 6: Not Reviewed (Not Started)
+                BidderEvaluationState bid6 = new BidderEvaluationState("BID-006", "DataSafe", "Not Started", "PENDING");
+                states.put("BID-006", bid6);
+            }
+            
             return states;
         });
     }
@@ -230,6 +314,333 @@ public class BidEvaluationMockController {
         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
         bidder.lastSaved = now.format(formatter);
 
+        // ══════════════════════════════════════════════════════════════════════════
+        // PERSIST EVALUATION TO DATABASE FOR AWARD PROCESSING
+        // ══════════════════════════════════════════════════════════════════════════
+        UUID tenderUuid = null;
+        String tenderTitle = "ERP System Upgrade";
+        String departmentName = "IT & Software";
+        BigDecimal estimatedBudget = BigDecimal.valueOf(10000000);
+        
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderNo;
+            Map<?, ?> tenderDetail = restTemplate.getForObject(tenderServiceUrl, Map.class);
+            if (tenderDetail != null) {
+                if (tenderDetail.get("id") != null) {
+                    tenderUuid = UUID.fromString(tenderDetail.get("id").toString());
+                }
+                if (tenderDetail.get("title") != null) {
+                    tenderTitle = tenderDetail.get("title").toString();
+                }
+                if (tenderDetail.get("departmentName") != null) {
+                    departmentName = tenderDetail.get("departmentName").toString();
+                }
+                if (tenderDetail.get("estimatedBudget") != null) {
+                    estimatedBudget = new BigDecimal(tenderDetail.get("estimatedBudget").toString());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch tender details in submitEvaluation: " + e.getMessage());
+        }
+
+        if (tenderUuid == null) {
+            try {
+                tenderUuid = UUID.fromString(tenderNo);
+            } catch (Exception e) {
+                tenderUuid = UUID.nameUUIDFromBytes(tenderNo.getBytes());
+            }
+        }
+
+        // Fetch bids from bid-service
+        UUID bidUuid = null;
+        BigDecimal bidAmount = BigDecimal.ZERO;
+        String currency = "LKR";
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String bidServiceUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid;
+            Map<?, ?> bidsResponse = restTemplate.getForObject(bidServiceUrl, Map.class);
+            if (bidsResponse != null && bidsResponse.get("data") != null) {
+                List<?> bidsList = (List<?>) bidsResponse.get("data");
+                for (Object bidObj : bidsList) {
+                    if (bidObj instanceof Map) {
+                        Map<?, ?> bidMap = (Map<?, ?>) bidObj;
+                        String companyName = bidMap.get("companyName") != null ? bidMap.get("companyName").toString() : "";
+                        String bidderName = bidMap.get("bidderName") != null ? bidMap.get("bidderName").toString() : "";
+                        if (companyName.equalsIgnoreCase(bidder.bidderName) || bidderName.equalsIgnoreCase(bidder.bidderName)) {
+                            bidUuid = UUID.fromString(bidMap.get("id").toString());
+                            if (bidMap.get("bidAmount") != null) {
+                                bidAmount = new BigDecimal(bidMap.get("bidAmount").toString());
+                            }
+                            if (bidMap.get("currency") != null) {
+                                currency = bidMap.get("currency").toString();
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Fallback to match by index if no name match
+                if (bidUuid == null && !bidsList.isEmpty()) {
+                    int index = 0;
+                    if (request.bidderId.startsWith("BID-")) {
+                        try {
+                            index = Integer.parseInt(request.bidderId.substring(4)) - 1;
+                        } catch (Exception ignored) {}
+                    }
+                    if (index < 0) index = 0;
+                    if (index >= bidsList.size()) index = bidsList.size() - 1;
+                    
+                    Object bidObj = bidsList.get(index);
+                    if (bidObj instanceof Map) {
+                        Map<?, ?> bidMap = (Map<?, ?>) bidObj;
+                        bidUuid = UUID.fromString(bidMap.get("id").toString());
+                        if (bidMap.get("bidAmount") != null) {
+                            bidAmount = new BigDecimal(bidMap.get("bidAmount").toString());
+                        }
+                        if (bidMap.get("currency") != null) {
+                            currency = bidMap.get("currency").toString();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch bids in submitEvaluation: " + e.getMessage());
+        }
+
+        if (bidUuid == null) {
+            bidUuid = UUID.nameUUIDFromBytes(request.bidderId.getBytes());
+        }
+
+        double finSubtotal = 0;
+        for (Criterion c : bidder.financialCriteria) {
+            finSubtotal += c.score * (c.weight / 100.0);
+        }
+        double compositeScore = techSubtotal * 0.7 + (techSubtotal >= 60 ? finSubtotal * 0.3 : 0.0);
+
+        // Save Evaluation entity
+        UUID evaluatorUuid = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        Evaluation evaluation = evaluationRepository.findByBidIdAndEvaluatorId(bidUuid, evaluatorUuid)
+                .orElse(new Evaluation());
+        evaluation.setTenderId(tenderUuid);
+        evaluation.setBidId(bidUuid);
+        evaluation.setEvaluatorId(evaluatorUuid);
+        evaluation.setStatus(EvaluationStatus.COMPLETED);
+        evaluation.setIsFlagged(false);
+        evaluation.setComplianceStatus(techSubtotal >= 60 ? ComplianceStatus.COMPLIANT : ComplianceStatus.NON_COMPLIANT);
+        evaluation.setTotalScore(BigDecimal.valueOf(compositeScore));
+        evaluation.setRemarks(request.notes != null ? request.notes : "");
+        evaluation.setEvaluatedAt(LocalDateTime.now());
+        
+        Evaluation savedEvaluation = evaluationRepository.save(evaluation);
+
+        // Save EvaluationScores and Criteria
+        List<EvaluationCriteria> dbCriteria = evaluationCriteriaRepository.findByTenderId(tenderUuid);
+        
+        for (Criterion c : bidder.technicalCriteria) {
+            saveScoreForCriterion(savedEvaluation, c, dbCriteria, tenderUuid);
+        }
+        for (Criterion c : bidder.financialCriteria) {
+            saveScoreForCriterion(savedEvaluation, c, dbCriteria, tenderUuid);
+        }
+
+        // Determine winning bidder
+        List<Evaluation> allEvaluations = evaluationRepository.findByTenderId(tenderUuid);
+        UUID winningBidId = null;
+        BigDecimal maxScore = BigDecimal.ZERO;
+        String winningBidderName = bidder.bidderName;
+        BigDecimal winningBidAmount = bidAmount;
+        
+        for (Evaluation eval : allEvaluations) {
+            if (eval.getComplianceStatus() == ComplianceStatus.COMPLIANT) {
+                if (eval.getTotalScore() != null && eval.getTotalScore().compareTo(maxScore) > 0) {
+                    maxScore = eval.getTotalScore();
+                    winningBidId = eval.getBidId();
+                }
+            }
+        }
+        
+        if (winningBidId != null) {
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                String bidUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid;
+                Map<?, ?> bidsResponse = restTemplate.getForObject(bidUrl, Map.class);
+                if (bidsResponse != null && bidsResponse.get("data") != null) {
+                    List<?> bidsList = (List<?>) bidsResponse.get("data");
+                    for (Object bidObj : bidsList) {
+                        if (bidObj instanceof Map) {
+                            Map<?, ?> bidMap = (Map<?, ?>) bidObj;
+                            UUID currentBidId = UUID.fromString(bidMap.get("id").toString());
+                            if (currentBidId.equals(winningBidId)) {
+                                winningBidderName = bidMap.get("companyName") != null ? bidMap.get("companyName").toString() : 
+                                                    (bidMap.get("bidderName") != null ? bidMap.get("bidderName").toString() : winningBidderName);
+                                if (bidMap.get("bidAmount") != null) {
+                                    winningBidAmount = new BigDecimal(bidMap.get("bidAmount").toString());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch winning bid details: " + e.getMessage());
+            }
+            
+            // Save EvaluationResult
+            EvaluationResult evalResult = evaluationResultRepository.findByTenderId(tenderUuid)
+                    .orElse(new EvaluationResult());
+            evalResult.setTenderId(tenderUuid);
+            evalResult.setWinningBidId(winningBidId);
+            evalResult.setFinalScore(maxScore);
+            evalResult.setStatus("FINALIZED");
+            evalResult.setApprovedAt(LocalDateTime.now());
+            evaluationResultRepository.save(evalResult);
+
+            // Save RecommendationNote
+            RecommendationNote recNote = recommendationNoteRepository.findAllByOrderByCreatedAtDesc().stream()
+                    .filter(rn -> rn.getTenderId().equals(tenderNo))
+                    .findFirst()
+                    .orElse(new RecommendationNote());
+            
+            recNote.setTenderId(tenderNo);
+            recNote.setTenderName(tenderTitle);
+            recNote.setDepartment(departmentName);
+            recNote.setEstimatedBudget(estimatedBudget);
+            recNote.setBidderName(winningBidderName);
+            recNote.setRecommendedValue(winningBidAmount);
+            recNote.setFinalScore(maxScore.doubleValue());
+            recNote.setJustification(request.notes != null ? request.notes : "Recommended based on scoring criteria.");
+            recNote.setStatus(RecommendationNote.RecommendationStatus.PENDING);
+            recommendationNoteRepository.save(recNote);
+            
+            // Update tender status to EVALUATION in tender-service
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                String updateUrl = "http://localhost:8082/api/v1/tenders/" + tenderUuid + "/status?status=EVALUATION";
+                restTemplate.put(updateUrl, null);
+            } catch (Exception e) {
+                System.err.println("Failed to update tender status to EVALUATION: " + e.getMessage());
+            }
+        }
+
         return ResponseEntity.ok(ApiResponse.success(bidder, "Evaluation submitted successfully"));
+    }
+
+    private void saveScoreForCriterion(Evaluation evaluation, Criterion c, List<EvaluationCriteria> dbCriteria, UUID tenderId) {
+        EvaluationCriteria criteria = null;
+        for (EvaluationCriteria ec : dbCriteria) {
+            if (ec.getName().equalsIgnoreCase(c.name)) {
+                criteria = ec;
+                break;
+            }
+        }
+        
+        if (criteria == null) {
+            criteria = new EvaluationCriteria();
+            criteria.setTenderId(tenderId);
+            criteria.setName(c.name);
+            criteria.setDescription(c.description != null ? c.description : "");
+            criteria.setWeight(BigDecimal.valueOf(c.weight));
+            criteria = evaluationCriteriaRepository.save(criteria);
+        }
+        
+        final UUID criteriaId = criteria.getId();
+        List<EvaluationScore> scores = evaluationScoreRepository.findByEvaluationId(evaluation.getId());
+        EvaluationScore score = null;
+        for (EvaluationScore es : scores) {
+            if (es.getCriteria().getId().equals(criteriaId)) {
+                score = es;
+                break;
+            }
+        }
+        if (score == null) {
+            score = new EvaluationScore();
+        }
+                
+        score.setEvaluation(evaluation);
+        score.setCriteria(criteria);
+        score.setScore(BigDecimal.valueOf(c.score));
+        score.setComment(c.comment != null ? c.comment : "");
+        evaluationScoreRepository.save(score);
+    }
+
+    public static class StatusCountsResponse {
+        public int technicalPassed;
+        public int financialPassed;
+        public int financialFailed;
+        public int evaluationFailed;
+        public int notReviewed;
+
+        public StatusCountsResponse(int technicalPassed, int financialPassed, int financialFailed, int evaluationFailed, int notReviewed) {
+            this.technicalPassed = technicalPassed;
+            this.financialPassed = financialPassed;
+            this.financialFailed = financialFailed;
+            this.evaluationFailed = evaluationFailed;
+            this.notReviewed = notReviewed;
+        }
+    }
+
+    @GetMapping("/dashboard/status-counts")
+    @Operation(summary = "Get evaluation status counts for the dashboard")
+    public ResponseEntity<ApiResponse<StatusCountsResponse>> getStatusCounts() {
+        // Ensure default tenders are pre-populated in tenderStates map
+        getOrCreateTenderState("TND-0041");
+        getOrCreateTenderState("TND-0042");
+        getOrCreateTenderState("TND-0043");
+
+        int technicalPassed = 0;
+        int financialPassed = 0;
+        int financialFailed = 0;
+        int evaluationFailed = 0;
+        int notReviewed = 0;
+
+        for (Map<String, BidderEvaluationState> bidders : tenderStates.values()) {
+            for (BidderEvaluationState bidder : bidders.values()) {
+                if (bidder.status.equals("Not Started")) {
+                    notReviewed++;
+                    continue;
+                }
+
+                // Calculate sub-scores
+                double techSubtotal = 0;
+                for (Criterion c : bidder.technicalCriteria) {
+                    techSubtotal += c.score * (c.weight / 100.0);
+                }
+
+                double finSubtotal = 0;
+                boolean hasFinancialScores = false;
+                for (Criterion c : bidder.financialCriteria) {
+                    finSubtotal += c.score * (c.weight / 100.0);
+                    if (c.score > 0) {
+                        hasFinancialScores = true;
+                    }
+                }
+
+                if (techSubtotal < 60 || bidder.complianceStatus.equals("FAIL")) {
+                    evaluationFailed++;
+                } else {
+                    // techSubtotal >= 60 (Passed technical)
+                    if (!hasFinancialScores) {
+                        technicalPassed++;
+                    } else {
+                        if (finSubtotal >= 60) {
+                            financialPassed++;
+                        } else {
+                            financialFailed++;
+                        }
+                    }
+                }
+            }
+        }
+
+        StatusCountsResponse counts = new StatusCountsResponse(
+                technicalPassed,
+                financialPassed,
+                financialFailed,
+                evaluationFailed,
+                notReviewed
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(counts, "Status counts retrieved successfully"));
     }
 }
