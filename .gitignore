@@ -1,0 +1,17 @@
+# Environment files
+.env
+.env.*
+env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor configurations
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
