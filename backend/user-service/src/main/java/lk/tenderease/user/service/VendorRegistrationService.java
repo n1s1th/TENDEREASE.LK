@@ -25,4 +25,5 @@ public interface VendorRegistrationService {
     PageResponse<VendorProfileResponse> listVendors(VendorStatus status, Pageable pageable);
     VendorProfileResponse approveVendor(UUID id);
     VendorProfileResponse rejectVendor(UUID id, String reason);
+    VendorProfileResponse getVendorByEmail(String email);
 }

@@ -12,7 +12,8 @@ import {
   Edit2,
   Download,
   Link,
-  Trash2
+  Trash2,
+  Check
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -30,7 +31,12 @@ interface Tender {
   role: string;
 }
 
-export default function AssignedTenderTable() {
+interface AssignedTenderTableProps {
+  title?: string;
+  subtitle?: string;
+}
+
+export default function AssignedTenderTable({ title, subtitle }: AssignedTenderTableProps = {}) {
   const router = useRouter();
   const { assignedTenders, fetchAssignedTenders, isLoading } = useEvaluationStore();
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,14 +99,28 @@ export default function AssignedTenderTable() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      {(title || subtitle) && (
+        <div className="px-6 pt-6">
+          {title && (
+            <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">
+              {title}
+            </h3>
+          )}
+          {subtitle && (
+            <p className="text-xs font-bold text-gray-400 mt-2.5 uppercase tracking-widest">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      )}
       {/* Header Actions */}
-      <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 pt-4 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Search by tender ID or title..."
-            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
+            className="w-full pl-12 pr-4 py-3 bg-[#F8FAFC] border-none rounded-xl text-sm text-gray-700 focus:ring-2 focus:ring-[#9A3B12]/20 transition-all placeholder:text-gray-400 outline-none font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -135,7 +155,7 @@ export default function AssignedTenderTable() {
                   }`}
                 >
                   {status === "ALL" ? "All Status" : formatStatus(status)}
-                  {statusFilter === status && <div className="w-1.5 h-1.5 rounded-full bg-[#953002]" />}
+                  {statusFilter === status && <Check className="w-3.5 h-3.5 text-[#953002]" />}
                 </button>
               ))}
             </div>
@@ -147,14 +167,14 @@ export default function AssignedTenderTable() {
       <div className="relative min-w-[1000px]">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-[#F8FAFC]">
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Tender ID</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[30%]">Tender Title</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Category</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Status</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[15%]">Opening Date</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[10%]">Role</th>
-              <th className="px-6 py-6 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] text-center w-[5%]">Actions</th>
+            <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
+              <th className="py-4 px-6 rounded-tl-lg text-center w-[15%]">Tender ID</th>
+              <th className="py-4 px-6 text-center w-[30%]">Tender Title</th>
+              <th className="py-4 px-6 text-center w-[10%]">Category</th>
+              <th className="py-4 px-6 text-center w-[15%]">Status</th>
+              <th className="py-4 px-6 text-center w-[15%]">Opening Date</th>
+              <th className="py-4 px-6 text-center w-[10%]">Role</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[5%]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -166,7 +186,7 @@ export default function AssignedTenderTable() {
               </tr>
             ) : paginatedTenders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-20 text-slate-500 font-bold italic tracking-wide">No tenders found matching your criteria...</td>
+                <td colSpan={7} className="text-center py-12 text-gray-500 font-bold italic">No tenders found matching your criteria...</td>
               </tr>
             ) : paginatedTenders.map((tender, idx) => (
               <tr key={tender.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all group">
@@ -246,17 +266,42 @@ export default function AssignedTenderTable() {
       </div>
 
       {/* Pagination */}
-      {filteredTenders.length > 0 && (
-        <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
-          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-            Showing <span className="text-gray-900">{paginatedTenders.length}</span> of <span className="text-gray-900">{filteredTenders.length}</span> tenders
-          </p>
-          <div className="flex items-center gap-2">
-            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronLeft className="w-5 h-5" /></button>
-            <button disabled className="p-2.5 rounded-xl border border-gray-100 text-gray-300 opacity-50"><ChevronRight className="w-5 h-5" /></button>
-          </div>
+      <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
+        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+          SHOWING {paginatedTenders.length} OF {filteredTenders.length} TENDERS
+        </span>
+        <div className="flex items-center gap-2">
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button 
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center text-[13px] font-black transition-all ${
+                currentPage === page 
+                  ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20' 
+                  : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+
+          <button 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

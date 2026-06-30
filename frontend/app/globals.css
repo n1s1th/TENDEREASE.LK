@@ -3818,3 +3818,12 @@
   font-weight: 600;
   border-bottom-color: var(--te-gray-1);
 }
+
+/* Hide scrollbar utility but keep functionality */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

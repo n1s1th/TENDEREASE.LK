@@ -78,6 +78,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .website(request.getOrganization().getWebsite())
                 .officialEmail(request.getOrganization().getOfficialEmail())
                 .officialTelephone(request.getOrganization().getOfficialTelephone())
+                .cidaGrade(request.getOrganization().getCidaGrade())
                 .status(VendorStatus.PENDING_REVIEW)
                 .drcVerified(false)
                 .termsAccepted(false)
@@ -294,6 +295,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .website(profile.getWebsite())
                 .officialEmail(profile.getOfficialEmail())
                 .officialTelephone(profile.getOfficialTelephone())
+                .cidaGrade(profile.getCidaGrade())
                 .drcVerified(Boolean.TRUE.equals(profile.getDrcVerified()))
                 .drcCompanyName(profile.getDrcCompanyName())
                 .drcIncorporationDate(profile.getDrcIncorporationDate())
@@ -317,5 +319,13 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .mimeType(doc.getMimeType())
                 .uploadedAt(doc.getCreatedAt())
                 .build();
+    }
+
+    @Override
+    public VendorProfileResponse getVendorByEmail(String email) {
+        log.info("Fetching vendor profile for email: {}", email);
+        VendorProfile profile = vendorProfileRepository.findByOfficialEmail(email)
+                .orElseThrow(() -> new RuntimeException("Vendor not found with email: " + email));
+        return mapToProfileResponse(profile);
     }
 }

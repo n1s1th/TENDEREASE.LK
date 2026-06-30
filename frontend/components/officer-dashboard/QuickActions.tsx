@@ -14,7 +14,7 @@ export default function QuickActions() {
     { 
       label: "Open Bid Session", 
       icon: Lock,
-      path: "/tenders/TND-2024-001/bid-opening"
+      path: "#"
     },
     { 
       label: "View Opening Records", 
@@ -54,12 +54,12 @@ export default function QuickActions() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-center justify-between mb-3.5">
           <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">Quick Actions</h3>
         </div>
         
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2">
           {actions.map((action, idx) => {
             const isSelected = selectedIdx === idx;
             const Icon = action.icon;
@@ -68,14 +68,14 @@ export default function QuickActions() {
               <button
                 key={idx}
                 onClick={() => handleActionClick(idx, action.label, action.path)}
-                className={`w-full text-left group flex items-center justify-between px-5 py-3.5 rounded-2xl text-[14px] font-bold transition-all duration-300 border ${
+                className={`w-full text-left group flex items-center justify-between px-5 py-2.5 rounded-xl text-[14px] font-bold transition-all duration-300 border ${
                   isSelected 
                     ? `${activeBg} ${activeText} ${activeBorder} shadow-sm translate-x-1`
                     : "text-gray-600 bg-white border-transparent hover:bg-gray-50"
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-xl transition-colors ${
+                  <div className={`p-1.5 rounded-xl transition-colors ${
                     isSelected ? 'bg-white shadow-sm text-[#953002]' : 'bg-gray-50 text-gray-400 group-hover:text-[#953002]/60'
                   }`}>
                     <Icon className="w-4 h-4" />

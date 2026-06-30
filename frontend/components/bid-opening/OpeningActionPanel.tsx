@@ -82,9 +82,12 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
   return (
     <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full relative overflow-hidden">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-[12px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-          BID OPENING ACTION <span className="text-[#953002] font-black">CHAIR ONLY</span>
+        <h3 className="text-[14px] font-black text-gray-500 uppercase tracking-widest">
+          BID OPENING ACTION
         </h3>
+        <span className="text-[#953002] bg-orange-50 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest shrink-0">
+          CHAIR ONLY
+        </span>
       </div>
       
       <div className="flex-1 flex flex-col items-center justify-center text-center px-2">

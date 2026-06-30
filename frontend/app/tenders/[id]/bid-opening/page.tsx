@@ -121,10 +121,12 @@ export default function BidOpeningPage() {
             division={displaySession.division || "Procurement"}
           />
 
-          <OpeningBanner
-            status={displaySession.status}
-            scheduledTime={displaySession.scheduledOpeningTime}
-          />
+          <div className="pt-4">
+            <OpeningBanner
+              status={displaySession.status}
+              scheduledTime={displaySession.scheduledOpeningTime}
+            />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <SchedulePanel

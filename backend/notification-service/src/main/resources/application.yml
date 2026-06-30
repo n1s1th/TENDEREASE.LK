@@ -10,7 +10,7 @@ spring:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/tenderease/protocol/openid-connect/certs}
   
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_notification_db
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_notification_db?sslmode=require
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver

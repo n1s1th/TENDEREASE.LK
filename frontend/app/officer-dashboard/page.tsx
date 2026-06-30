@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import KpiCards from "@/components/committee-dashboard/KpiCards";
-import QuickActions from "@/components/committee-dashboard/QuickActions";
-import EvaluationStatusPanel from "@/components/committee-dashboard/EvaluationStatusPanel";
-import AssignedTenderTable from "@/components/committee-dashboard/AssignedTenderTable";
+import EvaluationKpiCards from "@/components/officer-dashboard/EvaluationKpiCards";
+import QuickActions from "@/components/officer-dashboard/QuickActions";
+import EvaluationStatusPanel from "@/components/officer-dashboard/EvaluationStatusPanel";
+import AssignedTenderTable from "@/components/officer-dashboard/AssignedTenderTable";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 
 export default function OfficerDashboardPage() {
@@ -16,7 +16,7 @@ export default function OfficerDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div style={{ padding: "0.75rem 0 1.25rem" }}>
+      <div style={{ padding: "2.25rem 0 1.25rem" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
           <div style={{ width: 4, height: 60, background: "#953002", borderRadius: 4, marginTop: "0.2rem" }} className="shrink-0"></div>
           <div>
@@ -31,27 +31,30 @@ export default function OfficerDashboardPage() {
               Officer Dashboard
             </h1>
             <p style={{ fontSize: "0.9rem", color: "#94a3b8", fontWeight: 500, margin: "0.6rem 0 0" }}>
-              Centralized hub for secure bid openings and multi-criteria evaluation management. • <span style={{ color: "#953002", fontWeight: 700 }}>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</span>
+              Centralized hub for secure bid openings and multi-criteria evaluation management. • <span style={{ color: "#953002", fontWeight: 700, fontSize: "0.8rem" }}>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</span>
             </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
-        <h2 className="text-xl font-black text-gray-900">Welcome Back, Officer.</h2>
-        <p className="text-gray-500 mt-1">
+      <div className="bg-white rounded-xl shadow-sm py-3.5 px-5 mb-6 border border-gray-100">
+        <h2 className="text-[17px] font-black text-gray-900">Welcome Back, Officer.</h2>
+        <p className="text-[14px] text-gray-500 mt-0.5">
           You have {activeTendersCount} active tender{activeTendersCount !== 1 ? 's' : ''} requiring your attention today.
         </p>
       </div>
 
-      <KpiCards />
+      <EvaluationKpiCards />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-8">
         <QuickActions />
         <EvaluationStatusPanel />
       </div>
 
-      <AssignedTenderTable />
+      <AssignedTenderTable 
+        title="Approved Tenders"
+        subtitle="Log of all officially approved and verified tenders."
+      />
     </div>
   );
 }

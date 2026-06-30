@@ -19,6 +19,9 @@ function getAuthHeaders(): HeadersInit {
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearAuth();
+    }
     let errorMessage = "An error occurred";
     try {
       const errorData = await res.json();

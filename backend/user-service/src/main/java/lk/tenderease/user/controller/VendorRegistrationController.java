@@ -79,6 +79,12 @@ public class VendorRegistrationController {
         return ResponseEntity.ok(vendorRegistrationService.submit(id, request));
     }
 
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Get vendor profile by official email")
+    public ResponseEntity<VendorProfileResponse> getVendorByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(vendorRegistrationService.getVendorByEmail(email));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get vendor profile")
     public ResponseEntity<VendorProfileResponse> getVendorById(

@@ -36,21 +36,12 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
             }}>
               Bid Opening & Attendance
             </h1>
-            <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
-              <Link href="/committee-dashboard" className="hover:text-[#953002] transition-colors">COMMITTEE DASHBOARD</Link>
-              <ChevronRight className="w-3 h-3" />
+            <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
+              <Link href="http://localhost:3000/officer-dashboard" className="hover:text-[#953002] transition-colors">OFFICER DASHBOARD</Link>
+              <ChevronRight className="w-3 h-3 text-gray-400" />
               <span>{tenderId} — {title}</span>
               <ChevronRight className="w-3 h-3 text-[#953002]" />
               <span className="text-[#953002]">BID OPENING</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <div className="bg-white border border-gray-100 rounded-2xl px-5 py-3 flex flex-col items-center shadow-sm">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2">SESSION DATA</span>
-            <div className="flex gap-3">
-              <span className="bg-[#F8F9FA] text-gray-400 text-[11px] font-black px-4 py-1.5 rounded-xl uppercase tracking-widest border border-gray-100 italic">DATA UNAVAILABLE</span>
             </div>
           </div>
         </div>

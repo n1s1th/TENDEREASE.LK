@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { ShieldCheck, FileText, ChevronRight, Lock, AlertTriangle } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+import { getBidsByTender } from "@/services/bid.service";
 import BidEvaluationModal from "./BidEvaluationModal";
 
 export default function ReceivedBidsLog() {
@@ -21,28 +22,54 @@ export default function ReceivedBidsLog() {
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
 
   useEffect(() => {
-    const syncBids = async () => {
+    const loadBids = async () => {
       if (!session?.tenderId) return;
       try {
-        const evaluations = await fetchEvaluationsByTender(session.tenderId);
-        if (evaluations && evaluations.length > 0) {
-          setBids(prev => prev.map(bid => {
-            const evalItem = evaluations.find(e => e.id === bid.id || e.bidId === bid.id);
-            if (evalItem) {
-              return { 
-                ...bid, 
-                isFlagged: evalItem.isFlagged, 
-                status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus 
-              };
-            }
-            return bid;
+        const data = await getBidsByTender(session.tenderId);
+        let mapped: any[] = [];
+        if (data) {
+          mapped = data.map((bid: any, idx: number) => ({
+            id: bid.id,
+            no: (idx + 1).toString(),
+            ref: bid.id.substring(0, 8).toUpperCase(),
+            name: bid.companyName || bid.bidderName,
+            time: bid.submittedAt || "TBA",
+            docs: bid.bidData ? Object.keys(bid.bidData).filter(k => k.endsWith("File") && bid.bidData[k]).length + " Files" : "0 Files",
+            amount: `${bid.currency} ${Number(bid.bidAmount || 0).toLocaleString()}`,
+            status: bid.status,
+            isFlagged: bid.status === "FLAGGED",
+            bidData: bid.bidData,
+            technicalScore: bid.technicalScore,
+            financialScore: bid.financialScore,
+            notes: bid.notes
           }));
         }
+
+        try {
+          const evaluations = await fetchEvaluationsByTender(session.tenderId);
+          if (evaluations && evaluations.length > 0) {
+            mapped = mapped.map(bid => {
+              const evalItem = evaluations.find((e: any) => e.id === bid.id || e.bidId === bid.id);
+              if (evalItem) {
+                return { 
+                  ...bid, 
+                  isFlagged: evalItem.isFlagged, 
+                  status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus 
+                };
+              }
+              return bid;
+            });
+          }
+        } catch (storeErr) {
+          console.warn("Evaluations store sync warning:", storeErr);
+        }
+
+        setBids(mapped);
       } catch (err) {
-        console.error("Sync failed:", err);
+        console.error("Failed to load bids:", err);
       }
     };
-    syncBids();
+    loadBids();
   }, [session?.tenderId, fetchEvaluationsByTender]);
 
   const handleUpdateBid = async (no: string, updates: any) => {
@@ -75,9 +102,9 @@ export default function ReceivedBidsLog() {
   const visibleBids = bids.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="mt-4 mb-8 bg-white rounded-[32px] border border-gray-100 p-6 shadow-sm relative overflow-hidden">
+    <div className="mt-4 mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
 
-      <div className="flex justify-between items-start mb-6 relative z-10">
+      <div className="p-6 border-b border-gray-50 flex justify-between items-start relative z-10 bg-white">
         <div>
           <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-3 uppercase">
             RECEIVED BIDS LOG
@@ -93,14 +120,14 @@ export default function ReceivedBidsLog() {
               </span>
             ) : null}
           </h3>
-          <p className="text-xs font-bold text-gray-400 mt-1 uppercase tracking-widest">SECURE ADMINISTRATIVE LOG OF ALL VERIFIED TENDER SUBMISSIONS.</p>
+          <p className="text-xs font-bold text-gray-400 mt-2.5 uppercase tracking-widest">SECURE ADMINISTRATIVE LOG OF ALL VERIFIED TENDER SUBMISSIONS.</p>
         </div>
         <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">
           {bids.length} TOTAL SUBMISSIONS
         </span>
       </div>
 
-      <div className="overflow-x-auto min-h-[400px]">
+      <div className={`overflow-x-auto ${visibleBids.length === 0 ? 'min-h-[150px]' : 'min-h-[400px]'}`}>
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
@@ -117,7 +144,7 @@ export default function ReceivedBidsLog() {
           <tbody>
             {visibleBids.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-20 text-gray-500 font-bold italic">No submissions logged for this session...</td>
+                <td colSpan={8} className="text-center py-12 text-gray-500 font-bold italic">No submissions logged for this session...</td>
               </tr>
             ) : visibleBids.map((row, idx) => (
               <tr key={row.no} className={`border-b border-gray-100 hover:bg-gray-50/80 transition-all ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F2F4F7]'} ${row.isFlagged ? 'bg-red-50/30' : ''}`}>
@@ -170,7 +197,7 @@ export default function ReceivedBidsLog() {
         </table>
       </div>
 
-      <div className="flex justify-between items-center mt-6 relative z-10">
+      <div className="p-6 border-t border-gray-50 flex justify-between items-center bg-white/50 relative z-10">
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
           SHOWING {visibleBids.length} OF {bids.length} ENTRIES
         </span>
