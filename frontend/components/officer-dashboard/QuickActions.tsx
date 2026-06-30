@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Lock, FileText, Download, Users, Trophy } from "lucide-react";
+import { ArrowRight, Lock, FileText, Download, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QuickActionModal from "./QuickActionModal";
 
@@ -24,11 +24,6 @@ export default function QuickActions() {
     { 
       label: "Download Bid Documents", 
       icon: Download,
-      path: "#"
-    },
-    { 
-      label: "Committee Roster", 
-      icon: Users,
       path: "#"
     },
     { 
