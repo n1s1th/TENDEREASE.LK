@@ -20,7 +20,7 @@ export async function getDashboardMetrics(): Promise<{
   // Fetch tender metrics and bid count in parallel
   const [metricsRes, bidsRes] = await Promise.all([
     fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`),
-    fetch(`${BID_SERVICE}/api/bids/count`).catch(() => null), // Graceful fallback if bid-service is down
+    fetch(`${BID_SERVICE}/api/bids/count`).catch((): any => null), // Graceful fallback if bid-service is down
   ]);
 
   if (!metricsRes.ok) throw new Error("Failed to fetch dashboard metrics");

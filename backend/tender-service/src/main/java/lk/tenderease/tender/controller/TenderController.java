@@ -370,4 +370,14 @@ public class TenderController {
         TenderResponse response = tenderService.submitForApproval(id, "dev-user-id");
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/{id}/status")
+    @Operation(summary = "Update tender status", description = "Updates status of a tender. Public/internal use.")
+    public ResponseEntity<TenderResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestParam TenderStatus status) {
+        log.info("REST request to update tender {} status to {}", id, status);
+        TenderResponse response = tenderService.updateTenderStatus(id, status, null, "system-user");
+        return ResponseEntity.ok(response);
+    }
 }

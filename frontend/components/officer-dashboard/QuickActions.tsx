@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Lock, FileText, Download, Users, Settings } from "lucide-react";
+import { ArrowRight, Lock, FileText, Download, Users, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QuickActionModal from "./QuickActionModal";
 
@@ -32,8 +32,8 @@ export default function QuickActions() {
       path: "#"
     },
     { 
-      label: "System Settings", 
-      icon: Settings,
+      label: "Awards Processing", 
+      icon: Trophy,
       path: "#"
     },
   ];

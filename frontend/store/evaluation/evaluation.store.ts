@@ -10,9 +10,14 @@ import {
   apiFetchScores,
   apiFetchCriteria,
   apiSubmitScore,
-  fetchMyEvaluations,
-  getDashboardMetrics
+  fetchTenderEvaluations,
+  toggleFlag as toggleFlagApi,
+  updateComplianceStatus as updateComplianceStatusApi
 } from "@/lib/api/evaluation.api";
+import {
+  getDashboardMetrics,
+  getAssignedTenders
+} from "@/lib/api/officer.api";
 
 
 
@@ -88,13 +93,12 @@ export const useEvaluationStore = create<EvaluationState>()(
         ),
 
       fetchAssignedTenders: async () => {
-        set({ isLoading: true, error: null });
+        set({ isLoading: true });
         try {
-          const res = await fetchMyEvaluations();
-          set({ assignedTenders: res.data, isLoading: false });
+          const res = await getAssignedTenders();
+          set({ assignedTenders: res.data.content as any[], isLoading: false });
         } catch (err: any) {
           set({ 
-            error: err.message, 
             isLoading: false, 
             assignedTenders: [] 
           });
@@ -121,6 +125,40 @@ export const useEvaluationStore = create<EvaluationState>()(
             noBidTendersCount: 0
           });
         }
+      },
+
+      fetchEvaluationsByTender: async (tenderId: string) => {
+        set({ isLoading: true }, false, "evaluation/fetchEvaluationsByTender/pending");
+        try {
+          const res = await fetchTenderEvaluations(tenderId);
+          set({ isLoading: false }, false, "evaluation/fetchEvaluationsByTender/fulfilled");
+          return res.data;
+        } catch (err) {
+          set({ isLoading: false }, false, "evaluation/fetchEvaluationsByTender/rejected");
+          throw err;
+        }
+      },
+
+      toggleFlag: async (evaluationId: string) => {
+        set({ isLoading: true }, false, "evaluation/toggleFlag/pending");
+        try {
+          await toggleFlagApi(evaluationId);
+          set({ isLoading: false }, false, "evaluation/toggleFlag/fulfilled");
+        } catch (err) {
+          set({ isLoading: false }, false, "evaluation/toggleFlag/rejected");
+          throw err;
+        }
+      },
+
+      updateComplianceStatus: async (evaluationId: string, status: string) => {
+        set({ isLoading: true }, false, "evaluation/updateComplianceStatus/pending");
+        try {
+          await updateComplianceStatusApi(evaluationId, status);
+          set({ isLoading: false }, false, "evaluation/updateComplianceStatus/fulfilled");
+        } catch (err) {
+          set({ isLoading: false }, false, "evaluation/updateComplianceStatus/rejected");
+          throw err;
+        }
       }
     }),
     { name: "EvaluationStore" }
@@ -140,3 +178,4 @@ export const selectMetrics = (s: EvaluationState) => ({
   awarded: s.awardedProposalsCount,
   noBids: s.noBidTendersCount
 });
+

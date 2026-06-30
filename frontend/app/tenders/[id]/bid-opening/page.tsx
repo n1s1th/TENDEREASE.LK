@@ -13,7 +13,7 @@ import { useOpeningStore } from "@/store/opening/opening.store";
 import { ArrowLeft } from "lucide-react";
 import Footer from "@/components/home/Footer";
 import Link from "next/link";
-import { getTenders } from "@/services/tender.service";
+import { getTenders, getTenderById } from "@/services/tender.service";
 
 const DEMO_SESSION = {
   id: "TND-0000-SESSION",
@@ -34,15 +34,25 @@ export default function BidOpeningPage() {
 
   useEffect(() => {
     if (id) {
-      getTenders(0, 10, { keyword: id })
+      getTenderById(id)
         .then((res) => {
-          const content = res.content || res;
-          const found = content.find((t: any) => t.tenderNumber === id);
-          if (found) {
-            setTender(found);
+          if (res) {
+            setTender(res);
           }
         })
-        .catch((err) => console.error("Error fetching tender by number:", err));
+        .catch((err) => {
+          console.error("Error fetching tender by ID direct:", err);
+          // Fallback to searching by keyword/tender number
+          getTenders(0, 10, { keyword: id })
+            .then((res) => {
+              const content = res.content || res.data?.content || res.data || res;
+              const found = content.find((t: any) => t.tenderNumber === id || t.id === id);
+              if (found) {
+                setTender(found);
+              }
+            })
+            .catch((err2) => console.error("Error fetching tender by search:", err2));
+        });
     }
   }, [id]);
 
@@ -115,10 +125,10 @@ export default function BidOpeningPage() {
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 py-10">
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700 ease-out fill-mode-both">
           <OpeningHeader
-            tenderId={id || displaySession.tenderId}
+            tenderId={tender?.tenderNumber || id || displaySession.tenderId}
             title={tender?.title || displaySession.tenderTitle || "Tender Opening Session"}
             category={tender?.procurementType || displaySession.category || "General"}
-            division={displaySession.division || "Procurement"}
+            division={tender?.departmentName || displaySession.division || "Procurement"}
           />
 
           <div className="pt-4">

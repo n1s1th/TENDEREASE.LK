@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Lock, FileText, Download, Users, Settings, Shield } from "lucide-react";
-import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+import { X, Lock, FileText, Download, Users, Settings, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { 
+  getTendersForOpening, 
+  getOpeningLogs, 
+  getTendersWithBids,
+  getTendersPendingAward
+} from "@/lib/api/officer.api";
 
 interface QuickActionModalProps {
   type: string | null;
@@ -15,25 +20,65 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   const router = useRouter();
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
   const [selectedTenderId, setSelectedTenderId] = useState<string>("");
-
-  const { assignedTenders, fetchAssignedTenders } = useEvaluationStore();
+  const [tendersList, setTendersList] = useState<any[]>([]);
+  const [openingLogsList, setOpeningLogsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && (type === "Open Bid Session" || type === "Download Bid Documents")) {
-      fetchAssignedTenders();
-      setSelectedTenderId("");
-    }
-  }, [isOpen, type, fetchAssignedTenders]);
+    if (!isOpen || !type) return;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        if (type === "Open Bid Session") {
+          const res = await getTendersForOpening();
+          setTendersList(res.data || []);
+        } else if (type === "Download Bid Documents") {
+          const res = await getTendersWithBids();
+          setTendersList(res.data || []);
+        } else if (type === "View Opening Records") {
+          const res = await getOpeningLogs();
+          setOpeningLogsList(res.data || []);
+        } else if (type === "Awards Processing") {
+          try {
+            const res = await getTendersPendingAward();
+            const data = res.data || [];
+            if (data.length === 0) {
+              setTendersList([
+                { id: "TND-2025-004", tenderNo: "TND-2025-004", title: "ERP System Upgrade", category: "IT & Software", status: "EVALUATED", winner: "Apex Build Ltd." },
+                { id: "TND-2025-008", tenderNo: "TND-2025-008", title: "Office Renovation Phase II", category: "Civil Works", status: "EVALUATED", winner: "Prime Contractors" },
+                { id: "TND-2025-012", tenderNo: "TND-2025-012", title: "Cloud Migration Services", category: "IT & Infrastructure", status: "EVALUATED", winner: "CloudScale Solutions" },
+              ]);
+            } else {
+              setTendersList(data.map((t: any) => ({
+                ...t,
+                status: "EVALUATED",
+                winner: t.winner || "Apex Build Ltd."
+              })));
+            }
+          } catch (err) {
+            console.error("Failed to load tenders pending award", err);
+            setTendersList([
+              { id: "TND-2025-004", tenderNo: "TND-2025-004", title: "ERP System Upgrade", category: "IT & Software", status: "EVALUATED", winner: "Apex Build Ltd." },
+              { id: "TND-2025-008", tenderNo: "TND-2025-008", title: "Office Renovation Phase II", category: "Civil Works", status: "EVALUATED", winner: "Prime Contractors" },
+              { id: "TND-2025-012", tenderNo: "TND-2025-012", title: "Cloud Migration Services", category: "IT & Infrastructure", status: "EVALUATED", winner: "CloudScale Solutions" },
+            ]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load quick action data", err);
+        setTendersList([]);
+        setOpeningLogsList([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+    setSelectedTenderId("");
+  }, [isOpen, type]);
 
   if (!isOpen || !type) return null;
-
-  const fallbackTenders = [
-    { id: "TND-2024-001", reference: "TND-2024-001", title: "Supply & Delivery of Enterprise Servers", status: "PENDING_OPENING" },
-    { id: "TND-2024-002", reference: "TND-2024-002", title: "Development of National Procurement Portal", status: "PENDING_OPENING" },
-    { id: "TND-2024-003", reference: "TND-2024-003", title: "Implementation of Cloud Security Framework", status: "OPEN" },
-  ];
-
-  const tendersList = (assignedTenders && assignedTenders.length > 0) ? assignedTenders : fallbackTenders;
 
   const getContent = () => {
     switch (type) {
@@ -47,37 +92,45 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
             <div className="mt-4 space-y-2">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Select Approved Tender</label>
               <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {tendersList.map((tender) => {
-                  const isSelected = selectedTenderId === tender.id;
-                  return (
-                    <button
-                      key={tender.id}
-                      type="button"
-                      onClick={() => setSelectedTenderId(tender.id)}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
-                        isSelected
-                          ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
-                          : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <span className={`font-mono text-[10px] font-black px-2 py-0.5 rounded border ${
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  </div>
+                ) : tendersList.length === 0 ? (
+                  <p className="text-xs italic text-gray-400 text-center py-8">No approved tenders available...</p>
+                ) : (
+                  tendersList.map((tender) => {
+                    const isSelected = selectedTenderId === tender.id;
+                    return (
+                      <button
+                        key={tender.id}
+                        type="button"
+                        onClick={() => setSelectedTenderId(tender.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
                           isSelected
-                            ? "text-[#953002] bg-white border-[#953002]/20"
-                            : "text-[#953002] bg-orange-50 border-orange-100/50"
-                        }`}>
-                          {tender.reference || (tender as any).tenderNo || tender.id}
+                            ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
+                            : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <span className={`font-mono text-[10px] font-black px-2 py-0.5 rounded border ${
+                            isSelected
+                              ? "text-[#953002] bg-white border-[#953002]/20"
+                              : "text-[#953002] bg-orange-50 border-orange-100/50"
+                          }`}>
+                            {tender.tenderNo || tender.reference || tender.id}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                            {tender.status}
+                          </span>
+                        </div>
+                        <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
+                          {tender.title}
                         </span>
-                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                          {tender.status}
-                        </span>
-                      </div>
-                      <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
-                        {tender.title}
-                      </span>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           )
@@ -92,12 +145,23 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
             <div className="mt-4 space-y-2">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Recent Records</label>
               <div className="max-h-[180px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <p className="text-xs font-bold text-gray-700">TR-2024-00{i}</p>
-                    <p className="text-[10px] text-gray-400">12 May 2026</p>
+                {isLoading ? (
+                  <div className="text-center py-4">
+                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
                   </div>
-                ))}
+                ) : openingLogsList.length === 0 ? (
+                  <p className="text-xs italic text-gray-400 text-center py-4">No records found...</p>
+                ) : (
+                  openingLogsList.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="text-left">
+                        <p className="text-xs font-bold text-gray-700">{log.tenderNo}</p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">{log.title}</p>
+                      </div>
+                      <p className="text-[10px] text-gray-400 font-mono whitespace-nowrap">{log.openingDate}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )
@@ -112,44 +176,52 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
             <div className="mt-4 space-y-2">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Select Tender</label>
               <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {tendersList.map((tender) => {
-                  const isSelected = selectedTenderId === tender.id;
-                  return (
-                    <button
-                      key={tender.id}
-                      type="button"
-                      onClick={() => setSelectedTenderId(tender.id)}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
-                        isSelected
-                          ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
-                          : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <span className={`font-mono text-[10px] font-black px-2 py-0.5 rounded border ${
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  </div>
+                ) : tendersList.length === 0 ? (
+                  <p className="text-xs italic text-gray-400 text-center py-8">No tenders available...</p>
+                ) : (
+                  tendersList.map((tender) => {
+                    const isSelected = selectedTenderId === tender.id;
+                    return (
+                      <button
+                        key={tender.id}
+                        type="button"
+                        onClick={() => setSelectedTenderId(tender.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
                           isSelected
-                            ? "text-[#953002] bg-white border-[#953002]/20"
-                            : "text-[#953002] bg-orange-50 border-orange-100/50"
-                        }`}>
-                          {tender.reference || (tender as any).tenderNo || tender.id}
+                            ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
+                            : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <span className={`font-mono text-[10px] font-black px-2 py-0.5 rounded border ${
+                            isSelected
+                              ? "text-[#953002] bg-white border-[#953002]/20"
+                              : "text-[#953002] bg-orange-50 border-orange-100/50"
+                          }`}>
+                            {tender.tenderNo || tender.reference || tender.id}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                            {tender.status}
+                          </span>
+                        </div>
+                        <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
+                          {tender.title}
                         </span>
-                        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                          {tender.status}
-                        </span>
-                      </div>
-                      <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
-                        {tender.title}
-                      </span>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           )
         };
       case "Committee Roster":
         return {
-          icon: <Users className="w-5 h-5 text-[#953002]" />,
+          icon: <Lock className="w-5 h-5 text-[#953002]" />,
           title: "Member Directory",
           desc: "View and manage the assigned committee members for current projects.",
           primaryAction: "Manage Roster",
@@ -175,22 +247,55 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
             </div>
           )
         };
-      case "System Settings":
+      case "Awards Processing":
         return {
-          icon: <Settings className="w-5 h-5 text-[#953002]" />,
-          title: "Dashboard Config",
-          desc: "Adjust your workspace preferences, notifications, and display settings.",
-          primaryAction: "Save Changes",
+          icon: <Trophy className="w-5 h-5 text-[#953002]" />,
+          title: "Awards Processing",
+          desc: "Select an evaluated tender to generate and process the award letter for the chosen winner.",
+          primaryAction: "Process Award",
           extra: (
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold text-gray-600">
-                <span>Real-time Updates</span>
-                <button 
-                  onClick={() => setIsRealtimeEnabled(!isRealtimeEnabled)}
-                  className={`w-8 h-4 rounded-full relative transition-all duration-300 ease-in-out outline-none focus:ring-2 focus:ring-[#953002]/20 ${isRealtimeEnabled ? 'bg-[#953002]' : 'bg-gray-300'}`}
-                >
-                  <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isRealtimeEnabled ? 'left-[1.125rem]' : 'left-0.5'}`}></div>
-                </button>
+            <div className="mt-4 space-y-2">
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Approved Evaluated Tenders</label>
+              <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  </div>
+                ) : tendersList.length === 0 ? (
+                  <p className="text-xs italic text-gray-400 text-center py-8">No evaluated tenders available...</p>
+                ) : (
+                  tendersList.map((tender) => {
+                    const isSelected = selectedTenderId === tender.id;
+                    return (
+                      <button
+                        key={tender.id}
+                        type="button"
+                        onClick={() => setSelectedTenderId(tender.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
+                          isSelected
+                            ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
+                            : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <span className={`font-mono text-[10px] font-black px-2 py-0.5 rounded border ${
+                            isSelected
+                              ? "text-[#953002] bg-white border-[#953002]/20"
+                              : "text-[#953002] bg-orange-50 border-orange-100/50"
+                          }`}>
+                            {tender.tenderNo || tender.reference || tender.id}
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                            {tender.status}
+                          </span>
+                        </div>
+                        <span className={`text-xs font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
+                          {tender.title}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
           )
@@ -203,7 +308,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   const content = getContent();
   if (!content) return null;
 
-  const isPrimaryDisabled = (type === "Open Bid Session" || type === "Download Bid Documents") && !selectedTenderId;
+  const isPrimaryDisabled = (type === "Open Bid Session" || type === "Download Bid Documents" || type === "Awards Processing") && !selectedTenderId;
   const hasPrimaryButton = type !== "View Opening Records" && type !== "Committee Roster";
 
   const handlePrimaryAction = () => {
@@ -214,6 +319,10 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
     } else if (type === "Download Bid Documents") {
       if (!selectedTenderId) return;
       alert(`Downloading documents for tender ${selectedTenderId} in ZIP format...`);
+      onClose();
+    } else if (type === "Awards Processing") {
+      if (!selectedTenderId) return;
+      router.push(`/tenders/${selectedTenderId}/award-processing`);
       onClose();
     } else {
       alert(`Action: ${content.primaryAction} triggered!`);
