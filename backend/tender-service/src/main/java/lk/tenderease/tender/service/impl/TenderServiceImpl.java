@@ -622,15 +622,15 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
-    public Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable) {
+    public Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, Pageable pageable) {
         String keyword = search == null ? "" : search;
 
         if (status != null) {
-            return tenderRepository.searchWithStatus(keyword, status, pageable)
+            return tenderRepository.searchWithStatus(keyword, status, procurementType, pageable)
                     .map(this::mapToSummaryDTO);
         }
 
-        return tenderRepository.searchWithoutStatus(keyword, pageable)
+        return tenderRepository.searchWithoutStatus(keyword, procurementType, pageable)
                 .map(this::mapToSummaryDTO);
     }
 
