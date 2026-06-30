@@ -70,8 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setInitialized(true);
       } catch (error: any) {
-        console.error('❌ Keycloak initialization failed:', error);
-        setError(error?.message || 'Failed to connect to authentication server');
+        console.warn('Keycloak init failed (likely revoked tokens after logout):', error?.message);
+        clearAuth();
         setInitialized(true);
       } finally {
         isInitializing.current = false;
