@@ -710,6 +710,24 @@ public class TenderServiceImpl implements TenderService {
                 .build();
 
         clarificationRepository.save(clarification);
+
+        try {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .recipientUserId("OFFICER")
+                    .type("IN_APP")
+                    .subject("New clarification request: " + tender.getTenderNumber())
+                    .message("A vendor asked a clarification question for " + tender.getTitle())
+                    .tenderId(tender.getId())
+                    .tenderNumber(tender.getTenderNumber())
+                    .tenderTitle(tender.getTitle())
+                    .clarificationId(clarification.getId())
+                    .questionPreview(clarification.getQuestion())
+                    .actionUrl("/officer-dashboard/clarifications/" + tender.getId() + "/" + clarification.getId())
+                    .createdAt(clarification.getAskedAt())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to publish clarification notification: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -744,10 +762,17 @@ public class TenderServiceImpl implements TenderService {
 
         return ClarificationDTO.builder()
                 .id(clarification.getId())
+                .tenderId(tender.getId().toString())
+                .tenderTitle(tender.getTitle())
+                .tenderNumber(tender.getTenderNumber())
                 .question(clarification.getQuestion())
                 .answer(savedResponse.getResponse())
                 .askedAt(clarification.getAskedAt())
                 .answeredAt(savedResponse.getRespondedAt())
+                .bidderEmail(clarification.getBidderEmail())
+                .category(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .department(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .closingDate(tender.getClosingDate())
                 .build();
     }
 

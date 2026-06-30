@@ -20,6 +20,11 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const tenderApi = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api',
+  headers: { 'Content-Type': 'application/json' },
+});
+
 // ── Tenders ──────────────────────────────────────────────────
 export async function fetchDashboardTenders(
   tab: TenderTab,
@@ -94,23 +99,55 @@ export async function fetchDashboardNotifications(
   type?: string,
   status?: string,
 ): Promise<DashboardNotification[]> {
-  const res = await api.get('/officer/notifications', {
-    params: { search, type, status },
-  });
-  return res.data;
+  const readNotifications = getReadNotifications();
+  const clarifications = await fetchAllClarifications();
+  const notifications = clarifications
+    .filter((c) => !c.answer)
+    .map((c) => ({
+      id: `clarification-${c.tenderId}-${c.id}`,
+      tenderId: c.tenderId,
+      title: 'Clarification Request',
+      message: `New question for ${c.tenderTitle || c.tenderNumber || 'a tender'}.`,
+      type: 'clarification_received' as const,
+      status: 'pending' as const,
+      recipients: c.bidderEmail,
+      time: c.askedAt,
+      performedBy: c.bidderEmail || 'Vendor',
+      isRead: readNotifications.has(`clarification-${c.tenderId}-${c.id}`),
+      actionUrl: `/officer-dashboard/clarifications/${c.tenderId}/${c.id}`,
+    }))
+    .filter((n) => {
+      if (type && type !== 'all' && n.type !== type) return false;
+      if (status && status !== 'all' && n.status !== status) return false;
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return n.title.toLowerCase().includes(q) || n.message.toLowerCase().includes(q);
+    });
+
+  return notifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 }
 
 export async function fetchNotificationSummary(): Promise<NotificationSummary> {
-  const res = await api.get('/officer/notifications/summary');
-  return res.data;
+  const notifications = await fetchDashboardNotifications();
+  return {
+    unread: notifications.filter((n) => !n.isRead).length,
+    failedDeliveries: 0,
+    awardLettersGenerated: 0,
+    date: new Date().toLocaleDateString(),
+  };
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  await api.patch(`/officer/notifications/${id}/read`);
+  const readNotifications = getReadNotifications();
+  readNotifications.add(id);
+  saveReadNotifications(readNotifications);
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await api.patch('/officer/notifications/read-all');
+  const notifications = await fetchDashboardNotifications();
+  const readNotifications = getReadNotifications();
+  notifications.forEach((n) => readNotifications.add(n.id));
+  saveReadNotifications(readNotifications);
 }
 
 export async function resendFailedNotification(id: string): Promise<void> {
@@ -154,12 +191,12 @@ export async function deleteRegistration(id: string): Promise<void> {
 
 // ── Clarifications ───────────────────────────────────────────
 export async function fetchAllClarifications(): Promise<ClarificationItem[]> {
-  const res = await api.get('/officer/clarifications');
+  const res = await tenderApi.get('/officer/dashboard/clarifications');
   return res.data;
 }
 
 export async function fetchClarifications(tenderId: string): Promise<ClarificationItem[]> {
-  const res = await api.get(`/officer/clarifications/${tenderId}`);
+  const res = await tenderApi.get(`/officer/dashboard/clarifications/${tenderId}`);
   return res.data;
 }
 
@@ -168,6 +205,21 @@ export async function answerClarification(
   clarificationId: number,
   answer: string,
 ): Promise<ClarificationItem> {
-  const res = await api.post(`/officer/clarifications/${tenderId}/${clarificationId}/answer`, { answer });
+  const res = await tenderApi.post(`/officer/dashboard/clarifications/${tenderId}/${clarificationId}/answer`, { answer });
   return res.data;
+}
+
+function getReadNotifications(): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const data = localStorage.getItem('officerReadNotifications');
+    return data ? new Set(JSON.parse(data)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveReadNotifications(ids: Set<string>) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('officerReadNotifications', JSON.stringify(Array.from(ids)));
 }
