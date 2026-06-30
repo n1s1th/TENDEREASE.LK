@@ -83,6 +83,10 @@ public class TenderServiceImpl implements TenderService {
     @Value("${app.upload-dir:../uploads}")
     private String uploadDir;
 
+    // Publicly reachable base URL of this service (Cloud Run URL). Falls back to local for dev.
+    @Value("${app.public-base-url:http://localhost:8082}")
+    private String publicBaseUrl;
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -710,6 +714,24 @@ public class TenderServiceImpl implements TenderService {
                 .build();
 
         clarificationRepository.save(clarification);
+
+        try {
+            notificationProducer.sendNotification(NotificationEvent.builder()
+                    .recipientUserId("OFFICER")
+                    .type("IN_APP")
+                    .subject("New clarification request: " + tender.getTenderNumber())
+                    .message("A vendor asked a clarification question for " + tender.getTitle())
+                    .tenderId(tender.getId())
+                    .tenderNumber(tender.getTenderNumber())
+                    .tenderTitle(tender.getTitle())
+                    .clarificationId(clarification.getId())
+                    .questionPreview(clarification.getQuestion())
+                    .actionUrl("/officer-dashboard/clarifications/" + tender.getId() + "/" + clarification.getId())
+                    .createdAt(clarification.getAskedAt())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to publish clarification notification: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -744,10 +766,17 @@ public class TenderServiceImpl implements TenderService {
 
         return ClarificationDTO.builder()
                 .id(clarification.getId())
+                .tenderId(tender.getId().toString())
+                .tenderTitle(tender.getTitle())
+                .tenderNumber(tender.getTenderNumber())
                 .question(clarification.getQuestion())
                 .answer(savedResponse.getResponse())
                 .askedAt(clarification.getAskedAt())
                 .answeredAt(savedResponse.getRespondedAt())
+                .bidderEmail(clarification.getBidderEmail())
+                .category(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .department(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .closingDate(tender.getClosingDate())
                 .build();
     }
 
@@ -782,6 +811,8 @@ public class TenderServiceImpl implements TenderService {
                 .scopeOfWork(tender.getScopeOfWork())
                 .estimatedBudget(tender.getEstimatedBudget())
                 .departmentName(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .procurementType(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .dynamicData(tender.getDynamicData())
                 .openingDate(tender.getOpeningDate())
                 .closingDate(tender.getClosingDate())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
@@ -799,7 +830,7 @@ public class TenderServiceImpl implements TenderService {
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
-                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
+                .downloadUrl(publicBaseUrl + "/api/tenders/files/" + document.getS3Key())
                 .build();
     }
 

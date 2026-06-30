@@ -3,6 +3,7 @@ package lk.tenderease.tender.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lk.tenderease.tender.dto.response.DashboardMetricsResponse;
+import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.OfficerTenderResponse;
 import lk.tenderease.tender.dto.response.OpeningLogResponse;
 import lk.tenderease.tender.service.OfficerDashboardService;
@@ -10,12 +11,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * REST controller for the Officer Dashboard.
@@ -121,5 +127,42 @@ public class OfficerDashboardController {
         response.put("success", true);
         response.put("data", tenders);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/clarifications")
+    @Operation(summary = "Get all tender clarification requests",
+            description = "Returns vendor clarification questions across tenders for officer review")
+    public ResponseEntity<List<ClarificationDTO>> getAllClarifications() {
+        log.info("Officer dashboard: fetching all clarification requests");
+        return ResponseEntity.ok(dashboardService.getAllClarifications());
+    }
+
+    @GetMapping("/clarifications/{tenderId}")
+    @Operation(summary = "Get clarification requests for a tender",
+            description = "Returns vendor clarification questions for one tender")
+    public ResponseEntity<List<ClarificationDTO>> getClarifications(@PathVariable UUID tenderId) {
+        log.info("Officer dashboard: fetching clarification requests for tender {}", tenderId);
+        return ResponseEntity.ok(dashboardService.getClarifications(tenderId));
+    }
+
+    @PostMapping("/clarifications/{tenderId}/{clarificationId}/answer")
+    @Operation(summary = "Answer a clarification request",
+            description = "Publishes an official answer and sends email notification to the bidder")
+    public ResponseEntity<ClarificationDTO> answerClarification(
+            @PathVariable UUID tenderId,
+            @PathVariable Long clarificationId,
+            @RequestBody Map<String, String> request) {
+        String answer = request.getOrDefault("answer", request.get("response"));
+        return ResponseEntity.ok(dashboardService.answerClarification(tenderId, clarificationId, answer));
+    }
+
+    @PatchMapping("/notifications/{id}/read")
+    public ResponseEntity<Void> markNotificationRead(@PathVariable String id) {
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/notifications/read-all")
+    public ResponseEntity<Void> markAllNotificationsRead() {
+        return ResponseEntity.ok().build();
     }
 }

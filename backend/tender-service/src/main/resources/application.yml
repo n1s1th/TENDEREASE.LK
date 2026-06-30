@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db?sslmode=require
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD:kgum}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -46,7 +46,7 @@ spring:
           auth: ${MAIL_SMTP_AUTH:false}
           starttls:
             enable: ${MAIL_SMTP_STARTTLS:false}
-  
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -73,7 +73,7 @@ server:
 
 eureka:
   client:
-    enabled: false   # 👈 ADD THIS LINE
+    enabled: false # 👈 ADD THIS LINE
     service-url:
       defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     fetch-registry: true
@@ -138,5 +138,3 @@ app:
   upload-dir: "C:\\Users\\Peduru\\Desktop\\TENDEREASE.LK\\backend\\uploads"
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
-
-

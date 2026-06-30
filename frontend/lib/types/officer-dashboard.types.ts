@@ -105,6 +105,7 @@ export type DashboardNotificationType =
   | 'regret_email_failed'
   | 'regret_letters_sent'
   | 'vendor_notified'
+  | 'clarification_received'
   | 'general';
 
 export type DashboardNotificationStatus =
@@ -127,6 +128,7 @@ export interface DashboardNotification {
   time: string;
   performedBy: string;
   isRead: boolean;
+  actionUrl?: string;
 }
 
 export interface NotificationSummary {

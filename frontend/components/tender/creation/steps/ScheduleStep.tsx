@@ -3,29 +3,15 @@
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { CalendarDays } from "lucide-react";
 
 export function ScheduleStep() {
   const { formData, updateFormData } = useTenderCreationStore();
 
   return (
-    <Card>
-      <CardHeader className="border-b border-border">
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
-            <CalendarDays className="h-4 w-4 text-primary" />
-          </div>
-          <CardTitle>Schedule & Key Dates</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-5 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {/* Advertisement Start Date */}
           <div className="space-y-1.5">
             <Label htmlFor="tc-ad-date">Advertisement Start Date</Label>
@@ -92,7 +78,7 @@ export function ScheduleStep() {
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
   );
 }
+
