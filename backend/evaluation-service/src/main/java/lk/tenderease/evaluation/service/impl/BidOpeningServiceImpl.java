@@ -103,6 +103,16 @@ public class BidOpeningServiceImpl implements BidOpeningService {
 
         log.info("Bid opening session {} started by {}", sessionId, officerName);
         
+        // Update the tender status in tender-service to 'OPEN'
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId() + "/status?status=OPEN";
+            restTemplate.put(tenderServiceUrl, null);
+            log.info("Successfully updated tender status to OPEN in tender-service");
+        } catch (Exception e) {
+            log.error("Failed to update tender status in tender-service: {}", e.getMessage());
+        }
+        
         // TODO: Publish event to bid-service to unseal bids
         
         return mapper.toDto(sessionRepository.save(session));

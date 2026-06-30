@@ -6,20 +6,16 @@ import {
   Filter, 
   ChevronLeft, 
   ChevronRight, 
-  Eye, 
-  MoreVertical,
+  FolderOpen, 
   Calendar,
-  Edit2,
-  Download,
-  Link,
-  Trash2,
+  Copy,
   Check
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 
-type StatusFilter = "ALL" | "PENDING_OPENING" | "OPEN" | "EVALUATION" | "COMPLETED";
+type StatusFilter = "ALL" | "APPROVED";
 
 interface Tender {
   id: string;
@@ -43,24 +39,19 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const itemsPerPage = 8;
 
   useEffect(() => {
     fetchAssignedTenders();
   }, [fetchAssignedTenders]);
 
-  // Handle click outside to close menu
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const handleCopyId = (tenderId: string, tenderNo: string) => {
+    const textToCopy = tenderNo || tenderId;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedId(tenderId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const filteredTenders = useMemo(() => {
     return (assignedTenders as unknown as Tender[]).filter(tender => {
@@ -80,12 +71,14 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
 
   const getStatusStyle = (status: string) => {
     switch (status) {
+      case "APPROVED":
+        return "bg-[#DCFCE7] text-[#16A34A] border-[#BBF7D0]";
       case "OPEN":
-        return "bg-green-50 text-green-700 border-green-100";
+        return "bg-blue-50 text-blue-700 border-blue-100";
       case "PENDING_OPENING":
         return "bg-orange-50 text-[#9A3B12] border-orange-100";
       case "EVALUATION":
-        return "bg-blue-50 text-blue-700 border-blue-100";
+        return "bg-purple-50 text-purple-700 border-purple-100";
       case "COMPLETED":
         return "bg-gray-50 text-gray-700 border-gray-100";
       default:
@@ -215,48 +208,34 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                   <div className="flex items-center justify-center gap-1.5">
                     <button 
                       onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
-                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all"
-                      title="View Details"
+                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
                     >
-                      <Eye className="w-5 h-5" />
+                      <FolderOpen className="w-5 h-5" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                        Open Bids
+                      </span>
                     </button>
                     
-                    <div className="relative">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === tender.id ? null : tender.id);
-                        }}
-                        className={`p-2 rounded-xl transition-all ${
-                          openMenuId === tender.id 
-                            ? "bg-orange-100 text-[#9A3B12] ring-2 ring-[#9A3B12]/20" 
-                            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        }`}
-                      >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-
-                      {openMenuId === tender.id && (
-                        <div 
-                          ref={menuRef}
-                          className="absolute right-0 mt-3 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200"
-                          style={{ top: '100%' }}
-                        >
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Edit2 className="w-4 h-4" />
-                            Edit
-                          </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Download className="w-4 h-4" />
-                            Specs
-                          </button>
-                          <button className="w-full flex items-center gap-3 px-4 py-2 text-[13px] font-bold text-gray-600 hover:bg-orange-50 hover:text-[#9A3B12] transition-colors">
-                            <Link className="w-4 h-4" />
-                            Copy ID
-                          </button>
-                        </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyId(tender.id, tender.tenderNo);
+                      }}
+                      className={`p-2 rounded-xl transition-all relative group/copy ${
+                        copiedId === tender.id 
+                          ? "bg-green-50 text-green-600" 
+                          : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      }`}
+                    >
+                      {copiedId === tender.id ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        <Copy className="w-5 h-5" />
                       )}
-                    </div>
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/copy:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                        {copiedId === tender.id ? "Copied!" : "Copy ID"}
+                      </span>
+                    </button>
                   </div>
                 </td>
               </tr>

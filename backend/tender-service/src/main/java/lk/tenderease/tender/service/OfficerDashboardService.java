@@ -13,12 +13,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Service layer for the Officer Dashboard.
- * Aggregates tender data into KPI metrics and builds the assigned tender list.
+ *
+ * Data source: only PUBLISHED tenders are shown to officers.
+ * PUBLISHED = CAO has approved the tender and it is active for bid operations.
+ *
+ * Lifecycle:
+ *   PENDING_APPROVAL -> (CAO approves) -> PUBLISHED -> (bid session opened) -> OPEN -> ...
+ *
+ * When a bid opening session is started, the status is updated to OPEN in the database.
+ * Because both the Approved Tenders table and the Secure Bid Opening popup query only
+ * PUBLISHED tenders, the entry disappears from both lists automatically on next fetch.
+ * This is DB-persisted and refresh-safe — no in-memory state is needed.
  */
 @Slf4j
 @Service
@@ -31,27 +42,32 @@ public class OfficerDashboardService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
     /**
+     * The only status that represents a CAO-approved tender visible to officers.
+     * Once a bid session opens, the status changes to OPEN and the tender leaves this set.
+     */
+    private static final List<TenderStatus> APPROVED_STATUSES =
+            Collections.singletonList(TenderStatus.PUBLISHED);
+
+    /**
      * Builds the KPI metrics for the dashboard cards.
-     * - active: tenders in PUBLISHED, PENDING_OPENING, or OPEN status
+     * - active: tenders currently in PUBLISHED status (CAO approved, bid session not yet opened)
      * - evaluating: tenders in EVALUATION status
      * - awarded: tenders in AWARDED status
      * - noBids: tenders in NO_BID status
-     * - bids: placeholder (will be enriched from bid-service by the frontend)
+     * - bids: enriched by the frontend from bid-service
      */
     public DashboardMetricsResponse getMetrics() {
-        long active = tenderRepository.countByStatusIn(
-                Arrays.asList(TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING, TenderStatus.OPEN)
-        );
+        long active     = tenderRepository.countByStatus(TenderStatus.PUBLISHED);
         long evaluating = tenderRepository.countByStatus(TenderStatus.EVALUATION);
-        long awarded = tenderRepository.countByStatus(TenderStatus.AWARDED);
-        long noBids = tenderRepository.countByStatus(TenderStatus.NO_BID);
+        long awarded    = tenderRepository.countByStatus(TenderStatus.AWARDED);
+        long noBids     = tenderRepository.countByStatus(TenderStatus.NO_BID);
 
-        log.info("Dashboard metrics — active: {}, evaluating: {}, awarded: {}, noBids: {}",
+        log.info("Dashboard metrics — active(PUBLISHED): {}, evaluating: {}, awarded: {}, noBids: {}",
                 active, evaluating, awarded, noBids);
 
         return DashboardMetricsResponse.builder()
                 .active(active)
-                .bids(0) // Will be enriched by frontend from bid-service
+                .bids(0) // Enriched by frontend from bid-service
                 .evaluating(evaluating)
                 .awarded(awarded)
                 .noBids(noBids)
@@ -59,48 +75,46 @@ public class OfficerDashboardService {
     }
 
     /**
-     * Returns a paginated list of tenders that are past the APPROVED stage (i.e., visible to the officer).
-     * These are tenders that the CAO has approved and are now in the officer's workflow.
+     * Returns the paginated list of CAO-approved tenders for the Approved Tenders table.
+     *
+     * Only PUBLISHED tenders are returned — these are tenders the CAO has approved and
+     * whose bid opening session has not yet started. Supports keyword search.
      */
-    public org.springframework.data.domain.Page<OfficerTenderResponse> getAssignedTenders(String keyword, String status, int page, int size) {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
-        org.springframework.data.domain.Page<Tender> tenderPage;
+    public org.springframework.data.domain.Page<OfficerTenderResponse> getAssignedTenders(
+            String keyword, String status, int page, int size) {
 
-        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
-            List<TenderStatus> statuses = switch (status.toUpperCase()) {
-                case "PENDING_OPENING" -> Arrays.asList(TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING);
-                case "OPEN" -> Arrays.asList(TenderStatus.OPEN);
-                case "EVALUATION" -> Arrays.asList(TenderStatus.EVALUATION);
-                case "COMPLETED" -> Arrays.asList(TenderStatus.AWARDED, TenderStatus.NO_BID, TenderStatus.CLOSED);
-                default -> Arrays.asList(TenderStatus.valueOf(status.toUpperCase()));
-            };
-            tenderPage = tenderRepository.searchWithStatuses(keyword == null ? "" : keyword, statuses, pageable);
-        } else {
-            tenderPage = tenderRepository.searchWithoutStatus(keyword == null ? "" : keyword, pageable);
-        }
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(
+                        page, size,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
 
-        log.info("Found {} assigned tenders matching criteria", tenderPage.getTotalElements());
+        // Always restrict to PUBLISHED — the single source of truth for CAO-approved tenders.
+        org.springframework.data.domain.Page<Tender> tenderPage =
+                tenderRepository.searchWithStatuses(
+                        keyword == null ? "" : keyword, APPROVED_STATUSES, pageable);
 
+        log.info("Approved Tenders table: found {} PUBLISHED tenders", tenderPage.getTotalElements());
         return tenderPage.map(this::mapToOfficerResponse);
     }
 
     /**
-     * Returns a list of tenders that are ready for bid opening.
-     * These are tenders currently in PUBLISHED or PENDING_OPENING status.
+     * Returns all CAO-approved tenders available for bid opening in the Secure Bid Opening popup.
+     *
+     * Only PUBLISHED tenders are returned. Once an officer starts a bid opening session
+     * (which updates status to OPEN in the DB), the tender auto-disappears from this list
+     * on the next fetch — no extra table or flag needed. Refresh-safe and DB-persisted.
      */
     public List<OfficerTenderResponse> getTendersForOpening() {
-        List<Tender> tenders = tenderRepository.findAllByStatusIn(
-                Arrays.asList(TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING)
-        );
-        log.info("Found {} tenders ready for bid opening", tenders.size());
+        List<Tender> tenders = tenderRepository.findAllByStatusIn(APPROVED_STATUSES);
+        log.info("Secure Bid Opening popup: found {} PUBLISHED tenders available", tenders.size());
         return tenders.stream()
                 .map(this::mapToOfficerResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Returns a list of tenders that have already had their bids opened.
-     * These are historical records for the "Opening Logs" quick action.
+     * Returns historical bid opening records for the Opening Logs quick action.
+     * These are tenders that have moved past PUBLISHED (bid session already opened).
      */
     public List<OpeningLogResponse> getOpeningLogs() {
         List<TenderStatus> openedStatuses = Arrays.asList(
@@ -108,15 +122,14 @@ public class OfficerDashboardService {
                 TenderStatus.AWARDED, TenderStatus.NO_BID, TenderStatus.CLOSED
         );
         List<Tender> tenders = tenderRepository.findAllByStatusIn(openedStatuses);
-        log.info("Found {} historical opening logs", tenders.size());
+        log.info("Opening Logs: found {} historical records", tenders.size());
         return tenders.stream()
                 .map(this::mapToOpeningLogResponse)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Returns a list of tenders that have bids available for document export.
-     * These are tenders currently in OPEN, EVALUATION, or later stages.
+     * Returns tenders with bids available for document export.
      */
     public List<OfficerTenderResponse> getTendersWithBids() {
         List<TenderStatus> withBidsStatuses = Arrays.asList(
@@ -124,10 +137,46 @@ public class OfficerDashboardService {
                 TenderStatus.AWARDED, TenderStatus.NO_BID, TenderStatus.CLOSED
         );
         List<Tender> tenders = tenderRepository.findAllByStatusIn(withBidsStatuses);
-        log.info("Found {} tenders with potential bid documents", tenders.size());
+        log.info("Document Export: found {} tenders with bid documents", tenders.size());
         return tenders.stream()
                 .map(this::mapToOfficerResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns tenders pending award finalization.
+     */
+    public List<OfficerTenderResponse> getTendersPendingAward() {
+        List<TenderStatus> pendingAwardStatuses = Arrays.asList(
+                TenderStatus.EVALUATION, TenderStatus.OPEN
+        );
+        List<Tender> tenders = tenderRepository.findAllByStatusIn(pendingAwardStatuses);
+        log.info("Pending Award: found {} tenders", tenders.size());
+        return tenders.stream()
+                .map(this::mapToOfficerResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ── Mapping helpers ──────────────────────────────────────────────────────
+
+    private OfficerTenderResponse mapToOfficerResponse(Tender tender) {
+        String closingDate = tender.getClosingDate() != null
+                ? tender.getClosingDate().format(DATE_FMT)
+                : "N/A";
+
+        String category = tender.getProcurementType() != null
+                ? tender.getProcurementType().name()
+                : "General";
+
+        return OfficerTenderResponse.builder()
+                .id(tender.getId().toString())
+                .tenderNo(tender.getTenderNumber())
+                .title(tender.getTitle())
+                .category(category)
+                .status("APPROVED")  // All tenders in this set are CAO-approved (PUBLISHED)
+                .closingDate(closingDate)
+                .role("Officer")
+                .build();
     }
 
     private OpeningLogResponse mapToOpeningLogResponse(Tender tender) {
@@ -141,60 +190,19 @@ public class OfficerDashboardService {
                 .title(tender.getTitle())
                 .openingDate(openingDate)
                 .status(mapToFrontendStatus(tender.getStatus()))
-                .category(tender.getProcurementType() != null ? tender.getProcurementType().name() : "General")
+                .category(tender.getProcurementType() != null
+                        ? tender.getProcurementType().name() : "General")
                 .build();
     }
 
-
-    /**
-     * Returns a list of tenders that are in the final stages of evaluation and pending award finalization.
-     */
-    public List<OfficerTenderResponse> getTendersPendingAward() {
-        List<TenderStatus> pendingAwardStatuses = Arrays.asList(
-                TenderStatus.EVALUATION, TenderStatus.OPEN
-        );
-        List<Tender> tenders = tenderRepository.findAllByStatusIn(pendingAwardStatuses);
-        log.info("Found {} tenders pending award finalization", tenders.size());
-        return tenders.stream()
-                .map(this::mapToOfficerResponse)
-                .collect(Collectors.toList());
-    }
-
-    private OfficerTenderResponse mapToOfficerResponse(Tender tender) {
-        String closingDate = tender.getClosingDate() != null
-                ? tender.getClosingDate().format(DATE_FMT)
-                : "N/A";
-
-        // Map the procurementType to a human-readable category
-        String category = tender.getProcurementType() != null
-                ? tender.getProcurementType().name()
-                : "General";
-
-        // Map the internal status to what the frontend filter expects
-        String frontendStatus = mapToFrontendStatus(tender.getStatus());
-
-        return OfficerTenderResponse.builder()
-                .id(tender.getId().toString())
-                .tenderNo(tender.getTenderNumber())
-                .title(tender.getTitle())
-                .category(category)
-                .status(frontendStatus)
-                .closingDate(closingDate)
-                .role("Officer")
-                .build();
-    }
-
-    /**
-     * Maps internal TenderStatus to the status strings the frontend filter expects:
-     * PENDING_OPENING, OPEN, EVALUATION, COMPLETED
-     */
     private String mapToFrontendStatus(TenderStatus status) {
         return switch (status) {
-            case PUBLISHED, PENDING_OPENING -> "PENDING_OPENING";
-            case OPEN -> "OPEN";
-            case EVALUATION -> "EVALUATION";
+            case PUBLISHED          -> "APPROVED";
+            case PENDING_OPENING    -> "PENDING_OPENING";
+            case OPEN               -> "OPEN";
+            case EVALUATION         -> "EVALUATION";
             case AWARDED, NO_BID, CLOSED -> "COMPLETED";
-            default -> status.name();
+            default                 -> status.name();
         };
     }
 }
