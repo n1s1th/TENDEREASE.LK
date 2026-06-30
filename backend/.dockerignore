@@ -1,0 +1,19 @@
+# Keep Docker build contexts small & reproducible.
+# Multi-stage builds compile from source, so prebuilt target/ is not needed.
+**/target/
+.git/
+.github/
+.idea/
+.vscode/
+.mvn/wrapper/maven-wrapper.jar
+**/*.log
+**/uploads/
+docs/
+scripts/
+*.iml
+deploy.env
+.env
+.env*
+TestDb.*
+*_response.json
+curl_out.json

@@ -83,6 +83,10 @@ public class TenderServiceImpl implements TenderService {
     @Value("${app.upload-dir:../uploads}")
     private String uploadDir;
 
+    // Publicly reachable base URL of this service (Cloud Run URL). Falls back to local for dev.
+    @Value("${app.public-base-url:http://localhost:8082}")
+    private String publicBaseUrl;
+
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.exchanges.tender:tender.exchange}")
@@ -826,7 +830,7 @@ public class TenderServiceImpl implements TenderService {
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
-                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
+                .downloadUrl(publicBaseUrl + "/api/tenders/files/" + document.getS3Key())
                 .build();
     }
 

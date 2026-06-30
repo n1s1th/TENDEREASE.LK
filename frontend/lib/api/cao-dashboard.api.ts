@@ -81,8 +81,8 @@ export async function viewTenderDocument(docId: string): Promise<string> {
 export async function downloadTenderDocument(docId: string): Promise<Blob> {
   if (!docId) throw new Error("Document ID is required");
   
-  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
-  
+  const fullUrl = `${api.defaults.baseURL}/cao/tenders/documents/${docId}/base64?t=${Date.now()}`;
+
   const res = await axios.get(fullUrl, {
     withCredentials: false
   });
