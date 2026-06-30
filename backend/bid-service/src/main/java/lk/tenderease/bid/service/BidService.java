@@ -176,8 +176,20 @@ public class BidService {
         }
 
         // 4. Save bid to database
+        UUID tenderUuid = null;
+        if (tenderDetail.get("id") != null) {
+            try {
+                tenderUuid = UUID.fromString(tenderDetail.get("id").toString());
+            } catch (Exception e) {
+                log.error("Failed to parse tender UUID from tenderDetail: {}", e.getMessage());
+            }
+        }
+        if (tenderUuid == null) {
+            tenderUuid = UUID.fromString(request.getTenderId());
+        }
+
         Bid bid = Bid.builder()
-                .tenderId(UUID.fromString(request.getTenderId()))
+                .tenderId(tenderUuid)
                 .bidderName(request.getBidderName())
                 .bidderEmail(bidderEmail)
                 .companyName(request.getCompanyName())

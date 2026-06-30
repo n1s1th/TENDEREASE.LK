@@ -111,3 +111,20 @@ export async function fetchDashboardMetrics(token?: string): Promise<ApiResponse
   if (!res.ok) throw new Error("Failed to fetch dashboard metrics");
   return res.json();
 }
+
+export interface EvaluationStatusCounts {
+  technicalPassed: number;
+  financialPassed: number;
+  financialFailed: number;
+  evaluationFailed: number;
+  notReviewed: number;
+}
+
+export async function fetchEvaluationStatusCounts(token?: string): Promise<EvaluationStatusCounts> {
+  const res = await fetch(`${BASE}/api/evaluations/mock/dashboard/status-counts`, {
+    headers: authHeaders(token)
+  });
+  if (!res.ok) throw new Error("Failed to fetch evaluation status counts");
+  const json = await res.json();
+  return json.data;
+}
