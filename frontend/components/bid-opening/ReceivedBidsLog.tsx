@@ -245,7 +245,6 @@ export default function ReceivedBidsLog() {
         isOpen={isEvalModalOpen}
         onClose={() => setIsEvalModalOpen(false)}
         bid={selectedBid}
-        tenderId={session?.tenderId || ""}
         onUpdate={handleUpdateBid}
       />
     </div>

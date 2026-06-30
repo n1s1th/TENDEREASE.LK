@@ -3,20 +3,21 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ShieldCheck, AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 interface BidEvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
   bid: any;
-  tenderId: string;
   onUpdate: (bidId: string, updates: any) => void;
 }
 
-export default function BidEvaluationModal({ isOpen, onClose, bid, tenderId, onUpdate }: BidEvaluationModalProps) {
+export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: BidEvaluationModalProps) {
   const router = useRouter();
+  const params = useParams();
+  const tenderId = params?.id as string;
+
   const [mounted, setMounted] = useState(false);
-  
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -26,10 +27,6 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, tenderId, onU
 
   const handleToggleFlag = () => {
     onUpdate(bid.no, { isFlagged: !bid.isFlagged });
-  };
-
-  const handleEvaluateClick = () => {
-    router.push(`/tenders/${tenderId}/bid-evaluation`);
   };
 
   return createPortal(
@@ -76,8 +73,8 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, tenderId, onU
             {bid.isFlagged ? "UNFLAG BID" : "FLAG SUBMISSION"}
           </button>
           <button 
-            onClick={handleEvaluateClick}
-            className="flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-transparent bg-[#953002] text-white shadow-lg shadow-[#953002]/20 hover:bg-[#802801]"
+            onClick={() => router.push(`/tenders/${tenderId}/bid-evaluation`)}
+            className="flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-transparent bg-[#953002] text-white hover:bg-[#802801] shadow-lg shadow-[#953002]/20"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             EVALUATE BID
