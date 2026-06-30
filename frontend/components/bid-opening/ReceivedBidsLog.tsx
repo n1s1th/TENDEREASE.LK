@@ -24,6 +24,13 @@ export default function ReceivedBidsLog() {
   useEffect(() => {
     const loadBids = async () => {
       if (!session?.tenderId) return;
+      
+      // Bids should only be fetched and displayed after the bid opening session is opened or concluded (OPEN or CLOSED)
+      if (session.status !== 'OPEN' && session.status !== 'CLOSED') {
+        setBids([]);
+        return;
+      }
+
       try {
         const data = await getBidsByTender(session.tenderId);
         let mapped: any[] = [];
@@ -70,7 +77,7 @@ export default function ReceivedBidsLog() {
       }
     };
     loadBids();
-  }, [session?.tenderId, fetchEvaluationsByTender]);
+  }, [session?.tenderId, session?.status, fetchEvaluationsByTender]);
 
   const handleUpdateBid = async (no: string, updates: any) => {
     const bidToUpdate = bids.find(b => b.no === no);
@@ -128,12 +135,12 @@ export default function ReceivedBidsLog() {
       </div>
 
       <div className={`overflow-x-auto ${visibleBids.length === 0 ? 'min-h-[150px]' : 'min-h-[400px]'}`}>
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg">NO</th>
-              <th className="py-4 px-4">BID REF.</th>
-              <th className="py-4 px-4">BIDDER NAME</th>
+              <th className="py-4 px-6 rounded-tl-lg text-center">NO</th>
+              <th className="py-4 px-4 text-center">BID REF.</th>
+              <th className="py-4 px-4 text-center">BIDDER NAME</th>
               <th className="py-4 px-4 text-center">SUBMITTED AT</th>
               <th className="py-4 px-4 text-center">DOCS</th>
               <th className="py-4 px-4 text-center">AMOUNT</th>
@@ -148,20 +155,20 @@ export default function ReceivedBidsLog() {
               </tr>
             ) : visibleBids.map((row, idx) => (
               <tr key={row.no} className={`border-b border-gray-100 hover:bg-gray-50/80 transition-all ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F2F4F7]'} ${row.isFlagged ? 'bg-red-50/30' : ''}`}>
-                <td className="py-4 px-6">
+                <td className="py-4 px-6 text-center">
                   <div className="font-bold text-xs text-gray-400">{row.no}</div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-4 px-4 text-center">
                   <div className="font-bold text-sm text-gray-900">{row.ref}</div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-4 px-4 text-center">
                   <div className="font-bold text-sm text-gray-800 uppercase tracking-tight">{row.name}</div>
                 </td>
                 <td className="py-4 px-4 text-center">
                   <div className="text-sm font-bold text-gray-600">{row.time}</div>
                 </td>
                 <td className="py-4 px-4 text-center">
-                  <span className="inline-block px-3 py-1 text-[10px] font-black text-gray-500 bg-gray-100 rounded-md border border-gray-200 tracking-tighter uppercase">
+                  <span className="text-[12px] font-black text-gray-500 tracking-tighter uppercase">
                     {row.docs}
                   </span>
                 </td>
@@ -185,7 +192,7 @@ export default function ReceivedBidsLog() {
                       setSelectedBid(row);
                       setIsEvalModalOpen(true);
                     }}
-                    className="bg-[#953002]/5 text-[#953002] border border-[#953002]/10 text-[10px] font-black tracking-widest px-5 py-2 rounded-full hover:bg-[#953002]/10 transition-all whitespace-nowrap uppercase flex items-center gap-2"
+                    className="mx-auto bg-[#953002]/5 text-[#953002] border border-[#953002]/10 text-[10px] font-black tracking-widest px-5 py-2 rounded-full hover:bg-[#953002]/10 transition-all whitespace-nowrap uppercase flex items-center gap-2"
                   >
                     Evaluate Submission
                     <ChevronRight className="w-3 h-3" />

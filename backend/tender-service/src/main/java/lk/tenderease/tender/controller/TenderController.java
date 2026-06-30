@@ -152,8 +152,13 @@ public class TenderController {
         @ApiResponse(responseCode = "404", description = "Tender not found")
     })
     public ResponseEntity<TenderDetailResponse> getTenderById(
-            @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return ResponseEntity.ok(tenderService.getTenderById(id));
+            @Parameter(description = "Tender UUID or Number") @PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return ResponseEntity.ok(tenderService.getTenderById(uuid));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(tenderService.getTenderByNumber(id));
+        }
     }
 
     @PutMapping("/{id}")
