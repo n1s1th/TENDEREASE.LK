@@ -9,6 +9,9 @@ export default function SubNav() {
   const pathname = usePathname();
   const notificationSummary = useOfficerDashboardStore((s) => s.notificationSummary);
 
+  // Hide SubNav on the main officer dashboard page
+  if (pathname === "/officer-dashboard") return null;
+
   const isTenders = pathname.startsWith("/officer-dashboard/tenders");
   const isRegistration = pathname.startsWith("/officer-dashboard/registration");
   const isNotifications = pathname.startsWith("/officer-dashboard/notifications");

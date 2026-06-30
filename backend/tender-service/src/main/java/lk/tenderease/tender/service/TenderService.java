@@ -60,6 +60,7 @@ public interface TenderService {
      * @throws lk.tenderease.tender.exception.TenderNotFoundException if tender is not found
      */
     TenderDetailResponse getTenderById(UUID id);
+    TenderDetailResponse getTenderByNumber(String tenderNumber);
     byte[] viewDocument(UUID docId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
@@ -251,6 +252,7 @@ public interface TenderService {
     Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
+    TenderDetailsDTO getPublicTenderByNumber(String tenderNumber);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);
 

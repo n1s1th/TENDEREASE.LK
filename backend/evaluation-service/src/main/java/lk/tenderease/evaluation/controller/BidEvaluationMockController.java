@@ -104,30 +104,82 @@ public class BidEvaluationMockController {
         return tenderStates.computeIfAbsent(tenderNo, k -> {
             Map<String, BidderEvaluationState> states = new LinkedHashMap<>();
             
-            // Only 1 Bidder for evaluation for display purposes
-            BidderEvaluationState bid1 = new BidderEvaluationState("BID-001", "Apex Build Ltd.", "In Progress", "PASS");
-            
-            bid1.technicalCriteria.get(0).score = 70;
-            bid1.technicalCriteria.get(0).comment = "Clear methodology and diagrams.";
-            bid1.technicalCriteria.get(1).score = 68;
-            bid1.technicalCriteria.get(1).comment = "Good experience, lack of senior roles.";
-            bid1.technicalCriteria.get(2).score = 72;
-            bid1.technicalCriteria.get(2).comment = "Feasible schedule.";
-            bid1.technicalCriteria.get(3).score = 64;
-            bid1.technicalCriteria.get(3).comment = "Standard client references.";
-            
-            bid1.financialCriteria.get(0).score = 75;
-            bid1.financialCriteria.get(0).comment = "Price is competitive.";
-            bid1.financialCriteria.get(1).score = 68;
-            bid1.financialCriteria.get(1).comment = "Standard milestone split.";
-            bid1.financialCriteria.get(2).score = 70;
-            bid1.financialCriteria.get(2).comment = "1-year warranty plus training.";
+            if (tenderNo.equals("TND-0041")) {
+                // Bidder 1: Technical Passed (Technical scored >= 60, Financial all 0)
+                BidderEvaluationState bid1 = new BidderEvaluationState("BID-001", "Apex Build Ltd.", "In Progress", "PASS");
+                bid1.technicalCriteria.get(0).score = 70;
+                bid1.technicalCriteria.get(0).comment = "Clear methodology and diagrams.";
+                bid1.technicalCriteria.get(1).score = 68;
+                bid1.technicalCriteria.get(1).comment = "Good experience, lack of senior roles.";
+                bid1.technicalCriteria.get(2).score = 72;
+                bid1.technicalCriteria.get(2).comment = "Feasible schedule.";
+                bid1.technicalCriteria.get(3).score = 64;
+                bid1.technicalCriteria.get(3).comment = "Standard client references.";
+                
+                bid1.evaluationNotes = "Solid technical proposal.";
+                bid1.lastSaved = "10 Feb 2026, 11:00";
+                states.put("BID-001", bid1);
 
-            bid1.evaluationNotes = "Solid proposal. Compliant with technical specs.";
-            bid1.lastSaved = "10 Feb 2026, 11:00";
-            
-            states.put("BID-001", bid1);
+                // Bidder 2: Financial Passed (Technical scored >= 60, Financial scored >= 60)
+                BidderEvaluationState bid2 = new BidderEvaluationState("BID-002", "Vertex Solutions", "Submitted", "PASS");
+                bid2.technicalCriteria.get(0).score = 80;
+                bid2.technicalCriteria.get(1).score = 85;
+                bid2.technicalCriteria.get(2).score = 75;
+                bid2.technicalCriteria.get(3).score = 80;
+                
+                bid2.financialCriteria.get(0).score = 85;
+                bid2.financialCriteria.get(0).comment = "Highly competitive pricing.";
+                bid2.financialCriteria.get(1).score = 80;
+                bid2.financialCriteria.get(1).comment = "Acceptable payment milestones.";
+                bid2.financialCriteria.get(2).score = 90;
+                bid2.financialCriteria.get(2).comment = "Excellent warranty and support SLA.";
+                
+                bid2.evaluationNotes = "Excellent in both technical and financial criteria.";
+                bid2.lastSaved = "12 Feb 2026, 14:30";
+                states.put("BID-002", bid2);
+            } else if (tenderNo.equals("TND-0042")) {
+                // Bidder 3: Financial Failed (Technical scored >= 60, Financial scored < 60)
+                BidderEvaluationState bid3 = new BidderEvaluationState("BID-003", "BuildCo", "Submitted", "PASS");
+                bid3.technicalCriteria.get(0).score = 75;
+                bid3.technicalCriteria.get(1).score = 70;
+                bid3.technicalCriteria.get(2).score = 75;
+                bid3.technicalCriteria.get(3).score = 70;
+                
+                bid3.financialCriteria.get(0).score = 40;
+                bid3.financialCriteria.get(0).comment = "Extremely high bid price.";
+                bid3.financialCriteria.get(1).score = 30;
+                bid3.financialCriteria.get(1).comment = "Rigid payment term requirements.";
+                bid3.financialCriteria.get(2).score = 50;
+                bid3.financialCriteria.get(2).comment = "Basic warranty support.";
+                
+                bid3.evaluationNotes = "Technical proposal is good, but pricing is extremely high.";
+                bid3.lastSaved = "15 Feb 2026, 09:15";
+                states.put("BID-003", bid3);
 
+                // Bidder 4: Not Reviewed (Not Started)
+                BidderEvaluationState bid4 = new BidderEvaluationState("BID-004", "Green Spaces Ltd.", "Not Started", "PENDING");
+                states.put("BID-004", bid4);
+            } else {
+                // Bidder 5: Evaluation Failed (Technical scored < 60)
+                BidderEvaluationState bid5 = new BidderEvaluationState("BID-005", "Cloudify", "Submitted", "FAIL");
+                bid5.technicalCriteria.get(0).score = 40;
+                bid5.technicalCriteria.get(0).comment = "Unclear methodology description.";
+                bid5.technicalCriteria.get(1).score = 50;
+                bid5.technicalCriteria.get(1).comment = "Inadequate CV profiles.";
+                bid5.technicalCriteria.get(2).score = 45;
+                bid5.technicalCriteria.get(2).comment = "Schedules are not realistic.";
+                bid5.technicalCriteria.get(3).score = 35;
+                bid5.technicalCriteria.get(3).comment = "Poor references.";
+                
+                bid5.evaluationNotes = "Failed to meet minimum technical threshold.";
+                bid5.lastSaved = "18 Feb 2026, 16:45";
+                states.put("BID-005", bid5);
+
+                // Bidder 6: Not Reviewed (Not Started)
+                BidderEvaluationState bid6 = new BidderEvaluationState("BID-006", "DataSafe", "Not Started", "PENDING");
+                states.put("BID-006", bid6);
+            }
+            
             return states;
         });
     }
@@ -231,5 +283,85 @@ public class BidEvaluationMockController {
         bidder.lastSaved = now.format(formatter);
 
         return ResponseEntity.ok(ApiResponse.success(bidder, "Evaluation submitted successfully"));
+    }
+
+    public static class StatusCountsResponse {
+        public int technicalPassed;
+        public int financialPassed;
+        public int financialFailed;
+        public int evaluationFailed;
+        public int notReviewed;
+
+        public StatusCountsResponse(int technicalPassed, int financialPassed, int financialFailed, int evaluationFailed, int notReviewed) {
+            this.technicalPassed = technicalPassed;
+            this.financialPassed = financialPassed;
+            this.financialFailed = financialFailed;
+            this.evaluationFailed = evaluationFailed;
+            this.notReviewed = notReviewed;
+        }
+    }
+
+    @GetMapping("/dashboard/status-counts")
+    @Operation(summary = "Get evaluation status counts for the dashboard")
+    public ResponseEntity<ApiResponse<StatusCountsResponse>> getStatusCounts() {
+        // Ensure default tenders are pre-populated in tenderStates map
+        getOrCreateTenderState("TND-0041");
+        getOrCreateTenderState("TND-0042");
+        getOrCreateTenderState("TND-0043");
+
+        int technicalPassed = 0;
+        int financialPassed = 0;
+        int financialFailed = 0;
+        int evaluationFailed = 0;
+        int notReviewed = 0;
+
+        for (Map<String, BidderEvaluationState> bidders : tenderStates.values()) {
+            for (BidderEvaluationState bidder : bidders.values()) {
+                if (bidder.status.equals("Not Started")) {
+                    notReviewed++;
+                    continue;
+                }
+
+                // Calculate sub-scores
+                double techSubtotal = 0;
+                for (Criterion c : bidder.technicalCriteria) {
+                    techSubtotal += c.score * (c.weight / 100.0);
+                }
+
+                double finSubtotal = 0;
+                boolean hasFinancialScores = false;
+                for (Criterion c : bidder.financialCriteria) {
+                    finSubtotal += c.score * (c.weight / 100.0);
+                    if (c.score > 0) {
+                        hasFinancialScores = true;
+                    }
+                }
+
+                if (techSubtotal < 60 || bidder.complianceStatus.equals("FAIL")) {
+                    evaluationFailed++;
+                } else {
+                    // techSubtotal >= 60 (Passed technical)
+                    if (!hasFinancialScores) {
+                        technicalPassed++;
+                    } else {
+                        if (finSubtotal >= 60) {
+                            financialPassed++;
+                        } else {
+                            financialFailed++;
+                        }
+                    }
+                }
+            }
+        }
+
+        StatusCountsResponse counts = new StatusCountsResponse(
+                technicalPassed,
+                financialPassed,
+                financialFailed,
+                evaluationFailed,
+                notReviewed
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(counts, "Status counts retrieved successfully"));
     }
 }

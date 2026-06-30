@@ -61,8 +61,13 @@ public class PublicTenderController {
     }
 
     @GetMapping("/{id}")
-    public TenderDetailsDTO getTenderById(@PathVariable UUID id) {
-        return tenderService.getPublicTenderById(id);
+    public TenderDetailsDTO getTenderById(@PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return tenderService.getPublicTenderById(uuid);
+        } catch (IllegalArgumentException e) {
+            return tenderService.getPublicTenderByNumber(id);
+        }
     }
 
     @GetMapping("/{id}/documents")

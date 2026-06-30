@@ -253,6 +253,14 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    public TenderDetailResponse getTenderByNumber(String tenderNumber) {
+        log.info("Fetching tender detail for number: {}", tenderNumber);
+        Tender tender = tenderRepository.findByTenderNumber(tenderNumber)
+                .orElseThrow(() -> new RuntimeException("Tender not found with number: " + tenderNumber));
+        return getTenderById(tender.getId());
+    }
+
+    @Override
     @org.springframework.transaction.annotation.Transactional
     public TenderResponse updateTender(UUID id, CreateTenderRequest request, String callerUserId) {
         log.info("Updating tender with ID: {}", id);
@@ -639,6 +647,14 @@ public class TenderServiceImpl implements TenderService {
         Tender tender = tenderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
         return mapToDetailsDTO(tender);
+    }
+
+    @Override
+    public TenderDetailsDTO getPublicTenderByNumber(String tenderNumber) {
+        log.info("Fetching public tender detail for number: {}", tenderNumber);
+        Tender tender = tenderRepository.findByTenderNumber(tenderNumber)
+                .orElseThrow(() -> new RuntimeException("Tender not found with number: " + tenderNumber));
+        return getPublicTenderById(tender.getId());
     }
 
     @Override
