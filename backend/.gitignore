@@ -12,6 +12,9 @@ buildNumber.properties
 .env*
 .env
 
+# Cloud Run deploy secrets (keep the .example, ignore the real one)
+deploy.env
+
 # IDE
 .idea/
 *.iml
