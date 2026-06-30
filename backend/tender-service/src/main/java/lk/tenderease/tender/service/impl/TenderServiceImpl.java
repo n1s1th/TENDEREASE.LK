@@ -807,6 +807,8 @@ public class TenderServiceImpl implements TenderService {
                 .scopeOfWork(tender.getScopeOfWork())
                 .estimatedBudget(tender.getEstimatedBudget())
                 .departmentName(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .procurementType(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .dynamicData(tender.getDynamicData())
                 .openingDate(tender.getOpeningDate())
                 .closingDate(tender.getClosingDate())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
