@@ -1,6 +1,7 @@
 package lk.tenderease.tender.repository;
 
 import lk.tenderease.tender.entity.Tender;
+import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,12 +38,14 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
         AND t.status = :status
         AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
     """)
     Page<Tender> searchWithStatus(
             @Param("keyword") String keyword,
             @Param("status") TenderStatus status,
+            @Param("procurementType") ProcurementType procurementType,
             Pageable pageable
     );
 
@@ -53,10 +56,12 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
         AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,
+            @Param("procurementType") ProcurementType procurementType,
             Pageable pageable
     );
 

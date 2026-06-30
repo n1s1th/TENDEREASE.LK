@@ -9,6 +9,7 @@ import lk.tenderease.tender.dto.response.TenderDetailsDTO;
 import lk.tenderease.tender.dto.response.TenderDocumentDTO;
 import lk.tenderease.tender.dto.response.TenderSummaryDTO;
 import lk.tenderease.tender.dto.response.TimelineDTO;
+import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
 import lk.tenderease.tender.service.TenderService;
@@ -54,10 +55,11 @@ public class PublicTenderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) TenderStatus status) {
+            @RequestParam(required = false) TenderStatus status,
+            @RequestParam(required = false) ProcurementType procurementType) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
     }
 
     @GetMapping("/{id}")

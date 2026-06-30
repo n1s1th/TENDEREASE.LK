@@ -6,6 +6,7 @@ import { useState } from "react";
 interface Props {
   filters: {
     keyword: string;
+    category: string;
     status: string;
     dateType: string;
     fromDate: string;
@@ -15,6 +16,19 @@ interface Props {
   onSearch: () => void;
   onReset: () => void;
 }
+
+const CATEGORIES = [
+  "All Categories",
+  "Construction",
+  "IT & Technology",
+  "Healthcare",
+  "Transportation",
+  "Education",
+  "Energy",
+  "Defense",
+  "Agriculture",
+  "Consulting",
+];
 
 export default function TenderSearchBar({ filters, onFilterChange, onSearch, onReset }: Props) {
 
@@ -84,7 +98,23 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
       {/* Filter Grid */}
       <div className="pt-8 border-t border-gray-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 items-end">
+
+          {/* CATEGORY */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
+              Category
+            </label>
+            <select 
+              value={filters.category}
+              onChange={(e) => handleInputChange("category", e.target.value)}
+              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
 
           {/* STATUS */}
           <div className="space-y-3">

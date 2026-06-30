@@ -28,7 +28,7 @@ const INITIAL_ITEMS: NewsItem[] = [
     image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&auto=format&fit=crop",
     date: "February 24, 2025",
     category: "NEWS",
-    title: "TenderHub Partners with Procurement Authority to Improve Transparency",
+    title: "TenderEase Partners with Procurement Authority to Improve Transparency",
     tab: "News",
   },
   {
@@ -44,7 +44,7 @@ const INITIAL_ITEMS: NewsItem[] = [
     image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&auto=format&fit=crop",
     date: "April 18, 2025",
     category: "EVENT",
-    title: "Vendor Onboarding Workshop: How to Bid & Win on TenderHub",
+    title: "Vendor Onboarding Workshop: How to Bid & Win on TenderEase",
     tab: "Events",
   },
   {

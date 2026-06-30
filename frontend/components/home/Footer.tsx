@@ -105,7 +105,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1 }}>
-                    TenderHub
+                    TenderEase
                   </h2>
                   <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#FFB401", letterSpacing: "0.05em" }}>
                     .LK
@@ -205,7 +205,7 @@ export default function Footer() {
             }}
           >
             <p style={{ margin: 0, color: "rgba(255,255,255,0.35)" }}>
-              &copy; 2026 TenderHub.lk — All rights reserved
+              &copy; 2026 TenderEase.lk — All rights reserved
             </p>
             <div style={{ display: "flex", gap: "1.25rem" }}>
               <Link href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</Link>

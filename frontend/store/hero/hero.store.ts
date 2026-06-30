@@ -8,22 +8,22 @@ import type { HeroState, HeroSlide } from "@/lib/types/hero.types";
 // ── Seed data (moved from HeroSection.tsx) ───────────────────
 const INITIAL_SLIDES: HeroSlide[] = [
   {
-    badge: "TENDERHUB",
+    badge: "TENDEREASE",
     heading: "Access Government Tenders Across All Sectors in One Place",
     subtext:
       "Stay updated with the latest government tenders and contracts tailored to your business needs.",
   },
   {
-    badge: "TENDERHUB",
+    badge: "TENDEREASE",
     heading: "Find and Win More Government Contracts Faster",
     subtext:
       "Discover thousands of active tenders, filter by category and location, and never miss an opportunity.",
   },
   {
-    badge: "TENDERHUB",
+    badge: "TENDEREASE",
     heading: "Streamline Your Tender Bidding Process Today",
     subtext:
-      "From discovery to submission — TenderHub helps you manage the entire tendering lifecycle.",
+      "From discovery to submission — TenderEase helps you manage the entire tendering lifecycle.",
   },
 ];
 

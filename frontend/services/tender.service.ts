@@ -99,6 +99,23 @@ export async function getTenderById(id: string) {
   }
 }
 
+// Map UI categories to backend ProcurementType enums
+function mapCategoryToProcurementType(category: string): string | undefined {
+  if (!category || category === "All Categories") return undefined;
+  const cat = category.toLowerCase().trim();
+  if (cat.includes("construction") || cat.includes("works")) return "WORKS";
+  if (cat.includes("consulting") || cat.includes("consultancy")) return "CONSULTANCY";
+  if (cat.includes("it & technology") || cat.includes("it") || cat.includes("technology") || cat.includes("services")) return "SERVICES";
+  if (cat.includes("healthcare") || cat.includes("medical") || cat.includes("goods") || cat.includes("defense")) return "GOODS";
+  
+  const upper = category.toUpperCase().replace(/\s+/g, "_");
+  const validTypes = ["GOODS", "WORKS", "SERVICES", "CONSULTANCY", "CONSULTING_SERVICES", "NON_CONSULTING_SERVICES"];
+  if (validTypes.includes(upper)) {
+    return upper;
+  }
+  return undefined;
+}
+
 // 🔥 GET ALL TENDERS
 export async function getTenders(page = 0, size = 10, filters: any = {}) {
   try {
@@ -112,6 +129,13 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
       params.append("status", filters.status);
     if (filters.fromDate) params.append("fromDate", filters.fromDate);
     if (filters.toDate) params.append("toDate", filters.toDate);
+    
+    if (filters.procurementType) {
+      params.append("procurementType", filters.procurementType);
+    } else if (filters.category) {
+      const type = mapCategoryToProcurementType(filters.category);
+      if (type) params.append("procurementType", type);
+    }
 
     return await apiFetch(`${BASE_URL}?${params.toString()}`);
   } catch (error) {
