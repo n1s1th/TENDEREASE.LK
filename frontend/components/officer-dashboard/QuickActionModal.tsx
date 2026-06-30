@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Lock, FileText, Download, Users, Settings, Trophy } from "lucide-react";
+import { X, Lock, FileText, Download, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
   getTendersForOpening, 
@@ -219,34 +219,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
             </div>
           )
         };
-      case "Committee Roster":
-        return {
-          icon: <Lock className="w-5 h-5 text-[#953002]" />,
-          title: "Member Directory",
-          desc: "View and manage the assigned committee members for current projects.",
-          primaryAction: "Manage Roster",
-          extra: (
-            <div className="mt-4 space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Committee Roster</label>
-              <div className="max-h-[180px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {[
-                  { name: "Dr. Sarah Jenkins", role: "Chair / Evaluator" },
-                  { name: "John Doe", role: "Technical Officer" },
-                  { name: "Mrs. Priyanthi Perera", role: "Financial Advisor" },
-                  { name: "Mr. Amal Silva", role: "Procurement Specialist" },
-                  { name: "Miss Dharshani de Silva", role: "Secretary" },
-                ].map((member, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="text-left">
-                      <p className="text-xs font-bold text-gray-900">{member.name}</p>
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{member.role}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        };
+
       case "Awards Processing":
         return {
           icon: <Trophy className="w-5 h-5 text-[#953002]" />,
@@ -309,7 +282,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   if (!content) return null;
 
   const isPrimaryDisabled = (type === "Open Bid Session" || type === "Download Bid Documents" || type === "Awards Processing") && !selectedTenderId;
-  const hasPrimaryButton = type !== "View Opening Records" && type !== "Committee Roster";
+  const hasPrimaryButton = type !== "View Opening Records";
 
   const handlePrimaryAction = () => {
     if (type === "Open Bid Session") {
