@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp } from "lucide-react";
+import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -43,16 +43,26 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [registerDropdownOpen, setRegisterDropdownOpen] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
   const { initialized, error } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const registerDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if user needs to register as officer or vendor
+  const hasOfficerRole = user?.roles?.includes('PROCUREMENT_OFFICER') ?? false;
+  const hasVendorRole = user?.roles?.includes('VENDOR') ?? false;
+  const needsRoleRegistration = isAuthenticated && !hasOfficerRole && !hasVendorRole;
 
   // Close search dropdown on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
         setSearchFocused(false);
+      }
+      if (registerDropdownRef.current && !registerDropdownRef.current.contains(e.target as Node)) {
+        setRegisterDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -149,12 +159,38 @@ export default function Navbar() {
             </>
           ) : (
             <div className="te-navbar__user">
+              {needsRoleRegistration && (
+                <div className="te-navbar__register-dropdown" ref={registerDropdownRef}>
+                  <div className="te-navbar__register-trigger">
+                    <Link href="/vendor-registration" className="te-navbar__btn te-navbar__btn--register-vendor">
+                      <Building2 size={14} />
+                      <span>Register as Vendor</span>
+                    </Link>
+                    <button
+                      className="te-navbar__register-arrow"
+                      onClick={() => setRegisterDropdownOpen((prev) => !prev)}
+                      aria-label="More registration options"
+                    >
+                      <ChevronDown size={14} className={registerDropdownOpen ? "te-navbar__arrow-rotated" : ""} />
+                    </button>
+                  </div>
+                  {registerDropdownOpen && (
+                    <div className="te-navbar__register-menu">
+                      <Link
+                        href="/officer-registration"
+                        className="te-navbar__register-menu-item"
+                        onClick={() => setRegisterDropdownOpen(false)}
+                      >
+                        <Shield size={14} />
+                        <span>Register as Officer</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="te-navbar__user-avatar">
                 {(user?.firstName || user?.name || "U").charAt(0).toUpperCase()}
               </div>
-              <span className="te-navbar__user-name">
-                {user?.firstName || user?.name}
-              </span>
               <button onClick={logout} className="te-navbar__btn te-navbar__btn--signout">
                 Sign Out
               </button>
@@ -284,9 +320,31 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <button onClick={logout} className="te-navbar__mobile-signin te-navbar__mobile-signin--out">
-              Sign Out
-            </button>
+            <>
+              {needsRoleRegistration && (
+                <div className="te-navbar__mobile-register-group">
+                  <Link
+                    href="/officer-registration"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="te-navbar__mobile-register te-navbar__mobile-register--officer"
+                  >
+                    <Shield size={16} />
+                    <span>Register as Officer</span>
+                  </Link>
+                  <Link
+                    href="/vendor-registration"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="te-navbar__mobile-register te-navbar__mobile-register--vendor"
+                  >
+                    <Building2 size={16} />
+                    <span>Register as Vendor</span>
+                  </Link>
+                </div>
+              )}
+              <button onClick={logout} className="te-navbar__mobile-signin te-navbar__mobile-signin--out">
+                Sign Out
+              </button>
+            </>
           )}
         </nav>
       )}

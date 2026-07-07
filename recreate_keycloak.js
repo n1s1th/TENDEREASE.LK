@@ -57,7 +57,7 @@ async function run() {
     })
   });
 
-  const roles = ['ADMIN', 'PROCUREMENT_OFFICER', 'CAO', 'COMMITTEE', 'EVALUATOR', 'USER'];
+  const roles = ['ADMIN', 'PROCUREMENT_OFFICER', 'CAO', 'COMMITTEE', 'EVALUATOR', 'USER', 'VENDOR'];
   console.log("Creating Roles...");
   for (const role of roles) {
     await fetch(`${baseUrl}/admin/realms/tenderease/roles`, {
