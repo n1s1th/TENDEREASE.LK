@@ -752,12 +752,16 @@ public class TenderServiceImpl implements TenderService {
         clarificationRepository.save(clarification);
 
         if (clarification.getBidderEmail() != null && !clarification.getBidderEmail().isBlank()) {
-            notificationProducer.sendNotification(NotificationEvent.builder()
-                    .recipient(clarification.getBidderEmail())
-                    .type("EMAIL")
-                    .subject("Tender clarification answered: " + tender.getTenderNumber())
-                    .message(buildNotificationMessage(tender, clarification, savedResponse))
-                    .build());
+            try {
+                notificationProducer.sendNotification(NotificationEvent.builder()
+                        .recipient(clarification.getBidderEmail())
+                        .type("EMAIL")
+                        .subject("Tender clarification answered: " + tender.getTenderNumber())
+                        .message(buildNotificationMessage(tender, clarification, savedResponse))
+                        .build());
+            } catch (Exception e) {
+                log.warn("Failed to send notification to RabbitMQ for clarification {}: {}", clarification.getId(), e.getMessage());
+            }
         }
 
         return ClarificationDTO.builder()
