@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { officerSchema } from '../../../lib/validations/vendorSchema';
 import { OfficerData, useVendorStore } from '../../../store/vendorRegistrationStore';
 import { registerVendor } from '../../../lib/api/vendorApi';
+import { useAuthStore } from '@/store';
 
 export default function Step2Officer() {
   const { officerData, organizationData, setOfficerData, nextStep, prevStep, setVendorId } = useVendorStore();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { user } = useAuthStore();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<OfficerData>({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<OfficerData>({
     resolver: zodResolver(officerSchema),
     defaultValues: officerData || {
       nicOrPassportNo: '',
@@ -22,6 +24,17 @@ export default function Step2Officer() {
       email: '',
     } as any
   });
+
+  useEffect(() => {
+    if (user) {
+      if (user.name && !officerData?.name) {
+        setValue('name', user.name);
+      }
+      if (user.email && !officerData?.email) {
+        setValue('email', user.email);
+      }
+    }
+  }, [user, setValue, officerData]);
 
   const onSubmit = async (data: OfficerData) => {
     setSubmitError(null);

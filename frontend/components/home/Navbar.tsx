@@ -69,7 +69,7 @@ export default function Navbar() {
   };
 
   const handleSearch = () => {
-    if (searchQuery.trim()) {
+    if (searchQuery.trim() || selectedCategory !== "All Categories") {
       window.location.href = `/tenders?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(selectedCategory)}`;
     }
   };

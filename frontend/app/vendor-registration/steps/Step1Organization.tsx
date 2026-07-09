@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { organizationSchema } from '../../../lib/validations/vendorSchema';
 import { OrgData, useVendorStore } from '../../../store/vendorRegistrationStore';
 import { verifyRegistration } from '../../../lib/api/vendorApi';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { useAuthStore } from '@/store';
 
 const DEPARTMENT_OPTIONS = [
   { label: 'Department of the Registrar of Companies', value: 'ROC' },
@@ -25,8 +26,9 @@ export default function Step1Organization() {
   const { organizationData, setOrganizationData, nextStep, setVerified, isVerified, verifiedCompanyName } = useVendorStore();
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const { user } = useAuthStore();
 
-  const { register, handleSubmit, watch, control, formState: { errors } } = useForm<OrgData>({
+  const { register, handleSubmit, watch, control, setValue, formState: { errors } } = useForm<OrgData>({
     resolver: zodResolver(organizationSchema),
     defaultValues: organizationData || {
       businessName: '',
@@ -43,6 +45,12 @@ export default function Step1Organization() {
       departments: []
     }
   });
+
+  useEffect(() => {
+    if (user?.email && !organizationData?.officialEmail) {
+      setValue('officialEmail', user.email);
+    }
+  }, [user, setValue, organizationData]);
 
   const certificateNo = watch('registrationNumber');
 
@@ -181,7 +189,14 @@ export default function Step1Organization() {
         
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Official Email *</label>
-          <input {...register('officialEmail')} type="email" className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" />
+          <input 
+            {...register('officialEmail')} 
+            type="email" 
+            readOnly={!!user?.email} 
+            className={`flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500 ${
+              user?.email ? 'bg-gray-100 cursor-not-allowed opacity-75' : ''
+            }`} 
+          />
           {errors.officialEmail && <p className="text-red-500 text-xs">{errors.officialEmail.message}</p>}
         </div>
 

@@ -1,27 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import TenderLayout from "@/components/tender/TenderLayout";
 import TenderTable from "@/components/tender/TenderTable";
 import TenderSearchBar from "@/components/tender/TenderSearchBar";
 import TenderPagination from "@/components/tender/TenderPagination";
 import { getTenders } from "@/services/tender.service";
+import { useSearchParams } from "next/navigation";
 
 const INITIAL_FILTERS = {
   keyword: "",
+  category: "All Categories",
   status: "All Statuses",
   dateType: "None Selected",
   fromDate: "",
   toDate: "",
 };
 
-export default function TendersPage() {
+function TendersPageContent() {
+  const searchParams = useSearchParams();
   const [tenders, setTenders] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  
+  const [filters, setFilters] = useState(() => {
+    const search = searchParams.get("search") || "";
+    const cat = searchParams.get("category") || "All Categories";
+    return {
+      ...INITIAL_FILTERS,
+      keyword: search,
+      category: cat,
+    };
+  });
+  
   const [triggerFetch, setTriggerFetch] = useState(0);
+
+  // Synchronize filter state when URL search parameters change
+  useEffect(() => {
+    const search = searchParams.get("search") || "";
+    const cat = searchParams.get("category") || "All Categories";
+    setFilters((prev) => ({
+      ...prev,
+      keyword: search,
+      category: cat,
+    }));
+    setCurrentPage(1);
+    setTriggerFetch((prev) => prev + 1);
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchTenders() {
@@ -116,5 +142,19 @@ export default function TendersPage() {
         </div>
       </div>
     </TenderLayout>
+  );
+}
+
+export default function TendersPage() {
+  return (
+    <Suspense fallback={
+      <TenderLayout>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-10 py-10 text-center text-gray-2">
+          Loading Tender Portal...
+        </div>
+      </TenderLayout>
+    }>
+      <TendersPageContent />
+    </Suspense>
   );
 }

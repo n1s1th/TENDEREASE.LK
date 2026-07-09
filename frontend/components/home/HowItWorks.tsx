@@ -40,7 +40,7 @@ export default function HowItWorks() {
         {/* Header */}
         <div className="hiw-header">
           <span className="hiw-badge">Process</span>
-          <h2 className="hiw-title">How TenderHub Works</h2>
+          <h2 className="hiw-title">How TenderEase Works</h2>
           <p className="hiw-subtitle">
             A simple, transparent procurement process from start to finish
           </p>
