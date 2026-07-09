@@ -30,7 +30,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <TenderHeader tender={tender} />
         <SpecialRequirements tender={tender} />
         <TenderTabs tender={tender} />
-        <TenderActionsFooter tenderId={tender.id} />
+        <TenderActionsFooter tender={tender} />
       </div>
     </TenderLayout>
   );

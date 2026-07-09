@@ -1,7 +1,17 @@
-import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2 } from "lucide-react";
+"use client";
+
+import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2, Bookmark, Check, Mail, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { useSavedTendersStore } from "@/store/saved-tenders.store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function TenderHeader({ tender }: any) {
   const formatBudget = (amount: any) => {
@@ -64,9 +74,10 @@ export default function TenderHeader({ tender }: any) {
                 Apply Now
               </Button>
             )}
-            <Button variant="outline" size="icon" className="shrink-0 h-11 w-11">
-              <Share2 size={18} />
-            </Button>
+            <div className="flex gap-2">
+              <SaveTenderButton tender={tender} />
+              <ShareTenderButton tender={tender} />
+            </div>
           </div>
         </div>
 
@@ -111,5 +122,105 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
         <span className="text-sm font-semibold text-foreground">{value}</span>
       </div>
     </div>
+  );
+}
+
+function SaveTenderButton({ tender }: { tender: any }) {
+  const { savedTenders, saveTender, removeTender, isSaved } = useSavedTendersStore();
+  
+  if (!tender?.id) return null;
+  
+  const saved = isSaved(tender.id);
+
+  const toggleSave = () => {
+    if (saved) {
+      removeTender(tender.id);
+    } else {
+      saveTender({
+        id: tender.id,
+        tenderNumber: tender.tenderNumber,
+        title: tender.title,
+        departmentName: tender.departmentName,
+        closingDate: tender.closingDate,
+        status: tender.status,
+        estimatedBudget: tender.estimatedBudget
+      });
+    }
+  };
+
+  return (
+    <Button 
+      variant={saved ? "default" : "outline"} 
+      size="icon" 
+      className="shrink-0 h-11 w-11 transition-all"
+      onClick={toggleSave}
+      title={saved ? "Remove from saved" : "Save this tender"}
+    >
+      <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
+    </Button>
+  );
+}
+
+function ShareTenderButton({ tender }: { tender: any }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL:", err);
+    }
+  };
+
+  const getEmailContent = () => {
+    const subject = encodeURIComponent(`Check out this tender: ${tender?.title || "TenderEase"}`);
+    const body = encodeURIComponent(
+      `I found this tender on TenderEase and thought you might be interested:\n\n` +
+      `Title: ${tender?.title || "N/A"}\n` +
+      `Department: ${tender?.departmentName || "N/A"}\n\n` +
+      `View Tender Details:\n${window.location.href}`
+    );
+    return { subject, body };
+  };
+
+  const handleEmailShare = () => {
+    const { subject, body } = getEmailContent();
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleGmailShare = () => {
+    const { subject, body } = getEmailContent();
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`, '_blank');
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant={copied ? "default" : "outline"} 
+          size="icon" 
+          className={`shrink-0 h-11 w-11 transition-all ${copied ? "bg-success text-success-foreground hover:bg-success/90" : ""}`}
+          title="Share this tender"
+        >
+          {copied ? <Check size={18} /> : <Share2 size={18} />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-2">
+          <LinkIcon size={16} className="text-muted-foreground" />
+          <span>Copy Link</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleGmailShare} className="cursor-pointer gap-2">
+          <Mail size={16} className="text-muted-foreground" />
+          <span>Share via Gmail</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEmailShare} className="cursor-pointer gap-2">
+          <Mail size={16} className="text-muted-foreground" />
+          <span>Share via Default Email App</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
