@@ -51,7 +51,7 @@ public class QaController {
     @Operation(summary = "Submit a public question")
     @PostMapping("/questions")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("isAuthenticated()")
     public QuestionResponse createQuestion(@Valid @RequestBody CreateQuestionRequest request) {
         return questionService.createQuestion(request);
     }

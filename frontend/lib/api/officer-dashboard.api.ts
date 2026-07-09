@@ -21,7 +21,7 @@ const api = axios.create({
 });
 
 const tenderApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api',
+  baseURL: (process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082') + '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
