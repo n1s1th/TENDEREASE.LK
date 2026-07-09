@@ -60,6 +60,8 @@ import java.nio.file.StandardCopyOption;
 import java.io.IOException;
 import lk.tenderease.common.exception.BusinessException;
 import lk.tenderease.tender.enums.DocumentType;
+import lk.tenderease.tender.enums.TimelineEventType;
+import lk.tenderease.tender.entity.TenderTimeline;
 
 @Slf4j
 @Service
@@ -140,6 +142,10 @@ public class TenderServiceImpl implements TenderService {
         
         Tender saved = tenderRepository.save(tender);
         log.info("Tender created with ID: {}", saved.getId());
+
+        // Auto-record CREATED timeline event
+        recordTimelineEvent(saved, TimelineEventType.CREATED,
+                "Tender '" + saved.getTitle() + "' was created and saved as draft.");
 
         return mapToResponse(saved);
     }
@@ -598,6 +604,10 @@ public class TenderServiceImpl implements TenderService {
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
 
+        // Auto-record SUBMITTED timeline event
+        recordTimelineEvent(saved, TimelineEventType.SUBMITTED,
+                "Tender submitted for CAO approval by " + (callerUserId != null ? callerUserId : "officer") + ".");
+
         // 2. Publish event to RabbitMQ for Notification Service
         try {
             TenderSubmittedEvent event = TenderSubmittedEvent.builder()
@@ -810,9 +820,21 @@ public class TenderServiceImpl implements TenderService {
                 .projectOverview(tender.getProjectOverview())
                 .scopeOfWork(tender.getScopeOfWork())
                 .estimatedBudget(tender.getEstimatedBudget())
+                .status(tender.getStatus())
+                .procurementType(tender.getProcurementType() != null ? tender.getProcurementType().name() : null)
+                .biddingMethod(tender.getBiddingMethod())
+                .tenderType(tender.getTenderType())
+                .ministryId(tender.getMinistry() != null ? tender.getMinistry().getId() : null)
+                .ministryName(tender.getMinistry() != null ? tender.getMinistry().getName() : null)
+                .departmentId(tender.getDepartment() != null ? tender.getDepartment().getId() : null)
                 .departmentName(tender.getDepartment() != null ? tender.getDepartment().getName() : null)
+                .fundingSourceId(tender.getFundingSource() != null ? tender.getFundingSource().getId() : null)
+                .fundingSourceName(tender.getFundingSource() != null ? tender.getFundingSource().getName() : null)
+                .dynamicData(tender.getDynamicData())
                 .openingDate(tender.getOpeningDate())
                 .closingDate(tender.getClosingDate())
+                .createdAt(tender.getCreatedAt())
+                .updatedAt(tender.getUpdatedAt())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
                 .documents(getDocuments(tender.getId()))
                 .addenda(getAddenda(tender.getId()))
@@ -827,20 +849,35 @@ public class TenderServiceImpl implements TenderService {
                 .id(document.getId())
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
+                .mimeType(document.getMimeType())
+                .fileSizeBytes(document.getFileSizeBytes())
                 .version(document.getVersion())
+                .uploadedAt(document.getUploadedAt())
                 .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
                 .build();
     }
 
     private TenderAmendmentDTO mapAmendment(TenderAmendment amendment) {
-        return TenderAmendmentDTO.builder()
+        TenderAmendmentDTO.TenderAmendmentDTOBuilder builder = TenderAmendmentDTO.builder()
                 .id(amendment.getId())
                 .amendmentNumber(amendment.getAmendmentNumber())
                 .title(amendment.getTitle())
                 .description(amendment.getDescription())
+                .changeNote(amendment.getChangeNote())
                 .newClosingDate(amendment.getNewClosingDate())
                 .createdAt(amendment.getCreatedAt())
-                .build();
+                .version(amendment.getVersion());
+
+        // If linked to a document, resolve its download URL
+        if (amendment.getDocumentId() != null) {
+            documentRepository.findById(amendment.getDocumentId()).ifPresent(doc -> {
+                builder.documentName(doc.getDocumentName());
+                builder.version(doc.getVersion());
+                builder.downloadUrl("http://localhost:8082/api/tenders/files/" + doc.getS3Key());
+            });
+        }
+
+        return builder.build();
     }
 
     private long calculateTimeRemaining(LocalDateTime closingDate) {
@@ -1030,7 +1067,138 @@ public class TenderServiceImpl implements TenderService {
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
 
+        // Auto-record timeline event matching the new status
+        TimelineEventType eventType = statusToTimelineEvent(status);
+        if (eventType != null) {
+            String desc = buildStatusDescription(status, reason, callerUserId);
+            recordTimelineEvent(saved, eventType, desc);
+        }
+
         log.info("Tender {} status updated to {}", id, status);
         return mapToResponse(saved);
+    }
+
+    // ── Timeline helpers ─────────────────────────────────────────────────────
+
+    private void recordTimelineEvent(Tender tender, TimelineEventType eventType, String description) {
+        try {
+            TenderTimeline event = TenderTimeline.builder()
+                    .tender(tender)
+                    .eventType(eventType)
+                    .description(description)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            timelineRepository.save(event);
+            log.debug("Timeline event '{}' recorded for tender {}", eventType, tender.getId());
+        } catch (Exception e) {
+            log.warn("Failed to record timeline event '{}' for tender {}: {}", eventType, tender.getId(), e.getMessage());
+        }
+    }
+
+    private TimelineEventType statusToTimelineEvent(TenderStatus status) {
+        return switch (status) {
+            case APPROVED          -> TimelineEventType.APPROVED;
+            case REJECTED          -> TimelineEventType.REJECTED;
+            case PUBLISHED         -> TimelineEventType.PUBLISHED;
+            case OPEN              -> TimelineEventType.OPENED;
+            case EVALUATION        -> TimelineEventType.EVALUATION_STARTED;
+            case AWARDED           -> TimelineEventType.AWARDED;
+            case NO_BID            -> TimelineEventType.NO_BID;
+            case CLOSED            -> TimelineEventType.CLOSED;
+            case CANCELLED         -> TimelineEventType.CANCELLED;
+            default                -> null; // DRAFT, PENDING_APPROVAL handled separately
+        };
+    }
+
+    private String buildStatusDescription(TenderStatus status, String reason, String callerUserId) {
+        String actor = callerUserId != null ? callerUserId : "system";
+        return switch (status) {
+            case APPROVED   -> "Tender approved by " + actor + ".";
+            case REJECTED   -> "Tender rejected by " + actor + (reason != null ? ": " + reason : ".");
+            case PUBLISHED  -> "Tender published and visible to vendors.";
+            case OPEN       -> "Bid opening session started.";
+            case EVALUATION -> "Bid evaluation phase has commenced.";
+            case AWARDED    -> "Contract has been awarded.";
+            case NO_BID     -> "No bids were received; tender closed without award.";
+            case CLOSED     -> "Tender officially closed.";
+            case CANCELLED  -> "Tender was cancelled" + (reason != null ? ": " + reason : ".");
+            default         -> status.name();
+        };
+    }
+
+    // ── Addenda / Document Versioning ─────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public TenderAmendmentDTO replaceDocument(UUID tenderId, UUID docId,
+                                              org.springframework.web.multipart.MultipartFile newFile,
+                                              String changeNote, String callerUserId) {
+        log.info("Replacing document {} for tender {} by {}", docId, tenderId, callerUserId);
+
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+
+        TenderDocument oldDoc = documentRepository.findById(docId)
+                .orElseThrow(() -> new RuntimeException("Document not found with ID: " + docId));
+
+        if (!oldDoc.getTender().getId().equals(tenderId)) {
+            throw new RuntimeException("Document does not belong to this tender");
+        }
+
+        if (newFile == null || newFile.isEmpty()) {
+            throw new RuntimeException("Replacement file is empty or missing.");
+        }
+
+        // Determine next version number
+        int nextVersion = (oldDoc.getVersion() != null ? oldDoc.getVersion() : 1) + 1;
+
+        // Save new file to local storage with a distinct name
+        String originalName = newFile.getOriginalFilename() != null ? newFile.getOriginalFilename() : oldDoc.getDocumentName();
+        String newFileName = java.util.UUID.randomUUID().toString() + "_v" + nextVersion + "_" + originalName;
+        Path targetPath = Paths.get(uploadDir).resolve(newFileName).toAbsolutePath();
+
+        try {
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(newFile.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not store replacement file", e);
+        }
+
+        // Create new TenderDocument record for the new version
+        TenderDocument newDoc = TenderDocument.builder()
+                .tender(tender)
+                .documentName(originalName)
+                .documentType(oldDoc.getDocumentType())
+                .s3Key(newFileName)
+                .version(nextVersion)
+                .fileSizeBytes(newFile.getSize())
+                .mimeType(newFile.getContentType() != null ? newFile.getContentType() : oldDoc.getMimeType())
+                .uploadedAt(LocalDateTime.now())
+                .build();
+        TenderDocument savedNewDoc = documentRepository.save(newDoc);
+
+        // Count existing amendments to generate amendment number
+        int amendmentNumber = (int) amendmentRepository.findByTenderIdOrderByCreatedAtDesc(tenderId).size() + 1;
+
+        // Create amendment record
+        TenderAmendment amendment = TenderAmendment.builder()
+                .tender(tender)
+                .amendmentNumber(amendmentNumber)
+                .title("Amendment " + amendmentNumber + " – Document Updated")
+                .description("Document '" + originalName + "' was updated to version " + nextVersion + ".")
+                .changeNote(changeNote != null ? changeNote : "Document replacement")
+                .version(nextVersion)
+                .documentId(savedNewDoc.getId())
+                .createdAt(LocalDateTime.now())
+                .build();
+        TenderAmendment savedAmendment = amendmentRepository.save(amendment);
+
+        // Record AMENDED timeline event
+        recordTimelineEvent(tender, TimelineEventType.AMENDED,
+                "Addendum " + amendmentNumber + ": '" + originalName + "' updated to version " + nextVersion
+                + (changeNote != null ? " – " + changeNote : "."));
+
+        log.info("Document replacement complete. New doc ID: {}, Amendment ID: {}", savedNewDoc.getId(), savedAmendment.getId());
+        return mapAmendment(savedAmendment);
     }
 }

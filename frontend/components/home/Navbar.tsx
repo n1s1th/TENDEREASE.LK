@@ -13,7 +13,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "Tenders", href: "/tenders" },
   { label: "How it Works", href: "/how-it-works" },
-  { label: "Help / FAQ", href: "/help" },
+  { label: "Help / FAQ", href: "/qa" },
 ];
 
 const trendingSearches = [

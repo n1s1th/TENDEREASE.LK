@@ -148,10 +148,16 @@ export default function Footer() {
                 Quick Links
               </h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {["Browse Tenders", "How It Works", "Register as Vendor", "Sign In", "Help / FAQ"].map((link) => (
-                  <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
-                      {link}
+                {[
+                  { label: "Browse Tenders", href: "/tenders" },
+                  { label: "How It Works", href: "/how-it-works" },
+                  { label: "Register as Vendor", href: "/vendor-registration" },
+                  { label: "Sign In", href: "#" },
+                  { label: "Help / FAQ", href: "/qa" }
+                ].map((link) => (
+                  <li key={link.label}>
+                    <Link href={link.href} style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
+                      {link.label}
                     </Link>
                   </li>
                 ))}

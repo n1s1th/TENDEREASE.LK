@@ -265,4 +265,19 @@ public interface TenderService {
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
 
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
+
+    /**
+     * Replaces an existing document with a new version, creating an Addendum record.
+     * The old file is kept on disk; the new file is stored with version incremented.
+     *
+     * @param tenderId    the tender UUID
+     * @param docId       the document UUID to replace
+     * @param newFile     the new file bytes
+     * @param changeNote  human-readable description of what changed
+     * @param callerUserId the officer's user ID
+     * @return the new TenderAmendmentDTO
+     */
+    TenderAmendmentDTO replaceDocument(UUID tenderId, UUID docId,
+                                       org.springframework.web.multipart.MultipartFile newFile,
+                                       String changeNote, String callerUserId);
 }

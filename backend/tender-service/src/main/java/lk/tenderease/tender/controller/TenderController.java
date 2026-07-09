@@ -371,13 +371,36 @@ public class TenderController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping(value = "/{id}/status")
     @Operation(summary = "Update tender status", description = "Updates status of a tender. Public/internal use.")
     public ResponseEntity<TenderResponse> updateStatus(
             @PathVariable UUID id,
-            @RequestParam TenderStatus status) {
+            @RequestParam TenderStatus status,
+            @RequestParam(required = false) String reason) {
         log.info("REST request to update tender {} status to {}", id, status);
-        TenderResponse response = tenderService.updateTenderStatus(id, status, null, "system-user");
+        TenderResponse response = tenderService.updateTenderStatus(id, status, reason, "system-user");
         return ResponseEntity.ok(response);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ADDENDA — Document Version Replacement
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping(value = "/{id}/documents/{docId}/replace", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // @PreAuthorize("hasRole('PROCUREMENT_OFFICER') or hasRole('ADMIN')")
+    @Operation(summary = "Replace document (create addendum)",
+            description = "Uploads a new version of a document. Creates an Addendum record and records an AMENDED timeline event.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Document replaced and addendum created"),
+        @ApiResponse(responseCode = "400", description = "File is empty or document does not belong to tender"),
+        @ApiResponse(responseCode = "404", description = "Tender or document not found")
+    })
+    public ResponseEntity<lk.tenderease.tender.dto.response.TenderAmendmentDTO> replaceDocument(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Document UUID to replace") @PathVariable UUID docId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "changeNote", required = false) String changeNote) {
+        log.info("REST request to replace document {} for tender {}", docId, id);
+        return ResponseEntity.ok(tenderService.replaceDocument(id, docId, file, changeNote, "dev-user-id"));
     }
 }

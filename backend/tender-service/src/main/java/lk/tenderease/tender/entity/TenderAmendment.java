@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tender_amendment")
@@ -25,6 +26,10 @@ public class TenderAmendment {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /** Human-readable note about what changed (e.g., "Closing date extended") */
+    @Column(name = "change_note", columnDefinition = "TEXT")
+    private String changeNote;
+
     private Integer version;
 
     private LocalDateTime previousClosingDate;
@@ -32,7 +37,11 @@ public class TenderAmendment {
 
     private LocalDateTime createdAt;
 
+    /** Optional: the new TenderDocument version uploaded with this amendment */
+    @Column(name = "document_id")
+    private UUID documentId;
+
     @ManyToOne
     @JoinColumn(name = "tender_id")
     private Tender tender;
-}
+}
