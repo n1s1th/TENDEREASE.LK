@@ -40,3 +40,12 @@ export async function startOpeningSession(sessionId: string, token?: string): Pr
   if (!res.ok) throw new Error("Failed to start opening session");
   return res.json();
 }
+
+export async function deleteAttendanceRecord(attendanceId: string, token?: string): Promise<ApiResponse<void>> {
+  const res = await fetch(`${BASE}/api/v1/opening/attendance/${attendanceId}`, {
+    method: "DELETE",
+    headers: { ...authHeaders(token) }
+  });
+  if (!res.ok) throw new Error("Failed to delete attendance");
+  return res.json();
+}

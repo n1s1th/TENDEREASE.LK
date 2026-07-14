@@ -68,6 +68,11 @@ export interface EvaluationState {
   underEvaluationCount: number;
   awardedProposalsCount: number;
   noBidTendersCount: number;
+  completedEvaluationsCount: number;
+
+  totalPages?: number;
+  totalElements?: number;
+  currentPage?: number;
 
   // Actions
   fetchScores: (tenderId: string) => Promise<void>;
@@ -76,7 +81,7 @@ export interface EvaluationState {
   setCommitteeInputs: (input: Partial<EvaluationScore>) => void;
   resetScores: () => void;
   
-  fetchAssignedTenders: () => Promise<void>;
+  fetchAssignedTenders: (keyword?: string, status?: string, page?: number, size?: number) => Promise<void>;
   fetchDashboardMetrics: () => Promise<void>;
   
   // Vetting actions

@@ -62,4 +62,22 @@ public class AdminEvaluationController {
         EvaluationResultResponse response = evaluationService.getEvaluationResults(tenderId);
         return ResponseEntity.ok(ApiResponse.success(response, "Results retrieved successfully"));
     }
+
+    @PostMapping("/{bidId}/flag")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE', 'PROCUREMENT_OFFICER')")
+    @Operation(summary = "Toggle flag status for an evaluation by bid ID")
+    public ResponseEntity<ApiResponse<EvaluationResponse>> toggleFlag(@PathVariable UUID bidId) {
+        EvaluationResponse response = evaluationService.toggleFlagByBidId(bidId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Flag status toggled successfully"));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/{bidId}/compliance")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE', 'PROCUREMENT_OFFICER')")
+    @Operation(summary = "Update technical compliance status for an evaluation by bid ID")
+    public ResponseEntity<ApiResponse<EvaluationResponse>> updateComplianceStatus(
+            @PathVariable UUID bidId,
+            @org.springframework.web.bind.annotation.RequestParam String status) {
+        EvaluationResponse response = evaluationService.updateComplianceStatusByBidId(bidId, status);
+        return ResponseEntity.ok(ApiResponse.success(response, "Compliance status updated successfully"));
+    }
 }

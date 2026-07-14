@@ -808,6 +808,7 @@ public class TenderServiceImpl implements TenderService {
                 .closingDate(tender.getClosingDate())
                 .status(effectiveStatus)
                 .procurementType(tender.getProcurementType())
+                .createdAt(tender.getCreatedAt())
                 .timeRemaining(calculateTimeRemaining(tender.getClosingDate()))
                 .build();
     }
@@ -1038,6 +1039,9 @@ public class TenderServiceImpl implements TenderService {
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + id));
 
         tender.setStatus(status);
+        if (status == TenderStatus.OPEN && tender.getOpeningDate() == null) {
+            tender.setOpeningDate(LocalDateTime.now());
+        }
         if (reason != null && !reason.isBlank()) {
             tender.setRejectionReason(reason);
         }

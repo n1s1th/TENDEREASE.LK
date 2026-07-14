@@ -323,6 +323,30 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public EvaluationResponse toggleFlagByBidId(UUID bidId) {
+        Evaluation evaluation = evaluationRepository.findByBidId(bidId).stream().findFirst().orElse(null);
+        if (evaluation == null) {
+            log.info("No evaluation found for bidId {} when toggling flag.", bidId);
+            return null;
+        }
+        evaluation.setIsFlagged(!evaluation.getIsFlagged());
+        return mapper.toDto(evaluationRepository.save(evaluation));
+    }
+
+    @Override
+    @Transactional
+    public EvaluationResponse updateComplianceStatusByBidId(UUID bidId, String complianceStatus) {
+        Evaluation evaluation = evaluationRepository.findByBidId(bidId).stream().findFirst().orElse(null);
+        if (evaluation == null) {
+            log.info("No evaluation found for bidId {} when updating compliance status.", bidId);
+            return null;
+        }
+        evaluation.setComplianceStatus(lk.tenderease.common.constant.ComplianceStatus.valueOf(complianceStatus.toUpperCase()));
+        return mapper.toDto(evaluationRepository.save(evaluation));
+    }
+
     private void publishEvent(String evaluationId, String tenderId, String eventType) {
         try {
             EvaluationEvent event = EvaluationEvent.builder()

@@ -14,15 +14,16 @@ export default function EvaluationStatusPanel() {
   });
 
   useEffect(() => {
-    const loadCounts = async () => {
-      try {
-        const data = await fetchEvaluationStatusCounts();
-        setCounts(data);
-      } catch (err) {
-        console.error("Failed to fetch evaluation status counts", err);
-      }
-    };
-    loadCounts();
+    // TODO: re-enable when the real evaluation status counts endpoint is ready
+    // const loadCounts = async () => {
+    //   try {
+    //     const data = await fetchEvaluationStatusCounts();
+    //     setCounts(data);
+    //   } catch (err) {
+    //     console.error("Failed to fetch evaluation status counts", err);
+    //   }
+    // };
+    // loadCounts();
   }, []);
 
   const statuses = [

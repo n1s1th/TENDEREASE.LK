@@ -16,9 +16,12 @@ import {
   X,
   Lock,
   ChevronDown,
-  Check
+  Check,
+  AlertTriangle,
+  HelpCircle
 } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
+import { getTenderById } from "@/services/tender.service";
 
 const DESIGNATION_OPTIONS = [
   "Committee Chairman",
@@ -37,11 +40,21 @@ export default function AttendanceSection() {
   const [newMember, setNewMember] = useState({ name: "", designation: "", email: "" });
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isDesignationOpen, setIsDesignationOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" | "warning" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" | "warning") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   const menuRef = useRef<HTMLDivElement>(null);
   const designationRef = useRef<HTMLDivElement>(null);
@@ -60,31 +73,49 @@ export default function AttendanceSection() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const [isTenderClosed, setIsTenderClosed] = useState(false);
+
+  useEffect(() => {
+    const checkTenderStatus = async () => {
+      if (!session?.tenderId) return;
+      try {
+        const tenderData = await getTenderById(session.tenderId);
+        if (tenderData && (tenderData.status === "CLOSED" || tenderData.status === "COMPLETED")) {
+          setIsTenderClosed(true);
+        }
+      } catch (err) {
+        console.error("Error checking tender status in AttendanceSection:", err);
+      }
+    };
+    checkTenderStatus();
+  }, [session?.tenderId]);
+
   const isSessionUnlocked = session?.status === 'OPEN' || session?.status === 'CLOSED';
+  const shouldLockAttendance = isSessionUnlocked || isTenderClosed;
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMember.name || !newMember.designation || !newMember.email) return;
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMember.email)) {
-      alert("Please enter a valid email address!");
+      showToast("Please enter a valid email address!", "warning");
       return;
     }
 
     const emailExists = attendance.some(a => a.email?.toLowerCase() === newMember.email.toLowerCase());
     if (emailExists) {
-      alert("A member with this email address has already marked attendance!");
+      showToast("A member with this email address has already marked attendance!", "warning");
       return;
     }
     
-    await markAttendance("TND-0000-SESSION", newMember.name, newMember.designation, newMember.email);
+    await markAttendance(session?.id || "TND-0000-SESSION", newMember.name, newMember.designation, newMember.email);
     setNewMember({ name: "", designation: "", email: "" });
     setIsAddingMember(false);
   };
 
   const handleEditMember = (member: any) => {
-    if (isSessionUnlocked) {
-      alert("Records cannot be edited after the session has been unlocked!");
+    if (shouldLockAttendance) {
+      showToast("Records cannot be edited after the session has been unlocked or bids closed!", "warning");
       return;
     }
     setEditingMemberId(member.id);
@@ -102,13 +133,13 @@ export default function AttendanceSection() {
     if (!editingMemberId || !newMember.name || !newMember.designation || !newMember.email) return;
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newMember.email)) {
-      alert("Please enter a valid email address!");
+      showToast("Please enter a valid email address!", "warning");
       return;
     }
 
     const emailExists = attendance.some(a => a.email?.toLowerCase() === newMember.email.toLowerCase() && a.id !== editingMemberId);
     if (emailExists) {
-      alert("A member with this email address has already marked attendance!");
+      showToast("A member with this email address has already marked attendance!", "warning");
       return;
     }
 
@@ -124,14 +155,12 @@ export default function AttendanceSection() {
   };
 
   const handleDeleteMember = async (id: string) => {
-    if (isSessionUnlocked) {
-      alert("Records cannot be deleted after the session has been unlocked!");
+    if (shouldLockAttendance) {
+      showToast("Records cannot be deleted after the session has been unlocked or bids closed!", "warning");
       return;
     }
-    if (confirm("Are you sure you want to remove this member?")) {
-      await deleteAttendance(id);
-      setOpenMenuId(null);
-    }
+    setDeleteConfirmId(id);
+    setOpenMenuId(null);
   };
 
   const formatTime = (isoString?: string) => {
@@ -151,20 +180,20 @@ export default function AttendanceSection() {
       {/* Header */}
       <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white rounded-t-2xl">
         <div>
-          <h3 className="text-[14px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-[14px] font-black text-gray-800 uppercase tracking-widest flex items-center gap-2">
             Committee Attendance <span className="text-[#953002] bg-orange-50 px-2.5 py-1 rounded-lg text-[11px]">{attendance.length} PRESENT</span>
           </h3>
-          <p className="text-[13px] text-gray-500 mt-2.5 font-medium italic">Minimum 3 members required for quorum.</p>
+          <p className="text-[13px] text-gray-500 mt-2.5 font-medium">Minimum 3 members required for quorum.</p>
         </div>
         
         <button 
           onClick={() => {
-            if (isSessionUnlocked) return;
+            if (shouldLockAttendance) return;
             setIsAddingMember(true);
           }}
-          disabled={isSessionUnlocked}
+          disabled={shouldLockAttendance}
           className={`flex items-center gap-2 px-6 py-3 border rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm ${
-            isSessionUnlocked
+            shouldLockAttendance
               ? "bg-gray-100 text-gray-400 border-transparent cursor-not-allowed"
               : "bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10"
           }`}
@@ -179,11 +208,11 @@ export default function AttendanceSection() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg text-center w-[25%] align-middle">Committee Member</th>
-              <th className="py-4 px-6 text-center w-[18%] align-middle">Designation</th>
-              <th className="py-4 px-6 text-center w-[14%] align-middle">Status</th>
-              <th className="py-4 px-6 text-center w-[18%] align-middle">Date</th>
-              <th className="py-4 px-6 text-center w-[20%] align-middle">Time</th>
+              <th className="py-4 px-6 rounded-tl-lg text-left pl-12 w-[32%] align-middle">Committee Member</th>
+              <th className="py-4 px-6 text-center w-[28%] align-middle">Designation</th>
+              <th className="py-4 px-6 text-center w-[12%] align-middle">Status</th>
+              <th className="py-4 px-6 text-center w-[11%] align-middle">Date</th>
+              <th className="py-4 px-6 text-center w-[12%] align-middle">Time</th>
               <th className="py-4 px-6 rounded-tr-lg text-center w-[5%] align-middle">Actions</th>
             </tr>
           </thead>
@@ -211,7 +240,7 @@ export default function AttendanceSection() {
                   </div>
                 </td>
                 <td className="px-6 py-6 align-middle" style={{ textAlign: 'center' }}>
-                  <span className="text-[11px] font-black text-black uppercase tracking-wider">{member.designation || "NOT SPECIFIED"}</span>
+                  <span className="text-[11px] font-black text-black uppercase tracking-wider whitespace-nowrap">{member.designation || "NOT SPECIFIED"}</span>
                 </td>
                 <td className="px-6 py-6 text-center align-middle">
                   <div className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-green-50 rounded-xl border border-green-100 w-fit mx-auto">
@@ -229,8 +258,8 @@ export default function AttendanceSection() {
                   </div>
                 </td>
                 <td className="px-6 py-6 text-center align-middle">
-                  {isSessionUnlocked ? (
-                    <div className="flex justify-center text-gray-300" title="Attendance locked after session unlock">
+                  {shouldLockAttendance ? (
+                    <div className="flex justify-center text-gray-300" title="Attendance locked after session unlock or closed">
                       <Lock className="w-4 h-4" />
                     </div>
                   ) : (
@@ -516,6 +545,65 @@ export default function AttendanceSection() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {mounted && toast && createPortal(
+        <div className={`fixed top-6 right-6 w-max max-w-[90vw] whitespace-nowrap z-[100000] flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
+          toast.type === "success" ? "bg-white border-[#27AE60]/30 text-[#27AE60]" :
+          toast.type === "error" ? "bg-[#FFF5F5] border-[#EB5757]/30 text-red-750" :
+          toast.type === "warning" ? "bg-[#FFF5F5] border-[#EB5757]/30 text-[#EB5757]" :
+          "bg-white border-blue-200 text-blue-800"
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {toast.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
+            {toast.type === "error" && <AlertTriangle className="w-5 h-5 text-red-500" />}
+            {toast.type === "warning" && <AlertTriangle className="w-5 h-5 text-[#EB5757]" />}
+            {toast.type === "info" && <HelpCircle className="w-5 h-5 text-[#3B82F6]" />}
+            <span className="text-[13px] font-bold tracking-tight">{toast.message}</span>
+          </div>
+          <button 
+            onClick={() => setToast(null)}
+            className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${
+              toast.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
+              toast.type === "error" ? "text-red-750/60 hover:text-red-750" :
+              toast.type === "warning" ? "text-[#EB5757]/60 hover:text-[#EB5757]" :
+              "text-blue-800/60 hover:text-blue-800"
+            }`}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>,
+        document.body
+      )}
+
+      {mounted && deleteConfirmId && createPortal(
+        <div className="fixed top-6 right-6 w-max max-w-[90vw] whitespace-nowrap z-[100000] flex items-center justify-between gap-4 px-5 py-3 border rounded-xl shadow-md transition-all duration-300 animate-in fade-in slide-in-from-top-4 bg-[#FFF5F5] border-[#EB5757]/30 text-[#EB5757]">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-5 h-5 text-[#EB5757]" />
+            <span className="text-[13px] font-bold tracking-tight">Are you sure you want to remove this member?</span>
+          </div>
+          <div className="flex items-center gap-3 ml-4">
+            <button
+              onClick={async () => {
+                const idToDelete = deleteConfirmId;
+                setDeleteConfirmId(null);
+                await deleteAttendance(idToDelete);
+                showToast("Member removed successfully!", "success");
+              }}
+              className="px-4 py-1.5 rounded-full bg-[#EB5757] text-white text-[11px] font-black uppercase tracking-wider hover:bg-[#d84a4a] hover:shadow-md transition-all cursor-pointer"
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="p-1 rounded-full hover:bg-black/5 text-[#EB5757] transition-colors cursor-pointer"
+              title="Cancel"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>,
         document.body

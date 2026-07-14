@@ -23,7 +23,20 @@ import java.util.List;
 public class EvaluationSecurityConfig {
 
     @Bean
+    @org.springframework.core.annotation.Order(1)
+    public SecurityFilterChain mockFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/api/evaluations/mock/**")
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
     @Primary
+    @org.springframework.core.annotation.Order(2)
     public SecurityFilterChain evaluationFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)

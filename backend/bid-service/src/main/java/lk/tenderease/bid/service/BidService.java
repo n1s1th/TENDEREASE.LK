@@ -252,6 +252,14 @@ public class BidService {
         return mapToResponse(saved);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public BidResponse getBidById(UUID bidId) {
+        log.info("Fetching bid: {}", bidId);
+        Bid bid = bidRepository.findById(bidId)
+                .orElseThrow(() -> new RuntimeException("Bid not found with ID: " + bidId));
+        return mapToResponse(bid);
+    }
+
     private BidResponse mapToResponse(Bid bid) {
         return BidResponse.builder()
                 .id(bid.getId().toString())
