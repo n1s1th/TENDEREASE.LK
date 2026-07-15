@@ -1,7 +1,6 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useState } from "react";
 
 interface Props {
   filters: {
@@ -30,6 +29,11 @@ const CATEGORIES = [
   "Consulting",
 ];
 
+const inputClass =
+  "w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-normal font-sans text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all outline-none";
+
+const labelClass = "text-[10px] font-semibold text-gray-3 uppercase tracking-[0.2em] px-1";
+
 export default function TenderSearchBar({ filters, onFilterChange, onSearch, onReset }: Props) {
 
   const handleInputChange = (field: string, value: string) => {
@@ -38,16 +42,15 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
   return (
     <div className="bg-white rounded-[2rem] shadow-premium border border-gray-100 p-8 sm:p-10 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
-      
+
       {/* Top Search Row */}
-      <form 
+      <form
         onSubmit={(e) => {
           e.preventDefault();
           onSearch();
         }}
         className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center"
       >
-
         <div className="relative flex-1 group">
           <Search
             size={20}
@@ -70,9 +73,9 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
               focus:ring-primary/20
               focus:border-primary/30
               transition-all duration-300
-              text-sm font-bold text-black-2
+              text-sm font-normal font-sans text-black-2
               placeholder:text-gray-3
-              placeholder:font-medium
+              placeholder:font-normal
             "
           />
         </div>
@@ -84,7 +87,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
             text-white
             px-10 py-4
             rounded-2xl
-            text-sm font-black uppercase tracking-widest
+            text-sm font-semibold font-sans uppercase tracking-wider
             cursor-pointer
             transition-all duration-300
             hover:bg-primary/90
@@ -102,13 +105,11 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
           {/* CATEGORY */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Category
-            </label>
-            <select 
+            <label className={labelClass}>Category</label>
+            <select
               value={filters.category}
               onChange={(e) => handleInputChange("category", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+              className={inputClass}
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat}>{cat}</option>
@@ -118,13 +119,11 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
           {/* STATUS */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Status
-            </label>
-            <select 
+            <label className={labelClass}>Status</label>
+            <select
               value={filters.status}
               onChange={(e) => handleInputChange("status", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+              className={inputClass}
             >
               <option>All Statuses</option>
               <option>Open</option>
@@ -135,13 +134,11 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
           {/* DATE TYPE */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Date Type
-            </label>
-            <select 
+            <label className={labelClass}>Date Type</label>
+            <select
               value={filters.dateType}
               onChange={(e) => handleInputChange("dateType", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+              className={inputClass}
             >
               <option>None Selected</option>
               <option>Closing Date</option>
@@ -151,27 +148,23 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
           {/* FROM */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Valid From
-            </label>
+            <label className={labelClass}>Valid From</label>
             <input
               type="date"
               value={filters.fromDate}
               onChange={(e) => handleInputChange("fromDate", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+              className={inputClass}
             />
           </div>
 
           {/* TO */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Valid To
-            </label>
+            <label className={labelClass}>Valid To</label>
             <input
               type="date"
               value={filters.toDate}
               onChange={(e) => handleInputChange("toDate", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
+              className={inputClass}
             />
           </div>
 
@@ -185,7 +178,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
                 text-gray-2
                 px-8 py-3
                 rounded-xl
-                text-xs font-black uppercase tracking-widest
+                text-xs font-semibold font-sans uppercase tracking-wider
                 cursor-pointer
                 transition-all duration-300
                 hover:bg-gray-100

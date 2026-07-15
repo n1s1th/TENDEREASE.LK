@@ -11,8 +11,13 @@ import {
 } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-error mt-1">{message}</p>;
+}
+
 export function ScheduleStep() {
-  const { formData, updateFormData } = useTenderCreationStore();
+  const { formData, formErrors, updateFormData } = useTenderCreationStore();
 
   return (
     <Card>
@@ -28,28 +33,28 @@ export function ScheduleStep() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
           {/* Advertisement Start Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="tc-ad-date">Advertisement Start Date</Label>
+            <Label htmlFor="tc-ad-date">Advertisement Start Date <span className="text-error">*</span></Label>
             <Input
               id="tc-ad-date"
               type="date"
               value={formData.advertisementStartDate}
-              onChange={(e) =>
-                updateFormData({ advertisementStartDate: e.target.value })
-              }
+              onChange={(e) => updateFormData({ advertisementStartDate: e.target.value })}
+              aria-invalid={!!formErrors.advertisementStartDate}
             />
+            <FieldError message={formErrors.advertisementStartDate} />
           </div>
 
           {/* Bid Submission Deadline */}
           <div className="space-y-1.5">
-            <Label htmlFor="tc-deadline">Bid Submission Deadline</Label>
+            <Label htmlFor="tc-deadline">Bid Submission Deadline <span className="text-error">*</span></Label>
             <Input
               id="tc-deadline"
               type="date"
               value={formData.bidSubmissionDeadline}
-              onChange={(e) =>
-                updateFormData({ bidSubmissionDeadline: e.target.value })
-              }
+              onChange={(e) => updateFormData({ bidSubmissionDeadline: e.target.value })}
+              aria-invalid={!!formErrors.bidSubmissionDeadline}
             />
+            <FieldError message={formErrors.bidSubmissionDeadline} />
           </div>
         </div>
 
@@ -60,9 +65,7 @@ export function ScheduleStep() {
               <input
                 type="checkbox"
                 checked={formData.preBidMeetingEnabled}
-                onChange={(e) =>
-                  updateFormData({ preBidMeetingEnabled: e.target.checked })
-                }
+                onChange={(e) => updateFormData({ preBidMeetingEnabled: e.target.checked })}
                 className="peer sr-only"
               />
               <div className="h-5 w-5 rounded border-2 border-grey-3 peer-checked:border-primary peer-checked:bg-primary transition-colors flex items-center justify-center">
@@ -80,15 +83,15 @@ export function ScheduleStep() {
 
           {formData.preBidMeetingEnabled && (
             <div className="space-y-1.5 max-w-xs ml-8">
-              <Label htmlFor="tc-prebid">Pre-Bid Meeting Date</Label>
+              <Label htmlFor="tc-prebid">Pre-Bid Meeting Date <span className="text-error">*</span></Label>
               <Input
                 id="tc-prebid"
                 type="date"
                 value={formData.preBidMeetingDate}
-                onChange={(e) =>
-                  updateFormData({ preBidMeetingDate: e.target.value })
-                }
+                onChange={(e) => updateFormData({ preBidMeetingDate: e.target.value })}
+                aria-invalid={!!formErrors.preBidMeetingDate}
               />
+              <FieldError message={formErrors.preBidMeetingDate} />
             </div>
           )}
         </div>
