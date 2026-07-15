@@ -33,12 +33,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const stored = useAuthStore.getState();
 
       try {
-        const authenticated = await keycloak.init({
-          pkceMethod: 'S256',
-          checkLoginIframe: false,
-          token: stored.token ?? undefined,
-          refreshToken: stored.refreshToken ?? undefined,
-        });
+        let authenticated = false;
+        try {
+          authenticated = await keycloak.init({
+            pkceMethod: 'S256',
+            checkLoginIframe: false,
+            token: stored.token ?? undefined,
+            refreshToken: stored.refreshToken ?? undefined,
+          });
+        } catch (initErr) {
+          console.warn('⚠️ Keycloak token-based init failed, retrying clean init:', initErr);
+          clearAuth();
+          authenticated = await keycloak.init({
+            pkceMethod: 'S256',
+            checkLoginIframe: false,
+          });
+        }
 
         const applyAuth = (token: string) => {
           const decoded: any = jwtDecode(token);

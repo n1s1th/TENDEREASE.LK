@@ -254,16 +254,21 @@ const MOCK_AUDIT: AuditRow[] = [
 // ─────────────────────────── Sub-components ───────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    Admitted: "bg-green-50 text-green-700 border border-green-200",
-    Rejected: "bg-red-50 text-red-600 border border-red-200",
-    Pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    Winner: "bg-amber-50 text-amber-700 border border-amber-200",
-    Reviewed: "bg-blue-50 text-blue-700 border border-blue-200",
-    Complete: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    "Minor Gap": "bg-orange-50 text-orange-700 border border-orange-200",
-    Incomplete: "bg-red-50 text-red-600 border border-red-200",
+    Admitted: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Rejected: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Pending: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Winner: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Reviewed: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Complete: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    "Minor Gap": "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Incomplete: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
     "N/A": "bg-gray-100 text-gray-500 border border-gray-200",
-    Late: "bg-red-50 text-red-600 border border-red-200",
+    Late: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    Submitted: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    SUBMITTED: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    WINNER: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    REJECTED: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    PENDING: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
   };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${styles[status] || "bg-gray-100 text-gray-500 border border-gray-200"}`}>
@@ -616,6 +621,7 @@ function ReportsAndAuditContent() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [tendersLoading, setTendersLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [bidder, setBidder] = useState("Select Bidder");
   const [reportStatus, setReportStatus] = useState("Select Status");
 
@@ -624,6 +630,15 @@ function ReportsAndAuditContent() {
   const [appliedDateTo, setAppliedDateTo] = useState("");
   const [appliedBidder, setAppliedBidder] = useState("Select Bidder");
   const [appliedReportStatus, setAppliedReportStatus] = useState("Select Status");
+
+  const getBackendStatus = (statusStr: string) => {
+    if (statusStr === "All Statuses" || statusStr === "Select Status") return "ALL";
+    if (statusStr === "Pending Opening") return "PENDING_OPENING";
+    if (statusStr === "Open") return "OPEN";
+    if (statusStr === "Evaluation") return "EVALUATION";
+    if (statusStr === "Completed") return "COMPLETED";
+    return "ALL";
+  };
 
   const handleApplyFilters = () => {
     setAppliedTender(tender);
@@ -695,18 +710,29 @@ function ReportsAndAuditContent() {
 
   useEffect(() => {
     setTendersLoading(true);
-    getAssignedTenders("", "ALL", 0, 100)
+    const backendStatus = getBackendStatus(reportStatus);
+    getAssignedTenders("", backendStatus, 0, 100)
       .then((res) => {
         const content = res.data?.content || [];
         setTendersList(content);
+        
+        // Keep selected tender if it exists in the new list
+        const exists = content.some((t: any) => {
+          const refStr = t.tenderNo || t.tenderNumber || t.id;
+          return tender.startsWith(refStr);
+        });
+        if (!exists && tender !== "Select Tender" && tender !== "") {
+          setTender("Select Tender");
+        }
       })
       .catch((err) => {
         console.error("Error fetching approved tenders:", err);
       })
       .finally(() => {
         setTendersLoading(false);
+        setIsInitialLoading(false);
       });
-  }, []);
+  }, [reportStatus]);
 
   useEffect(() => {
     if (tendersList.length > 0) {
@@ -729,15 +755,28 @@ function ReportsAndAuditContent() {
     if (tendersLoading) return "Loading tenders...";
     const isBidderSelected = bidder && bidder !== "Select Bidder" && bidder !== "All Bidders";
     const isDateSelected = !!(dateFrom || dateTo);
+    const isStatusSelected = reportStatus && reportStatus !== "Select Status" && reportStatus !== "All Statuses";
     
+    if (isBidderSelected && isDateSelected && isStatusSelected) {
+      return "No tenders found for bidder with selected status and date range.";
+    }
     if (isBidderSelected && isDateSelected) {
       return "No tenders found for this bidder in the selected date range.";
+    }
+    if (isBidderSelected && isStatusSelected) {
+      return "No tenders found for bidder with selected status.";
     }
     if (isBidderSelected) {
       return "No bid submissions found for the selected bidder.";
     }
+    if (isDateSelected && isStatusSelected) {
+      return "No tenders found for selected status in the selected date range.";
+    }
     if (isDateSelected) {
       return "No tenders found in the selected date range.";
+    }
+    if (isStatusSelected) {
+      return "No tenders found for selected status.";
     }
     return "No tenders found.";
   };
@@ -821,7 +860,7 @@ function ReportsAndAuditContent() {
         setBidRows(list.map((bid, i) => apiBidToRow(bid, i, evalNotesMap)));
 
         const processedEvaluations: EvaluationRow[] = evalBidders
-          .filter((b: any) => b.status === "Submitted" || b.status === "In Progress" || b.status === "COMPLETED")
+          .filter((b: any) => b.status === "COMPLETED")
           .map((bidder: any) => {
             const techSubtotal = bidder.technicalCriteria?.reduce((sum: number, c: any) => sum + (c.score || 0) * ((c.weight || 0) / 100), 0) || 0;
             const finSubtotal = bidder.financialCriteria?.reduce((sum: number, c: any) => sum + (c.score || 0) * ((c.weight || 0) / 100), 0) || 0;
@@ -839,7 +878,7 @@ function ReportsAndAuditContent() {
               financialBar: Math.round(financialScore),
               compliancePassed: bidder.complianceStatus === "PASS" || techSubtotal >= 75,
               compositeScore: Number(compositeScore.toFixed(1)),
-              evaluator: bidder.evaluatorName || "John Smith",
+              evaluator: bidder.evaluatorName || "Jane Doe",
               status: bidder.complianceStatus === "FAIL" ? "Rejected" : "Reviewed",
               notes: bidder.evaluationNotes || "No notes available."
             };
@@ -918,7 +957,7 @@ function ReportsAndAuditContent() {
     { key: "audit", label: "Audit Log" },
   ];
 
-  if (tendersLoading) {
+  if (isInitialLoading) {
     return (
       <div className="bg-[#FAF9F6] min-h-screen flex flex-col items-center justify-center font-inter">
         <div className="flex flex-col items-center gap-4">
@@ -1012,13 +1051,13 @@ function ReportsAndAuditContent() {
                   onChange={setDateTo}
                 />
               </div>
-              {/* Report Status */}
+              {/* Tender Status */}
               <div>
-                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Report Status</label>
+                <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Tender Status</label>
                 <CustomSelect
                   value={reportStatus}
                   onChange={setReportStatus}
-                  options={["Select Status", "All Statuses", "Finalized", "In Progress", "Pending"]}
+                  options={["Select Status", "All Statuses", "Pending Opening", "Open", "Evaluation", "Completed"]}
                 />
               </div>
             </div>
@@ -1262,19 +1301,21 @@ function ReportsAndAuditContent() {
                             </td>
                           </tr>
                         ) : (
-                          filteredEvaluations.map((row) => (
-                          <tr key={row.rank} className="hover:bg-gray-50/60 transition-colors">
-                            <td className="px-5 py-3.5 text-center">
-                              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black mx-auto ${row.rank === 1 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
-                                {row.rank}
-                              </span>
-                            </td>
+                          (() => {
+                            const hasAnyCompliantBid = filteredEvaluations.some((r) => r.compliancePassed);
+                            return filteredEvaluations.map((row) => (
+                              <tr key={row.rank} className="hover:bg-gray-50/60 transition-colors">
+                                <td className="px-5 py-3.5 text-center">
+                                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black mx-auto ${(row.rank === 1 && hasAnyCompliantBid) ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
+                                    {row.rank}
+                                  </span>
+                                </td>
                             <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.bidder}</td>
                             <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.technicalScore} max={70} /></div></td>
                             <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.financialScore} max={30} /></div></td>
                             <td className="px-3 py-3.5 text-center">
-                              <span className={`inline-flex items-center gap-1.5 text-[12px] font-black px-3 py-1 rounded-lg border ${row.compliancePassed ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-600 border-red-200"}`}>
-                                {row.compliancePassed ? "Passed" : "Failed"}
+                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-lg border bg-[#FFF7ED] text-[#953002] border-[#953002]/20 uppercase tracking-wider`}>
+                                {row.compliancePassed ? "PASSED" : "FAILED"}
                               </span>
                             </td>
                             <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(1)}</td>
@@ -1286,14 +1327,15 @@ function ReportsAndAuditContent() {
                               </button>
                             </td>
                           </tr>
-                        ))
-                      )}
+                            ));
+                          })()
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                      SHOWING 3 OF 3 EVALUATED BIDS
+                      {bidsLoading ? "LOADING…" : `SHOWING ${filteredEvaluations.length} OF ${filteredEvaluations.length} EVALUATED BIDS`}
                     </span>
                     <div className="flex items-center gap-2">
                       <button className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-300 cursor-not-allowed" disabled>
@@ -1379,7 +1421,7 @@ function ReportsAndAuditContent() {
                   {/* Audit footer */}
                   <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                      SHOWING 3 OF 3 ENTRIES
+                      SHOWING {MOCK_AUDIT.length} OF {MOCK_AUDIT.length} ENTRIES
                     </span>
                     <div className="flex items-center gap-2">
                       <button className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-300 cursor-not-allowed" disabled>

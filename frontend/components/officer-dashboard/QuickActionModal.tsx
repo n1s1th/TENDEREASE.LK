@@ -47,6 +47,13 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         </span>
       );
     }
+    if (s === "EVALUATION") {
+      return (
+        <span className="text-[10.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#E2B93B]/10 text-[#E2B93B] border border-[#E2B93B]/20">
+          {s}
+        </span>
+      );
+    }
     return (
       <span className="text-[10.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
         {s}
@@ -210,7 +217,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         return {
           icon: <Download className="w-5 h-5 text-[#953002]" />,
           title: "Reports & Audit",
-          desc: "View the completed bid report, evaluation report, consensus sheet, and audit logs. Select a tender to begin.",
+          desc: "View the completed bid report, evaluation report, and audit logs. Select a tender to begin.",
           primaryAction: "View Reports",
           extra: (
             <div className="space-y-2">
