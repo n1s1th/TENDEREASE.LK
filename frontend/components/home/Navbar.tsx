@@ -194,7 +194,7 @@ export default function Navbar() {
                 </div>
               )}
               <div className="te-navbar__profile-container" ref={profileDropdownRef}>
-                <button 
+                <button
                   className="te-navbar__user-avatar"
                   onClick={() => setProfileDropdownOpen((prev) => !prev)}
                   aria-label="Profile menu"
