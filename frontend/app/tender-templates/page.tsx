@@ -138,7 +138,7 @@ export default function TenderTemplatesDashboard() {
                   <LayoutTemplate className="w-6 h-6" />
                 </div>
                 
-                <h3 className="text-lg font-bold text-foreground mb-2 pr-20 line-clamp-1">
+                <h3 className="text-lg font-bold text-foreground mb-2 pr-20">
                   Standard Tender Creation Flow
                 </h3>
                 
@@ -175,7 +175,7 @@ export default function TenderTemplatesDashboard() {
                     <FileText className="w-6 h-6" />
                   </div>
                   
-                  <h3 className="text-lg font-bold text-foreground mb-2 pr-20 line-clamp-1">
+                  <h3 className="text-lg font-bold text-foreground mb-2 pr-20">
                     {template.name}
                   </h3>
                   
