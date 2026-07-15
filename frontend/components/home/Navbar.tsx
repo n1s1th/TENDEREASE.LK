@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown } from "lucide-react";
+import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -44,11 +44,13 @@ export default function Navbar() {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [searchFocused, setSearchFocused] = useState(false);
   const [registerDropdownOpen, setRegisterDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
   const { initialized, error } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
   const registerDropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if user needs to register as officer or vendor
   const hasOfficerRole = user?.roles?.includes('PROCUREMENT_OFFICER') ?? false;
@@ -63,6 +65,9 @@ export default function Navbar() {
       }
       if (registerDropdownRef.current && !registerDropdownRef.current.contains(e.target as Node)) {
         setRegisterDropdownOpen(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -188,12 +193,22 @@ export default function Navbar() {
                   )}
                 </div>
               )}
-              <div className="te-navbar__user-avatar">
-                {(user?.firstName || user?.name || "U").charAt(0).toUpperCase()}
+              <div className="te-navbar__profile-container" ref={profileDropdownRef}>
+                <button 
+                  className="te-navbar__user-avatar"
+                  onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                  aria-label="Profile menu"
+                >
+                  <UserIcon size={18} />
+                </button>
+                {profileDropdownOpen && (
+                  <div className="te-navbar__profile-menu">
+                    <button onClick={logout} className="te-navbar__profile-menu-item">
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
-              <button onClick={logout} className="te-navbar__btn te-navbar__btn--signout">
-                Sign Out
-              </button>
             </div>
           )}
 
