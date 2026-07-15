@@ -177,4 +177,11 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         
         return mapper.toDto(sessionRepository.save(session));
     }
+
+    @Override
+    @Transactional
+    public void deleteAttendance(UUID attendanceId) {
+        log.info("Deleting opening attendance with ID: {}", attendanceId);
+        attendanceRepository.deleteById(attendanceId);
+    }
 }

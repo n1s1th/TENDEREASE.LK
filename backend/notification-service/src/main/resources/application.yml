@@ -26,10 +26,7 @@ spring:
     show-sql: false
   
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    addresses: ${RABBITMQ_ADDRESSES:amqps://ckjlipjh:hBXULY5GyLq-BcWm-_Tr7TGeVRSULquN@dog.lmq.cloudamqp.com/ckjlipjh}
 
   mail:
     host: ${MAIL_HOST:localhost}

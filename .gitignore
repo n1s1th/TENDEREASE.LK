@@ -1,3 +1,10 @@
+# JVM crash and replay logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Dependency directories
+node_modules/
+
 # Environment files
 .env
 .env.*

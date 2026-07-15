@@ -24,4 +24,6 @@ public interface EvaluationService {
     EvaluationResultResponse finalizeEvaluation(UUID tenderId);
     EvaluationResultResponse getEvaluationResults(UUID tenderId);
     lk.tenderease.evaluation.dto.response.DashboardMetricsResponse getDashboardMetrics(UUID evaluatorId);
+    EvaluationResponse toggleFlagByBidId(UUID bidId);
+    EvaluationResponse updateComplianceStatusByBidId(UUID bidId, String complianceStatus);
 }

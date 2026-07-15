@@ -90,6 +90,20 @@ export async function getBidsByTender(tenderId: string) {
   return json.data || json;
 }
 
+// Get all bids
+export async function getAllBids() {
+  const headers = getAuthHeaders();
+  const res = await fetch(`${BASE_URL}`, {
+    method: "GET",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await handleResponse(res);
+  return json.data || json;
+}
+
 // Evaluate bid
 export async function evaluateBid(bidId: string, evaluationData: any) {
   const headers = getAuthHeaders();

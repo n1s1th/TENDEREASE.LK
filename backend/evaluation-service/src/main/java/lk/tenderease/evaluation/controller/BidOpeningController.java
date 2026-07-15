@@ -38,7 +38,7 @@ public class BidOpeningController {
     }
 
     @PostMapping("/session/{sessionId}/attendance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE', 'PROCUREMENT_OFFICER')")
     @Operation(summary = "Mark attendance for an opening session")
     public ResponseEntity<ApiResponse<OpeningAttendanceResponse>> markAttendance(
             @PathVariable UUID sessionId,
@@ -56,11 +56,19 @@ public class BidOpeningController {
     }
 
     @PostMapping("/session/{sessionId}/open")
-    @PreAuthorize("hasRole('COMMITTEE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE', 'PROCUREMENT_OFFICER')")
     @Operation(summary = "Start the bid opening session")
     public ResponseEntity<ApiResponse<OpeningSessionResponse>> startOpeningSession(@PathVariable UUID sessionId) {
         // Use a dummy officer name for now since Keycloak is disabled
         OpeningSessionResponse response = bidOpeningService.startOpeningSession(sessionId, "ENG. KHALID HAMDAN");
         return ResponseEntity.ok(ApiResponse.success(response, "Bid opening session started successfully"));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/attendance/{attendanceId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMMITTEE', 'PROCUREMENT_OFFICER')")
+    @Operation(summary = "Delete attendance record")
+    public ResponseEntity<ApiResponse<Void>> deleteAttendance(@PathVariable UUID attendanceId) {
+        bidOpeningService.deleteAttendance(attendanceId);
+        return ResponseEntity.ok(ApiResponse.success(null, "Attendance deleted successfully"));
     }
 }

@@ -15,4 +15,5 @@ public class DashboardMetricsResponse {
     private long evaluating;
     private long awarded;
     private long noBids;
+    private long completed;
 }

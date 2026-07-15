@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface EvaluationRepository extends JpaRepository<Evaluation, UUID> {
     List<Evaluation> findByEvaluatorId(UUID evaluatorId);
     List<Evaluation> findByTenderId(UUID tenderId);
+    List<Evaluation> findByBidId(UUID bidId);
     Optional<Evaluation> findByBidIdAndEvaluatorId(UUID bidId, UUID evaluatorId);
     boolean existsByBidIdAndEvaluatorId(UUID bidId, UUID evaluatorId);
 }
