@@ -16,11 +16,12 @@ export async function getDashboardMetrics(): Promise<{
   evaluating: number;
   awarded: number;
   noBids: number;
+  completed: number;
 }> {
-  // Fetch tender metrics and all bids from bid-service in parallel
-  const [metricsRes, bidsRes] = await Promise.all([
+  // Fetch tender metrics and total bid count from bid-service in parallel
+  const [metricsRes, bidsCountRes] = await Promise.all([
     fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`),
-    fetch(`${BID_SERVICE}/api/bids`).catch((): any => null),
+    fetch(`${BID_SERVICE}/api/bids/count`).catch((): any => null),
   ]);
 
   if (!metricsRes.ok) throw new Error("Failed to fetch dashboard metrics");
@@ -28,17 +29,15 @@ export async function getDashboardMetrics(): Promise<{
   const metricsJson = await metricsRes.json();
   const metrics = metricsJson.data;
 
-  // Count bids only for real portal-submitted bids (where bidData is present)
+  // Retrieve total bid count directly from the database-backed endpoint
   let bidCount = 0;
   try {
-    if (bidsRes && bidsRes.ok) {
-      const bidsJson = await bidsRes.json();
-      const bidsList = bidsJson.data || [];
-      // Filter bids where bidData is populated (excludes SQL seed/test bids which have null bid_data)
-      bidCount = bidsList.filter((b: any) => b.bidData !== null && b.bidData !== undefined).length;
+    if (bidsCountRes && bidsCountRes.ok) {
+      const bidsCountJson = await bidsCountRes.json();
+      bidCount = typeof bidsCountJson.data === "number" ? bidsCountJson.data : 0;
     }
   } catch (err) {
-    console.error("Failed to compute portal-submitted bid count, falling back to 0", err);
+    console.error("Failed to fetch bid count from bid-service, falling back to 0", err);
     bidCount = 0;
   }
 
@@ -48,6 +47,7 @@ export async function getDashboardMetrics(): Promise<{
     evaluating: metrics.evaluating,
     awarded: metrics.awarded,
     noBids: metrics.noBids,
+    completed: metrics.completed || 0,
   };
 }
 

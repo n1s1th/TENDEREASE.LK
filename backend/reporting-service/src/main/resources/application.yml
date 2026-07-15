@@ -32,10 +32,7 @@ spring:
     baseline-on-migrate: true
   
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    addresses: ${RABBITMQ_ADDRESSES:amqps://ckjlipjh:hBXULY5GyLq-BcWm-_Tr7TGeVRSULquN@dog.lmq.cloudamqp.com/ckjlipjh}
   
   redis:
     host: ${REDIS_HOST:localhost}

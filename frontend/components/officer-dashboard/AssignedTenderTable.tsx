@@ -9,13 +9,15 @@ import {
   FolderOpen, 
   Calendar,
   Copy,
-  Check
+  Check,
+  ClipboardList,
+  FileEdit
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 
-type StatusFilter = "ALL" | "APPROVED";
+type StatusFilter = "ALL" | "PENDING_OPENING" | "OPEN" | "EVALUATION" | "COMPLETED" | "APPROVED";
 
 interface Tender {
   id: string;
@@ -34,17 +36,30 @@ interface AssignedTenderTableProps {
 
 export default function AssignedTenderTable({ title, subtitle }: AssignedTenderTableProps = {}) {
   const router = useRouter();
-  const { assignedTenders, fetchAssignedTenders, isLoading } = useEvaluationStore();
+  const { 
+    assignedTenders, 
+    fetchAssignedTenders, 
+    isLoading,
+    totalPages = 1,
+    totalElements = 0
+  } = useEvaluationStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
 
   useEffect(() => {
-    fetchAssignedTenders();
-  }, [fetchAssignedTenders]);
+    // page parameter is 0-indexed in backend
+    fetchAssignedTenders(searchTerm, statusFilter, currentPage - 1, itemsPerPage);
+  }, [fetchAssignedTenders, searchTerm, statusFilter, currentPage]);
+
+  useEffect(() => {
+    const handleCloseFilter = () => setIsFilterOpen(false);
+    window.addEventListener("quick-modal-open", handleCloseFilter);
+    return () => window.removeEventListener("quick-modal-open", handleCloseFilter);
+  }, []);
 
   const handleCopyId = (tenderId: string, tenderNo: string) => {
     const textToCopy = tenderNo || tenderId;
@@ -53,21 +68,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const filteredTenders = useMemo(() => {
-    return (assignedTenders as unknown as Tender[]).filter(tender => {
-      const matchesSearch = 
-        tender.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tender.tenderNo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "ALL" || tender.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [searchTerm, statusFilter, assignedTenders]);
-
-  const totalPages = Math.ceil(filteredTenders.length / itemsPerPage) || 1;
-  const paginatedTenders = filteredTenders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const paginatedTenders = assignedTenders as unknown as Tender[];
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -78,9 +79,9 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
       case "PENDING_OPENING":
         return "bg-orange-50 text-[#9A3B12] border-orange-100";
       case "EVALUATION":
-        return "bg-purple-50 text-purple-700 border-purple-100";
+        return "bg-[#2F80ED]/10 text-[#2F80ED] border-[#2F80ED]/20";
       case "COMPLETED":
-        return "bg-gray-50 text-gray-700 border-gray-100";
+        return "bg-[#27AE60]/10 text-[#27AE60] border-[#27AE60]/20";
       default:
         return "bg-gray-50 text-gray-600 border-gray-100";
     }
@@ -109,7 +110,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
       {/* Header Actions */}
       <div className="p-6 pt-4 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
           <input
             type="text"
             placeholder="Search by tender ID or title..."
@@ -122,14 +123,14 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
         <div className="flex items-center gap-3 relative">
           <button 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className={`flex items-center gap-2 px-5 py-3 rounded-xl border transition-all font-bold text-xs uppercase tracking-widest ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all font-bold text-xs uppercase tracking-widest ${
               isFilterOpen 
                 ? "bg-[#953002]/5 text-[#953002] border-[#953002]/20" 
                 : "border-gray-200 text-gray-600 hover:border-[#953002]/20 hover:bg-gray-50"
             }`}
           >
-            <Filter className="w-4 h-4" />
-            <span>{statusFilter === "ALL" ? "All Status" : formatStatus(statusFilter)}</span>
+            <Filter className="w-3.5 h-3.5" />
+            <span>{statusFilter === "ALL" ? "All Statuses" : formatStatus(statusFilter)}</span>
           </button>
 
           {isFilterOpen && (
@@ -147,7 +148,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  {status === "ALL" ? "All Status" : formatStatus(status)}
+                  {status === "ALL" ? "All Statuses" : formatStatus(status)}
                   {statusFilter === status && <Check className="w-3.5 h-3.5 text-[#953002]" />}
                 </button>
               ))}
@@ -162,29 +163,28 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
               <th className="py-4 px-6 rounded-tl-lg text-center w-[15%]">Tender ID</th>
-              <th className="py-4 px-6 text-center w-[30%]">Tender Title</th>
+              <th className="py-4 px-6 text-center w-[35%]">Tender Title</th>
               <th className="py-4 px-6 text-center w-[10%]">Category</th>
               <th className="py-4 px-6 text-center w-[15%]">Status</th>
               <th className="py-4 px-6 text-center w-[15%]">Opening Date</th>
-              <th className="py-4 px-6 text-center w-[10%]">Role</th>
-              <th className="py-4 px-6 rounded-tr-lg text-center w-[5%]">Actions</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[10%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-20 text-center">
+                <td colSpan={6} className="px-6 py-20 text-center">
                   <div className="w-8 h-8 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </td>
               </tr>
             ) : paginatedTenders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-12 text-gray-500 font-bold italic">No tenders found matching your criteria...</td>
+                <td colSpan={6} className="text-center py-12 text-gray-500 font-bold italic">No tenders found matching your criteria...</td>
               </tr>
             ) : paginatedTenders.map((tender, idx) => (
               <tr key={tender.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all group">
                 <td className="px-6 py-6 text-center">
-                  <span className="font-mono text-[12px] font-black text-gray-500 bg-gray-100/80 px-3 py-1.5 rounded-xl border border-gray-200 whitespace-nowrap">
+                  <span className="font-mono text-[12.5px] font-black text-gray-800 whitespace-nowrap">
                     {tender.tenderNo}
                   </span>
                 </td>
@@ -203,18 +203,39 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                     <span className="text-[14px] font-bold">{tender.closingDate}</span>
                   </div>
                 </td>
-                <td className="px-6 py-6 text-center text-xs font-black text-gray-400 uppercase tracking-tight whitespace-nowrap">{tender.role}</td>
                 <td className="px-6 py-6 text-center">
                   <div className="flex items-center justify-center gap-1.5">
-                    <button 
-                      onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
-                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
-                    >
-                      <FolderOpen className="w-5 h-5" />
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
-                        Open Bids
-                      </span>
-                    </button>
+                    {tender.status === "EVALUATION" || tender.status === "OPEN" ? (
+                      <button 
+                        onClick={() => router.push(`/tenders/${tender.id}/bid-evaluation`)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
+                      >
+                        <ClipboardList className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Evaluate Bids
+                        </span>
+                      </button>
+                    ) : tender.status === "COMPLETED" ? (
+                      <button 
+                        onClick={() => router.push(`/reports-and-audit?tenderNo=${tender.tenderNo}`)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
+                      >
+                        <FileEdit className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Reports & Audit
+                        </span>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => router.push(`/tenders/${tender.id}/bid-opening`)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
+                      >
+                        <FolderOpen className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Open Bids
+                        </span>
+                      </button>
+                    )}
                     
                     <button 
                       onClick={(e) => {
@@ -246,14 +267,14 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
 
       {/* Pagination */}
       <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
-        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-          SHOWING {paginatedTenders.length} OF {filteredTenders.length} TENDERS
+        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+          SHOWING {paginatedTenders.length} OF {totalElements} TENDERS
         </span>
         <div className="flex items-center gap-2">
           <button 
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-10 h-10 rounded-lg border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:border-gray-500 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -275,7 +296,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
           <button 
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-10 h-10 rounded-lg border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:border-gray-500 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
