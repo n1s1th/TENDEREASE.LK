@@ -51,9 +51,16 @@ function getAuthHeaders(): HeadersInit {
   };
 
   if (typeof window !== "undefined") {
-    const { token } = useAuthStore.getState();
+    const { token, user } = useAuthStore.getState();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+    }
+    // qa-service uses HeaderAuthenticationFilter that expects these gateway-injected headers
+    if (user?.id) {
+      headers["X-User-Id"] = user.id;
+    }
+    if (user?.roles?.length) {
+      headers["X-Roles"] = user.roles.join(",");
     }
   }
 
