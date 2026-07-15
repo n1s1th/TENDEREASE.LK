@@ -68,6 +68,7 @@ export interface TenderCreationState {
   showPreview: boolean;
   formData: TenderCreationFormData;
   referenceData: TenderCreationReferenceData;
+  formErrors: Record<string, string>;
   isLoading: boolean;
   isSubmitting: boolean;
   error: string | null;
@@ -77,6 +78,7 @@ export interface TenderCreationState {
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (step: StepIndex) => void;
+  setFormErrors: (errors: Record<string, string>) => void;
   updateFormData: (partial: Partial<TenderCreationFormData>) => void;
   updateComplianceItem: (key: keyof TenderCreationFormData["complianceChecklist"], value: boolean) => void;
   addPendingFile: (file: File) => void;

@@ -6,7 +6,7 @@ import Footer from "@/components/home/Footer";
 
 export default function TenderLayout({ children }: any) {
   return (
-    <div className="bg-[#fafafa] min-h-screen text-black-2 font-inter selection:bg-secondary/20 selection:text-primary">
+    <div className="bg-[#fafafa] min-h-screen text-black-2 font-sans selection:bg-secondary/20 selection:text-primary">
       {/* --- Breadcrumbs / Sub-Navigation --- */}
       <nav className="bg-white px-6 sm:px-10 py-4 flex items-center justify-between border-b border-gray-100 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-6 text-sm font-bold text-gray-3 whitespace-nowrap">

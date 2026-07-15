@@ -8,23 +8,33 @@ import { DesignerCanvas } from "./DesignerCanvas";
 import { DesignerSidebarRight } from "./DesignerSidebarRight";
 import { TemplatePreview } from "./TemplatePreview";
 import { Button } from "@/components/ui/button";
-import { Save, Send, Eye, Edit2 } from "lucide-react";
+import { Save, Send, Eye, Edit2, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { templateService } from "@/services/template.service";
 import { toast, Toaster } from "sonner";
 
+const makeSnapshot = (name: string, description: string, sections: any) =>
+  JSON.stringify({ name, description, sections });
+
 export function TenderTemplateBuilder() {
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  const router = useRouter();
+
   const state = useTemplateDesignerStore();
   const { moveField, status, version, id, name, description, sections } = state;
 
-  const showPreview = status === 'PUBLISHED' || isPreviewMode;
+  const showPreview = isPreviewMode;
+
+  const currentSnapshot = makeSnapshot(name, description, sections);
+  const hasChanges = savedSnapshot === null || currentSnapshot !== savedSnapshot;
 
   const handleSave = async () => {
     try {
-      setIsSaving(true);
+      setIsSavingDraft(true);
       const payload = {
         name,
         description,
@@ -38,18 +48,19 @@ export function TenderTemplateBuilder() {
         result = await templateService.createTemplate(payload);
         useTemplateDesignerStore.setState({ id: result.id, templateCode: result.templateCode });
       }
-      
-      useTemplateDesignerStore.setState({ 
-        version: result.version, 
-        status: result.status 
+
+      useTemplateDesignerStore.setState({
+        version: result.version,
+        status: result.status
       });
-      
+
+      setSavedSnapshot(makeSnapshot(name, description, sections));
       toast.success("Template saved successfully");
     } catch (error: any) {
       toast.error(error.message || "Failed to save template");
       console.error(error);
     } finally {
-      setIsSaving(false);
+      setIsSavingDraft(false);
     }
   };
 
@@ -58,9 +69,9 @@ export function TenderTemplateBuilder() {
       toast.error("Please save the draft first before publishing.");
       return;
     }
-    
+
     try {
-      setIsSaving(true);
+      setIsPublishing(true);
       const result = await templateService.publishTemplate(id);
       useTemplateDesignerStore.setState({ 
         status: result.status,
@@ -71,7 +82,7 @@ export function TenderTemplateBuilder() {
       toast.error(error.message || "Failed to publish template");
       console.error(error);
     } finally {
-      setIsSaving(false);
+      setIsPublishing(false);
     }
   };
 
@@ -112,9 +123,20 @@ export function TenderTemplateBuilder() {
       {/* Top Header */}
       <div className="bg-white border-b border-grey-2 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.push("/tender-templates")}
+            className="flex items-center justify-center w-8 h-8 rounded-md text-grey-5 hover:text-foreground hover:bg-grey-1 transition-colors"
+            title="Back to Templates"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <h1 className="text-xl font-bold tracking-tight text-foreground">Tender Template Designer</h1>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-md border border-amber-200">
+            <span className={`px-2 py-1 text-xs font-semibold rounded-md border ${
+              status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+              status === 'ARCHIVED'  ? 'bg-grey-2 text-grey-6 border-grey-3' :
+              'bg-amber-100 text-amber-800 border-amber-200'
+            }`}>
               {status}
             </span>
             <span className="text-sm text-grey-5 font-medium">Version {version}</span>
@@ -133,20 +155,20 @@ export function TenderTemplateBuilder() {
             </Button>
           )}
 
-          <Button 
-            variant="outline" 
-            className="border-grey-3 text-grey-5 hover:bg-grey-1" 
+          <Button
+            variant="outline"
+            className="border-grey-3 text-grey-5 hover:bg-grey-1"
             onClick={handleSave}
-            disabled={isSaving || status === 'PUBLISHED'}
+            disabled={isSavingDraft || isPublishing || status === 'PUBLISHED' || !hasChanges}
           >
-            <Save className="w-4 h-4 mr-2" /> Save Draft
+            <Save className="w-4 h-4 mr-2" /> {isSavingDraft ? "Saving..." : "Save Draft"}
           </Button>
-          <Button 
-            className="bg-gradient-to-r from-primary to-primary-hover text-white shadow-md disabled:opacity-50"
+          <Button
+            className="bg-primary hover:bg-[#782500] text-white shadow-md disabled:opacity-50"
             onClick={handlePublish}
-            disabled={isSaving || status === 'PUBLISHED'}
+            disabled={isSavingDraft || isPublishing || status === 'PUBLISHED' || hasChanges}
           >
-            <Send className="w-4 h-4 mr-2" /> Publish Template
+            <Send className="w-4 h-4 mr-2" /> {isPublishing ? "Publishing..." : "Publish Template"}
           </Button>
         </div>
       </div>

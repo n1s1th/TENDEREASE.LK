@@ -1,10 +1,9 @@
-// import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function OfficerRegistrationLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // return <ProtectedRoute>{children}</ProtectedRoute>;
-  return <>{children}</>;
-}
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
