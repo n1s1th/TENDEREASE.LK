@@ -717,15 +717,84 @@ public class TenderServiceImpl implements TenderService {
                 .collect(Collectors.toList());
     }
 
+    private java.util.Map<String, String> fetchCreatorInfo(String createdBy) {
+        java.util.Map<String, String> info = new java.util.HashMap<>();
+        info.put("name", "Procurement Officer");
+        info.put("role", "Procuring Entity");
+        if (createdBy == null || createdBy.trim().isEmpty() || createdBy.equalsIgnoreCase("dev-user")) {
+            return info;
+        }
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String url = "http://localhost:8081/api/officers";
+            if (createdBy.contains("@")) {
+                url += "/email/" + createdBy;
+            } else {
+                url += "/keycloak/" + createdBy;
+            }
+            java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
+            if (response != null) {
+                String orgName = (String) response.get("organizationName");
+                if (orgName != null && !orgName.trim().isEmpty()) {
+                    info.put("name", orgName);
+                    String designation = (String) response.get("headDesignation");
+                    if (designation != null && !designation.trim().isEmpty()) {
+                        info.put("role", designation);
+                    } else {
+                        info.put("role", "Procuring Entity");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch creator info from user-service for key: {}", createdBy, e);
+        }
+        return info;
+    }
+
     @Override
     public List<TimelineDTO> getTimeline(UUID tenderId) {
-        return timelineRepository.findByTenderIdOrderByTimestampDesc(tenderId).stream()
-                .map(event -> TimelineDTO.builder()
-                        .eventType(event.getEventType())
-                        .description(event.getDescription())
-                        .timestamp(event.getTimestamp())
-                        .build())
-                .collect(Collectors.toList());
+        Tender tender = tenderRepository.findById(tenderId).orElse(null);
+        String tenderCreator = tender != null ? tender.getCreatedBy() : null;
+        java.util.Map<String, String> creatorInfo = fetchCreatorInfo(tenderCreator);
+
+        List<TenderTimeline> databaseEvents = timelineRepository.findByTenderIdOrderByTimestampDesc(tenderId);
+        List<TimelineDTO> dtos = databaseEvents.stream()
+                .map(event -> {
+                    TimelineDTO dto = TimelineDTO.builder()
+                            .eventType(event.getEventType())
+                            .description(event.getDescription())
+                            .timestamp(event.getTimestamp())
+                            .build();
+                    if (event.getEventType() == TimelineEventType.CREATED || event.getEventType() == TimelineEventType.PUBLISHED) {
+                        dto.setCreatedBy(creatorInfo.get("name"));
+                        dto.setCreatorRole(creatorInfo.get("role"));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toCollection(java.util.ArrayList::new));
+
+        boolean hasCreated = databaseEvents.stream()
+                .anyMatch(event -> event.getEventType() == TimelineEventType.CREATED);
+
+        if (!hasCreated && tender != null && tender.getCreatedAt() != null) {
+            TimelineDTO synthesizedCreated = TimelineDTO.builder()
+                    .eventType(TimelineEventType.CREATED)
+                    .description("Tender created in system")
+                    .timestamp(tender.getCreatedAt())
+                    .createdBy(creatorInfo.get("name"))
+                    .creatorRole(creatorInfo.get("role"))
+                    .build();
+            dtos.add(synthesizedCreated);
+            
+            // Re-sort list by timestamp descending
+            dtos.sort((a, b) -> {
+                if (a.getTimestamp() == null) return 1;
+                if (b.getTimestamp() == null) return -1;
+                return b.getTimestamp().compareTo(a.getTimestamp());
+            });
+        }
+
+        return dtos;
     }
 
     @Override

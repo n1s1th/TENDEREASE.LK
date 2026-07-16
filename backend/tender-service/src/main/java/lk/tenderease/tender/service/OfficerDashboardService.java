@@ -103,8 +103,8 @@ public class OfficerDashboardService {
         long active     = tenderRepository.countByStatusIn(activeStatuses);
         long evaluating = tenderRepository.countByStatus(TenderStatus.EVALUATION);
         long awarded    = tenderRepository.countByStatus(TenderStatus.AWARDED);
-        long completed  = tenderRepository.countByStatus(TenderStatus.CLOSED);
-        long noBids     = 0;
+        long completed  = tenderRepository.countByStatusIn(Arrays.asList(TenderStatus.CLOSED, TenderStatus.AWARDED));
+        long noBids     = tenderRepository.countByStatus(TenderStatus.NO_BID);
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             List<Tender> activeTenders = tenderRepository.findAllByStatusIn(APPROVED_STATUSES);

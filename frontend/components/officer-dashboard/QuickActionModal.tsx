@@ -34,9 +34,10 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
       );
     }
     if (s === "COMPLETED" || s === "EVALUATED" || s === "AWARDED" || s === "CLOSED") {
+      const displayText = s === "COMPLETED" ? "EVALUATION COMPLETED" : s;
       return (
         <span className="text-[10.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-          {s}
+          {displayText}
         </span>
       );
     }
@@ -83,31 +84,6 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         } else if (type === "View Opening Records") {
           const res = await getOpeningLogs();
           setOpeningLogsList(res.data || []);
-        } else if (type === "Awards Processing") {
-          try {
-            const res = await getTendersPendingAward();
-            const data = res.data || [];
-            if (data.length === 0) {
-              setTendersList([
-                { id: "TND-2025-004", tenderNo: "TND-2025-004", title: "ERP System Upgrade", category: "IT & Software", status: "COMPLETED", winner: "Apex Build Ltd." },
-                { id: "TND-2025-008", tenderNo: "TND-2025-008", title: "Office Renovation Phase II", category: "Civil Works", status: "COMPLETED", winner: "Prime Contractors" },
-                { id: "TND-2025-012", tenderNo: "TND-2025-012", title: "Cloud Migration Services", category: "IT & Infrastructure", status: "COMPLETED", winner: "CloudScale Solutions" },
-              ]);
-            } else {
-              setTendersList(data.map((t: any) => ({
-                ...t,
-                status: "COMPLETED",
-                winner: t.winner || "Apex Build Ltd."
-              })));
-            }
-          } catch (err) {
-            console.error("Failed to load tenders pending award", err);
-            setTendersList([
-              { id: "TND-2025-004", tenderNo: "TND-2025-004", title: "ERP System Upgrade", category: "IT & Software", status: "COMPLETED", winner: "Apex Build Ltd." },
-              { id: "TND-2025-008", tenderNo: "TND-2025-008", title: "Office Renovation Phase II", category: "Civil Works", status: "COMPLETED", winner: "Prime Contractors" },
-              { id: "TND-2025-012", tenderNo: "TND-2025-012", title: "Cloud Migration Services", category: "IT & Infrastructure", status: "COMPLETED", winner: "CloudScale Solutions" },
-            ]);
-          }
         }
       } catch (err) {
         console.error("Failed to load quick action data", err);
@@ -193,19 +169,19 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
                    openingLogsList.map((log) => (
                     <div key={log.id} className="w-full text-left px-4 py-3 rounded-xl flex flex-col gap-1.5 border bg-gray-50/50 border-gray-100">
                       <div className="flex items-center justify-between gap-2 w-full">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11.5px] font-black text-[#953002]">
-                            {log.tenderNo}
-                          </span>
-                          {renderStatusBadge(log.status)}
-                        </div>
-                        <span className="text-[12.5px] font-bold text-gray-700 uppercase">
+                        <span className="font-mono text-[11.5px] font-black text-[#953002]">
+                          {log.tenderNo}
+                        </span>
+                        {renderStatusBadge(log.status)}
+                      </div>
+                      <div className="flex justify-between items-end gap-2 mt-0.5">
+                        <span className="text-[13px] font-bold text-gray-700 truncate max-w-[70%]">
+                          {log.title}
+                        </span>
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider shrink-0">
                           {log.openingDate}
                         </span>
                       </div>
-                      <span className="text-[13px] font-bold text-gray-700 truncate mt-0.5">
-                        {log.title}
-                      </span>
                     </div>
                   ))
                 )}
@@ -261,53 +237,6 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
           )
         };
 
-      case "Awards Processing":
-        return {
-          icon: <Trophy className="w-5 h-5 text-[#953002]" />,
-          title: "Awards Processing",
-          desc: "Select an evaluated tender to generate and process the award letter for the chosen winner.",
-          primaryAction: "Process Award",
-          extra: (
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-gray-900 ml-1 uppercase tracking-widest block mb-1.5">Approved Evaluated Tenders</label>
-              <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  </div>
-                ) : tendersList.length === 0 ? (
-                  <p className="text-xs italic text-gray-400 text-center py-8">No evaluated tenders available...</p>
-                ) : (
-                  tendersList.map((tender) => {
-                    const isSelected = selectedTenderId === tender.id;
-                    return (
-                      <button
-                        key={tender.id}
-                        type="button"
-                        onClick={() => setSelectedTenderId(tender.id)}
-                        className={`w-full text-left px-4 py-3 rounded-xl transition-all flex flex-col gap-1.5 border ${
-                          isSelected
-                            ? "bg-orange-50/40 border-[#953002] ring-1 ring-[#953002]/20"
-                            : "bg-gray-50/50 border-gray-100 hover:bg-gray-50 hover:border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 w-full">
-                          <span className="font-mono text-[11.5px] font-black text-[#953002]">
-                            {tender.tenderNo || tender.reference || tender.id}
-                          </span>
-                          {renderStatusBadge(tender.status)}
-                        </div>
-                        <span className={`text-[13px] font-bold transition-colors ${isSelected ? 'text-gray-955 font-extrabold' : 'text-gray-700'}`}>
-                          {tender.title}
-                        </span>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )
-        };
       default:
         return null;
     }
@@ -316,7 +245,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   const content = getContent();
   if (!content) return null;
 
-  const isPrimaryDisabled = (type === "Open Bid Session" || type === "Reports & Audit" || type === "Awards Processing") && !selectedTenderId;
+  const isPrimaryDisabled = (type === "Open Bid Session" || type === "Reports & Audit") && !selectedTenderId;
   const hasPrimaryButton = type !== "View Opening Records";
 
   const handlePrimaryAction = () => {
@@ -329,10 +258,6 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
       const tender = tendersList.find(t => t.id === selectedTenderId);
       const tenderNo = tender ? (tender.tenderNo || tender.reference || tender.id) : "";
       router.push(`/reports-and-audit?tenderId=${selectedTenderId}&tenderNo=${tenderNo}`);
-      onClose();
-    } else if (type === "Awards Processing") {
-      if (!selectedTenderId) return;
-      router.push(`/tenders/${selectedTenderId}/award-processing`);
       onClose();
     } else {
       alert(`Action: ${content.primaryAction} triggered!`);

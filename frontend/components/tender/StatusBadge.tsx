@@ -23,7 +23,7 @@ export default function StatusBadge({ status }: Props) {
 
   return (
     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${color}`}>
-      {status}
+      {normalized === "completed" ? "Evaluation Completed" : status}
     </span>
   );
 }

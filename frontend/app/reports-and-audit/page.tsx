@@ -287,10 +287,15 @@ function StatusBadge({ status }: { status: string }) {
     WINNER: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
     REJECTED: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
     PENDING: "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20",
+    COMPLETED: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    "Evaluation Completed": "bg-emerald-50 text-emerald-700 border border-emerald-200",
   };
+  const normalized = status?.toUpperCase();
+  const displayStatus = normalized === "COMPLETED" ? "Evaluation Completed" : status;
+  const lookupKey = normalized === "COMPLETED" ? "Evaluation Completed" : status;
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${styles[status] || "bg-gray-100 text-gray-500 border border-gray-200"}`}>
-      {status}
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${styles[lookupKey] || "bg-[#FFF7ED] text-[#953002] border border-[#953002]/20"}`}>
+      {displayStatus}
     </span>
   );
 }
@@ -319,7 +324,7 @@ function AuditTypeBadge({ type }: { type: AuditRow["type"] }) {
 
 function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
   return (
-    <span className="text-sm font-black text-gray-800">{value.toFixed(1)}</span>
+    <span className="text-sm font-black text-gray-800">{value.toFixed(2)}</span>
   );
 }
 
@@ -629,8 +634,11 @@ function ReportsAndAuditContent() {
   const searchParams = useSearchParams();
   const tenderNoParam = searchParams ? searchParams.get("tenderNo") : null;
   const tenderIdParam = searchParams ? searchParams.get("tenderId") : null;
+  const tabParam = searchParams ? searchParams.get("tab") : null;
 
-  const [activeTab, setActiveTab] = useState<"opening" | "evaluation" | "audit">("opening");
+  const [activeTab, setActiveTab] = useState<"opening" | "evaluation" | "audit">(
+    tabParam === "evaluation" ? "evaluation" : "opening"
+  );
   const [tender, setTender] = useState("");
   const [tendersList, setTendersList] = useState<any[]>([]);
   const [bidRows, setBidRows] = useState<BidRow[]>([]);
@@ -656,7 +664,7 @@ function ReportsAndAuditContent() {
     if (statusStr === "Pending Opening") return "PENDING_OPENING";
     if (statusStr === "Open") return "OPEN";
     if (statusStr === "Evaluation") return "EVALUATION";
-    if (statusStr === "Completed") return "COMPLETED";
+    if (statusStr === "Completed" || statusStr === "Evaluation Completed") return "COMPLETED";
     return "ALL";
   };
 
@@ -779,6 +787,12 @@ function ReportsAndAuditContent() {
     }
   }, [tendersList, tenderNoParam, tenderIdParam]);
 
+  useEffect(() => {
+    if (tabParam === "evaluation") {
+      setActiveTab("evaluation");
+    }
+  }, [tabParam]);
+
   const getEmptyTenderText = () => {
     if (tendersLoading) return "Loading tenders...";
     const isBidderSelected = bidder && bidder !== "Select Bidder" && bidder !== "All Bidders";
@@ -891,9 +905,37 @@ function ReportsAndAuditContent() {
         setBidRows(list.map((bid, i) => apiBidToRow(bid, i, evalNotesMap, evalBidders)));
 
         // Map timeline data to audit logs
-        const logs: AuditRow[] = (timelineData || []).map((item: any, idx: number) => {
-          let user = "System Administrator";
-          let userRole = "System";
+        const hasCreatedEvent = (timelineData || []).some((item: any) => item.eventType === "CREATED");
+        let finalTimeline = [...(timelineData || [])];
+        if (!hasCreatedEvent) {
+          const matchedT = tendersList.find((t: any) => {
+            const refStr = t.tenderNo || t.tenderNumber || t.id;
+            return tenderNo === refStr;
+          });
+          const siblingEvent = (timelineData || []).find((e: any) => e.createdBy && e.creatorRole);
+          const creator = siblingEvent ? siblingEvent.createdBy : null;
+          const role = siblingEvent ? siblingEvent.creatorRole : null;
+          
+          if (matchedT && matchedT.createdAt) {
+            finalTimeline.push({
+              eventType: "CREATED",
+              description: "Tender created in system",
+              timestamp: matchedT.createdAt,
+              createdBy: creator,
+              creatorRole: role
+            });
+          }
+        }
+        
+        finalTimeline.sort((a: any, b: any) => {
+          const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timeB - timeA;
+        });
+
+        const logs: AuditRow[] = finalTimeline.map((item: any, idx: number) => {
+          let user = item.createdBy || "Procurement Officer";
+          let userRole = item.creatorRole || "Procuring Entity";
           let action = item.eventType || "Event Logged";
           
           if (action === "CREATED" || action === "PUBLISHED") {
@@ -943,12 +985,12 @@ function ReportsAndAuditContent() {
             return {
               rank: 0,
               bidder: bidder.bidderName,
-              technicalScore: Number(technicalScore.toFixed(1)),
+              technicalScore: Number(technicalScore.toFixed(2)),
               technicalBar: Math.round(technicalScore),
-              financialScore: Number(financialScore.toFixed(1)),
+              financialScore: Number(financialScore.toFixed(2)),
               financialBar: Math.round(financialScore),
               compliancePassed: bidder.complianceStatus === "PASS" || techSubtotal >= 75,
-              compositeScore: Number(compositeScore.toFixed(1)),
+              compositeScore: Number(compositeScore.toFixed(2)),
               evaluator: bidder.evaluatorName || "Jane Doe",
               status: bidder.complianceStatus === "FAIL" ? "Rejected" : "Reviewed",
               notes: bidder.evaluationNotes || "No notes available."
@@ -1133,7 +1175,7 @@ function ReportsAndAuditContent() {
                 <CustomSelect
                   value={reportStatus}
                   onChange={setReportStatus}
-                  options={["Select Status", "All Statuses", "Pending Opening", "Open", "Evaluation", "Completed"]}
+                  options={["Select Status", "All Statuses", "Pending Opening", "Open", "Evaluation", "Evaluation Completed"]}
                 />
               </div>
             </div>
@@ -1398,7 +1440,7 @@ function ReportsAndAuditContent() {
                                 {row.compliancePassed ? "PASSED" : "FAILED"}
                               </span>
                             </td>
-                            <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(1)}</td>
+                            <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(2)}</td>
                             <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{row.evaluator}</td>
                             <td className="px-3 py-3.5 text-center"><StatusBadge status={row.status} /></td>
                             <td className="px-3 py-3.5 text-center">

@@ -14,4 +14,6 @@ public class TimelineDTO {
     private TimelineEventType eventType;
     private String description;
     private LocalDateTime timestamp;
+    private String createdBy;
+    private String creatorRole;
 }

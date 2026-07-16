@@ -13,24 +13,9 @@ export default function OfficerDashboardPage() {
   const { activeTendersCount, fetchDashboardMetrics } = useEvaluationStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentTime, setCurrentTime] = useState<string>("");
-
   useEffect(() => {
     fetchDashboardMetrics().finally(() => setLoading(false));
   }, [fetchDashboardMetrics]);
-
-  useEffect(() => {
-    const updateClock = () => {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-      setCurrentTime(`${dateStr} | ${timeStr}`);
-    };
-    
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   if (loading) {
     return (
@@ -66,10 +51,7 @@ export default function OfficerDashboardPage() {
             </div>
           </div>
 
-          {/* Right side Date and Time display */}
-          <div style={{ color: "#953002", fontWeight: 700, fontSize: "0.82rem", letterSpacing: "0.05em" }} className="shrink-0 mt-3 sm:mt-0 select-none bg-[#FFF7ED] border border-[#953002]/10 px-4 py-2.5 rounded-2xl shadow-sm font-mono font-bold">
-            {currentTime}
-          </div>
+
         </div>
       </div>
 
