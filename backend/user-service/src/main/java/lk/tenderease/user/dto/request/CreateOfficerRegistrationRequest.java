@@ -92,6 +92,9 @@ public class CreateOfficerRegistrationRequest {
     @Schema(description = "Liaison Officer details", requiredMode = Schema.RequiredMode.REQUIRED)
     private LiaisonOfficerDTO liaisonOfficer;
 
+    @Schema(description = "Keycloak User ID", example = "uuid")
+    private String keycloakUserId;
+
     // ──── Terms ────
 
     @AssertTrue(message = "Terms and Conditions must be accepted")
