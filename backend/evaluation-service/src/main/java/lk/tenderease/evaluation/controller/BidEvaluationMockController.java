@@ -261,14 +261,16 @@ public class BidEvaluationMockController {
                         // ignore
                     }
                     bidderState = new BidderEvaluationState(bidIdStr, bidderName, 
-                            eval.getStatus() == EvaluationStatus.COMPLETED ? "Submitted" : "In Progress", 
+                            eval.getStatus() == EvaluationStatus.COMPLETED ? "COMPLETED" : "In Progress", 
                             eval.getComplianceStatus() != null ? eval.getComplianceStatus().toString() : "PENDING");
                     states.put(bidIdStr, bidderState);
                 }
 
-                bidderState.status = eval.getStatus() == EvaluationStatus.COMPLETED ? "Submitted" : "In Progress";
+                bidderState.status = eval.getStatus() == EvaluationStatus.COMPLETED ? "COMPLETED" : "In Progress";
                 bidderState.complianceStatus = eval.getComplianceStatus() != null ? eval.getComplianceStatus().toString() : "PENDING";
                 bidderState.evaluationNotes = eval.getRemarks() != null ? eval.getRemarks() : "";
+                bidderState.evaluatorName = eval.getEvaluatorName() != null ? eval.getEvaluatorName() : bidderState.evaluatorName;
+                bidderState.evaluatorRole = eval.getEvaluatorRole() != null ? eval.getEvaluatorRole() : bidderState.evaluatorRole;
 
                 if (eval.getEvaluatedAt() != null) {
                     java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm");
@@ -329,6 +331,8 @@ public class BidEvaluationMockController {
         public List<Criterion> financialCriteria;
         public String notes;
         public String status; // Optional status update
+        public String evaluatorName;
+        public String evaluatorRole;
     }
 
     @PostMapping("/{tenderNo}/save")
@@ -373,6 +377,12 @@ public class BidEvaluationMockController {
         if (request.notes != null) {
             bidder.evaluationNotes = request.notes;
         }
+        if (request.evaluatorName != null) {
+            bidder.evaluatorName = request.evaluatorName;
+        }
+        if (request.evaluatorRole != null) {
+            bidder.evaluatorRole = request.evaluatorRole;
+        }
         if (request.status != null) {
             bidder.status = request.status;
         } else if (bidder.status.equals("Not Started")) {
@@ -405,6 +415,8 @@ public class BidEvaluationMockController {
             evaluation.setEvaluatorId(evaluatorUuid);
             evaluation.setStatus(EvaluationStatus.IN_PROGRESS);
             evaluation.setIsFlagged(false);
+            evaluation.setEvaluatorName(bidder.evaluatorName);
+            evaluation.setEvaluatorRole(bidder.evaluatorRole);
             
             double techSubtotal = 0;
             for (Criterion c : bidder.technicalCriteria) {
@@ -473,8 +485,14 @@ public class BidEvaluationMockController {
         if (request.notes != null) {
             bidder.evaluationNotes = request.notes;
         }
+        if (request.evaluatorName != null) {
+            bidder.evaluatorName = request.evaluatorName;
+        }
+        if (request.evaluatorRole != null) {
+            bidder.evaluatorRole = request.evaluatorRole;
+        }
         
-        bidder.status = "Submitted";
+        bidder.status = "COMPLETED";
         
         // Update compliance status based on score
         double techSubtotal = 0;
@@ -625,6 +643,9 @@ public class BidEvaluationMockController {
         evaluation.setTotalScore(BigDecimal.valueOf(compositeScore));
         evaluation.setRemarks(request.notes != null ? request.notes : "");
         evaluation.setEvaluatedAt(LocalDateTime.now());
+        
+        evaluation.setEvaluatorName(bidder.evaluatorName);
+        evaluation.setEvaluatorRole(bidder.evaluatorRole);
         
         Evaluation savedEvaluation = evaluationRepository.save(evaluation);
 

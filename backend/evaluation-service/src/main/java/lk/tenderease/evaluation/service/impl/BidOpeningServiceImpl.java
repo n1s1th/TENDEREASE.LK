@@ -125,8 +125,28 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         OpeningAttendance attendance = new OpeningAttendance();
         attendance.setSession(session);
         attendance.setOfficerId(request.getOfficerId());
-        attendance.setOfficerName(request.getOfficerName());
-        attendance.setDesignation(request.getDesignation());
+
+        // Fetch details from officer registration (user-service) in real-time
+        String officerName = request.getOfficerName();
+        String designation = request.getDesignation();
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String userServiceUrl = "http://localhost:8081/api/officers/email/" + request.getOfficerId();
+            java.util.Map<?, ?> officerProfile = restTemplate.getForObject(userServiceUrl, java.util.Map.class);
+            if (officerProfile != null) {
+                if (officerProfile.get("name") != null) {
+                    officerName = officerProfile.get("name").toString();
+                }
+                if (officerProfile.get("designation") != null) {
+                    designation = officerProfile.get("designation").toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch officer profile from user-service for email {}: {}", request.getOfficerId(), e.getMessage());
+        }
+
+        attendance.setOfficerName(officerName);
+        attendance.setDesignation(designation);
         attendance.setOrganisation(request.getOrganisation());
         attendance.setRole(request.getRole());
 

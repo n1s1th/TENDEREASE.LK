@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import { getTenderById } from "@/services/tender.service";
+import { useAuthStore } from "@/store";
+import { getOfficerByEmail } from "@/lib/api/officerApi";
 
 const DESIGNATION_OPTIONS = [
   "Committee Chairman",
@@ -41,6 +43,47 @@ export default function AttendanceSection() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [isDesignationOpen, setIsDesignationOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const { user } = useAuthStore();
+  const [officerProfile, setOfficerProfile] = useState<{ name: string; designation: string; email: string } | null>(null);
+
+  useEffect(() => {
+    if (user?.email) {
+      getOfficerByEmail(user.email)
+        .then(res => {
+          if (res && res.liaisonOfficer) {
+            setOfficerProfile({
+              name: res.liaisonOfficer.name || "",
+              designation: res.liaisonOfficer.designation || "Procurement Officer",
+              email: res.liaisonOfficer.email || user.email
+            });
+          } else {
+            setOfficerProfile({
+              name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.name || "",
+              designation: "Procurement Officer",
+              email: user.email
+            });
+          }
+        })
+        .catch(() => {
+          setOfficerProfile({
+            name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.name || "",
+            designation: "Procurement Officer",
+            email: user.email
+          });
+        });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isAddingMember && officerProfile) {
+      setNewMember({
+        name: officerProfile.name,
+        designation: officerProfile.designation,
+        email: officerProfile.email
+      });
+    }
+  }, [isAddingMember, officerProfile]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -199,7 +242,7 @@ export default function AttendanceSection() {
           }`}
         >
           <UserPlus className="w-4 h-4" />
-          Mark Attendance
+          Record Presence
         </button>
       </div>
 
@@ -213,7 +256,7 @@ export default function AttendanceSection() {
               <th className="py-4 px-6 text-center w-[12%] align-middle">Status</th>
               <th className="py-4 px-6 text-center w-[11%] align-middle">Date</th>
               <th className="py-4 px-6 text-center w-[12%] align-middle">Time</th>
-              <th className="py-4 px-6 rounded-tr-lg text-center w-[5%] align-middle">Actions</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[5%] align-middle">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -240,7 +283,7 @@ export default function AttendanceSection() {
                   </div>
                 </td>
                 <td className="px-6 py-6 align-middle" style={{ textAlign: 'center' }}>
-                  <span className="text-[11px] font-black text-black uppercase tracking-wider whitespace-nowrap">{member.designation || "NOT SPECIFIED"}</span>
+                  <span className="text-[13px] font-bold text-gray-800 whitespace-nowrap">{member.designation || "Not specified"}</span>
                 </td>
                 <td className="px-6 py-6 text-center align-middle">
                   <div className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-green-50 rounded-xl border border-green-100 w-fit mx-auto">
@@ -263,47 +306,15 @@ export default function AttendanceSection() {
                       <Lock className="w-4 h-4" />
                     </div>
                   ) : (
-                    <div className="relative flex justify-center">
                       <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === member.id ? null : member.id);
-                        }}
-                        className={`p-2 rounded-xl transition-all ${
-                          openMenuId === member.id 
-                            ? "bg-gray-100 text-gray-900" 
-                            : "text-gray-900 hover:bg-gray-100"
-                        }`}
+                        onClick={() => handleDeleteMember(member.id)}
+                        className="p-2 rounded-xl text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all active:scale-95 relative group/remove"
                       >
-                        <MoreVertical className="w-5 h-5" />
+                        <UserX className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/remove:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Remove Member
+                        </span>
                       </button>
-
-                      {openMenuId === member.id && (
-                        <div 
-                          ref={menuRef}
-                          className={`absolute left-0 w-40 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] py-2 animate-in fade-in zoom-in-95 duration-200 ${
-                            idx >= attendance.length - 2 ? "bottom-full mb-2" : "top-full mt-2"
-                          }`}
-                        >
-                          <button 
-                            onClick={() => handleEditMember(member)}
-                            className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002] transition-colors flex items-center gap-3"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                            Edit Record
-                          </button>
-                          <button 
-                            onClick={() => {
-                              handleDeleteMember(member.id);
-                            }}
-                            className="w-full px-4 py-2 text-left text-[13px] font-bold text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors flex items-center gap-3"
-                          >
-                            <UserX className="w-4 h-4" />
-                            Remove Member
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   )}
                 </td>
               </tr>
@@ -322,8 +333,8 @@ export default function AttendanceSection() {
                   <UserPlus className="w-5 h-5 text-[#953002]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900 tracking-tight">Manual Attendance</h3>
-                  <p className="text-xs text-gray-500 font-medium mt-1">Record a committee member present for this session.</p>
+                  <h3 className="text-lg font-black text-gray-900 tracking-tight">Record Attendance</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-1">Verify and record your presence for this session.</p>
                 </div>
               </div>
               <button 
@@ -339,12 +350,10 @@ export default function AttendanceSection() {
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1">Member Name</label>
                 <input 
-                  autoFocus
+                  readOnly
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all text-gray-800"
-                  placeholder="Enter full name..."
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none text-gray-500 cursor-not-allowed"
                   value={newMember.name}
-                  onChange={e => setNewMember({...newMember, name: e.target.value})}
                 />
               </div>
               
@@ -352,58 +361,22 @@ export default function AttendanceSection() {
                 <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1">Email Address</label>
                 <input 
                   type="email"
+                  readOnly
                   required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all text-gray-800"
-                  placeholder="name@tenderease.lk"
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none text-gray-500 cursor-not-allowed"
                   value={newMember.email}
-                  onChange={e => setNewMember({...newMember, email: e.target.value})}
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1">Designation</label>
-                <div className="relative" ref={designationRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsDesignationOpen(!isDesignationOpen)}
-                    className={`w-full border rounded-xl px-4 py-3 text-left flex justify-between items-center outline-none focus:ring-2 focus:ring-[#953002]/10 transition-all ${
-                      newMember.designation 
-                        ? "bg-white border-gray-200 text-gray-800 text-sm font-semibold" 
-                        : "bg-gray-50 border-gray-200 text-gray-400 text-sm font-medium hover:bg-gray-50"
-                    }`}
-                  >
-                    <span>
-                      {newMember.designation || "Select designation..."}
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isDesignationOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {isDesignationOpen && (
-                    <div className="absolute right-0 bottom-full mb-1.5 w-[260px] bg-white rounded-2xl border border-gray-100 shadow-xl z-[1000] p-1.5 max-h-48 overflow-y-auto scrollbar-none animate-in fade-in slide-in-from-bottom-2 duration-200">
-                      {DESIGNATION_OPTIONS.map((opt, i) => {
-                        const isSelected = newMember.designation === opt;
-                        return (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => {
-                              setNewMember({ ...newMember, designation: opt });
-                              setIsDesignationOpen(false);
-                            }}
-                            className={`w-full px-4 py-2.5 text-left text-sm font-medium rounded-xl transition-all flex items-center justify-between ${
-                              isSelected 
-                                ? 'bg-[#953002]/5 text-[#953002] font-semibold' 
-                                : 'text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]'
-                            }`}
-                          >
-                            <span>{opt}</span>
-                            {isSelected && <Check className="w-4 h-4 text-[#953002]" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <input 
+                  type="text"
+                  readOnly
+                  required
+                  className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold outline-none text-gray-500 cursor-not-allowed"
+                  value={newMember.designation}
+                />
               </div>
               
               <div className="flex gap-3 pt-2">

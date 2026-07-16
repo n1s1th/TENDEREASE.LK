@@ -30,6 +30,8 @@ public interface LiaisonOfficerRepository extends JpaRepository<LiaisonOfficer, 
      */
     boolean existsByEmail(String email);
 
+    Optional<LiaisonOfficer> findByEmail(String email);
+
     /**
      * Find liaison officer by NIC.
      *

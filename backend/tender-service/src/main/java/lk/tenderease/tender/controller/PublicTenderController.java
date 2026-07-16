@@ -112,6 +112,14 @@ public class PublicTenderController {
         return tenderService.getTimeline(id);
     }
 
+    @PostMapping("/{id}/timeline")
+    public ResponseEntity<Void> addTimelineEvent(
+            @PathVariable UUID id,
+            @RequestBody TimelineDTO request) {
+        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription());
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{id}/contact")
     public List<ContactDTO> getContacts(@PathVariable UUID id) {
         return tenderService.getContacts(id);

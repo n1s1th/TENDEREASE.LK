@@ -48,7 +48,22 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    }
+    if (isFilterOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isFilterOpen]);
 
   useEffect(() => {
     // page parameter is 0-indexed in backend
@@ -79,7 +94,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
       case "PENDING_OPENING":
         return "bg-orange-50 text-[#9A3B12] border-orange-100";
       case "EVALUATION":
-        return "bg-[#2F80ED]/10 text-[#2F80ED] border-[#2F80ED]/20";
+        return "bg-[#E2B93B]/10 text-[#E2B93B] border-[#E2B93B]/20";
       case "COMPLETED":
         return "bg-[#27AE60]/10 text-[#27AE60] border-[#27AE60]/20";
       default:
@@ -120,7 +135,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
           />
         </div>
         
-        <div className="flex items-center gap-3 relative">
+        <div ref={dropdownRef} className="flex items-center gap-3 relative">
           <button 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border transition-all font-bold text-xs uppercase tracking-widest ${

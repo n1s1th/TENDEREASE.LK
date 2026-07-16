@@ -48,7 +48,7 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
 
   return createPortal(
     <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[32px] w-full max-w-[480px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
+      <div className="bg-white rounded-[32px] w-full max-w-[410px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100">
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
           <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            {bid.isFlagged ? "UNFLAG BID" : "FLAG SUBMISSION"}
+            {bid.isFlagged ? "UNFLAG" : "FLAG"}
           </button>
           <button 
             onClick={() => router.push(`/tenders/${tenderId}/bid-evaluation?bidId=${bid.id}`)}

@@ -262,6 +262,8 @@ public interface TenderService {
 
     List<TimelineDTO> getTimeline(UUID tenderId);
 
+    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description);
+
     List<ContactDTO> getContacts(UUID tenderId);
 
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);

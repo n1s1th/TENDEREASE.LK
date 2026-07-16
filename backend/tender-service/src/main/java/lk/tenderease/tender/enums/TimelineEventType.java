@@ -4,5 +4,9 @@ public enum TimelineEventType {
     CREATED,
     PUBLISHED,
     AMENDED,
-    CLOSED
+    CLOSED,
+    APPROVED,
+    OPENED,
+    EVALUATED,
+    AWARDED
 }
