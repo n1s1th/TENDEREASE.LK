@@ -773,6 +773,151 @@ public class TenderServiceImpl implements TenderService {
                 })
                 .collect(Collectors.toCollection(java.util.ArrayList::new));
 
+        // Dynamically synthesize/enrich events from other microservices
+        if (tender != null) {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            // Define asynchronous tasks for external service calls in parallel to speed up loading
+            java.util.concurrent.CompletableFuture<Void> openingTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String sessionUrl = "http://localhost:8084/api/v1/opening/tender/" + tenderId;
+                    java.util.Map<?, ?> sessionResponse = restTemplate.getForObject(sessionUrl, java.util.Map.class);
+                    if (sessionResponse != null && sessionResponse.get("data") != null) {
+                        java.util.Map<?, ?> sessionData = (java.util.Map<?, ?>) sessionResponse.get("data");
+                        String sessionIdStr = (String) sessionData.get("id");
+                        Object actualOpeningTimeObj = sessionData.get("actualOpeningTime");
+                        String openedBy = (String) sessionData.get("openedBy");
+                        
+                        if (actualOpeningTimeObj != null) {
+                            LocalDateTime actualOpeningTime = parseLocalDateTime(actualOpeningTimeObj);
+                            synchronized (dtos) {
+                                dtos.add(TimelineDTO.builder()
+                                        .eventType(TimelineEventType.SESSION_UNLOCKED)
+                                        .description("Session Unlocked: Bid opening session unlocked.")
+                                        .timestamp(actualOpeningTime)
+                                        .createdBy(openedBy != null ? openedBy : "Procurement Officer")
+                                        .creatorRole("Committee")
+                                        .build());
+                            }
+                        }
+                        
+                        if (sessionIdStr != null) {
+                            String attendanceUrl = "http://localhost:8084/api/v1/opening/session/" + sessionIdStr + "/attendance";
+                            java.util.Map<?, ?> attendanceResponse = restTemplate.getForObject(attendanceUrl, java.util.Map.class);
+                            if (attendanceResponse != null && attendanceResponse.get("data") != null) {
+                                java.util.List<?> attendanceList = (java.util.List<?>) attendanceResponse.get("data");
+                                synchronized (dtos) {
+                                    for (Object itemObj : attendanceList) {
+                                        java.util.Map<?, ?> attendee = (java.util.Map<?, ?>) itemObj;
+                                        String officerName = (String) attendee.get("officerName");
+                                        String designation = (String) attendee.get("designation");
+                                        Object attendanceTimeObj = attendee.get("attendanceTime");
+                                        if (officerName != null) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.COMMITTEE_CHECKED_IN)
+                                                    .description("Committee Checked-In: " + officerName + " (" + (designation != null ? designation : "Officer") + ")")
+                                                    .timestamp(parseLocalDateTime(attendanceTimeObj))
+                                                    .createdBy(officerName)
+                                                    .creatorRole(designation != null ? designation : "Committee Member")
+                                                    .build());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            java.util.concurrent.CompletableFuture<Void> bidsTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String bidsUrl = "http://localhost:8083/api/bids/tender/" + tenderId;
+                    java.util.Map<?, ?> bidsResponse = restTemplate.getForObject(bidsUrl, java.util.Map.class);
+                    if (bidsResponse != null && bidsResponse.get("data") != null) {
+                        java.util.List<?> bidsList = (java.util.List<?>) bidsResponse.get("data");
+                        synchronized (dtos) {
+                            for (Object bidObj : bidsList) {
+                                java.util.Map<?, ?> bid = (java.util.Map<?, ?>) bidObj;
+                                String companyName = (String) bid.get("companyName");
+                                String bidderName = (String) bid.get("bidderName");
+                                Object submittedAtObj = bid.get("submittedAt");
+                                if (companyName != null) {
+                                    dtos.add(TimelineDTO.builder()
+                                            .eventType(TimelineEventType.BID_SUBMITTED)
+                                            .description("Bid Submitted: " + companyName + " submitted a bid proposal.")
+                                            .timestamp(parseLocalDateTime(submittedAtObj))
+                                            .createdBy(bidderName != null ? bidderName : "Bidder")
+                                            .creatorRole("Bidder")
+                                            .build());
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            java.util.concurrent.CompletableFuture<Void> evalTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String tenderNo = tender.getTenderNumber() != null ? tender.getTenderNumber() : tenderId.toString();
+                    String evalUrl = "http://localhost:8084/api/evaluations/mock/" + tenderNo + "/data";
+                    java.util.Map<?, ?> evalResponse = restTemplate.getForObject(evalUrl, java.util.Map.class);
+                    if (evalResponse != null && evalResponse.get("data") != null) {
+                        java.util.Map<?, ?> evalData = (java.util.Map<?, ?>) evalResponse.get("data");
+                        java.util.List<?> biddersList = (java.util.List<?>) evalData.get("bidders");
+                        if (biddersList != null) {
+                            synchronized (dtos) {
+                                for (Object bidderObj : biddersList) {
+                                    java.util.Map<?, ?> bidder = (java.util.Map<?, ?>) bidderObj;
+                                    String bidderName = (String) bidder.get("bidderName");
+                                    String complianceStatus = (String) bidder.get("complianceStatus");
+                                    String status = (String) bidder.get("status");
+                                    String evaluatorName = (String) bidder.get("evaluatorName");
+                                    String evaluatorRole = (String) bidder.get("evaluatorRole");
+                                    Object lastSavedObj = bidder.get("lastSaved");
+                                    
+                                    if (bidderName != null) {
+                                        if ("FAIL".equalsIgnoreCase(complianceStatus)) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.COMPLIANCE_MARKED)
+                                                    .description("Compliance Status Marked: " + bidderName + " failed compliance review.")
+                                                    .timestamp(parseLocalDateTime(lastSavedObj))
+                                                    .createdBy(evaluatorName != null ? evaluatorName : "Procurement Officer")
+                                                    .creatorRole(evaluatorRole != null ? evaluatorRole : "Procuring Entity")
+                                                    .build());
+                                        }
+                                        
+                                        if ("COMPLETED".equalsIgnoreCase(status) || "Submitted".equalsIgnoreCase(status)) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.SCORES_FINALIZED)
+                                                    .description("Scores Finalized: Consensus scoring submitted for " + bidderName + ".")
+                                                    .timestamp(parseLocalDateTime(lastSavedObj))
+                                                    .createdBy(evaluatorName != null ? evaluatorName : "Procurement Officer")
+                                                    .creatorRole(evaluatorRole != null ? evaluatorRole : "Procuring Entity")
+                                                    .build());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            // Wait for all async tasks to complete with a safety timeout of 3 seconds
+            try {
+                java.util.concurrent.CompletableFuture.allOf(openingTask, bidsTask, evalTask)
+                        .get(3, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.warn("Timeline parallel tasks execution timed out or interrupted: {}", e.getMessage());
+            }
+        }
+
         boolean hasCreated = databaseEvents.stream()
                 .anyMatch(event -> event.getEventType() == TimelineEventType.CREATED);
 
@@ -785,14 +930,14 @@ public class TenderServiceImpl implements TenderService {
                     .creatorRole(creatorInfo.get("role"))
                     .build();
             dtos.add(synthesizedCreated);
-            
-            // Re-sort list by timestamp descending
-            dtos.sort((a, b) -> {
-                if (a.getTimestamp() == null) return 1;
-                if (b.getTimestamp() == null) return -1;
-                return b.getTimestamp().compareTo(a.getTimestamp());
-            });
         }
+
+        // Re-sort list by timestamp descending
+        dtos.sort((a, b) -> {
+            if (a.getTimestamp() == null) return 1;
+            if (b.getTimestamp() == null) return -1;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
 
         return dtos;
     }
@@ -1203,5 +1348,37 @@ public class TenderServiceImpl implements TenderService {
                 .build();
         timelineRepository.save(event);
         log.info("Timeline event saved: {} - {} for tender {}", eventType, description, tenderId);
+    }
+
+    private LocalDateTime parseLocalDateTime(Object obj) {
+        if (obj == null) return null;
+        String str = obj.toString();
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            // format used for date string without time
+            return java.time.LocalDate.parse(str, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")).atStartOfDay();
+        } catch (Exception e) {
+            // ignore
+        }
+        return LocalDateTime.now();
     }
 }

@@ -18,37 +18,45 @@ export async function getDashboardMetrics(): Promise<{
   noBids: number;
   completed: number;
 }> {
-  // Fetch tender metrics and total bid count from bid-service in parallel
-  const [metricsRes, bidsCountRes] = await Promise.all([
-    fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`),
-    fetch(`${BID_SERVICE}/api/bids/count`).catch((): any => null),
-  ]);
-
-  if (!metricsRes.ok) throw new Error("Failed to fetch dashboard metrics");
-  
-  const metricsJson = await metricsRes.json();
-  const metrics = metricsJson.data;
-
-  // Retrieve total bid count directly from the database-backed endpoint
-  let bidCount = 0;
   try {
+    // Fetch tender metrics and total bid count from bid-service in parallel
+    const [metricsRes, bidsCountRes] = await Promise.all([
+      fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`).catch(() => null),
+      fetch(`${BID_SERVICE}/api/bids/count`).catch(() => null),
+    ]);
+
+    let metrics = { active: 0, evaluating: 0, awarded: 0, noBids: 0, completed: 0 };
+    if (metricsRes && metricsRes.ok) {
+      const metricsJson = await metricsRes.json();
+      metrics = metricsJson.data || metrics;
+    }
+
+    // Retrieve total bid count directly from the database-backed endpoint
+    let bidCount = 0;
     if (bidsCountRes && bidsCountRes.ok) {
       const bidsCountJson = await bidsCountRes.json();
       bidCount = typeof bidsCountJson.data === "number" ? bidsCountJson.data : 0;
     }
-  } catch (err) {
-    console.error("Failed to fetch bid count from bid-service, falling back to 0", err);
-    bidCount = 0;
-  }
 
-  return {
-    active: metrics.active,
-    bids: bidCount,
-    evaluating: metrics.evaluating,
-    awarded: metrics.awarded,
-    noBids: metrics.noBids,
-    completed: metrics.completed || 0,
-  };
+    return {
+      active: metrics.active || 0,
+      bids: bidCount,
+      evaluating: metrics.evaluating || 0,
+      awarded: metrics.awarded || 0,
+      noBids: metrics.noBids || 0,
+      completed: metrics.completed || 0,
+    };
+  } catch (err) {
+    console.warn("Failed to fetch dashboard metrics:", err);
+    return {
+      active: 0,
+      bids: 0,
+      evaluating: 0,
+      awarded: 0,
+      noBids: 0,
+      completed: 0,
+    };
+  }
 }
 
 /**
@@ -76,15 +84,24 @@ export async function getAssignedTenders(
     number: number;
   };
 }> {
-  const url = new URL(`${TENDER_SERVICE}/api/officer/dashboard/tenders`);
-  if (keyword) url.searchParams.append("keyword", keyword);
-  if (status && status !== "ALL") url.searchParams.append("status", status);
-  url.searchParams.append("page", page.toString());
-  url.searchParams.append("size", size.toString());
+  const fallback = { data: { content: [], totalElements: 0, totalPages: 1, number: 0 } };
+  try {
+    const url = new URL(`${TENDER_SERVICE}/api/officer/dashboard/tenders`);
+    if (keyword) url.searchParams.append("keyword", keyword);
+    if (status && status !== "ALL") url.searchParams.append("status", status);
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("size", size.toString());
 
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error("Failed to fetch assigned tenders");
-  return res.json();
+    const res = await fetch(url.toString());
+    if (!res.ok) {
+      console.warn("Failed to fetch assigned tenders status:", res.status);
+      return fallback;
+    }
+    return res.json();
+  } catch (err) {
+    console.warn("Failed to fetch assigned tenders:", err);
+    return fallback;
+  }
 }
 
 /**
@@ -101,9 +118,15 @@ export async function getTendersForOpening(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-for-opening`);
-  if (!res.ok) throw new Error("Failed to fetch tenders for opening");
-  return res.json();
+  const fallback = { success: false, data: [] };
+  try {
+    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-for-opening`);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch (err) {
+    console.warn("Failed to fetch tenders for opening:", err);
+    return fallback;
+  }
 }
 
 /**
@@ -120,9 +143,15 @@ export async function getOpeningLogs(): Promise<{
     category: string;
   }>;
 }> {
-  const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/opening-logs`);
-  if (!res.ok) throw new Error("Failed to fetch opening logs");
-  return res.json();
+  const fallback = { success: false, data: [] };
+  try {
+    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/opening-logs`);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch (err) {
+    console.warn("Failed to fetch opening logs:", err);
+    return fallback;
+  }
 }
 
 /**
@@ -139,9 +168,15 @@ export async function getTendersWithBids(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-with-bids`);
-  if (!res.ok) throw new Error("Failed to fetch tenders with bids");
-  return res.json();
+  const fallback = { success: false, data: [] };
+  try {
+    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-with-bids`);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch (err) {
+    console.warn("Failed to fetch tenders with bids:", err);
+    return fallback;
+  }
 }
 
 /**
@@ -158,7 +193,13 @@ export async function getTendersPendingAward(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-pending-award`);
-  if (!res.ok) throw new Error("Failed to fetch tenders pending award");
-  return res.json();
+  const fallback = { success: false, data: [] };
+  try {
+    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-pending-award`);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch (err) {
+    console.warn("Failed to fetch tenders pending award:", err);
+    return fallback;
+  }
 }
