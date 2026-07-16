@@ -183,7 +183,17 @@ export default function OfficerRegistrationPage() {
           </div>
 
           {/* ─── Registration Form ─── */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-0" method="POST" action="#">
+          <form onSubmit={handleSubmit(onSubmit, (validationErrors) => {
+              // Scroll to the first error field so the user can see it
+              const firstErrorKey = Object.keys(validationErrors)[0];
+              if (firstErrorKey) {
+                const el = document.querySelector(`[name="${firstErrorKey}"]`);
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  (el as HTMLElement).focus?.();
+                }
+              }
+            })} className="space-y-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* ── Procuring Entity Type ── */}
@@ -452,6 +462,16 @@ export default function OfficerRegistrationPage() {
             </div>
 
             <div className="mt-6">
+              {Object.keys(errors).length > 0 && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  <strong>Please fix the following errors before submitting:</strong>
+                  <ul className="mt-1 ml-4 list-disc">
+                    {Object.entries(errors).map(([key, err]) => (
+                      <li key={key}>{(err as any)?.message || `${key} is invalid`}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={isSubmitting}
