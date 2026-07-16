@@ -18,6 +18,8 @@ import lk.tenderease.tender.entity.TenderAmendment;
 import lk.tenderease.tender.entity.TenderClarification;
 import lk.tenderease.tender.entity.TenderDocument;
 import lk.tenderease.tender.entity.TenderSchedule;
+import lk.tenderease.tender.entity.TenderTimeline;
+import lk.tenderease.tender.enums.TimelineEventType;
 import lk.tenderease.tender.entity.TenderComplianceChecklist;
 import lk.tenderease.tender.enums.BiddingMethod;
 import lk.tenderease.tender.enums.ProcurementType;
@@ -140,6 +142,19 @@ public class TenderServiceImpl implements TenderService {
         
         Tender saved = tenderRepository.save(tender);
         log.info("Tender created with ID: {}", saved.getId());
+
+        // Log Tender Creation in tender_timeline
+        try {
+            TenderTimeline creationEvent = TenderTimeline.builder()
+                    .tender(saved)
+                    .eventType(TimelineEventType.CREATED)
+                    .description("Tender " + saved.getTenderNumber() + " created and published. Submission window opened.")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            timelineRepository.save(creationEvent);
+        } catch (Exception e) {
+            log.error("Failed to log tender creation to timeline: {}", e.getMessage());
+        }
 
         return mapToResponse(saved);
     }
@@ -484,7 +499,22 @@ public class TenderServiceImpl implements TenderService {
         
         tender.setSchedule(schedule);
         tender.setUpdatedAt(java.time.LocalDateTime.now());
-        tenderRepository.save(tender);
+        Tender saved = tenderRepository.save(tender);
+
+        // Log schedule milestones update in timeline
+        try {
+            String desc = "Tender schedule updated. Advertisement start: " + request.getAdvertisementStartDate() + 
+                         ", Submission deadline: " + request.getBidSubmissionDeadline();
+            TenderTimeline scheduleEvent = TenderTimeline.builder()
+                    .tender(saved)
+                    .eventType(TimelineEventType.AMENDED)
+                    .description(desc)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            timelineRepository.save(scheduleEvent);
+        } catch (Exception e) {
+            log.error("Failed to log schedule update to timeline: {}", e.getMessage());
+        }
         
         return TenderScheduleResponse.builder()
                 .advertisementStartDate(schedule.getAdvertisementStartDate())
@@ -1052,7 +1082,57 @@ public class TenderServiceImpl implements TenderService {
         tender.setUpdatedAt(LocalDateTime.now());
         Tender saved = tenderRepository.save(tender);
 
+        // Log timeline status transitions
+        try {
+            TimelineEventType timelineType = null;
+            String desc = "";
+            if (status == TenderStatus.PENDING_APPROVAL) {
+                timelineType = TimelineEventType.AMENDED;
+                desc = "Tender " + saved.getTenderNumber() + " submitted for approval.";
+            } else if (status == TenderStatus.PUBLISHED) {
+                timelineType = TimelineEventType.APPROVED;
+                desc = "Tender " + saved.getTenderNumber() + " approved and published.";
+            } else if (status == TenderStatus.OPEN) {
+                timelineType = TimelineEventType.OPENED;
+                desc = "Bid opening session commenced.";
+            } else if (status == TenderStatus.EVALUATION) {
+                timelineType = TimelineEventType.EVALUATED;
+                desc = "Tender evaluation commenced.";
+            } else if (status == TenderStatus.CLOSED) {
+                timelineType = TimelineEventType.CLOSED;
+                desc = "Bid submission window closed.";
+            }
+            
+            if (timelineType != null) {
+                TenderTimeline statusEvent = TenderTimeline.builder()
+                        .tender(saved)
+                        .eventType(timelineType)
+                        .description(desc)
+                        .timestamp(LocalDateTime.now())
+                        .build();
+                timelineRepository.save(statusEvent);
+            }
+        } catch (Exception e) {
+            log.error("Failed to log status transition to timeline: {}", e.getMessage());
+        }
+
         log.info("Tender {} status updated to {}", id, status);
         return mapToResponse(saved);
+     }
+
+    @Override
+    @Transactional
+    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description) {
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+        
+        TenderTimeline event = TenderTimeline.builder()
+                .tender(tender)
+                .eventType(eventType)
+                .description(description)
+                .timestamp(LocalDateTime.now())
+                .build();
+        timelineRepository.save(event);
+        log.info("Timeline event saved: {} - {} for tender {}", eventType, description, tenderId);
     }
 }

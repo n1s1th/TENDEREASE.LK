@@ -188,12 +188,15 @@ export default function BidOpeningPage() {
             <OpeningBanner
               status={displaySession.status}
               scheduledTime={displaySession.scheduledOpeningTime}
+              actualOpeningTime={displaySession.actualOpeningTime}
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <SchedulePanel
+              status={displaySession.status}
               scheduledTime={displaySession.scheduledOpeningTime}
+              actualOpeningTime={displaySession.actualOpeningTime}
             />
             <OpeningActionPanel bidSubmissionDeadline={deadline} />
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, FileText, ChevronRight, Lock, AlertTriangle, Flag } from "lucide-react";
+import { ShieldCheck, FileText, ChevronRight, Lock, AlertTriangle, ClipboardList, Copy, Check } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
 import { getBidsByTender, evaluateBid } from "@/services/bid.service";
@@ -19,8 +19,16 @@ export default function ReceivedBidsLog() {
 
   const [bids, setBids] = useState<any[]>([]);
 
-  const [selectedBid, setSelectedBid] = useState<any>(null);
+   const [selectedBid, setSelectedBid] = useState<any>(null);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyId = (tenderId: string, tenderNo: string) => {
+    const textToCopy = tenderNo || tenderId;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedId(tenderId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     const loadBids = async () => {
@@ -166,7 +174,7 @@ export default function ReceivedBidsLog() {
               <th className="py-4 px-4 text-center">DOCS</th>
               <th className="py-4 px-4 text-center">AMOUNT</th>
               <th className="py-4 px-4 text-center">STATUS</th>
-              <th className="py-4 px-4 text-center rounded-tr-lg">ACTION</th>
+              <th className="py-4 px-4 text-center rounded-tr-lg">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -201,28 +209,64 @@ export default function ReceivedBidsLog() {
                 <td className="py-4 px-4 text-center relative">
                   <div className="relative flex items-center justify-center">
                     {row.isFlagged && (
-                      <Flag className="w-3.5 h-3.5 text-red-500 fill-red-500 absolute translate-x-16 shrink-0" />
+                      <svg 
+                        viewBox="0 0 24 24" 
+                        className="w-3.5 h-3.5 text-red-500 fill-red-500 absolute translate-x-16 shrink-0"
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <line x1="4" y1="22" x2="4" y2="2" />
+                        <path d="M4 2h15l-6 5l6 5H4z" />
+                      </svg>
                     )}
                     <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-md border uppercase tracking-widest ${
                       row.status === "COMPLIANT" 
                         ? "bg-green-50 text-green-600 border-green-200" 
-                        : "bg-gray-50 text-gray-600 border-gray-200"
+                        : row.status?.toUpperCase() === "SUBMITTED"
+                          ? "bg-[#FFF7ED] text-[#953002] border-[#953002]/20"
+                          : "bg-gray-50 text-gray-600 border-gray-200"
                     }`}>
                       {row.status}
                     </span>
                   </div>
                 </td>
                 <td className="py-4 px-4 text-center">
-                  <button 
-                    onClick={() => {
-                      setSelectedBid(row);
-                      setIsEvalModalOpen(true);
-                    }}
-                    className="mx-auto bg-[#953002]/5 text-[#953002] border border-[#953002]/10 text-[10px] font-black tracking-widest px-5 py-2 rounded-full hover:bg-[#953002]/10 transition-all whitespace-nowrap uppercase flex items-center gap-2"
-                  >
-                    Evaluate Submission
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <button 
+                      onClick={() => {
+                        setSelectedBid(row);
+                        setIsEvalModalOpen(true);
+                      }}
+                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye cursor-pointer"
+                    >
+                      <ClipboardList className="w-5 h-5" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                        Evaluate Bids
+                      </span>
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyId(row.id, row.ref);
+                      }}
+                      className={`p-2 rounded-xl transition-all relative group/copy cursor-pointer ${
+                        copiedId === row.id 
+                          ? "bg-green-50 text-green-600" 
+                          : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      }`}
+                    >
+                      {copiedId === row.id ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        <Copy className="w-5 h-5" />
+                      )}
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/copy:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                        {copiedId === row.id ? "Copied!" : "Copy ID"}
+                      </span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

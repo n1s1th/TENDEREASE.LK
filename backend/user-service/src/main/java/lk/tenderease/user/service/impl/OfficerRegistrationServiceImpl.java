@@ -203,6 +203,12 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         log.info("Approving officer: {}", id);
         final Officer officer = findOfficerOrThrow(id);
 
+        // Idempotent: if already approved, just return current state
+        if (officer.getStatus() == OfficerStatus.APPROVED) {
+            log.info("Officer {} is already approved, returning current state", id);
+            return mapToProfileResponse(officer);
+        }
+
         if (officer.getStatus() != OfficerStatus.PENDING) {
             throw new InvalidOfficerStatusException(officer.getStatus().name(), "approve");
         }
@@ -236,6 +242,12 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     public OfficerProfileResponse rejectOfficer(UUID id, String reason) {
         log.info("Rejecting officer: {} with reason: {}", id, reason);
         final Officer officer = findOfficerOrThrow(id);
+
+        // Idempotent: if already rejected, just return current state
+        if (officer.getStatus() == OfficerStatus.REJECTED) {
+            log.info("Officer {} is already rejected, returning current state", id);
+            return mapToProfileResponse(officer);
+        }
 
         if (officer.getStatus() != OfficerStatus.PENDING) {
             throw new InvalidOfficerStatusException(officer.getStatus().name(), "reject");
@@ -401,6 +413,19 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
             case "REJECTED" -> eventPublisher.publishRejected(event);
             default -> log.warn("Unknown event type: {}", eventType);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OfficerProfileResponse getOfficerByEmail(String email) {
+        log.debug("Fetching officer by email: {}", email);
+        Officer officer = officerRepository.findByOfficialEmail(email).orElse(null);
+        if (officer == null) {
+            LiaisonOfficer lo = liaisonOfficerRepository.findByEmail(email)
+                    .orElseThrow(() -> new OfficerNotFoundException("email", email));
+            officer = lo.getOfficer();
+        }
+        return mapToProfileResponse(officer);
     }
 
     private OfficerProfileResponse mapToProfileResponse(Officer officer) {

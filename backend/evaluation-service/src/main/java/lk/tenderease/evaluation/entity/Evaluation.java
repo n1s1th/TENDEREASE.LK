@@ -52,4 +52,10 @@ public class Evaluation extends BaseEntity {
     private String remarks;
 
     private LocalDateTime evaluatedAt;
+
+    @Column(name = "evaluator_name")
+    private String evaluatorName;
+
+    @Column(name = "evaluator_role")
+    private String evaluatorRole;
 }

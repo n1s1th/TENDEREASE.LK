@@ -6,10 +6,12 @@ import QuickActions from "@/components/officer-dashboard/QuickActions";
 import EvaluationStatusPanel from "@/components/officer-dashboard/EvaluationStatusPanel";
 import AssignedTenderTable from "@/components/officer-dashboard/AssignedTenderTable";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+import { useAuthStore } from "@/store";
 import { Loader2 } from "lucide-react";
 
 export default function OfficerDashboardPage() {
   const { activeTendersCount, fetchDashboardMetrics } = useEvaluationStore();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<string>("");
 
@@ -72,7 +74,7 @@ export default function OfficerDashboardPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm py-3.5 px-5 mb-6 border border-gray-100">
-        <h2 className="text-[17px] font-black text-gray-900">Welcome Back, Officer.</h2>
+        <h2 className="text-[17px] font-black text-gray-900">Welcome Back, {user?.name || "Officer"}.</h2>
         <p className="text-[14px] text-gray-500 mt-0.5">
           You have {activeTendersCount} active tender{activeTendersCount !== 1 ? 's' : ''} requiring your attention today.
         </p>

@@ -171,6 +171,18 @@ public class OfficerRegistrationController {
     }
 
     /**
+     * Get officer profile by email.
+     */
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Get officer by email", description = "Retrieve officer profile by email")
+    @ApiResponse(responseCode = "200", description = "Officer retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Officer not found")
+    public ResponseEntity<OfficerProfileResponse> getOfficerByEmail(@PathVariable String email) {
+        log.debug("Fetching officer by email: {}", email);
+        return ResponseEntity.ok(officerRegistrationService.getOfficerByEmail(email));
+    }
+
+    /**
      * Approve an officer registration.
      * Requires ROLE_ADMIN.
      */

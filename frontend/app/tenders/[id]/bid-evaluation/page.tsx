@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Footer from "@/components/home/Footer";
 import Link from "next/link";
+import { useAuthStore } from "@/store";
 import { getTenderById, updateTenderStatus } from "@/services/tender.service";
 import { getBidsByTender } from "@/services/bid.service";
 
@@ -81,6 +82,7 @@ const INITIAL_MOCK_DATA: TenderData = {
 };
 
 export default function BidEvaluationPage() {
+  const { user } = useAuthStore();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -276,14 +278,14 @@ export default function BidEvaluationPage() {
           return {
             bidderId: bid.id,
             bidderName: bid.companyName || bid.bidderName || "Unknown Bidder",
-            status: existingBidder?.status ?? (bid.status === "FLAGGED" ? "Submitted" : bid.status || "Submitted"),
+            status: existingBidder?.status ?? (bid.status === "FLAGGED" ? "COMPLETED" : bid.status || "COMPLETED"),
             complianceStatus: existingBidder?.complianceStatus ?? (bid.status === "FLAGGED" ? "FAIL" : "PENDING"),
             documents: docs,
             technicalCriteria,
             financialCriteria,
             evaluationNotes: existingBidder?.evaluationNotes ?? (bid.notes || ""),
-            evaluatorName: existingBidder?.evaluatorName ?? "Jane Doe",
-            evaluatorRole: existingBidder?.evaluatorRole ?? "Senior Designer",
+            evaluatorName: existingBidder?.evaluatorName ?? (user?.name || "Jane Doe"),
+            evaluatorRole: existingBidder?.evaluatorRole ?? (user?.roles?.includes("officer") ? "Officer" : "Senior Designer"),
             lastSaved: existingBidder?.lastSaved ?? "Never"
           };
         });
@@ -481,7 +483,9 @@ export default function BidEvaluationPage() {
           technicalCriteria: activeBidder.technicalCriteria,
           financialCriteria: activeBidder.financialCriteria,
           notes: notesText,
-          status: "In Progress"
+          status: "In Progress",
+          evaluatorName: user?.name || activeBidder.evaluatorName || "Officer",
+          evaluatorRole: user?.roles?.includes("officer") ? "Officer" : (activeBidder.evaluatorRole || "Evaluator")
         })
       });
 
@@ -532,7 +536,9 @@ export default function BidEvaluationPage() {
           bidderId: selectedBidderId,
           technicalCriteria: activeBidder.technicalCriteria,
           financialCriteria: activeBidder.financialCriteria,
-          notes: notesText
+          notes: notesText,
+          evaluatorName: user?.name || activeBidder.evaluatorName || "Officer",
+          evaluatorRole: user?.roles?.includes("officer") ? "Officer" : (activeBidder.evaluatorRole || "Evaluator")
         })
       });
 
@@ -544,7 +550,7 @@ export default function BidEvaluationPage() {
           if (b.bidderId === selectedBidderId) {
             return {
               ...b,
-              status: "Submitted",
+              status: "COMPLETED",
               complianceStatus: techSubtotal >= (data?.threshold || 75) ? "PASS" : "FAIL",
               lastSaved: json.data.lastSaved
             };
@@ -847,11 +853,11 @@ export default function BidEvaluationPage() {
                     <button
                       onClick={() => setActiveTab("technical")}
                       className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "technical"
-                        ? "border-[#953002] text-[#953002] bg-[#FFF7ED]"
+                        ? "border-[#953002] text-[#953002] bg-gray-50"
                         : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                         }`}
                     >
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "technical" ? "bg-[#FFF7ED] text-[#953002]" : "bg-gray-100 text-gray-500"
+                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "technical" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
                         }`}>1</span>
                       <span>Technical Evaluation</span>
                       <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${
@@ -866,11 +872,11 @@ export default function BidEvaluationPage() {
                     <button
                       onClick={() => setActiveTab("financial")}
                       className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "financial"
-                        ? "border-[#953002] text-[#953002] bg-[#FFF7ED]"
+                        ? "border-[#953002] text-[#953002] bg-gray-50"
                         : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                         }`}
                     >
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "financial" ? "bg-[#FFF7ED] text-[#953002]" : "bg-gray-100 text-gray-500"
+                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "financial" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
                         }`}>2</span>
                       <span>Financial Evaluation</span>
                       <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${
@@ -908,10 +914,7 @@ export default function BidEvaluationPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl ${isTechPassed
-                            ? "bg-[#E8F8F0] text-[#27AE60]"
-                            : "bg-red-50 text-red-600"
-                            }`}>
+                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
                             {isTechPassed ? "PASS" : "FAIL"}
                           </span>
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -960,7 +963,7 @@ export default function BidEvaluationPage() {
                                       max="100"
                                       value={c.score || ""}
                                       onChange={(e) => handleScoreChange("technical", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "Submitted"}
+                                      disabled={activeBidder.status === "COMPLETED"}
                                       className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </td>
@@ -970,7 +973,7 @@ export default function BidEvaluationPage() {
                                       placeholder="Enter comment..."
                                       value={c.comment || ""}
                                       onChange={(e) => handleCommentChange("technical", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "Submitted"}
+                                      disabled={activeBidder.status === "COMPLETED"}
                                       className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </td>
@@ -1032,10 +1035,7 @@ export default function BidEvaluationPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl ${isFinPassed
-                            ? "bg-[#E8F8F0] text-[#27AE60]"
-                            : "bg-red-50 text-red-600"
-                            }`}>
+                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
                             {isFinPassed ? "PASS" : "FAIL"}
                           </span>
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -1084,7 +1084,7 @@ export default function BidEvaluationPage() {
                                       max="100"
                                       value={c.score || ""}
                                       onChange={(e) => handleScoreChange("financial", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "Submitted"}
+                                      disabled={activeBidder.status === "COMPLETED"}
                                       className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </td>
@@ -1094,7 +1094,7 @@ export default function BidEvaluationPage() {
                                       placeholder="Enter comment..."
                                       value={c.comment || ""}
                                       onChange={(e) => handleCommentChange("financial", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "Submitted"}
+                                      disabled={activeBidder.status === "COMPLETED"}
                                       className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
                                     />
                                   </td>
@@ -1123,7 +1123,7 @@ export default function BidEvaluationPage() {
                       setNotesText(activeBidder.evaluationNotes || "");
                       setActiveModal("notes");
                     }}
-                    disabled={activeBidder.status === "Submitted"}
+                    disabled={activeBidder.status === "COMPLETED"}
                     className="inline-flex items-center gap-1.5 border border-gray-200 hover:border-[#953002] bg-white px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-600 hover:text-[#953002] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <FileText size={13} />
@@ -1226,8 +1226,7 @@ export default function BidEvaluationPage() {
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span className="text-gray-400">Status</span>
-                      <span className={`font-black uppercase text-xs ${activeBidder.status === "Submitted" ? "text-[#953002]" : "text-amber-600"
-                        }`}>
+                      <span className={`font-black uppercase text-xs text-[#953002]`}>
                         {activeBidder.status}
                       </span>
                     </div>
@@ -1241,7 +1240,7 @@ export default function BidEvaluationPage() {
                 {/* Action Buttons */}
                 <div className="border-t-2 border-gray-200 pt-5 flex-1 flex flex-col gap-2">
 
-                  {activeBidder.status !== "Submitted" ? (
+                  {activeBidder.status !== "COMPLETED" ? (
                     <>
                       <button
                         onClick={handleSaveDraft}
@@ -1734,12 +1733,7 @@ export default function BidEvaluationPage() {
                             </span>
                           </div>
                         </div>
-                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-widest shrink-0 ${bidder.status === "Submitted"
-                          ? "bg-red-50 text-[#953002] border border-[#953002]/10"
-                          : bidder.status === "In Progress"
-                            ? "bg-amber-50 text-amber-700 border border-amber-200/40"
-                            : "bg-gray-50 text-gray-600 border border-gray-100"
-                          }`}>
+                        <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md tracking-widest shrink-0 bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
                           {bidder.status}
                         </span>
                       </button>
