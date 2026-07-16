@@ -20,6 +20,7 @@ export {
   selectToken,
   selectIsAuthenticated,
   selectAuthLoading,
+  selectOfficerRegistrationStatus,
 } from "./auth/auth.store";
 
 // ── Vendor selectors ─────────────────────────────────────────
