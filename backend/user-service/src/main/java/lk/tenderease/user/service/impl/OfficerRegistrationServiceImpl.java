@@ -403,6 +403,19 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OfficerProfileResponse getOfficerByEmail(String email) {
+        log.debug("Fetching officer by email: {}", email);
+        Officer officer = officerRepository.findByOfficialEmail(email).orElse(null);
+        if (officer == null) {
+            LiaisonOfficer lo = liaisonOfficerRepository.findByEmail(email)
+                    .orElseThrow(() -> new OfficerNotFoundException("email", email));
+            officer = lo.getOfficer();
+        }
+        return mapToProfileResponse(officer);
+    }
+
     private OfficerProfileResponse mapToProfileResponse(Officer officer) {
         LiaisonOfficerDTO liaisonDto = null;
         if (officer.getLiaisonOfficer() != null) {

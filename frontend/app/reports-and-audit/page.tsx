@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { getAssignedTenders } from "@/lib/api/officer.api";
 import { getBidsByTender, getAllBids } from "@/services/bid.service";
+import { getTimeline } from "@/services/tender.service";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -19,6 +20,7 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  X,
   Clock,
   Eye,
   BarChart3,
@@ -121,7 +123,23 @@ function formatQuotedValue(amount: number | null | undefined, currency: string |
   return `${cur} ${Number(amount).toLocaleString("en-LK")}`;
 }
 
-function apiBidToRow(bid: any, index: number, evalNotesMap: Record<string, string> = {}): BidRow {
+function apiBidToRow(
+  bid: any, 
+  index: number, 
+  evalNotesMap: Record<string, string> = {}, 
+  evalBidders: any[] = []
+): BidRow {
+  const evaluationObj = evalBidders.find((eb: any) => eb.bidderId === bid.id || eb.bidderName === bid.bidderName);
+
+  let admissionStatus = "Pending";
+  if (evaluationObj) {
+    if (evaluationObj.complianceStatus === "FAIL" || evaluationObj.status === "REJECTED") {
+      admissionStatus = "Rejected";
+    } else if (evaluationObj.status === "COMPLETED") {
+      admissionStatus = "Admitted";
+    }
+  }
+
   return {
     id: index + 1,
     bidderName: bid.companyName || bid.bidderName || "—",
@@ -130,7 +148,7 @@ function apiBidToRow(bid: any, index: number, evalNotesMap: Record<string, strin
     envelopeStatus: "Opened",
     quotedValue: formatQuotedValue(bid.bidAmount, bid.currency),
     completeness: "N/A",
-    admissionStatus: "Pending",
+    admissionStatus,
     // Prefer evaluation notes saved in bid-evaluation UI; fall back to bid.notes
     notes: evalNotesMap[bid.id] || bid.notes || "",
     isLate: false,
@@ -618,6 +636,8 @@ function ReportsAndAuditContent() {
   const [bidRows, setBidRows] = useState<BidRow[]>([]);
   const [evaluations, setEvaluations] = useState<EvaluationRow[]>([]);
   const [bidsLoading, setBidsLoading] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [tendersLoading, setTendersLoading] = useState(true);
@@ -679,6 +699,14 @@ function ReportsAndAuditContent() {
     // Fallback default
     return ["Select Bidder", "All Bidders"];
   }, [appliedTender, bidRows, globalBidders]);
+
+  const selectedTenderObj = useMemo(() => {
+    if (!appliedTender) return null;
+    const tenderNo = appliedTender.split(" - ")[0];
+    return tendersList.find(t => (t.tenderNo || t.tenderNumber || t.id) === tenderNo);
+  }, [appliedTender, tendersList]);
+
+  const isPendingOpening = selectedTenderObj?.status === "PENDING_OPENING";
 
   const filteredBidRows = useMemo(() => {
     let rows = bidRows;
@@ -829,6 +857,7 @@ function ReportsAndAuditContent() {
     if (!appliedTender) {
       setBidRows([]);
       setEvaluations([]);
+      setAuditLogs([]);
       return;
     }
     const tenderNo = appliedTender.split(" - ")[0];
@@ -836,6 +865,7 @@ function ReportsAndAuditContent() {
     const tenderId = tenderNoToId[tenderNo] || tenderNo;
     if (!tenderId || tenderId === "Select Tender") return;
     setBidsLoading(true);
+    setAuditLoading(true);
 
     const EVAL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
 
@@ -843,9 +873,10 @@ function ReportsAndAuditContent() {
       getBidsByTender(tenderId),
       fetch(`${EVAL_BASE}/api/evaluations/mock/${tenderNo}/data`)
         .then(r => r.ok ? r.json() : null)
-        .catch(() => null)
+        .catch(() => null),
+      getTimeline(tenderId).catch(() => [])
     ])
-      .then(([bidsData, evalJson]: [any, any]) => {
+      .then(([bidsData, evalJson, timelineData]: [any, any, any]) => {
         const list: any[] = Array.isArray(bidsData) ? bidsData : (bidsData?.content || []);
 
         // Build bidderId → evaluationNotes map from evaluation data
@@ -857,7 +888,47 @@ function ReportsAndAuditContent() {
           }
         }
 
-        setBidRows(list.map((bid, i) => apiBidToRow(bid, i, evalNotesMap)));
+        setBidRows(list.map((bid, i) => apiBidToRow(bid, i, evalNotesMap, evalBidders)));
+
+        // Map timeline data to audit logs
+        const logs: AuditRow[] = (timelineData || []).map((item: any, idx: number) => {
+          let user = "System Administrator";
+          let userRole = "System";
+          let action = item.eventType || "Event Logged";
+          
+          if (action === "CREATED" || action === "PUBLISHED") {
+            action = action === "CREATED" ? "Tender Created" : "Tender Published";
+          } else if (action === "CLOSED") {
+            action = "Submissions Closed";
+            user = "Committee";
+            userRole = "Committee";
+          } else if (action === "OPEN") {
+            action = "Opening Session";
+            user = "Committee";
+            userRole = "Committee";
+          }
+
+          let timestampStr = "-- --- ---- · --:-- --";
+          if (item.timestamp) {
+            const date = new Date(item.timestamp);
+            const dateFormatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const timeFormatted = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            timestampStr = `${dateFormatted} · ${timeFormatted}`;
+          }
+
+          return {
+            id: idx + 1,
+            timestamp: timestampStr,
+            user,
+            userRole,
+            action,
+            tenderRef: tenderNo,
+            details: item.description || "",
+            ipSession: "—",
+            type: "System",
+          };
+        });
+        setAuditLogs(logs);
 
         const processedEvaluations: EvaluationRow[] = evalBidders
           .filter((b: any) => b.status === "COMPLETED")
@@ -901,8 +972,12 @@ function ReportsAndAuditContent() {
         console.error("Error fetching bids:", err);
         setBidRows([]);
         setEvaluations([]);
+        setAuditLogs([]);
       })
-      .finally(() => setBidsLoading(false));
+      .finally(() => {
+        setBidsLoading(false);
+        setAuditLoading(false);
+      });
   }, [appliedTender, tenderNoToId]);
 
   const [openingPage, setOpeningPage] = useState(1);
@@ -925,8 +1000,8 @@ function ReportsAndAuditContent() {
   const paginatedConsensus = MOCK_CONSENSUS.slice((consensusPage - 1) * ITEMS_PER_PAGE, consensusPage * ITEMS_PER_PAGE);
 
   // Pagination for audit log
-  const totalAuditPages = Math.max(1, Math.ceil(MOCK_AUDIT.length / ITEMS_PER_PAGE));
-  const paginatedAudit = MOCK_AUDIT.slice((auditPage - 1) * ITEMS_PER_PAGE, auditPage * ITEMS_PER_PAGE);
+  const totalAuditPages = Math.max(1, Math.ceil(auditLogs.length / ITEMS_PER_PAGE));
+  const paginatedAudit = auditLogs.slice((auditPage - 1) * ITEMS_PER_PAGE, auditPage * ITEMS_PER_PAGE);
 
   const [notePopup, setNotePopup] = useState<{ open: boolean; bid: string; tender: string; note: string } | null>(null);
 
@@ -943,6 +1018,7 @@ function ReportsAndAuditContent() {
     setAppliedDateTo("");
     setAppliedBidder("Select Bidder");
     setAppliedReportStatus("Select Status");
+    setAuditLogs([]);
   };
 
   interface ReportTab {
@@ -1162,7 +1238,6 @@ function ReportsAndAuditContent() {
                           <th className="text-center px-3 py-3 text-[12px] font-black text-white uppercase tracking-widest">Submission Date &amp; Time</th>
 
                           <th className="text-center px-3 py-3 text-[12px] font-black text-white uppercase tracking-widest">Quoted Value</th>
-                          <th className="text-center px-3 py-3 text-[12px] font-black text-white uppercase tracking-widest">Completeness</th>
                           <th className="text-center px-3 py-3 text-[12px] font-black text-white uppercase tracking-widest">Admission Status</th>
                         </tr>
                       </thead>
@@ -1170,7 +1245,7 @@ function ReportsAndAuditContent() {
                         {bidsLoading ? (
                           Array.from({ length: 3 }).map((_, i) => (
                             <tr key={i} className="animate-pulse">
-                              {Array.from({ length: 7 }).map((__, j) => (
+                              {Array.from({ length: 6 }).map((__, j) => (
                                 <td key={j} className="px-3 py-4">
                                   <div className="h-3 bg-gray-100 rounded-full mx-auto" style={{ width: j === 0 ? "1.5rem" : "80%" }} />
                                 </td>
@@ -1179,15 +1254,21 @@ function ReportsAndAuditContent() {
                           ))
                         ) : !appliedTender ? (
                           <tr>
-                            <td colSpan={7} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
+                            <td colSpan={6} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
                               {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
                                 ? "No tender selected. Please select a tender to view submissions for this bidder." 
                                 : "No tender selected. Please select a tender to view data."}
                             </td>
                           </tr>
+                        ) : isPendingOpening ? (
+                          <tr>
+                            <td colSpan={6} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
+                              Bid submissions hidden for this tender.
+                            </td>
+                          </tr>
                         ) : filteredBidRows.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
+                            <td colSpan={6} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
                               {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
                                 ? "No submissions found for the selected bidder in this tender." 
                                 : "No bid submissions logged for this tender."}
@@ -1205,7 +1286,6 @@ function ReportsAndAuditContent() {
                                 {bid.submissionDateTime}
                               </td>
                               <td className="px-3 py-3.5 font-semibold text-gray-700 text-center">{bid.quotedValue}</td>
-                              <td className="px-3 py-3.5 text-center"><StatusBadge status={bid.completeness} /></td>
                               <td className="px-3 py-3.5 text-center"><StatusBadge status={bid.admissionStatus} /></td>
                             </tr>
                           ))
@@ -1323,7 +1403,7 @@ function ReportsAndAuditContent() {
                             <td className="px-3 py-3.5 text-center"><StatusBadge status={row.status} /></td>
                             <td className="px-3 py-3.5 text-center">
                               <button onClick={() => setNotePopup({ open: true, bid: row.bidder, tender: appliedTender || "TND-2024-0041", note: row.notes || "No notes available." })}>
-                                <FileText size={15} className="text-gray-400 hover:text-[#953002] cursor-pointer mx-auto transition-colors" />
+                                <FileText size={18} className="text-gray-400 hover:text-[#953002] cursor-pointer mx-auto transition-colors" />
                               </button>
                             </td>
                           </tr>
@@ -1401,19 +1481,43 @@ function ReportsAndAuditContent() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {MOCK_AUDIT.map((entry) => (
-                          <tr key={entry.id} className="hover:bg-gray-50/60 transition-colors align-top">
-                            <td className="px-5 py-4 font-black text-gray-500 text-xs text-center">{String(entry.id).padStart(3, "0")}</td>
-                            <td className="px-3 py-4 font-semibold text-gray-500 whitespace-nowrap text-center">{entry.tenderRef}</td>
-                            <td className="px-3 py-4 text-gray-500 font-semibold whitespace-nowrap text-center">{entry.timestamp}</td>
-                            <td className="px-3 py-4 text-center">
-                              <div className="font-black text-gray-800">{entry.user}</div>
-                              <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-0.5">{entry.userRole}</div>
+                        {auditLoading ? (
+                          Array.from({ length: 3 }).map((_, i) => (
+                            <tr key={i} className="animate-pulse">
+                              {Array.from({ length: 5 }).map((__, j) => (
+                                <td key={j} className="px-3 py-4">
+                                  <div className="h-3 bg-gray-100 rounded-full mx-auto" style={{ width: j === 0 ? "1.5rem" : "80%" }} />
+                                </td>
+                              ))}
+                            </tr>
+                          ))
+                        ) : !appliedTender ? (
+                          <tr>
+                            <td colSpan={5} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
+                              No tender selected. Please select a tender to view data.
                             </td>
-                            <td className="px-3 py-4 font-black text-gray-800 whitespace-nowrap text-center">{entry.action}</td>
-
                           </tr>
-                        ))}
+                        ) : paginatedAudit.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
+                              No audit logs available for this tender.
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedAudit.map((entry) => (
+                            <tr key={entry.id} className="hover:bg-gray-50/60 transition-colors align-top">
+                              <td className="px-5 py-4 font-black text-gray-500 text-xs text-center">{String(entry.id).padStart(3, "0")}</td>
+                              <td className="px-3 py-4 font-semibold text-gray-500 whitespace-nowrap text-center">{entry.tenderRef}</td>
+                              <td className="px-3 py-4 text-gray-500 font-semibold whitespace-nowrap text-center">{entry.timestamp}</td>
+                              <td className="px-3 py-4 text-center">
+                                <div className="font-black text-gray-800">{entry.user}</div>
+                                <div className="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-0.5">{entry.userRole}</div>
+                              </td>
+                              <td className="px-3 py-4 font-black text-gray-800 whitespace-nowrap text-center">{entry.action}</td>
+
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1421,7 +1525,7 @@ function ReportsAndAuditContent() {
                   {/* Audit footer */}
                   <div className="px-5 py-3.5 border-t border-gray-100 bg-[#F7F8FA] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-                      SHOWING {MOCK_AUDIT.length} OF {MOCK_AUDIT.length} ENTRIES
+                      SHOWING {paginatedAudit.length} OF {auditLogs.length} ENTRIES
                     </span>
                     <div className="flex items-center gap-2">
                       <button className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-300 cursor-not-allowed" disabled>
@@ -1456,35 +1560,58 @@ function ReportsAndAuditContent() {
       {/* ─── Notes Popup ─── */}
       {notePopup?.open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-          style={{ background: "rgba(0,0,0,0.18)" }}
+          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setNotePopup(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+            className="bg-white rounded-[32px] w-full max-w-[380px] shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200 overflow-visible relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-[#F7F8FA] px-5 py-3.5 border-b border-gray-100 flex items-center gap-2.5">
-              <FileText size={16} className="text-gray-400 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[11px] font-black uppercase tracking-widest text-gray-400 truncate">Notes</p>
-                <p className="text-[13px] font-black text-gray-800 truncate">{notePopup.bid}</p>
+            <div className="py-3 px-5 border-b border-gray-50 bg-[#F9FAFB] flex justify-between items-center rounded-t-[32px]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#953002]/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-[#953002]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 tracking-tight">Evaluation Notes</h3>
+                  <p className="text-xs text-gray-500 font-semibold mt-0.5">{notePopup.bid}</p>
+                </div>
               </div>
               <button
                 onClick={() => setNotePopup(null)}
-                className="ml-auto text-gray-300 hover:text-gray-500 transition-colors text-base font-bold leading-none shrink-0"
-              >✕</button>
+                className="p-1.5 hover:bg-gray-200/60 rounded-xl transition-colors text-gray-400 hover:text-gray-600 shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            {/* Tender ref */}
-            <div className="px-5 pt-3.5 pb-1">
-              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#953002] bg-[#953002]/8 px-2.5 py-1 rounded-lg">
-                {notePopup.tender.split(" - ")[0]}
-              </span>
+
+            {/* Body */}
+            <div className="p-5 space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Tender Reference</label>
+                <div className="w-full bg-gray-100 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-[#953002]">
+                  {notePopup.tender.split(" - ")[0]}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Evaluation Note</label>
+                <div className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 leading-relaxed min-h-[70px] whitespace-pre-wrap">
+                  {notePopup.note || "No evaluation notes provided."}
+                </div>
+              </div>
             </div>
-            {/* Note body */}
-            <div className="px-5 pt-2 pb-5">
-              <p className="text-[13px] text-gray-600 font-semibold leading-relaxed">{notePopup.note}</p>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-50 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setNotePopup(null)}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-black text-gray-500 hover:bg-gray-50 transition-all uppercase tracking-wider shrink-0 cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

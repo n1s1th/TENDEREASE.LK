@@ -88,7 +88,7 @@ export const useOpeningStore = create<OpeningState>()(
       markAttendance: async (sessionId: string, name: string, designation: string, email: string, organisation?: string, role?: string, officerIdFromForm?: string) => {
         set({ isLoading: true });
         try {
-          const officerId = officerIdFromForm || "dev-officer-id-" + Math.random().toString(36).substr(2, 9);
+          const officerId = officerIdFromForm || email;
           const newEntry: OpeningAttendance = {
             id: Math.random().toString(36).substr(2, 9),
             officerId,
