@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown, User as UserIcon } from "lucide-react";
+import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown, User as UserIcon, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -55,7 +55,19 @@ export default function Navbar() {
   // Check if user needs to register as officer or vendor
   const hasOfficerRole = user?.roles?.includes('PROCUREMENT_OFFICER') ?? false;
   const hasVendorRole = user?.roles?.includes('VENDOR') ?? false;
-  const needsRoleRegistration = isAuthenticated && !hasOfficerRole && !hasVendorRole;
+  const hasAdminRole = user?.roles?.includes('ADMIN') ?? false;
+  const hasCaoRole = user?.roles?.includes('CAO') ?? false;
+  const needsRoleRegistration = isAuthenticated && !hasOfficerRole && !hasVendorRole && !hasAdminRole && !hasCaoRole;
+
+  // Determine dashboard path based on role
+  const getDashboardPath = (): string | null => {
+    if (hasAdminRole) return '/admin';
+    if (hasCaoRole) return '/cao-dashboard';
+    if (hasOfficerRole) return '/officer-dashboard';
+    if (hasVendorRole) return '/vendor-profile';
+    return null;
+  };
+  const dashboardPath = getDashboardPath();
 
   // Close search dropdown on outside click
   useEffect(() => {
@@ -203,7 +215,18 @@ export default function Navbar() {
                 </button>
                 {profileDropdownOpen && (
                   <div className="te-navbar__profile-menu">
-                    <button onClick={logout} className="te-navbar__profile-menu-item">
+                    {dashboardPath && (
+                      <Link
+                        href={dashboardPath}
+                        className="te-navbar__profile-menu-item te-navbar__profile-menu-item--dashboard"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        <LayoutDashboard size={14} />
+                        <span>Dashboard</span>
+                      </Link>
+                    )}
+                    {dashboardPath && <div className="te-navbar__profile-menu-divider" />}
+                    <button onClick={logout} className="te-navbar__profile-menu-item te-navbar__profile-menu-item--signout">
                       Sign Out
                     </button>
                   </div>
