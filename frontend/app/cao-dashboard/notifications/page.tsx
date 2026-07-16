@@ -44,6 +44,7 @@ export default function NotificationsPage() {
   const markNotificationRead = useCAODashboardStore((s) => s.markNotificationRead);
   const setRegistrationSearch = useCAODashboardStore((s) => s.setRegistrationSearch);
   const setRegistrationStatusFilter = useCAODashboardStore((s) => s.setRegistrationStatusFilter);
+  const setSearchQuery = useCAODashboardStore((s) => s.setSearchQuery);
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const router = useRouter();
@@ -60,7 +61,10 @@ export default function NotificationsPage() {
 
   const handleNotificationClick = (notif: DashboardNotification) => {
     markNotificationRead(notif.id);
-    if (notif.targetId) {
+    if (notif.type === "recommendation_received") {
+      setSearchQuery(notif.targetId || "");
+      router.push("/cao-dashboard/recommendations/pending");
+    } else if (notif.targetId) {
       if (notif.type === "tender_submitted") {
         const refId = encodeURIComponent(notif.targetId.replace(/\//g, "-"));
         router.push(`/cao-dashboard/tenders/${refId}/review`);
