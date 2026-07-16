@@ -1153,6 +1153,322 @@
 
 } /* end @layer base — navbar + search */
 
+/* ── Registration Pending Page ───────────────────────── */
+
+.te-pending-page {
+  position: relative;
+  min-height: calc(100vh - 68px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #faf7f5 0%, #fff5ee 50%, #f5f0eb 100%);
+  overflow: hidden;
+}
+
+.te-pending-page__bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.te-pending-page__bg-orb--1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #953002 0%, transparent 70%);
+  top: -100px;
+  right: -100px;
+}
+
+.te-pending-page__bg-orb--2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #C45A2B 0%, transparent 70%);
+  bottom: -80px;
+  left: -80px;
+}
+
+.te-pending-page__card {
+  position: relative;
+  max-width: 560px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(149, 48, 2, 0.08);
+  box-shadow:
+    0 4px 24px rgba(149, 48, 2, 0.06),
+    0 1px 4px rgba(0, 0, 0, 0.04);
+  padding: 3rem 2.5rem;
+  text-align: center;
+}
+
+/* Icon wrapper with pulse ring */
+.te-pending-page__icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 1.75rem;
+}
+
+.te-pending-page__icon-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid rgba(149, 48, 2, 0.15);
+  animation: pendingPulse 2.5s ease-in-out infinite;
+}
+
+.te-pending-page__icon {
+  color: #953002;
+  animation: pendingBreathe 2.5s ease-in-out infinite;
+}
+
+@keyframes pendingPulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.15); opacity: 0.1; }
+}
+
+@keyframes pendingBreathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.06); opacity: 0.8; }
+}
+
+.te-pending-page__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1f2937;
+  letter-spacing: -0.3px;
+  margin-bottom: 0.75rem;
+}
+
+.te-pending-page__description {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.te-pending-page__description strong {
+  color: #953002;
+  font-weight: 600;
+}
+
+/* Reference ID badge */
+.te-pending-page__ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(149, 48, 2, 0.06);
+  border: 1px solid rgba(149, 48, 2, 0.12);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 2rem;
+}
+
+.te-pending-page__ref-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #953002;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.te-pending-page__ref-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* Timeline */
+.te-pending-page__timeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.te-pending-page__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 0.75rem;
+}
+
+.te-pending-page__step--done {
+  color: #059669;
+}
+
+.te-pending-page__step--active {
+  color: #953002;
+}
+
+.te-pending-page__step--active svg {
+  animation: pendingBreathe 2.5s ease-in-out infinite;
+}
+
+.te-pending-page__step--pending {
+  color: #d1d5db;
+}
+
+.te-pending-page__step-line {
+  width: 40px;
+  height: 2px;
+  background: #059669;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.te-pending-page__step-line--pending {
+  background: #e5e7eb;
+}
+
+.te-pending-page__note {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.te-pending-page__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #953002;
+  background: transparent;
+  border: 1.5px solid rgba(149, 48, 2, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.te-pending-page__back-btn:hover {
+  background: rgba(149, 48, 2, 0.06);
+  border-color: #953002;
+  transform: translateY(-1px);
+}
+
+/* ── Registration Toast ──────────────────────────────── */
+
+.te-reg-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 420px;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 9999;
+  animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.te-reg-toast--success {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.te-reg-toast--success .te-reg-toast__icon {
+  color: #059669;
+}
+
+.te-reg-toast--error {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.te-reg-toast--error .te-reg-toast__icon {
+  color: #EF4444;
+}
+
+.te-reg-toast__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.te-reg-toast__message {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.te-reg-toast__close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.te-reg-toast__close:hover {
+  color: #374151;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .te-pending-page__card {
+    padding: 2rem 1.5rem;
+  }
+
+  .te-pending-page__title {
+    font-size: 1.4rem;
+  }
+
+  .te-pending-page__timeline {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .te-pending-page__step-line {
+    width: 2px;
+    height: 24px;
+  }
+
+  .te-reg-toast {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    max-width: none;
+  }
+}
+
 /* ── Hero Section ─────────────────────────────────────── */
 
 .hero-section {

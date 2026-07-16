@@ -100,6 +100,7 @@ export const registerOfficer = async (
       email: formData.liaisonEmail,
     },
     termsAccepted: formData.termsAccepted,
+    keycloakUserId: formData.keycloakUserId,
   };
 
   const response = await axios.post<OfficerSuccessResponse>(

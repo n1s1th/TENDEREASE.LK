@@ -68,6 +68,7 @@ export default function OfficerRegistrationPage() {
   const [hydrated, setHydrated] = useState(false);
 
   const user = useAuthStore((s) => s.user);
+  const setOfficerRegistration = useAuthStore((s) => s.setOfficerRegistration);
 
   const {
     register,
@@ -129,11 +130,16 @@ export default function OfficerRegistrationPage() {
     setSubmitting(true);
 
     try {
+      if (user?.id) {
+        data.keycloakUserId = user.id;
+      }
+      
       const response = await registerOfficer(data);
       setResult({
         success: true,
         referenceId: response.data.referenceId,
       });
+      setOfficerRegistration('PENDING', response.data.referenceId);
       clearDraft();
       router.push('/officer-registration/success');
     } catch (error) {

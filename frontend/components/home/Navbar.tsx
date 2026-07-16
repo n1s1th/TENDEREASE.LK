@@ -45,7 +45,7 @@ export default function Navbar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [registerDropdownOpen, setRegisterDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, officerRegistrationStatus } = useAuthStore();
   const { initialized, error } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -57,7 +57,8 @@ export default function Navbar() {
   const hasVendorRole = user?.roles?.includes('VENDOR') ?? false;
   const hasAdminRole = user?.roles?.includes('ADMIN') ?? false;
   const hasCaoRole = user?.roles?.includes('CAO') ?? false;
-  const needsRoleRegistration = isAuthenticated && !hasOfficerRole && !hasVendorRole && !hasAdminRole && !hasCaoRole;
+  const hasPendingRegistration = officerRegistrationStatus === 'PENDING';
+  const needsRoleRegistration = isAuthenticated && !hasOfficerRole && !hasVendorRole && !hasAdminRole && !hasCaoRole && !hasPendingRegistration;
 
   // Determine dashboard path based on role
   const getDashboardPath = (): string | null => {
@@ -65,6 +66,7 @@ export default function Navbar() {
     if (hasCaoRole) return '/cao-dashboard';
     if (hasOfficerRole) return '/officer-dashboard';
     if (hasVendorRole) return '/vendor-profile';
+    if (hasPendingRegistration) return '/registration-pending';
     return null;
   };
   const dashboardPath = getDashboardPath();
