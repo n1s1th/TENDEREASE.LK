@@ -18,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,7 +44,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
 public class OfficerDashboardService {
 
@@ -50,14 +53,37 @@ public class OfficerDashboardService {
     private final ClarificationResponseRepository responseRepository;
     private final TenderService tenderService;
 
+    @PostConstruct
+    public void resetOpenTendersToPendingOpening() {
+        try {
+            log.info("Resetting seeded or active OPEN tenders to PENDING_OPENING so attendance can be verified");
+            List<Tender> openTenders = tenderRepository.findAllByStatusIn(Collections.singletonList(TenderStatus.OPEN));
+            if (!openTenders.isEmpty()) {
+                for (Tender t : openTenders) {
+                    t.setStatus(TenderStatus.PENDING_OPENING);
+                    tenderRepository.save(t);
+                    log.info("Successfully reset tender {} status to PENDING_OPENING", t.getTenderNumber());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to reset open status tenders to PENDING_OPENING: {}", e.getMessage());
+        }
+    }
+
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
     /**
      * The only status that represents a CAO-approved tender visible to officers.
      * Once a bid session opens, the status changes to OPEN and the tender leaves this set.
      */
-    private static final List<TenderStatus> APPROVED_STATUSES =
-            Collections.singletonList(TenderStatus.PUBLISHED);
+    private static final List<TenderStatus> APPROVED_STATUSES = Arrays.asList(
+            TenderStatus.PUBLISHED,
+            TenderStatus.PENDING_OPENING,
+            TenderStatus.OPEN,
+            TenderStatus.EVALUATION,
+            TenderStatus.CLOSED,
+            TenderStatus.AWARDED
+    );
 
     /**
      * Builds the KPI metrics for the dashboard cards.
@@ -68,13 +94,45 @@ public class OfficerDashboardService {
      * - bids: enriched by the frontend from bid-service
      */
     public DashboardMetricsResponse getMetrics() {
-        long active     = tenderRepository.countByStatus(TenderStatus.PUBLISHED);
+        List<TenderStatus> activeStatuses = Arrays.asList(
+                TenderStatus.PUBLISHED,
+                TenderStatus.PENDING_OPENING,
+                TenderStatus.OPEN,
+                TenderStatus.EVALUATION
+        );
+        long active     = tenderRepository.countByStatusIn(activeStatuses);
         long evaluating = tenderRepository.countByStatus(TenderStatus.EVALUATION);
         long awarded    = tenderRepository.countByStatus(TenderStatus.AWARDED);
-        long noBids     = tenderRepository.countByStatus(TenderStatus.NO_BID);
+        long completed  = tenderRepository.countByStatus(TenderStatus.CLOSED);
+        long noBids     = 0;
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            List<Tender> activeTenders = tenderRepository.findAllByStatusIn(APPROVED_STATUSES);
+            String bidsUrl = "http://localhost:8083/api/bids";
+            java.util.Map<?, ?> bidsResponse = restTemplate.getForObject(bidsUrl, java.util.Map.class);
+            if (bidsResponse != null && bidsResponse.get("data") != null) {
+                List<?> bidsList = (List<?>) bidsResponse.get("data");
+                java.util.Set<UUID> tendersWithBids = new java.util.HashSet<>();
+                for (Object bidObj : bidsList) {
+                    if (bidObj instanceof java.util.Map) {
+                        java.util.Map<?, ?> bidMap = (java.util.Map<?, ?>) bidObj;
+                        if (bidMap.get("tenderId") != null) {
+                            tendersWithBids.add(UUID.fromString(bidMap.get("tenderId").toString()));
+                        }
+                    }
+                }
+                for (Tender tender : activeTenders) {
+                    if (!tendersWithBids.contains(tender.getId())) {
+                        noBids++;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to calculate zero-bid tenders count: {}", e.getMessage());
+        }
 
-        log.info("Dashboard metrics — active(PUBLISHED): {}, evaluating: {}, awarded: {}, noBids: {}",
-                active, evaluating, awarded, noBids);
+        log.info("Dashboard metrics — active(in progress): {}, evaluating: {}, awarded: {}, noBids: {}, completed: {}",
+                active, evaluating, awarded, noBids, completed);
 
         return DashboardMetricsResponse.builder()
                 .active(active)
@@ -82,6 +140,7 @@ public class OfficerDashboardService {
                 .evaluating(evaluating)
                 .awarded(awarded)
                 .noBids(noBids)
+                .completed(completed)
                 .build();
     }
 
@@ -99,12 +158,24 @@ public class OfficerDashboardService {
                         page, size,
                         org.springframework.data.domain.Sort.by("createdAt").descending());
 
-        // Always restrict to PUBLISHED — the single source of truth for CAO-approved tenders.
+        List<TenderStatus> filterStatuses = APPROVED_STATUSES;
+        if (status != null && !status.equalsIgnoreCase("ALL")) {
+            if (status.equalsIgnoreCase("PENDING_OPENING")) {
+                filterStatuses = Arrays.asList(TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING);
+            } else if (status.equalsIgnoreCase("OPEN")) {
+                filterStatuses = Collections.singletonList(TenderStatus.OPEN);
+            } else if (status.equalsIgnoreCase("EVALUATION")) {
+                filterStatuses = Collections.singletonList(TenderStatus.EVALUATION);
+            } else if (status.equalsIgnoreCase("COMPLETED")) {
+                filterStatuses = Arrays.asList(TenderStatus.CLOSED, TenderStatus.AWARDED);
+            }
+        }
+
         org.springframework.data.domain.Page<Tender> tenderPage =
                 tenderRepository.searchWithStatuses(
-                        keyword == null ? "" : keyword, APPROVED_STATUSES, pageable);
+                        keyword == null ? "" : keyword, filterStatuses, pageable);
 
-        log.info("Approved Tenders table: found {} PUBLISHED tenders", tenderPage.getTotalElements());
+        log.info("Approved Tenders table: found {} tenders matching filter", tenderPage.getTotalElements());
         return tenderPage.map(this::mapToOfficerResponse);
     }
 
@@ -116,8 +187,12 @@ public class OfficerDashboardService {
      * on the next fetch — no extra table or flag needed. Refresh-safe and DB-persisted.
      */
     public List<OfficerTenderResponse> getTendersForOpening() {
-        List<Tender> tenders = tenderRepository.findAllByStatusIn(APPROVED_STATUSES);
-        log.info("Secure Bid Opening popup: found {} PUBLISHED tenders available", tenders.size());
+        List<TenderStatus> openingStatuses = Arrays.asList(
+                TenderStatus.PUBLISHED,
+                TenderStatus.PENDING_OPENING
+        );
+        List<Tender> tenders = tenderRepository.findAllByStatusIn(openingStatuses);
+        log.info("Secure Bid Opening popup: found {} PENDING_OPENING tenders available", tenders.size());
         return tenders.stream()
                 .map(this::mapToOfficerResponse)
                 .collect(Collectors.toList());
@@ -159,7 +234,7 @@ public class OfficerDashboardService {
      */
     public List<OfficerTenderResponse> getTendersPendingAward() {
         List<TenderStatus> pendingAwardStatuses = Arrays.asList(
-                TenderStatus.EVALUATION, TenderStatus.OPEN
+                TenderStatus.CLOSED, TenderStatus.AWARDED
         );
         List<Tender> tenders = tenderRepository.findAllByStatusIn(pendingAwardStatuses);
         log.info("Pending Award: found {} tenders", tenders.size());
@@ -179,20 +254,38 @@ public class OfficerDashboardService {
                 ? tender.getProcurementType().name()
                 : "General";
 
+        String status = "PENDING_OPENING";
+        if (tender.getStatus() == TenderStatus.OPEN) {
+            status = "OPEN";
+        } else if (tender.getStatus() == TenderStatus.EVALUATION) {
+            status = "EVALUATION";
+        } else if (tender.getStatus() == TenderStatus.CLOSED || tender.getStatus() == TenderStatus.AWARDED) {
+            status = "COMPLETED";
+        }
+
         return OfficerTenderResponse.builder()
                 .id(tender.getId().toString())
                 .tenderNo(tender.getTenderNumber())
                 .title(tender.getTitle())
                 .category(category)
-                .status("APPROVED")  // All tenders in this set are CAO-approved (PUBLISHED)
+                .status(status)
                 .closingDate(closingDate)
                 .role("Officer")
+                .createdAt(tender.getCreatedAt() != null ? tender.getCreatedAt().toString() : null)
                 .build();
     }
 
     private OpeningLogResponse mapToOpeningLogResponse(Tender tender) {
-        String openingDate = tender.getOpeningDate() != null
-                ? tender.getOpeningDate().format(DATE_FMT)
+        LocalDateTime openDateTime = tender.getOpeningDate();
+        if (openDateTime == null) {
+            openDateTime = tender.getUpdatedAt();
+        }
+        if (openDateTime == null) {
+            openDateTime = tender.getCreatedAt();
+        }
+
+        String openingDate = openDateTime != null
+                ? openDateTime.format(DATE_FMT)
                 : "N/A";
 
         return OpeningLogResponse.builder()

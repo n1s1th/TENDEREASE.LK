@@ -10,7 +10,7 @@ import OfficerDetailsModal from "@/components/officer-dashboard/modals/OfficerDe
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Officer Dashboard — TenderEase.lk",
+  title: "Officer Dashboard - TenderEase.lk",
   description: "Chief Accounting Officer dashboard for managing government tenders, approvals, and officer assignments.",
 };
 

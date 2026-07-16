@@ -29,7 +29,7 @@ public class UserCreatedEventListener {
      *
      * @param event the user created event payload
      */
-    @RabbitListener(queues = "user.created.queue", autoStartup = "false")
+    @RabbitListener(queues = "user.created.queue")
     public void handleUserCreated(Map<String, String> event) {
         final String email = event.get("email");
         final String keycloakUserId = event.get("keycloakUserId");

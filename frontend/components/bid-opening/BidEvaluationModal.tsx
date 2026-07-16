@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ShieldCheck, AlertTriangle } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import { getTenderById } from "@/services/tender.service";
 
 interface BidEvaluationModalProps {
   isOpen: boolean;
@@ -18,9 +19,25 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
   const tenderId = params?.id as string;
 
   const [mounted, setMounted] = useState(false);
+  const [resolvedTenderNo, setResolvedTenderNo] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && tenderId) {
+      getTenderById(tenderId)
+        .then((res) => {
+          if (res && res.tenderNumber) {
+            setResolvedTenderNo(res.tenderNumber);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to resolve tender Number in modal:", err);
+        });
+    }
+  }, [isOpen, tenderId]);
 
   if (!isOpen || !bid) return null;
   if (!mounted) return null;
@@ -73,7 +90,7 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
             {bid.isFlagged ? "UNFLAG BID" : "FLAG SUBMISSION"}
           </button>
           <button 
-            onClick={() => router.push(`/tenders/${tenderId}/bid-evaluation`)}
+            onClick={() => router.push(`/tenders/${tenderId}/bid-evaluation?bidId=${bid.id}`)}
             className="flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-transparent bg-[#953002] text-white hover:bg-[#802801] shadow-lg shadow-[#953002]/20"
           >
             <ShieldCheck className="w-3.5 h-3.5" />

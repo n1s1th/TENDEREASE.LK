@@ -11,30 +11,20 @@ import {
 import { Eye, ClipboardCheck, CheckCircle2 } from "lucide-react";
 
 export function NoticeComplianceStep() {
-  const { formData, updateComplianceItem } = useTenderCreationStore();
+  const { formData, formErrors, updateComplianceItem } = useTenderCreationStore();
   const cl = formData.complianceChecklist;
 
   const checklistItems: {
     key: keyof typeof cl;
     label: string;
   }[] = [
-    {
-      key: "procurementPlanApproved",
-      label: "Procurement plan approved",
-    },
-    {
-      key: "budgetAvailabilityConfirmed",
-      label: "Budget availability confirmed",
-    },
-    {
-      key: "sbdComplyWithGuidelines",
-      label: "SBDs comply with guidelines",
-    },
-    {
-      key: "evaluationCriteriaDefined",
-      label: "Evaluation criteria defined",
-    },
+    { key: "procurementPlanApproved", label: "Procurement plan approved" },
+    { key: "budgetAvailabilityConfirmed", label: "Budget availability confirmed" },
+    { key: "sbdComplyWithGuidelines", label: "SBDs comply with guidelines" },
+    { key: "evaluationCriteriaDefined", label: "Evaluation criteria defined" },
   ];
+
+  const hasComplianceError = checklistItems.some((item) => formErrors[item.key]);
 
   return (
     <div className="space-y-5">
@@ -75,13 +65,20 @@ export function NoticeComplianceStep() {
       </Card>
 
       {/* Compliance Checklist */}
-      <Card>
+      <Card className={hasComplianceError ? "border-error/40" : ""}>
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
               <ClipboardCheck className="h-4 w-4 text-primary" />
             </div>
-            <CardTitle>Compliance Checklist</CardTitle>
+            <div>
+              <CardTitle>
+                Compliance Checklist <span className="text-error">*</span>
+              </CardTitle>
+              {hasComplianceError && (
+                <p className="text-xs text-error mt-0.5">All items must be confirmed before proceeding.</p>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-5">
@@ -95,18 +92,20 @@ export function NoticeComplianceStep() {
                   <input
                     type="checkbox"
                     checked={cl[item.key]}
-                    onChange={(e) =>
-                      updateComplianceItem(item.key, e.target.checked)
-                    }
+                    onChange={(e) => updateComplianceItem(item.key, e.target.checked)}
                     className="peer sr-only"
                   />
-                  <div className="h-5 w-5 rounded border-2 border-grey-3 peer-checked:border-primary peer-checked:bg-primary transition-colors flex items-center justify-center">
-                    {cl[item.key] && (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                    )}
+                  <div className={`h-5 w-5 rounded border-2 transition-colors flex items-center justify-center ${
+                    cl[item.key]
+                      ? "border-primary bg-primary"
+                      : formErrors[item.key]
+                      ? "border-error"
+                      : "border-grey-3"
+                  }`}>
+                    {cl[item.key] && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
                   </div>
                 </div>
-                <span className="text-sm text-foreground group-hover:text-foreground">
+                <span className={`text-sm ${formErrors[item.key] && !cl[item.key] ? "text-error" : "text-foreground"}`}>
                   {item.label}
                 </span>
               </label>

@@ -12,4 +12,5 @@ public interface BidOpeningService {
     OpeningAttendanceResponse markAttendance(UUID sessionId, OpeningAttendanceRequest request);
     List<OpeningAttendanceResponse> getAttendance(UUID sessionId);
     OpeningSessionResponse startOpeningSession(UUID sessionId, String officerName);
+    void deleteAttendance(UUID attendanceId);
 }

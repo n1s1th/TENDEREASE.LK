@@ -61,16 +61,12 @@ async function handleResponse(response: Response) {
   }
 }
 
-//  Common fetch wrapper with timeout
+//  Common fetch wrapper
 async function apiFetch(url: string, options: RequestInit = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
   try {
     const res = await fetch(url, {
       cache: "no-store",
       ...options,
-      signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
         ...(options.headers || {}),
@@ -79,12 +75,7 @@ async function apiFetch(url: string, options: RequestInit = {}) {
 
     return handleResponse(res);
   } catch (error: any) {
-    if (error.name === "AbortError") {
-      throw new Error(`Request to ${url} timed out after 5 seconds`);
-    }
     throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -198,4 +189,12 @@ export async function getTimeline(id: string) {
 // 🔥 CONTACT
 export async function getContact(id: string) {
   return apiFetch(`${BASE_URL}/${id}/contact`);
+}
+
+// 🔥 UPDATE TENDER STATUS
+export async function updateTenderStatus(id: string, status: string) {
+  const secureBase = "http://localhost:8082/api/v1/tenders";
+  return apiFetch(`${secureBase}/${id}/status?status=${status}`, {
+    method: "PUT",
+  });
 }

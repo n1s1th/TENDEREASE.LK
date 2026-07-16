@@ -2,9 +2,10 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { Lock, UserCheck, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Lock, UserCheck, X, Eye, EyeOff, ShieldCheck, AlertTriangle, Check, HelpCircle } from "lucide-react";
 
 import { useOpeningStore } from "@/store/opening/opening.store";
+import { getTenderById } from "@/services/tender.service";
 
 interface OpeningActionPanelProps {
   bidSubmissionDeadline?: string | null;
@@ -13,6 +14,14 @@ interface OpeningActionPanelProps {
 export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningActionPanelProps) {
   const { session, attendance, startOpening, isLoading } = useOpeningStore();
   const [currentTime, setCurrentTime] = React.useState<Date | null>(null);
+  const [toast, setToast] = React.useState<{ message: string; type: "success" | "error" | "info" | "warning" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" | "warning") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4500);
+  };
 
   React.useEffect(() => {
     setCurrentTime(new Date());
@@ -22,19 +31,24 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
     return () => clearInterval(timer);
   }, []);
 
-  const deadlineDate = bidSubmissionDeadline ? new Date(bidSubmissionDeadline) : null;
-  const isDeadlineReached = deadlineDate && currentTime ? currentTime >= deadlineDate : false;
-
-  const canOpen = attendance.length >= 3 && (!session || (session.status as any) === 'SCHEDULED' || (session.status as any) === 'PENDING_OPENING') && !isDeadlineReached;
-
-  const alertShownRef = React.useRef(false);
+  const [isTenderClosed, setIsTenderClosed] = React.useState(false);
 
   React.useEffect(() => {
-    if (isDeadlineReached && !alertShownRef.current) {
-      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
-      alertShownRef.current = true;
-    }
-  }, [isDeadlineReached]);
+    const checkTenderStatus = async () => {
+      if (!session?.tenderId) return;
+      try {
+        const tenderData = await getTenderById(session.tenderId);
+        if (tenderData && (tenderData.status === "CLOSED" || tenderData.status === "COMPLETED")) {
+          setIsTenderClosed(true);
+        }
+      } catch (err) {
+        console.error("Error checking tender status in OpeningActionPanel:", err);
+      }
+    };
+    checkTenderStatus();
+  }, [session?.tenderId]);
+
+  const canOpen = attendance.length >= 3 && (!session || (session.status as any) === 'SCHEDULED' || (session.status as any) === 'PENDING_OPENING');
 
   const [isUnlockModalOpen, setIsUnlockModalOpen] = React.useState(false);
   const [pin, setPin] = React.useState("");
@@ -47,24 +61,16 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
   }, []);
 
   const handleOpenBids = () => {
-    if (isDeadlineReached) {
-      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
-      return;
-    }
     if (!canOpen) {
-      alert(`Quorum not met: ${attendance.length}/3 members present.`);
+      showToast(`Quorum not met: ${attendance.length}/3 members present.`, "warning");
       return;
     }
     setIsUnlockModalOpen(true);
   };
 
   const handleConfirmUnlock = async () => {
-    if (isDeadlineReached) {
-      alert("The bid submission deadline has been reached. The bid opening session is now closed.");
-      return;
-    }
     if (!canOpen) {
-      alert("Quorum not met. Minimum 3 members required.");
+      showToast("Quorum not met. Minimum 3 members required.", "warning");
       return;
     }
     
@@ -79,6 +85,9 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
     }
   };
 
+  const isOpen = session?.status === 'OPEN';
+  const isClosed = session?.status === 'CLOSED' || isTenderClosed;
+
   return (
     <div className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm flex flex-col h-full relative overflow-hidden">
       <div className="flex justify-between items-center mb-3">
@@ -91,36 +100,36 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
       </div>
       
       <div className="flex-1 flex flex-col items-center justify-center text-center px-2">
-        <p className="text-[13px] font-bold text-gray-500 leading-snug mb-4 max-w-[280px]">
+        <p className="text-[13px] font-medium text-gray-500 leading-snug mb-4 max-w-[280px]">
           Clicking "Open Bids" will unseal all bids and log the timestamp.
         </p>
         
         <button 
           onClick={handleOpenBids}
-          disabled={session?.status === 'OPEN' || isDeadlineReached}
+          disabled={isOpen || isClosed}
           className={`w-full max-w-[280px] py-4 rounded-[20px] flex flex-col items-center justify-center gap-2 group transition-all duration-300 border ${
-            isDeadlineReached
+            isClosed
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-              : session?.status === 'OPEN'
+              : isOpen
                 ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20 cursor-default border-transparent'
                 : !canOpen
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-60 border-transparent'
-                  : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10'
+                  : 'bg-[#953002]/5 text-[#953002] border-[#953002]/10 hover:bg-[#953002]/10 hover:scale-102 active:scale-98'
           }`}
         >
           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-            isDeadlineReached ? 'bg-gray-200' : session?.status === 'OPEN' ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-white/10 group-hover:bg-white/20'
+            isClosed ? 'bg-gray-200' : isOpen ? 'bg-white/20' : !canOpen ? 'bg-gray-200' : 'bg-[#953002]/10 group-hover:bg-[#953002]/20'
           }`}>
-            {isDeadlineReached ? <Lock className="w-4 h-4" /> : session?.status === 'OPEN' ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4" />}
+            {isClosed ? <Lock className="w-4 h-4 text-gray-400" /> : isOpen ? <ShieldCheck className="w-4 h-4 text-white" /> : <Lock className={`w-4 h-4 transition-colors ${canOpen ? 'text-[#953002]' : 'text-gray-600'}`} />}
           </div>
           <span className="text-[14px] font-black tracking-[0.15em] uppercase">
             {isLoading 
-              ? "OPENING..." 
-              : isDeadlineReached 
+              ? "UNLOCKING BIDS..." 
+              : isClosed 
                 ? "BIDS CLOSED" 
-                : session?.status === 'OPEN' 
-                  ? "BIDS OPENED" 
-                  : "OPEN BIDS"
+                : isOpen 
+                  ? "BIDS OPEN" 
+                  : "UNLOCK BIDS"
             }
           </span>
         </button>
@@ -208,10 +217,39 @@ export default function OpeningActionPanel({ bidSubmissionDeadline }: OpeningAct
                     : 'bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10'
                 } disabled:opacity-50`}
               >
-                {isLoading ? "Unlocking..." : !canOpen ? "Quorum Required" : "Confirm & Unlock"}
+                Confirm & Unlock
               </button>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {mounted && toast && createPortal(
+        <div className={`fixed top-6 right-6 w-max max-w-[90vw] whitespace-nowrap z-[100000] flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
+          toast.type === "success" ? "bg-white border-[#27AE60]/30 text-[#27AE60]" :
+          toast.type === "error" ? "bg-[#FFF5F5] border-[#EB5757]/30 text-red-750" :
+          toast.type === "warning" ? "bg-[#FFF5F5] border-[#EB5757]/30 text-[#EB5757]" :
+          "bg-white border-blue-200 text-blue-800"
+        }`}>
+          <div className="flex items-center gap-2.5">
+            {toast.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
+            {toast.type === "error" && <AlertTriangle className="w-5 h-5 text-red-500" />}
+            {toast.type === "warning" && <AlertTriangle className="w-5 h-5 text-[#EB5757]" />}
+            {toast.type === "info" && <HelpCircle className="w-5 h-5 text-[#3B82F6]" />}
+            <span className="text-[13px] font-bold tracking-tight">{toast.message}</span>
+          </div>
+          <button 
+            onClick={() => setToast(null)}
+            className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${
+              toast.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
+              toast.type === "error" ? "text-red-750/60 hover:text-red-750" :
+              toast.type === "warning" ? "text-[#EB5757]/60 hover:text-[#EB5757]" :
+              "text-blue-800/60 hover:text-blue-800"
+            }`}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>,
         document.body
       )}
