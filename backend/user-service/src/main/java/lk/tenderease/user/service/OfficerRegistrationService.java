@@ -75,4 +75,12 @@ public interface OfficerRegistrationService {
      * @return officer profile details
      */
     OfficerProfileResponse getOfficerByEmail(String email);
+
+    /**
+     * Get officer profile by Keycloak user ID.
+     *
+     * @param keycloakUserId the Keycloak user ID
+     * @return officer profile details
+     */
+    OfficerProfileResponse getOfficerByKeycloakUserId(String keycloakUserId);
 }

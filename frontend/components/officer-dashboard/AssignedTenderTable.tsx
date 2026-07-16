@@ -103,6 +103,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   };
 
   const formatStatus = (status: string) => {
+    if (status === "COMPLETED") return "Evaluation Completed";
     return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
 

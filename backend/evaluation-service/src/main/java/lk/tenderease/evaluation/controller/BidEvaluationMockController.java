@@ -825,6 +825,18 @@ public class BidEvaluationMockController {
         getOrCreateTenderState("TND-0042");
         getOrCreateTenderState("TND-0043");
 
+        // Dynamically pre-populate all tenders from database evaluations
+        try {
+            List<Evaluation> allDbEvals = evaluationRepository.findAll();
+            for (Evaluation eval : allDbEvals) {
+                if (eval.getTenderId() != null) {
+                    getOrCreateTenderState(eval.getTenderId().toString());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to pre-populate DB evaluations in getStatusCounts: " + e.getMessage());
+        }
+
         int technicalPassed = 0;
         int financialPassed = 0;
         int financialFailed = 0;

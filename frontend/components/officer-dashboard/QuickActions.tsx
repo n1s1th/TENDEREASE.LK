@@ -35,6 +35,9 @@ export default function QuickActions() {
 
   const handleActionClick = (idx: number, label: string, path: string) => {
     setSelectedIdx(idx);
+    if (label === "Awards Processing") {
+      return;
+    }
     if (path !== "#") {
       router.push(path);
     } else {
