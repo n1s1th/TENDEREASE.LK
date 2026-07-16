@@ -24,6 +24,7 @@ import lk.tenderease.user.service.OfficerRegistrationService;
 import lk.tenderease.user.util.ReferenceIdGenerator;
 import lk.tenderease.user.producer.UserEventProducer;
 import lk.tenderease.common.event.UserEvent;
+import lk.tenderease.user.service.KeycloakAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -67,6 +68,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
     private final OfficerEventPublisher eventPublisher;
     private final UserEventProducer userEventProducer;
     private final EmailService emailService;
+    private final KeycloakAdminService keycloakAdminService;
 
     // ────────────────────────────────────────────────────────
     //  PUBLIC REGISTRATION
@@ -228,6 +230,13 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
                 .triggerBy("cao-user")
                 .build());
 
+        // Assign Keycloak Role
+        try {
+            keycloakAdminService.assignRoleToUser(officer.getKeycloakUserId(), "PROCUREMENT_OFFICER");
+        } catch (Exception e) {
+            log.error("Failed to assign Keycloak role, but proceeding with database approval", e);
+        }
+
         log.info("Officer {} approved (ref: {})", id, officer.getRegistrationReference());
 
         // Send approval emails to both Official and Liaison emails
@@ -365,6 +374,7 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
                 .registrationReference(referenceId)
                 .status(OfficerStatus.PENDING)
                 .termsAccepted(request.getTermsAccepted())
+                .keycloakUserId(request.getKeycloakUserId())
                 .build();
     }
 

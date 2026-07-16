@@ -42,12 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             refreshToken: stored.refreshToken ?? undefined,
           });
         } catch (initErr) {
-          console.warn('⚠️ Keycloak token-based init failed, retrying clean init:', initErr);
+          console.warn('Keycloak token-based init failed (likely revoked tokens). Clearing and reloading...', initErr);
           clearAuth();
-          authenticated = await keycloak.init({
-            pkceMethod: 'S256',
-            checkLoginIframe: false,
-          });
+          window.location.reload();
+          return;
         }
 
         const applyAuth = (token: string) => {
