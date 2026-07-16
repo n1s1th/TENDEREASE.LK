@@ -491,15 +491,41 @@
   border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #EF4444;
+  color: #374151;
   background: transparent;
   border: none;
   cursor: pointer;
   transition: all 0.15s;
+  text-decoration: none;
 }
 
 .te-navbar__profile-menu-item:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(149, 48, 2, 0.06);
+  color: #953002;
+}
+
+.te-navbar__profile-menu-item--dashboard {
+  color: #374151;
+}
+
+.te-navbar__profile-menu-item--dashboard:hover {
+  background: rgba(149, 48, 2, 0.08);
+  color: #953002;
+}
+
+.te-navbar__profile-menu-divider {
+  height: 1px;
+  background: #E5E7EB;
+  margin: 0.25rem 0.5rem;
+}
+
+.te-navbar__profile-menu-item--signout {
+  color: #EF4444;
+}
+
+.te-navbar__profile-menu-item--signout:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #DC2626;
 }
 
 .te-navbar__user-name {

@@ -12,13 +12,13 @@ const keycloak = typeof window !== 'undefined' ? new Keycloak(keycloakConfig) : 
 
 export const login = () => {
   if (keycloak) {
-    keycloak.login();
+    keycloak.login({ redirectUri: window.location.origin });
   }
 };
 
 export const signup = () => {
   if (keycloak) {
-    keycloak.register();
+    keycloak.register({ redirectUri: window.location.origin });
   }
 };
 
