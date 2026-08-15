@@ -186,6 +186,19 @@ export async function getTimeline(id: string) {
   return apiFetch(`${BASE_URL}/${id}/timeline`);
 }
 
+export async function addTimelineEvent(
+  id: string,
+  eventType: string,
+  description: string,
+  createdBy?: string,
+  creatorRole?: string
+) {
+  return apiFetch(`${BASE_URL}/${id}/timeline`, {
+    method: "POST",
+    body: JSON.stringify({ eventType, description, createdBy, creatorRole }),
+  });
+}
+
 // 🔥 CONTACT
 export async function getContact(id: string) {
   return apiFetch(`${BASE_URL}/${id}/contact`);

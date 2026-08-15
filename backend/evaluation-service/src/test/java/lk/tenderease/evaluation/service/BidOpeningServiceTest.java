@@ -56,13 +56,13 @@ class BidOpeningServiceTest {
 
     @Test
     void getOpeningSession_Success() {
-        when(sessionRepository.findByTenderId(tenderId)).thenReturn(Optional.of(session));
+        when(sessionRepository.findFirstByTenderIdOrderByScheduledOpeningTimeDesc(tenderId)).thenReturn(Optional.of(session));
         when(mapper.toDto(session)).thenReturn(new OpeningSessionResponse());
 
         OpeningSessionResponse response = bidOpeningService.getOpeningSession(tenderId);
 
         assertNotNull(response);
-        verify(sessionRepository).findByTenderId(tenderId);
+        verify(sessionRepository).findFirstByTenderIdOrderByScheduledOpeningTimeDesc(tenderId);
     }
 
     @Test

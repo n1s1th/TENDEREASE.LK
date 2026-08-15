@@ -53,22 +53,7 @@ public class OfficerDashboardService {
     private final ClarificationResponseRepository responseRepository;
     private final TenderService tenderService;
 
-    @PostConstruct
-    public void resetOpenTendersToPendingOpening() {
-        try {
-            log.info("Resetting seeded or active OPEN tenders to PENDING_OPENING so attendance can be verified");
-            List<Tender> openTenders = tenderRepository.findAllByStatusIn(Collections.singletonList(TenderStatus.OPEN));
-            if (!openTenders.isEmpty()) {
-                for (Tender t : openTenders) {
-                    t.setStatus(TenderStatus.PENDING_OPENING);
-                    tenderRepository.save(t);
-                    log.info("Successfully reset tender {} status to PENDING_OPENING", t.getTenderNumber());
-                }
-            }
-        } catch (Exception e) {
-            log.error("Failed to reset open status tenders to PENDING_OPENING: {}", e.getMessage());
-        }
-    }
+
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
@@ -105,6 +90,8 @@ public class OfficerDashboardService {
         long awarded    = tenderRepository.countByStatus(TenderStatus.AWARDED);
         long completed  = tenderRepository.countByStatusIn(Arrays.asList(TenderStatus.CLOSED, TenderStatus.AWARDED));
         long noBids     = tenderRepository.countByStatus(TenderStatus.NO_BID);
+        // RestTemplate call disabled to optimize dashboard loading times
+        /*
         try {
             org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
             List<Tender> activeTenders = tenderRepository.findAllByStatusIn(APPROVED_STATUSES);
@@ -130,6 +117,7 @@ public class OfficerDashboardService {
         } catch (Exception e) {
             log.error("Failed to calculate zero-bid tenders count: {}", e.getMessage());
         }
+        */
 
         log.info("Dashboard metrics — active(in progress): {}, evaluating: {}, awarded: {}, noBids: {}, completed: {}",
                 active, evaluating, awarded, noBids, completed);

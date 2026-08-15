@@ -76,6 +76,21 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
               <span className="text-[15px] font-black text-[#953002]">{bid.amount}</span>
             </div>
           </div>
+
+          {/* Already Evaluating Warning Box */}
+          {bid.isBeingEvaluatedByOther && (
+            <div className="bg-red-50 border border-red-200 rounded-[20px] p-4 flex gap-3 items-start animate-in fade-in duration-200">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-xs font-black text-red-800 uppercase tracking-wider mb-1">
+                  UNDER EVALUATION
+                </h4>
+                <p className="text-[11px] font-bold text-red-700 leading-relaxed">
+                  This bid is already being evaluated by another officer ({bid.evaluatorName}).
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -90,11 +105,16 @@ export default function BidEvaluationModal({ isOpen, onClose, bid, onUpdate }: B
             {bid.isFlagged ? "UNFLAG" : "FLAG"}
           </button>
           <button 
+            disabled={bid.isBeingEvaluatedByOther}
             onClick={() => router.push(`/tenders/${tenderId}/bid-evaluation?bidId=${bid.id}`)}
-            className="flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-transparent bg-[#953002] text-white hover:bg-[#802801] shadow-lg shadow-[#953002]/20"
+            className={`flex-[1.2] px-6 py-3 rounded-[16px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border ${
+              bid.isBeingEvaluatedByOther 
+                ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-60" 
+                : "border-transparent bg-[#953002] text-white hover:bg-[#802801] shadow-lg shadow-[#953002]/20"
+            }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            EVALUATE BID
+            {bid.isBeingEvaluatedByOther ? "LOCKED" : "EVALUATE BID"}
           </button>
         </div>
       </div>
