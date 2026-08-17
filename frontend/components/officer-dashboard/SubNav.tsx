@@ -11,19 +11,16 @@ export default function SubNav() {
   const notificationSummary = useOfficerDashboardStore((s) => s.notificationSummary);
   const fetchNotificationSummary = useOfficerDashboardStore((s) => s.fetchNotificationSummary);
 
-  // Hide SubNav on the main officer dashboard page
-  if (pathname === "/officer-dashboard") return null;
+  useEffect(() => {
+    fetchNotificationSummary();
+  }, [fetchNotificationSummary]);
 
-  const isTenders = pathname.startsWith("/officer-dashboard/tenders");
+  const isTenders = pathname === "/officer-dashboard" || pathname.startsWith("/officer-dashboard/tenders");
   const isRegistration = pathname.startsWith("/officer-dashboard/registration");
   const isClarifications = pathname.startsWith("/officer-dashboard/clarifications");
   const isNotifications = pathname.startsWith("/officer-dashboard/notifications");
 
   const unreadCount = notificationSummary?.unread ?? 0;
-
-  useEffect(() => {
-    fetchNotificationSummary();
-  }, [fetchNotificationSummary]);
 
   return (
     <div className="dash-subnav" id="dashboard-subnav">
@@ -39,7 +36,7 @@ export default function SubNav() {
       }}>
         <div className="dash-subnav-tabs">
           <Link
-            href="/officer-dashboard/tenders/pending"
+            href="/officer-dashboard"
             className={`dash-subnav-tab ${isTenders ? "dash-subnav-tab--active" : ""}`}
           >
             Tenders
