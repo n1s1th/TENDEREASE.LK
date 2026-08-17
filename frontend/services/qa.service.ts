@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store";
 
 // Use environment variable if available, otherwise assume gateway or direct service
-const QA_API_BASE = process.env.NEXT_PUBLIC_QA_SERVICE_URL || "http://localhost:8000/api/qa";
+const QA_API_BASE = process.env.NEXT_PUBLIC_QA_SERVICE_URL || "http://localhost:8194/api/qa";
 
 export type QaCategory =
   | "REGISTRATION"
