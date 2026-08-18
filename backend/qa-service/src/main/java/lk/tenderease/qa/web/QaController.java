@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lk.tenderease.qa.domain.QuestionCategory;
+import lk.tenderease.qa.domain.QuestionStatus;
 import lk.tenderease.qa.dto.AnswerQuestionRequest;
 import lk.tenderease.qa.dto.CreateQuestionRequest;
 import lk.tenderease.qa.dto.QuestionResponse;
@@ -48,10 +49,9 @@ public class QaController {
         return questionService.getQuestion(id);
     }
 
-    @Operation(summary = "Submit a public question")
+    @Operation(summary = "Submit a public question", description = "Anyone can submit a question — authentication is optional.")
     @PostMapping("/questions")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("isAuthenticated()")
     public QuestionResponse createQuestion(@Valid @RequestBody CreateQuestionRequest request) {
         return questionService.createQuestion(request);
     }
@@ -63,16 +63,29 @@ public class QaController {
         return questionService.getMyQuestions(pageable);
     }
 
-    @Operation(summary = "Admin list of all questions")
+    @Operation(summary = "Admin/Officer list of all questions")
     @GetMapping("/admin/questions")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'OFFICER')")
     public Page<QuestionResponse> getAdminQuestions(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+        return questionService.getAdminQuestions(pageable);
+    }
+
+    @Operation(summary = "Officer list of questions by status", description = "Returns questions filtered by PENDING or ANSWERED status.")
+    @GetMapping("/officer/questions")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'OFFICER')")
+    public Page<QuestionResponse> getOfficerQuestions(
+            @RequestParam(required = false) QuestionStatus status,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+    ) {
+        if (status != null) {
+            return questionService.getQuestionsByStatus(status, pageable);
+        }
         return questionService.getAdminQuestions(pageable);
     }
 
     @Operation(summary = "Answer a question", description = "Creates the single allowed answer for a pending question.")
     @PostMapping("/questions/{id}/answer")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROCUREMENT_OFFICER', 'OFFICER')")
     public QuestionResponse answerQuestion(
             @PathVariable Long id,
             @Valid @RequestBody AnswerQuestionRequest request
@@ -80,3 +93,4 @@ public class QaController {
         return questionService.answerQuestion(id, request);
     }
 }
+

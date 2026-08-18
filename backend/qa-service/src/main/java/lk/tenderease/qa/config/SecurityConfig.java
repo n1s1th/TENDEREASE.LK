@@ -32,7 +32,11 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "https://tenderease-lk.vercel.app"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -56,11 +60,13 @@ public class SecurityConfig {
                         ).permitAll()
                         // GET questions is public
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/qa/questions", "/api/qa/questions/*").permitAll()
-                        .requestMatchers("/api/qa/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/qa/questions/*/answer").hasRole("ADMIN")
+                        // POST questions is also public (anonymous allowed)
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/qa/questions").permitAll()
+                        // Officer endpoints: ADMIN or PROCUREMENT_OFFICER
+                        .requestMatchers("/api/qa/admin/**").hasAnyRole("ADMIN", "PROCUREMENT_OFFICER", "OFFICER")
+                        .requestMatchers("/api/qa/officer/**").hasAnyRole("ADMIN", "PROCUREMENT_OFFICER", "OFFICER")
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/qa/questions/*/answer").hasAnyRole("ADMIN", "PROCUREMENT_OFFICER", "OFFICER")
                         .requestMatchers("/api/qa/my-questions").authenticated()
-                        // POST questions requires authentication
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/qa/questions").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(new HeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -73,11 +79,15 @@ public class SecurityConfig {
                 throws ServletException, IOException {
             String userId = request.getHeader("X-User-Id");
             String roles = request.getHeader("X-Roles");
+            System.out.println("====== HeaderAuthenticationFilter DEBUG ======");
+            System.out.println("X-User-Id: " + userId);
+            System.out.println("X-Roles: " + roles);
 
             if (userId != null && roles != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 List<SimpleGrantedAuthority> authorities = Arrays.stream(roles.split(","))
                         .map(String::trim)
                         .filter(role -> !role.isBlank())
+                        .map(String::toUpperCase)
                         .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                         .map(SimpleGrantedAuthority::new)
                         .toList();

@@ -1086,14 +1086,70 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public List<ContactDTO> getContacts(UUID tenderId) {
-        return contactRepository.findByTenderId(tenderId).stream()
+        List<ContactDTO> contacts = contactRepository.findByTenderId(tenderId).stream()
                 .map(contact -> ContactDTO.builder()
                         .officerName(contact.getOfficerName())
                         .designation(contact.getDesignation())
                         .email(contact.getEmail())
                         .phone(contact.getPhone())
+                        .department("Procurement Office")
                         .build())
                 .collect(Collectors.toList());
+
+        if (contacts.isEmpty()) {
+            Tender tender = tenderRepository.findById(tenderId).orElse(null);
+            if (tender != null && tender.getCreatedBy() != null && !tender.getCreatedBy().trim().isEmpty() && !tender.getCreatedBy().equalsIgnoreCase("dev-user")) {
+                try {
+                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    String createdBy = tender.getCreatedBy();
+                    String url = "http://localhost:8081/api/officers";
+                    if (createdBy.contains("@")) {
+                        url += "/email/" + createdBy;
+                    } else {
+                        url += "/keycloak/" + createdBy;
+                    }
+                    java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
+                    if (response != null) {
+                        java.util.Map<?, ?> liaison = (java.util.Map<?, ?>) response.get("liaisonOfficer");
+                        String officerName = liaison != null ? (String) liaison.get("name") : (String) response.get("organizationName");
+                        String designation = liaison != null ? (String) liaison.get("designation") : (String) response.get("headDesignation");
+                        String email = liaison != null ? (String) liaison.get("email") : (String) response.get("officialEmail");
+                        String phone = liaison != null ? (String) liaison.get("mobileNumber") : (String) response.get("personalLandPhone");
+                        String department = tender.getDepartment() != null ? tender.getDepartment().getName() : (String) response.get("organizationName");
+
+                        contacts.add(ContactDTO.builder()
+                                .officerName(officerName != null ? officerName : "Procurement Officer")
+                                .designation(designation != null ? designation : "Officer")
+                                .email(email != null ? email : "Not Provided")
+                                .phone(phone != null ? phone : "Not Provided")
+                                .department(department)
+                                .build());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to fetch creator contact info from user-service for key: {}", tender.getCreatedBy(), e);
+                    // Add fallback basic contact using tender details
+                    String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                    contacts.add(ContactDTO.builder()
+                            .officerName("Procurement Officer")
+                            .designation("Contact Person")
+                            .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                            .phone("Not Provided")
+                            .department(department)
+                            .build());
+                }
+            } else if (tender != null) {
+                 // Add fallback basic contact using tender details
+                 String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                 contacts.add(ContactDTO.builder()
+                         .officerName("Procurement Officer")
+                         .designation("Contact Person")
+                         .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                         .phone("Not Provided")
+                         .department(department)
+                         .build());
+            }
+        }
+        return contacts;
     }
 
     @Override

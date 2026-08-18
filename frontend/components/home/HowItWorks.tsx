@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, UserCheck, MessageSquare, Award, ArrowRight } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const steps = [
   {
@@ -34,6 +35,9 @@ const steps = [
 ];
 
 export default function HowItWorks() {
+  const pathname = usePathname();
+  const isHowItWorksPage = pathname === "/how-it-works";
+
   return (
     <section className="hiw-section">
       <div className="hiw-inner">
@@ -72,11 +76,13 @@ export default function HowItWorks() {
         </div>
 
         {/* CTA */}
-        <div className="hiw-cta-wrap">
-          <a href="/how-it-works" className="hiw-cta">
-            Explore Workflow <ArrowRight size={16} />
-          </a>
-        </div>
+        {!isHowItWorksPage && (
+          <div className="hiw-cta-wrap">
+            <a href="/how-it-works" className="hiw-cta">
+              Explore Workflow <ArrowRight size={16} />
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

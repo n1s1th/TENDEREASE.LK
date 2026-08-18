@@ -1,6 +1,7 @@
 package lk.tenderease.qa.service;
 
 import lk.tenderease.qa.domain.QuestionCategory;
+import lk.tenderease.qa.domain.QuestionStatus;
 import lk.tenderease.qa.dto.AnswerQuestionRequest;
 import lk.tenderease.qa.dto.CreateQuestionRequest;
 import lk.tenderease.qa.dto.QuestionResponse;
@@ -18,6 +19,8 @@ public interface QuestionService {
     Page<QuestionResponse> getMyQuestions(Pageable pageable);
 
     Page<QuestionResponse> getAdminQuestions(Pageable pageable);
+
+    Page<QuestionResponse> getQuestionsByStatus(QuestionStatus status, Pageable pageable);
 
     QuestionResponse answerQuestion(Long id, AnswerQuestionRequest request);
 }

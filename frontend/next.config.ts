@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   outputFileTracingRoot: __dirname,
+  async redirects() {
+    return [
+      {
+        source: '/help',
+        destination: '/qa',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;
