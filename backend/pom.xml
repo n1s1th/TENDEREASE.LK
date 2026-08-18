@@ -29,6 +29,7 @@
         <aws-sdk.version>2.20.0</aws-sdk.version>
         <jjwt.version>0.12.5</jjwt.version>
         <testcontainers.version>1.19.0</testcontainers.version>
+        <postgresql.version>42.7.3</postgresql.version>
     </properties>
 
     <modules>
