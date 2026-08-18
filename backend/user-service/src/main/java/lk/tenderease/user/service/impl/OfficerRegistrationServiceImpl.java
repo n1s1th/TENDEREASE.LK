@@ -438,6 +438,15 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
         return mapToProfileResponse(officer);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public OfficerProfileResponse getOfficerByKeycloakUserId(String keycloakUserId) {
+        log.debug("Fetching officer by keycloakUserId: {}", keycloakUserId);
+        Officer officer = officerRepository.findByKeycloakUserId(keycloakUserId)
+                .orElseThrow(() -> new lk.tenderease.user.exception.OfficerNotFoundException("keycloakUserId", keycloakUserId));
+        return mapToProfileResponse(officer);
+    }
+
     private OfficerProfileResponse mapToProfileResponse(Officer officer) {
         LiaisonOfficerDTO liaisonDto = null;
         if (officer.getLiaisonOfficer() != null) {

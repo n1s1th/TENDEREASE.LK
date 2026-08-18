@@ -11,7 +11,8 @@ import {
   Copy,
   Check,
   ClipboardList,
-  FileEdit
+  FileEdit,
+  FilePlus
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -50,6 +51,10 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -103,6 +108,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   };
 
   const formatStatus = (status: string) => {
+    if (status === "COMPLETED") return "Evaluation Completed";
     return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
   };
 
@@ -248,6 +254,19 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                         <FolderOpen className="w-5 h-5" />
                         <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
                           Open Bids
+                        </span>
+                      </button>
+                    )}
+                    
+                    {/* Addenda Button (Hidden for Evaluation/Completed) */}
+                    {(tender.status === "PENDING_OPENING" || tender.status === "OPEN" || tender.status === "PUBLISHED" || tender.status === "APPROVED") && (
+                      <button 
+                        onClick={() => router.push(`/officer-dashboard/tenders/${tender.id}/addenda`)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
+                      >
+                        <FilePlus className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Manage Addenda
                         </span>
                       </button>
                     )}

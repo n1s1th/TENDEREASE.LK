@@ -183,6 +183,18 @@ public class OfficerRegistrationController {
     }
 
     /**
+     * Get officer profile by Keycloak user ID.
+     */
+    @GetMapping("/keycloak/{keycloakUserId}")
+    @Operation(summary = "Get officer by Keycloak user ID", description = "Retrieve officer profile by Keycloak user ID")
+    @ApiResponse(responseCode = "200", description = "Officer retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Officer not found")
+    public ResponseEntity<OfficerProfileResponse> getOfficerByKeycloakUserId(@PathVariable String keycloakUserId) {
+        log.debug("Fetching officer by Keycloak user ID: {}", keycloakUserId);
+        return ResponseEntity.ok(officerRegistrationService.getOfficerByKeycloakUserId(keycloakUserId));
+    }
+
+    /**
      * Approve an officer registration.
      * Requires ROLE_ADMIN.
      */

@@ -54,9 +54,9 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "qa:questions", allEntries = true)
+    @CacheEvict(value = {"qa:questions", "qa:questions:status"}, allEntries = true)
     public QuestionResponse createQuestion(CreateQuestionRequest request) {
-        Question question = new Question(currentUser.userId(), request.questionText(), request.category());
+        Question question = new Question(currentUser.userIdOrAnonymous(), request.questionText(), request.category());
         Question saved = questionRepository.save(question);
         eventPublisher.publishEvent(new QaQuestionCreatedEvent(saved.getId()));
         return questionMapper.toResponse(saved);
@@ -75,8 +75,15 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(value = "qa:questions:status", key = "{#status, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
+    public Page<QuestionResponse> getQuestionsByStatus(QuestionStatus status, Pageable pageable) {
+        return questionRepository.findByStatus(status, pageable)
+                .map(questionMapper::toResponse);
+    }
+
+    @Override
     @Transactional
-    @CacheEvict(value = "qa:questions", allEntries = true)
+    @CacheEvict(value = {"qa:questions", "qa:questions:status"}, allEntries = true)
     public QuestionResponse answerQuestion(Long id, AnswerQuestionRequest request) {
         Question question = findQuestion(id);
         if (question.getStatus() == QuestionStatus.ANSWERED || question.getAnswer() != null) {

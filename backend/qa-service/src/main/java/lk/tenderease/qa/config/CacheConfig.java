@@ -18,15 +18,19 @@ public class CacheConfig {
 
     @Bean
     CacheManager cacheManager() {
-        return new TtlCacheManager("qa:questions", Duration.ofMinutes(5));
+        return new TtlCacheManager(Duration.ofMinutes(5), "qa:questions", "qa:questions:status");
     }
 
     static class TtlCacheManager implements CacheManager {
 
         private final Map<String, Cache> caches;
 
-        TtlCacheManager(String cacheName, Duration ttl) {
-            this.caches = Map.of(cacheName, new TtlCache(cacheName, ttl));
+        TtlCacheManager(Duration ttl, String... cacheNames) {
+            Map<String, Cache> cacheMap = new ConcurrentHashMap<>();
+            for (String cacheName : cacheNames) {
+                cacheMap.put(cacheName, new TtlCache(cacheName, ttl));
+            }
+            this.caches = cacheMap;
         }
 
         @Override

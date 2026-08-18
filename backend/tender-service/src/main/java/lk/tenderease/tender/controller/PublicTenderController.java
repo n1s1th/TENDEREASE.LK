@@ -2,6 +2,7 @@ package lk.tenderease.tender.controller;
 
 import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ContactDTO;
 import lk.tenderease.tender.dto.response.TenderAmendmentDTO;
@@ -80,6 +81,28 @@ public class PublicTenderController {
     @GetMapping("/{id}/addenda")
     public List<TenderAmendmentDTO> getAddenda(@PathVariable UUID id) {
         return tenderService.getAddenda(id);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions")
+    public List<AddendumVersionResponse> getAddendumVersionHistory(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getAddendumVersionHistory(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/current")
+    public AddendumVersionResponse getCurrentAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getCurrentAddendumVersion(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/{versionNumber}")
+    public AddendumVersionResponse getAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId,
+            @PathVariable Integer versionNumber) {
+        return tenderService.getAddendumVersion(id, addendumId, versionNumber);
     }
 
     @GetMapping("/{id}/clarifications")

@@ -445,7 +445,7 @@ export default function BidEvaluationPage() {
   const isFinPassed = finSubtotal >= (data?.threshold || 75);
 
   // Composite score: Tech * 0.7 + Fin * 0.3
-  const compositeScore = Math.round((techSubtotal * 0.7 + (isTechPassed ? finSubtotal * 0.3 : 0.0)) * 10) / 10;
+  const compositeScore = Math.round((techSubtotal * 0.7 + (isTechPassed ? finSubtotal * 0.3 : 0.0)) * 100) / 100;
 
   // Confirm & Unlock action for submitted evaluations
   const handleConfirmUnlock = () => {
@@ -1169,7 +1169,7 @@ export default function BidEvaluationPage() {
                       {/* Centered composite score */}
                       <div className="absolute text-center pb-1">
                         <span className="block text-2xl font-black text-gray-800 leading-none">
-                          {compositeScore}
+                          {compositeScore.toFixed(2)}
                         </span>
                         <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mt-1.5 block">
                           Composite
@@ -1183,28 +1183,28 @@ export default function BidEvaluationPage() {
                     <div className="border-b border-gray-50 pb-2">
                       <div className="flex justify-between text-gray-700 font-bold text-[13px] mb-1">
                         <span>Technical Score</span>
-                        <span>{techSubtotal}</span>
+                        <span>{Number(techSubtotal).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-xs text-gray-400 font-semibold">
                         <span>70% weight</span>
-                        <span>Weighted (×0.70): {(techSubtotal * 0.7).toFixed(1)}</span>
+                        <span>Weighted (×0.70): {(techSubtotal * 0.7).toFixed(2)}</span>
                       </div>
                     </div>
 
                     <div className="border-b border-gray-50 pb-2">
                       <div className="flex justify-between text-gray-700 font-bold text-[13px] mb-1">
                         <span>Financial Score</span>
-                        <span>{isTechPassed ? finSubtotal : "0.0"}</span>
+                        <span>{isTechPassed ? Number(finSubtotal).toFixed(2) : "0.00"}</span>
                       </div>
                       <div className="flex justify-between text-xs text-gray-400 font-semibold">
                         <span>30% weight</span>
-                        <span>Weighted (×0.30): {(isTechPassed ? finSubtotal * 0.3 : 0.0).toFixed(1)}</span>
+                        <span>Weighted (×0.30): {(isTechPassed ? finSubtotal * 0.3 : 0.0).toFixed(2)}</span>
                       </div>
                     </div>
 
                     <div className="flex justify-between font-black text-sm text-[#953002] pt-1">
                       <span>Final Composite Score</span>
-                      <span>{compositeScore}</span>
+                      <span>{compositeScore.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
