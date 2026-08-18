@@ -10,7 +10,7 @@ spring:
   config:
     import: "optional:file:../.env[.properties]"
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_qa_db?sslmode=disable
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_qa_db?sslmode=${DB_SSLMODE:require}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:kgum}
     driver-class-name: org.postgresql.Driver

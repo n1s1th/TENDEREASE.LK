@@ -5,9 +5,9 @@ spring:
     name: tender-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db?sslmode=disable
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:kgum}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db?sslmode=${DB_SSLMODE:require}
+    username: ${DB_USERNAME:${POSTGRES_USER:postgres}}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
