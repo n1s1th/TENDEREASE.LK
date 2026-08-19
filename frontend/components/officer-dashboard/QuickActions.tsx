@@ -7,7 +7,7 @@ import QuickActionModal from "./QuickActionModal";
 
 export default function QuickActions() {
   const router = useRouter();
-  const [selectedIdx, setSelectedIdx] = useState<number | null>(0); 
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null); 
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const actions = [
@@ -22,7 +22,7 @@ export default function QuickActions() {
       path: "#" 
     },
     { 
-      label: "Download Bid Documents", 
+      label: "Reports & Audit", 
       icon: Download,
       path: "#"
     },
@@ -35,6 +35,9 @@ export default function QuickActions() {
 
   const handleActionClick = (idx: number, label: string, path: string) => {
     setSelectedIdx(idx);
+    if (label === "Awards Processing") {
+      return;
+    }
     if (path !== "#") {
       router.push(path);
     } else {

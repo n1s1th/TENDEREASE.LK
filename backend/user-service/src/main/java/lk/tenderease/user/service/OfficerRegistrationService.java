@@ -67,4 +67,20 @@ public interface OfficerRegistrationService {
      * @return updated officer profile
      */
     OfficerProfileResponse rejectOfficer(UUID id, String reason);
+
+    /**
+     * Get officer profile by official email or liaison email.
+     *
+     * @param email the email of the officer
+     * @return officer profile details
+     */
+    OfficerProfileResponse getOfficerByEmail(String email);
+
+    /**
+     * Get officer profile by Keycloak user ID.
+     *
+     * @param keycloakUserId the Keycloak user ID
+     * @return officer profile details
+     */
+    OfficerProfileResponse getOfficerByKeycloakUserId(String keycloakUserId);
 }

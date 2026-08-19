@@ -1,6 +1,6 @@
 import { OpeningSession, OpeningAttendance, OpeningAttendanceRequest, ApiResponse } from "@/lib/types/opening.types";
 
-const BASE = "http://localhost:8095";
+const BASE = process.env.NEXT_PUBLIC_OPENING_SERVICE_URL || "http://localhost:8084";
 
 function authHeaders(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -38,5 +38,14 @@ export async function startOpeningSession(sessionId: string, token?: string): Pr
     headers: { ...authHeaders(token) }
   });
   if (!res.ok) throw new Error("Failed to start opening session");
+  return res.json();
+}
+
+export async function deleteAttendanceRecord(attendanceId: string, token?: string): Promise<ApiResponse<void>> {
+  const res = await fetch(`${BASE}/api/v1/opening/attendance/${attendanceId}`, {
+    method: "DELETE",
+    headers: { ...authHeaders(token) }
+  });
+  if (!res.ok) throw new Error("Failed to delete attendance");
   return res.json();
 }

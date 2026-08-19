@@ -21,7 +21,7 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
   const bidsCount = session?.bidsCount !== undefined ? `${session.bidsCount} BIDS` : "-- BIDS";
 
   const isUuid = (str: string) => str.length === 36 && str.includes("-");
-  const displayId = tenderId && !isUuid(tenderId) ? `${tenderId} — ` : "";
+  const displayId = tenderId && !isUuid(tenderId) ? `${tenderId} - ` : "";
 
   return (
     <div className="mb-3">
@@ -41,8 +41,12 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
             </h1>
             <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
               <Link href="http://localhost:3000/officer-dashboard" className="hover:text-[#953002] transition-colors">OFFICER DASHBOARD</Link>
-              <ChevronRight className="w-3 h-3 text-gray-400" />
-              <span>{displayId}{title}</span>
+              {(displayId || title) && (
+                <>
+                  <ChevronRight className="w-3 h-3 text-gray-400" />
+                  <span>{displayId}{title}</span>
+                </>
+              )}
               <ChevronRight className="w-3 h-3 text-[#953002]" />
               <span className="text-[#953002]">BID OPENING</span>
             </div>

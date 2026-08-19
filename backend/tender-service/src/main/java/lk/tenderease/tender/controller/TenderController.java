@@ -7,13 +7,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lk.tenderease.tender.dto.request.ComplianceChecklistRequest;
+import lk.tenderease.tender.dto.request.CreateAddendumRequest;
 import lk.tenderease.tender.dto.request.CreateTenderRequest;
 import lk.tenderease.tender.dto.request.TenderScheduleRequest;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ComplianceChecklistResponse;
 import lk.tenderease.tender.dto.response.DepartmentResponse;
 import lk.tenderease.tender.dto.response.FundingSourceResponse;
 import lk.tenderease.tender.dto.response.MinistryResponse;
 import lk.tenderease.tender.dto.response.SbdTemplateResponse;
+import lk.tenderease.tender.dto.response.TenderAmendmentDTO;
 import lk.tenderease.tender.dto.response.TenderDetailResponse;
 import lk.tenderease.tender.dto.response.TenderDocumentResponse;
 import lk.tenderease.tender.dto.response.TenderNoticePreviewResponse;
@@ -152,8 +155,13 @@ public class TenderController {
         @ApiResponse(responseCode = "404", description = "Tender not found")
     })
     public ResponseEntity<TenderDetailResponse> getTenderById(
-            @Parameter(description = "Tender UUID") @PathVariable UUID id) {
-        return ResponseEntity.ok(tenderService.getTenderById(id));
+            @Parameter(description = "Tender UUID or Number") @PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return ResponseEntity.ok(tenderService.getTenderById(uuid));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(tenderService.getTenderByNumber(id));
+        }
     }
 
     @PutMapping("/{id}")
@@ -262,6 +270,72 @@ public class TenderController {
             @Parameter(description = "Document UUID") @PathVariable UUID docId) {
         tenderService.deleteDocument(id, docId, "dev-user-id");
         return ResponseEntity.noContent().build();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ADDENDA & ADDENDUM VERSIONING
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/{id}/addenda")
+    @Operation(summary = "Get all addenda for tender", description = "Returns all addenda/amendments issued for a tender including their latest version information.")
+    public ResponseEntity<List<TenderAmendmentDTO>> getAddenda(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id) {
+        return ResponseEntity.ok(tenderService.getAddenda(id));
+    }
+
+    @PostMapping(value = "/{id}/addenda", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // @PreAuthorize("hasRole('PROCUREMENT_OFFICER') or hasRole('ADMIN')")
+    @Operation(summary = "Create new addendum (Officer)", description = "Created by Procurement Officer. Creates an addendum and optionally uploads the initial version (v1) file.")
+    public ResponseEntity<TenderAmendmentDTO> createAddendum(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "changeDescription", required = false) String changeDescription,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
+        CreateAddendumRequest request = CreateAddendumRequest.builder()
+                .title(title)
+                .description(description)
+                .changeDescription(changeDescription)
+                .build();
+        TenderAmendmentDTO response = tenderService.createAddendum(id, request, file, "procurement-officer");
+        return ResponseEntity.status(201).body(response);
+    }
+
+    @PostMapping(value = "/{id}/addenda/{addendumId}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // @PreAuthorize("hasRole('PROCUREMENT_OFFICER') or hasRole('ADMIN')")
+    @Operation(summary = "Upload new addendum version (Officer)", description = "Uploaded by Procurement Officer. Uploads a new immutable version for an existing addendum (e.g. v2, v3).")
+    public ResponseEntity<AddendumVersionResponse> uploadAddendumVersion(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Addendum ID") @PathVariable Long addendumId,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "changeDescription", required = false) String changeDescription) {
+        AddendumVersionResponse response = tenderService.uploadAddendumVersion(id, addendumId, file, changeDescription, "procurement-officer");
+        return ResponseEntity.status(201).body(response);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions")
+    @Operation(summary = "Get complete version history", description = "Returns all immutable versions created for an addendum in chronological order.")
+    public ResponseEntity<List<AddendumVersionResponse>> getAddendumVersionHistory(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Addendum ID") @PathVariable Long addendumId) {
+        return ResponseEntity.ok(tenderService.getAddendumVersionHistory(id, addendumId));
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/current")
+    @Operation(summary = "Get current addendum version", description = "Returns the latest active version for an addendum.")
+    public ResponseEntity<AddendumVersionResponse> getCurrentAddendumVersion(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Addendum ID") @PathVariable Long addendumId) {
+        return ResponseEntity.ok(tenderService.getCurrentAddendumVersion(id, addendumId));
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/{versionNumber}")
+    @Operation(summary = "Get specific addendum version", description = "Returns a specific historical version of an addendum by version number.")
+    public ResponseEntity<AddendumVersionResponse> getAddendumVersion(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Addendum ID") @PathVariable Long addendumId,
+            @Parameter(description = "Version number (1, 2, 3...)") @PathVariable Integer versionNumber) {
+        return ResponseEntity.ok(tenderService.getAddendumVersion(id, addendumId, versionNumber));
     }
 
     // ══════════════════════════════════════════════════════════════════════════

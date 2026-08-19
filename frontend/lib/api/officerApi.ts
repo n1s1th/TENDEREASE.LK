@@ -100,11 +100,17 @@ export const registerOfficer = async (
       email: formData.liaisonEmail,
     },
     termsAccepted: formData.termsAccepted,
+    keycloakUserId: formData.keycloakUserId,
   };
 
   const response = await axios.post<OfficerSuccessResponse>(
     `${API_BASE_URL}/register`,
     payload
   );
+  return response.data;
+};
+
+export const getOfficerByEmail = async (email: string): Promise<any> => {
+  const response = await axios.get(`${API_BASE_URL}/email/${encodeURIComponent(email)}`);
   return response.data;
 };

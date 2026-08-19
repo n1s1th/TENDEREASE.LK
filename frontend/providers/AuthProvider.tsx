@@ -33,12 +33,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const stored = useAuthStore.getState();
 
       try {
-        const authenticated = await keycloak.init({
-          pkceMethod: 'S256',
-          checkLoginIframe: false,
-          token: stored.token ?? undefined,
-          refreshToken: stored.refreshToken ?? undefined,
-        });
+        let authenticated = false;
+        try {
+          authenticated = await keycloak.init({
+            pkceMethod: 'S256',
+            checkLoginIframe: false,
+            token: stored.token ?? undefined,
+            refreshToken: stored.refreshToken ?? undefined,
+          });
+        } catch (initErr) {
+          console.warn('Keycloak token-based init failed (likely revoked tokens). Clearing and reloading...', initErr);
+          clearAuth();
+          window.location.reload();
+          return;
+        }
 
         const applyAuth = (token: string) => {
           const decoded: any = jwtDecode(token);
@@ -70,8 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setInitialized(true);
       } catch (error: any) {
-        console.error('❌ Keycloak initialization failed:', error);
-        setError(error?.message || 'Failed to connect to authentication server');
+        console.warn('Keycloak init failed (likely revoked tokens after logout):', error?.message);
+        clearAuth();
         setInitialized(true);
       } finally {
         isInitializing.current = false;

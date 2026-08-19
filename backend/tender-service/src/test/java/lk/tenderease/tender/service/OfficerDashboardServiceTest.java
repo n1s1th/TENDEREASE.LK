@@ -36,11 +36,12 @@ class OfficerDashboardServiceTest {
     void shouldReturnCorrectDashboardMetrics() {
         // Given
         List<TenderStatus> activeStatuses = Arrays.asList(
-                TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING, TenderStatus.OPEN
+                TenderStatus.PUBLISHED, TenderStatus.PENDING_OPENING, TenderStatus.OPEN, TenderStatus.EVALUATION
         );
         when(tenderRepository.countByStatusIn(activeStatuses)).thenReturn(10L);
         when(tenderRepository.countByStatus(TenderStatus.EVALUATION)).thenReturn(3L);
         when(tenderRepository.countByStatus(TenderStatus.AWARDED)).thenReturn(5L);
+        when(tenderRepository.countByStatusIn(Arrays.asList(TenderStatus.CLOSED, TenderStatus.AWARDED))).thenReturn(2L);
         when(tenderRepository.countByStatus(TenderStatus.NO_BID)).thenReturn(2L);
 
         // When

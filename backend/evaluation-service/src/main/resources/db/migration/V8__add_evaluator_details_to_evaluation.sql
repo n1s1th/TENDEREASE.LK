@@ -1,0 +1,2 @@
+ALTER TABLE evaluation ADD COLUMN IF NOT EXISTS evaluator_name VARCHAR(255);
+ALTER TABLE evaluation ADD COLUMN IF NOT EXISTS evaluator_role VARCHAR(255);

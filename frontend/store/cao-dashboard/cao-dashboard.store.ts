@@ -208,8 +208,10 @@ export const useCAODashboardStore = create<CAODashboardState>(
         });
         get().fetchRegistrations();
         get().fetchKpiSummary();
-      } catch {
-        get().showToast('error', 'Failed to approve registration.');
+      } catch (err: any) {
+        console.error("Accept registration error:", err);
+        const errMsg = err?.response?.data?.message || err?.message || 'Server error';
+        get().showToast('error', `Failed to approve registration: ${errMsg}`);
       }
     },
 
@@ -225,8 +227,10 @@ export const useCAODashboardStore = create<CAODashboardState>(
         });
         get().closeModal();
         get().fetchRegistrations();
-      } catch {
-        get().showToast('error', 'Failed to reject registration.');
+      } catch (err: any) {
+        console.error("Reject registration error:", err);
+        const errMsg = err?.response?.data?.message || err?.message || 'Server error';
+        get().showToast('error', `Failed to reject registration: ${errMsg}`);
       }
     },
 
@@ -371,7 +375,18 @@ export const useCAODashboardStore = create<CAODashboardState>(
         get().showToast('success', msg);
         
         get().closeModal();
-        get().fetchRecommendations();
+        
+        // Re-fetch recommendations for the current active sub-page tab
+        const path = typeof window !== 'undefined' ? window.location.pathname : '';
+        if (path.includes('/pending')) {
+          get().fetchRecommendations('PENDING');
+        } else if (path.includes('/accepted')) {
+          get().fetchRecommendations('APPROVED');
+        } else if (path.includes('/rejected')) {
+          get().fetchRecommendations('REJECTED');
+        } else {
+          get().fetchRecommendations();
+        }
       } catch {
         get().showToast('error', `Failed to ${status.toLowerCase()} recommendation.`);
       }

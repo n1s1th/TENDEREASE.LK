@@ -25,6 +25,7 @@ public class OfficerRabbitMQConfig {
     public static final String APPROVED_QUEUE = "officer.approved.queue";
     public static final String REJECTED_QUEUE = "officer.rejected.queue";
     public static final String NOTIFICATION_QUEUE = "officer.notification.queue";
+    public static final String USER_CREATED_QUEUE = "user.created.queue";
 
     public static final String REGISTERED_KEY = "officer.registered";
     public static final String APPROVED_KEY = "officer.approved";
@@ -60,6 +61,11 @@ public class OfficerRabbitMQConfig {
     @Bean
     public Queue officerNotificationQueue() {
         return QueueBuilder.durable(NOTIFICATION_QUEUE).build();
+    }
+
+    @Bean
+    public Queue userCreatedQueue() {
+        return QueueBuilder.durable(USER_CREATED_QUEUE).build();
     }
 
     // ──── Bindings ────

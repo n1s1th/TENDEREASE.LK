@@ -7,12 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { termsSchema } from '../../../lib/validations/vendorSchema';
 import { useVendorStore } from '../../../store/vendorRegistrationStore';
 import { submitVendor } from '../../../lib/api/vendorApi';
+import keycloak from '../../../lib/keycloak';
+import { jwtDecode } from 'jwt-decode';
+import { useAuthStore } from '../../../store';
 
 export default function Step4Review() {
   const router = useRouter();
   const { vendorId, organizationData, officerData, uploadedDocuments, prevStep } = useVendorStore();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(termsSchema),
@@ -29,6 +33,32 @@ export default function Step4Review() {
     setError(null);
     try {
       await submitVendor(vendorId);
+
+      // Force a token refresh to immediately pick up the new VENDOR role
+      if (keycloak) {
+        try {
+          const refreshed = await keycloak.updateToken(-1);
+          if (refreshed && keycloak.token) {
+            const decoded: any = jwtDecode(keycloak.token);
+            setAuth(
+              keycloak.token,
+              {
+                id: decoded.sub,
+                email: decoded.email,
+                name: decoded.name,
+                firstName: decoded.given_name,
+                lastName: decoded.family_name,
+                username: decoded.preferred_username,
+                roles: decoded.realm_access?.roles || [],
+              },
+              keycloak.refreshToken || null
+            );
+          }
+        } catch (e) {
+          console.warn("Failed to refresh token after vendor registration:", e);
+        }
+      }
+
       router.push('/vendor-registration/success');
     } catch (e: any) {
       setError(e.response?.data?.message || "Failed to submit registration.");

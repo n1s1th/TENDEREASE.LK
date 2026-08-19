@@ -29,8 +29,8 @@ export default function EvaluationKpiCards() {
     { title: "ACTIVE TENDERS", subtitle: "IN PROGRESS", value: metrics.active },
     { title: "TOTAL BIDS RECEIVED", subtitle: "ALL TENDERS", value: metrics.bids },
     { title: "UNDER EVALUATION", subtitle: "PENDING FINAL", value: metrics.evaluating },
+    { title: "EVALUATION COMPLETED", subtitle: "COMPLETED EVALUATIONS", value: metrics.completed || 0 },
     { title: "AWARDED PROPOSALS", subtitle: "SUCCESSFUL", value: metrics.awarded },
-    { title: "NO BID TENDERS", subtitle: "CLOSED WITHOUT BIDS", value: metrics.noBids },
   ];
 
   return (
@@ -40,7 +40,7 @@ export default function EvaluationKpiCards() {
           key={idx} 
           className="bg-[#9A3B12] text-white rounded-xl p-5 flex-1 min-w-[180px] shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer"
         >
-          <div className="text-sm font-bold uppercase tracking-wider">{card.title}</div>
+          <div className="text-[12px] font-bold uppercase tracking-wider whitespace-nowrap">{card.title}</div>
           <div className="text-[10px] uppercase opacity-80 mt-1 mb-3">{card.subtitle}</div>
           <div className="text-4xl font-bold">
             <CountUp end={card.value} />

@@ -21,4 +21,5 @@ public class OfficerTenderResponse {
     private String status;
     private String closingDate;
     private String role;
+    private String createdAt;
 }

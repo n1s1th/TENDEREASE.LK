@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = "http://localhost:8083/api/bids";
+const BASE_URL = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -80,6 +80,20 @@ export async function uploadBidDocument(file: File) {
 export async function getBidsByTender(tenderId: string) {
   const headers = getAuthHeaders();
   const res = await fetch(`${BASE_URL}/tender/${tenderId}`, {
+    method: "GET",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await handleResponse(res);
+  return json.data || json;
+}
+
+// Get all bids
+export async function getAllBids() {
+  const headers = getAuthHeaders();
+  const res = await fetch(`${BASE_URL}`, {
     method: "GET",
     headers: {
       ...headers,

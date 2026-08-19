@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store";
 
 // Use environment variable if available, otherwise assume gateway or direct service
-const QA_API_BASE = process.env.NEXT_PUBLIC_QA_SERVICE_URL || "http://localhost:8000/api/qa";
+const QA_API_BASE = process.env.NEXT_PUBLIC_QA_SERVICE_URL || "http://localhost:8194/api/qa";
 
 export type QaCategory =
   | "REGISTRATION"
@@ -51,13 +51,29 @@ function getAuthHeaders(): HeadersInit {
   };
 
   if (typeof window !== "undefined") {
-    const { token } = useAuthStore.getState();
+    const { token, user } = useAuthStore.getState();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+    }
+    // qa-service uses HeaderAuthenticationFilter that expects these gateway-injected headers
+    if (user?.id) {
+      headers["X-User-Id"] = user.id;
+    }
+    if (user?.roles?.length) {
+      headers["X-Roles"] = user.roles.join(",");
     }
   }
 
   return headers;
+}
+
+/**
+ * Returns minimal headers for anonymous requests (no auth).
+ */
+function getPublicHeaders(): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+  };
 }
 
 async function handleQaResponse<T>(response: Response): Promise<T> {
@@ -104,12 +120,63 @@ export async function getQaQuestions({
   return handleQaResponse<QaPage>(response);
 }
 
+/**
+ * Submit a question — works for both authenticated and anonymous users.
+ */
 export async function createQaQuestion(questionText: string, category: QaCategory) {
+  const isLoggedIn = typeof window !== "undefined" && !!useAuthStore.getState().token;
+
   const response = await fetch(`${QA_API_BASE}/questions`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers: isLoggedIn ? getAuthHeaders() : getPublicHeaders(),
     body: JSON.stringify({ questionText, category }),
   });
 
   return handleQaResponse<QaQuestion>(response);
 }
+
+/**
+ * Officer/Admin: Get questions filtered by status (PENDING or ANSWERED).
+ */
+export async function getOfficerQuestions({
+  status,
+  page = 0,
+  size = 10,
+  sort = "createdAt,desc",
+}: {
+  status?: QaStatus;
+  page?: number;
+  size?: number;
+  sort?: string;
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+    sort,
+  });
+
+  if (status) {
+    params.set("status", status);
+  }
+
+  const response = await fetch(`${QA_API_BASE}/officer/questions?${params.toString()}`, {
+    cache: "no-store",
+    headers: getAuthHeaders(),
+  });
+
+  return handleQaResponse<QaPage>(response);
+}
+
+/**
+ * Officer/Admin: Answer a pending question.
+ */
+export async function answerQaQuestion(questionId: number, answerText: string) {
+  const response = await fetch(`${QA_API_BASE}/questions/${questionId}/answer`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ answerText }),
+  });
+
+  return handleQaResponse<QaQuestion>(response);
+}
+

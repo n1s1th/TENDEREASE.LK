@@ -1,13 +1,36 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { fetchEvaluationStatusCounts } from "@/lib/api/evaluation.api";
+import type { EvaluationStatusCounts } from "@/lib/api/evaluation.api";
+
 export default function EvaluationStatusPanel() {
+  const [counts, setCounts] = useState<EvaluationStatusCounts>({
+    technicalPassed: 0,
+    financialPassed: 0,
+    financialFailed: 0,
+    evaluationFailed: 0,
+    notReviewed: 0,
+  });
+
+  useEffect(() => {
+    const loadCounts = async () => {
+      try {
+        const data = await fetchEvaluationStatusCounts();
+        setCounts(data);
+      } catch (err) {
+        console.error("Failed to fetch evaluation status counts", err);
+      }
+    };
+    loadCounts();
+  }, []);
+
   const statuses = [
-    { label: "Technical Pass", count: 0, color: "bg-green-500" },
-    { label: "Under Technical Review", count: 0, color: "bg-blue-500" },
-    { label: "Pending Finance", count: 0, color: "bg-yellow-400" },
-    { label: "Under Financial Review", count: 0, color: "bg-yellow-500" },
-    { label: "Rejected", count: 0, color: "bg-red-500" },
-    { label: "Not Reviewed", count: 0, color: "bg-gray-400" },
+    { label: "Technical Passed", count: counts.technicalPassed, color: "bg-green-500" },
+    { label: "Financial Passed", count: counts.financialPassed, color: "bg-blue-500" },
+    { label: "Financial Failed", count: counts.financialFailed, color: "bg-yellow-500" },
+    { label: "Evaluation Failed", count: counts.evaluationFailed, color: "bg-red-500" },
+    { label: "Not Reviewed", count: counts.notReviewed, color: "bg-gray-400" },
   ];
 
   return (
