@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useDynamicTenderCreationStore } from "@/store/tender-creation/dynamic-creation.store";
 import { templateService } from "@/services/template.service";
 import { DynamicStepIndicator } from "@/components/tender/creation/dynamic/DynamicStepIndicator";
-import { BaseDetailsStep } from "@/components/tender/creation/dynamic/BaseDetailsStep";
 import { DynamicSectionStep } from "@/components/tender/creation/dynamic/DynamicSectionStep";
 import { DynamicTenderPreview } from "@/components/tender/creation/dynamic/DynamicTenderPreview";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ export default function DynamicTenderCreationPage() {
     showPreview,
     isSubmitting,
     error,
-    baseData,
     dynamicData,
     nextStep,
     prevStep,
@@ -81,40 +79,20 @@ export default function DynamicTenderCreationPage() {
   }
 
   const sections = template.schema?.sections || [];
-  const totalSteps = 1 + sections.length;
+  const totalSteps = sections.length;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
 
-  // Build step labels: "Core Details" + one per template section
-  const stepLabels = ["Core Details", ...sections.map((s: any) => s.title || "Section")];
+  // Step labels correspond 1-to-1 with the template's defined sections
+  const stepLabels = sections.map((s: any, idx: number) => s.title || `Section ${idx + 1}`);
 
-  // ── Mandatory field validation ──────────────────────────────
+  // ── Mandatory field validation for the active section ──────────────
   const validateCurrentStep = (): boolean => {
-    if (currentStep === 0) {
-      // Validate base mandatory fields
-      const missing: string[] = [];
-      if (!baseData.title?.trim())              missing.push("Tender Title");
-      if (!baseData.referenceNumber?.trim())    missing.push("Reference Number");
-      if (!baseData.procurementType)            missing.push("Procurement Type");
-      if (!baseData.ministryId)                 missing.push("Ministry");
-      if (!baseData.departmentAgencyId)         missing.push("Department / Agency");
-      if (!baseData.estimatedBudget)            missing.push("Estimated Budget");
-      if (!baseData.tenderType)                 missing.push("Tender Type");
-      if (!baseData.biddingMethod)              missing.push("Bidding Method");
-
-      if (missing.length > 0) {
-        toast.error(`Please fill in required fields: ${missing.join(", ")}`);
-        return false;
-      }
-      return true;
-    }
-
-    // Validate dynamic section fields
-    const section = sections[currentStep - 1];
+    const section = sections[currentStep];
     if (!section) return true;
 
     const missing: string[] = [];
-    for (const field of section.fields) {
+    for (const field of section.fields || []) {
       if (!field.required) continue;
       const val = dynamicData[field.id];
       const isEmpty =
@@ -149,17 +127,20 @@ export default function DynamicTenderCreationPage() {
         <Toaster position="top-right" richColors />
         <div className="border-b border-border bg-white">
           <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Review Tender — {template.name}
-            </h1>
-            <span className="text-xs font-medium text-grey-4 bg-primary/10 text-primary px-3 py-1 rounded-full">
-              Preview
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                Review Tender
+              </h1>
+              <p className="text-xs text-grey-5 mt-0.5">{template.name}</p>
+            </div>
+            <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              Preview Mode
             </span>
           </div>
         </div>
 
         <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
-          <DynamicTenderPreview sections={sections} />
+          <DynamicTenderPreview sections={sections} template={template} />
         </div>
       </div>
     );
@@ -182,24 +163,37 @@ export default function DynamicTenderCreationPage() {
                 {template.name}
               </h1>
               <p className="text-xs text-grey-5 mt-0.5">
-                Step {currentStep + 1} of {totalSteps} — {stepLabels[currentStep]}
+                {totalSteps > 0 ? (
+                  <>Step {currentStep + 1} of {totalSteps} — {stepLabels[currentStep]}</>
+                ) : (
+                  "No sections configured"
+                )}
               </p>
             </div>
           </div>
-          <span className="hidden sm:flex items-center text-xs font-medium text-grey-5 bg-grey-1 px-3 py-1.5 rounded-full border border-grey-2">
-            {stepLabels[currentStep]}
-          </span>
+          {totalSteps > 0 && (
+            <span className="hidden sm:flex items-center text-xs font-semibold text-primary bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-full">
+              {stepLabels[currentStep]}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Main content */}
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
-        {/* Dynamic step indicator */}
-        <DynamicStepIndicator
-          steps={stepLabels}
-          currentStep={currentStep}
-          onStepClick={(step) => goToStep(step)}
-        />
+        {/* Dynamic step indicator matching template sections */}
+        {totalSteps > 1 && (
+          <DynamicStepIndicator
+            steps={stepLabels}
+            currentStep={currentStep}
+            onStepClick={(step) => {
+              // Only allow jumping to previous steps or next if valid
+              if (step < currentStep || validateCurrentStep()) {
+                goToStep(step);
+              }
+            }}
+          />
+        )}
 
         {error && (
           <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
@@ -209,10 +203,12 @@ export default function DynamicTenderCreationPage() {
 
         {/* Active step form */}
         <div className="min-h-[400px]">
-          {currentStep === 0 ? (
-            <BaseDetailsStep />
+          {sections[currentStep] ? (
+            <DynamicSectionStep section={sections[currentStep]} />
           ) : (
-            <DynamicSectionStep section={sections[currentStep - 1]} />
+            <div className="p-8 text-center bg-white rounded-xl border border-grey-2 text-grey-5">
+              No fields configured for this template.
+            </div>
           )}
         </div>
 
@@ -232,14 +228,14 @@ export default function DynamicTenderCreationPage() {
           </div>
 
           <div className="flex gap-3">
-            {!isLastStep && (
+            {!isLastStep && totalSteps > 1 && (
               <Button type="button" size="sm" onClick={handleNext}>
                 Next Step
                 <ChevronRight className="size-4 ml-1" />
               </Button>
             )}
 
-            {isLastStep && (
+            {(isLastStep || totalSteps <= 1) && (
               <Button type="button" size="sm" onClick={handleReview}>
                 <Eye className="size-4 mr-1" />
                 Review Tender

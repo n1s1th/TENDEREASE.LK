@@ -75,5 +75,16 @@ export const templateService = {
       headers: getAuthHeaders(),
     });
     return handleResponse(res);
+  },
+
+  async deleteTemplate(id: string) {
+    const res = await fetch(`${API_URL}/api/v1/tender-templates/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.status === 204 || res.ok) {
+      return true;
+    }
+    return handleResponse(res);
   }
 };

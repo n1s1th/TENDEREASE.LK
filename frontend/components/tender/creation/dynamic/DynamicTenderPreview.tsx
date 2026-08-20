@@ -12,35 +12,23 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  FileText,
   AlertTriangle,
   ArrowLeft,
   SendHorizontal,
   FolderOpen,
+  LayoutTemplate,
 } from "lucide-react";
 import { toast } from "sonner";
 
 interface DynamicTenderPreviewProps {
   sections: TemplateSection[];
+  template?: any;
 }
 
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-0.5">
-      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">
-        {label}
-      </dt>
-      <dd className="text-sm text-foreground font-medium">{value || "—"}</dd>
-    </div>
-  );
-}
-
-export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
+export function DynamicTenderPreview({ sections, template }: DynamicTenderPreviewProps) {
   const router = useRouter();
   const {
-    baseData,
     dynamicData,
-    referenceData,
     isSubmitting,
     error,
     setShowPreview,
@@ -48,42 +36,13 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
     reset,
   } = useDynamicTenderCreationStore();
 
-  // Resolve names from reference data instead of showing raw IDs
-  const ministryName =
-    referenceData.ministries.find((m) => String(m.id) === String(baseData.ministryId))?.name ||
-    baseData.ministryId || "—";
-
-  const departmentName =
-    referenceData.departments.find((d) => String(d.id) === String(baseData.departmentAgencyId))?.name ||
-    baseData.departmentAgencyId || "—";
-
-  const procurementTypeName =
-    referenceData.procurementTypes.find(
-      (p) => String(p.code ?? p.id) === String(baseData.procurementType)
-    )?.name || baseData.procurementType || "—";
-
-  const biddingMethodName =
-    referenceData.biddingMethods.find(
-      (b) => String(b.code ?? b.id) === String(baseData.biddingMethod)
-    )?.name || baseData.biddingMethod || "—";
-
-  const fundingSourceName =
-    referenceData.fundingSources.find(
-      (f) => String(f.code ?? f.id) === String(baseData.fundingSource)
-    )?.name || baseData.fundingSource || "—";
-
-  const tenderTypeName =
-    referenceData.tenderTypes.find(
-      (t) => String(t.code ?? t.id) === String(baseData.tenderType)
-    )?.name || baseData.tenderType || "—";
-
   const handleSubmit = async () => {
-    const tenderId = await submitTender();
+    const { tenderId, tenderNumber } = await submitTender(sections, template?.name);
 
     if (tenderId) {
       try {
         await api.submitForApproval(tenderId);
-        toast.success(`Tender submitted for approval! Reference: ${baseData.referenceNumber}`);
+        toast.success(`Tender submitted for approval! Reference: ${tenderNumber}`);
         reset();
         router.push("/tenders");
       } catch (err: any) {
@@ -115,63 +74,47 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
         </div>
       )}
 
-      {/* ── Core Details ─────────────────────────────────────────── */}
-      <Card>
-        <CardHeader className="border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
-              <FileText className="h-4 w-4 text-primary" />
+      {/* ── Template Header Card ─────────────────────────────────── */}
+      {template && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center">
+                  <LayoutTemplate className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                  {template.description && (
+                    <p className="text-xs text-grey-5 mt-0.5">{template.description}</p>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                {template.status || "PUBLISHED"}
+              </span>
             </div>
-            <CardTitle>Mandatory Core Details</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-5">
-          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="sm:col-span-2 lg:col-span-3 space-y-0.5">
-              <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">Tender Title</dt>
-              <dd className="text-sm text-foreground font-medium">{baseData.title || "—"}</dd>
-            </div>
-            <Field label="Reference Number" value={baseData.referenceNumber || ""} />
-            <Field label="Procurement Type" value={procurementTypeName} />
-            <Field label="Bidding Method" value={biddingMethodName} />
-            <Field label="Ministry" value={ministryName} />
-            <Field label="Department / Agency" value={departmentName} />
-            <Field
-              label="Estimated Budget (LKR)"
-              value={
-                baseData.estimatedBudget
-                  ? `LKR ${Number(baseData.estimatedBudget).toLocaleString()}`
-                  : ""
-              }
-            />
-            <Field label="Funding Source" value={fundingSourceName} />
-            <Field label="Tender Type" value={tenderTypeName} />
-          </dl>
-          {baseData.description && (
-            <div className="mt-6 pt-5 border-t border-border">
-              <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">
-                Description
-              </dt>
-              <dd className="text-sm text-foreground whitespace-pre-wrap bg-grey-1/30 p-4 rounded-md border border-border">
-                {baseData.description}
-              </dd>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* ── Dynamic Template Sections ──────────────────────────────── */}
       {sections.map((section) => (
         <Card key={section.id}>
-          <CardHeader className="border-b border-border bg-grey-1/30">
+          <CardHeader className="border-b border-border bg-grey-1/30 py-3.5">
             <div className="flex items-center gap-2.5">
               <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
                 <FolderOpen className="h-4 w-4 text-primary" />
               </div>
-              <CardTitle>{section.title}</CardTitle>
+              <div>
+                <CardTitle className="text-base">{section.title}</CardTitle>
+                {section.description && (
+                  <p className="text-xs text-grey-5 mt-0.5">{section.description}</p>
+                )}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-5">
+          <CardContent className="pt-5 pb-6">
             <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {section.fields.map((field) => {
                 let displayVal = dynamicData[field.id];
@@ -187,11 +130,11 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
                 if (field.type === "PARAGRAPH") {
                   return (
                     <div key={field.id} className="col-span-full">
-                      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">
+                      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-1.5">
                         {field.title}
                         {field.required && <span className="text-error ml-1">*</span>}
                       </dt>
-                      <dd className="text-sm text-foreground whitespace-pre-wrap bg-grey-1/30 p-4 rounded-md border border-border">
+                      <dd className="text-sm text-foreground whitespace-pre-wrap bg-grey-1/30 p-3.5 rounded-md border border-border">
                         {displayVal || "—"}
                       </dd>
                     </div>
@@ -205,7 +148,7 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
                         {field.title}
                         {field.required && <span className="text-error ml-1">*</span>}
                       </dt>
-                      <dd className="text-sm text-grey-5 italic">File upload (pending attachment)</dd>
+                      <dd className="text-sm text-grey-5 italic">File attachment</dd>
                     </div>
                   );
                 }

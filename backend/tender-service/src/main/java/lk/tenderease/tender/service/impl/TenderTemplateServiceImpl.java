@@ -141,6 +141,16 @@ public class TenderTemplateServiceImpl implements TenderTemplateService {
         repository.save(template);
     }
 
+    @Override
+    @Transactional
+    public void deleteTemplate(UUID id) {
+        TenderTemplate template = repository.findById(id)
+                .orElseThrow(() -> new BusinessException("Template not found"));
+        
+        repository.delete(template);
+        log.info("Deleted template with id {}", id);
+    }
+
     private TenderTemplateResponse mapToResponse(TenderTemplate template) {
         return TenderTemplateResponse.builder()
                 .id(template.getId())
