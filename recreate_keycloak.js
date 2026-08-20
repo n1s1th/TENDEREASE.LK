@@ -3,7 +3,7 @@ const http = require('http');
 async function run() {
   const adminUser = 'admin';
   const adminPass = 'admin';
-  const baseUrl = 'http://localhost:8080';
+  const baseUrl = 'http://158.178.227.145:8080';
   
   console.log("Getting admin token...");
   const tokenRes = await fetch(`${baseUrl}/realms/master/protocol/openid-connect/token`, {

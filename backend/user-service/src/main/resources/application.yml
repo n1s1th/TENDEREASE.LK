@@ -62,10 +62,10 @@ spring:
 
   keycloak:
     admin:
-      server-url: ${KEYCLOAK_ADMIN_URL:https://lemur-1.cloud-iam.com/auth}
+      server-url: ${KEYCLOAK_ADMIN_URL:http://158.178.227.145:8080}
       realm: ${KEYCLOAK_REALM:tenderease}
       client-id: ${KEYCLOAK_ADMIN_CLIENT_ID:tenderease-backend}
-      client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:UdiHyV4TMypLJQqBsqOXDrltJaG5TK7O}
+      client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET:Jj4k84LKRBhiJ13v2AnhnCyKOY9gckSX}
 
 server:
   port: ${PORT:8081}
