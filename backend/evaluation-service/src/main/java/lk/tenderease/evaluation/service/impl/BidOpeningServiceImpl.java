@@ -30,10 +30,43 @@ public class BidOpeningServiceImpl implements BidOpeningService {
     private final OpeningAttendanceRepository attendanceRepository;
     private final EvaluationMapper mapper;
 
+    @jakarta.annotation.PostConstruct
+    public void syncActiveSessionsToTenderService() {
+        new Thread(() -> {
+            try {
+                // Wait 4 seconds for services to fully initialize
+                Thread.sleep(4000);
+                log.info("Self-healing: Synchronizing active opening sessions to tender-service status...");
+                List<OpeningSession> openSessions = sessionRepository.findAll();
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                for (OpeningSession session : openSessions) {
+                    if (session.getStatus() == OpeningStatus.OPEN) {
+                        try {
+                            String getUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId();
+                            java.util.Map<?, ?> tender = restTemplate.getForObject(getUrl, java.util.Map.class);
+                            if (tender != null) {
+                                String currentStatus = (String) tender.get("status");
+                                if ("PUBLISHED".equals(currentStatus) || "PENDING_OPENING".equals(currentStatus)) {
+                                    String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId() + "/status?status=OPEN";
+                                    restTemplate.put(tenderServiceUrl, null);
+                                    log.info("Self-healed: Synced tender {} status to OPEN", session.getTenderId());
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.error("Failed to sync tender {} status: {}", session.getTenderId(), e.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to sync active sessions: {}", e.getMessage());
+            }
+        }).start();
+    }
+
     @Override
     @Transactional
     public OpeningSessionResponse getOpeningSession(UUID tenderId) {
-        OpeningSession session = sessionRepository.findByTenderId(tenderId)
+        OpeningSession session = sessionRepository.findFirstByTenderIdOrderByScheduledOpeningTimeDesc(tenderId)
                 .orElseGet(() -> createDefaultSession(tenderId));
 
         // Sync scheduled opening time with tender closing date if session is still SCHEDULED

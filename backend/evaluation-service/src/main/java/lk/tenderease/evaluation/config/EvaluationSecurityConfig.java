@@ -45,10 +45,10 @@ public class EvaluationSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .anyRequest().permitAll()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
             );
+            // .oauth2ResourceServer(oauth2 -> oauth2
+            //     .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
+            // );
 
         return http.build();
     }

@@ -48,7 +48,7 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
                 </>
               )}
               <ChevronRight className="w-3 h-3 text-[#953002]" />
-              <span className="text-[#953002]">BID OPENING</span>
+              <span className="text-[#953002]">BID OPENING & ATTENDANCE</span>
             </div>
           </div>
         </div>

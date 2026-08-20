@@ -876,15 +876,50 @@ public class TenderServiceImpl implements TenderService {
             }
             java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
             if (response != null) {
-                String orgName = (String) response.get("organizationName");
-                if (orgName != null && !orgName.trim().isEmpty()) {
-                    info.put("name", orgName);
-                    String designation = (String) response.get("headDesignation");
-                    if (designation != null && !designation.trim().isEmpty()) {
-                        info.put("role", designation);
-                    } else {
-                        info.put("role", "Procuring Entity");
+                // Prefer the liaison officer's personal full name for the USER column
+                java.util.Map<?, ?> liaisonOfficer = null;
+                Object liaisonObj = response.get("liaisonOfficer");
+                if (liaisonObj instanceof java.util.Map) {
+                    liaisonOfficer = (java.util.Map<?, ?>) liaisonObj;
+                }
+
+                String fullName = null;
+                String designation = null;
+
+                if (liaisonOfficer != null) {
+                    String liaisonName = (String) liaisonOfficer.get("name");
+                    String liaisonTitle = (String) liaisonOfficer.get("title");
+                    String liaisonDesignation = (String) liaisonOfficer.get("designation");
+                    if (liaisonName != null && !liaisonName.trim().isEmpty()) {
+                        // Prefix with title if available (e.g. "Mr. John Doe")
+                        fullName = (liaisonTitle != null && !liaisonTitle.trim().isEmpty())
+                                ? liaisonTitle + ". " + liaisonName
+                                : liaisonName;
                     }
+                    if (liaisonDesignation != null && !liaisonDesignation.trim().isEmpty()) {
+                        designation = liaisonDesignation;
+                    }
+                }
+
+                // Fall back to organization name if liaison officer name is not available
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    String orgName = (String) response.get("organizationName");
+                    if (orgName != null && !orgName.trim().isEmpty()) {
+                        fullName = orgName;
+                    }
+                }
+                if (designation == null || designation.trim().isEmpty()) {
+                    String headDesignation = (String) response.get("headDesignation");
+                    if (headDesignation != null && !headDesignation.trim().isEmpty()) {
+                        designation = headDesignation;
+                    }
+                }
+
+                if (fullName != null && !fullName.trim().isEmpty()) {
+                    info.put("name", fullName);
+                }
+                if (designation != null && !designation.trim().isEmpty()) {
+                    info.put("role", designation);
                 }
             }
         } catch (Exception e) {
@@ -906,10 +941,14 @@ public class TenderServiceImpl implements TenderService {
                             .eventType(event.getEventType())
                             .description(event.getDescription())
                             .timestamp(event.getTimestamp())
+                            .createdBy(event.getCreatedBy())
+                            .creatorRole(event.getCreatorRole())
                             .build();
-                    if (event.getEventType() == TimelineEventType.CREATED || event.getEventType() == TimelineEventType.PUBLISHED) {
-                        dto.setCreatedBy(creatorInfo.get("name"));
-                        dto.setCreatorRole(creatorInfo.get("role"));
+                    if (dto.getCreatedBy() == null || dto.getCreatedBy().isBlank()) {
+                        if (event.getEventType() == TimelineEventType.CREATED || event.getEventType() == TimelineEventType.PUBLISHED) {
+                            dto.setCreatedBy(creatorInfo.get("name"));
+                            dto.setCreatorRole(creatorInfo.get("role"));
+                        }
                     }
                     return dto;
                 })
@@ -1557,7 +1596,7 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @Transactional
-    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description) {
+    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description, String createdBy, String creatorRole) {
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
         
@@ -1566,9 +1605,11 @@ public class TenderServiceImpl implements TenderService {
                 .eventType(eventType)
                 .description(description)
                 .timestamp(LocalDateTime.now())
+                .createdBy(createdBy)
+                .creatorRole(creatorRole)
                 .build();
         timelineRepository.save(event);
-        log.info("Timeline event saved: {} - {} for tender {}", eventType, description, tenderId);
+        log.info("Timeline event saved: {} - {} by {} ({}) for tender {}", eventType, description, createdBy, creatorRole, tenderId);
     }
 
     private LocalDateTime parseLocalDateTime(Object obj) {

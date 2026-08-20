@@ -273,7 +273,7 @@ public interface TenderService {
 
     List<TimelineDTO> getTimeline(UUID tenderId);
 
-    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description);
+    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description, String createdBy, String creatorRole);
 
     List<ContactDTO> getContacts(UUID tenderId);
 
