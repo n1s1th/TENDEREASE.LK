@@ -64,9 +64,15 @@ public class BidController {
 
     @GetMapping
     @Operation(summary = "Get all bids", description = "Returns all bids in the system")
-    public ResponseEntity<Map<String, Object>> getAllBids() {
-        log.info("Fetching all bids");
-        List<BidResponse> bids = bidService.getAllBids();
+    public ResponseEntity<Map<String, Object>> getAllBids(
+            @RequestParam(required = false) String bidderEmail) {
+        log.info("Fetching all bids. BidderEmail: {}", bidderEmail);
+        List<BidResponse> bids;
+        if (bidderEmail != null && !bidderEmail.trim().isEmpty()) {
+            bids = bidService.getBidsByBidderEmail(bidderEmail);
+        } else {
+            bids = bidService.getAllBids();
+        }
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", bids
