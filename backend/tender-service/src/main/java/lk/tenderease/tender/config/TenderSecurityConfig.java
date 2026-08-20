@@ -45,10 +45,10 @@ public class TenderSecurityConfig {
                 .requestMatchers("/api/v1/tenders/**").permitAll() // Allow TenderController
                 .requestMatchers("/api/cao/**").permitAll() // Allow CAO Dashboard
                 .anyRequest().permitAll()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
             );
+            // .oauth2ResourceServer(oauth2 -> oauth2
+            //     .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
+            // );
 
         return http.build();
     }

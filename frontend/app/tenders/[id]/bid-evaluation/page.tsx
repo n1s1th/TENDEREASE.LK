@@ -5,13 +5,17 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Search, Lock, Unlock, FileText, CheckCircle2, AlertTriangle,
-  X, Download, Save, FileSpreadsheet, ChevronRight, HelpCircle, ArrowLeft, Loader2, Ban, Eye, EyeOff, ShieldCheck, Check
+  X, Download, Save, FileSpreadsheet, ChevronRight, ChevronDown, HelpCircle, ArrowLeft, Loader2, Ban, Eye, EyeOff, ShieldCheck, Check
 } from "lucide-react";
 import Footer from "@/components/home/Footer";
 import Link from "next/link";
 import { useAuthStore } from "@/store";
-import { getTenderById, updateTenderStatus } from "@/services/tender.service";
+import { getTenderById, updateTenderStatus, addTimelineEvent } from "@/services/tender.service";
 import { getBidsByTender } from "@/services/bid.service";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { getOfficerByEmail } from "@/lib/api/officerApi";
+import * as XLSX from "xlsx";
 
 // Interface definitions mirroring backend
 interface Criterion {
@@ -99,28 +103,56 @@ export default function BidEvaluationPage() {
   };
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [activeModal, setActiveModal] = useState<null | "download" | "draft" | "submit" | "notes" | "documents" | "unlock">(null);
+  const [tenderDocs, setTenderDocs] = useState<Array<{ name: string; url: string; size?: string }>>([
+    { name: "RFP Specification.pdf", url: "", size: "2.4 MB" },
+    { name: "Terms of Reference (TOR).pdf", url: "", size: "1.8 MB" },
+    { name: "BOQ Schedule.pdf", url: "", size: "950 KB" },
+    { name: "Bidding Instructions.pdf", url: "", size: "1.1 MB" },
+  ]);
+  const [activeModal, setActiveModal] = useState<null | "download" | "draft" | "submit" | "notes" | "documents" | "tenderDocuments" | "unlock">(null);
   const [downloadFormat, setDownloadFormat] = useState<null | "pdf" | "excel">(null);
   const [notesText, setNotesText] = useState<string>("");
   const [savingDraft, setSavingDraft] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const [unlockPin, setUnlockPin] = useState<string>("");
+  const [unlocking, setUnlocking] = useState<boolean>(false);
+  const [unlockPin, setUnlockPin] = useState<string>( "");
   const [showUnlockPin, setShowUnlockPin] = useState<boolean>(false);
   const [unlockPinError, setUnlockPinError] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"technical" | "financial">("technical");
-  const [previewDoc, setPreviewDoc] = useState<{ name: string; url: string } | null>(null);
+  const [previewBidDoc, setPreviewBidDoc] = useState<{ name: string; url: string } | null>(null);
+  const [previewTenderDoc, setPreviewTenderDoc] = useState<{ name: string; url: string } | null>(null);
+  const [isCompareDropdownOpen, setIsCompareDropdownOpen] = useState<boolean>(false);
   const [isDirty, setIsDirty] = useState<boolean>(false);
 
   // Toast notifications state
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" | "warning" } | null>(null);
+  const [toasts, setToasts] = useState<{ id: string; message: string; type: "success" | "error" | "info" | "warning" }[]>([]);
 
   const [mounted, setMounted] = useState<boolean>(false);
   const [downloadingDocs, setDownloadingDocs] = useState<string[]>([]);
   const [downloadedDocs, setDownloadedDocs] = useState<string[]>([]);
+  const ignorePollUntilRef = React.useRef<number>(0);
   const [tenderUuid, setTenderUuid] = useState<string>("");
+  const [dbOfficerRole, setDbOfficerRole] = useState<string>("Procurement Officer");
+
+  useEffect(() => {
+    if (user?.email) {
+      getOfficerByEmail(user.email)
+        .then(res => {
+          if (res && res.liaisonOfficer && res.liaisonOfficer.designation) {
+            setDbOfficerRole(res.liaisonOfficer.designation);
+          }
+        })
+        .catch(err => {
+          console.warn("Failed to fetch officer designation from database:", err);
+        });
+    }
+  }, [user]);
   
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
   }, []);
 
   useEffect(() => {
@@ -142,11 +174,12 @@ export default function BidEvaluationPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
 
   // Fetch initial evaluation data from backend
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (silent = false) => {
+    if (isDirty || unlocking) return;
+    if (!silent) setLoading(true);
     let baseData = { ...INITIAL_MOCK_DATA };
     try {
-      const res = await fetch(`${BASE_URL}/api/evaluations/mock/${tenderNo}/data`);
+      const res = await fetch(`${BASE_URL}/api/evaluations/mock/${tenderNo}/data?t=${Date.now()}`, { cache: "no-store" });
       const json = await res.json();
       if (res.ok && json.data) {
         baseData = json.data;
@@ -164,6 +197,17 @@ export default function BidEvaluationPage() {
         baseData.tenderNo = tenderDetails.tenderNumber || baseData.tenderNo;
         baseData.department = tenderDetails.departmentName || baseData.department || "Procurement Department";
         setTenderUuid(tenderDetails.id);
+
+        const rawDocs = tenderDetails.documents || tenderDetails.biddingDocuments || tenderDetails.dynamicData?.biddingDocuments;
+        if (rawDocs && Array.isArray(rawDocs) && rawDocs.length > 0) {
+          const parsed = rawDocs.map((d: any) => {
+            const docName = typeof d === "string" ? d : (d.documentName || d.name || "Tender Specification.pdf");
+            const docUrl = typeof d === "string" ? "" : (d.fileUrl || d.downloadUrl || d.url || "");
+            const docSize = typeof d === "string" ? "1.5 MB" : (d.fileSize || d.size || "1.5 MB");
+            return { name: docName, url: docUrl, size: docSize };
+          });
+          setTenderDocs(parsed);
+        }
       }
     } catch (tenderErr) {
       console.warn("Could not fetch real tender info from database:", tenderErr);
@@ -209,7 +253,9 @@ export default function BidEvaluationPage() {
           const existingBidder = baseData.bidders?.find((b: any) =>
             b.bidderId === bid.id ||
             b.bidderId?.toLowerCase() === bid.id?.toLowerCase() ||
-            b.bidderId === String(bid.id)
+            b.bidderId === String(bid.id) ||
+            (b.bidderName && bid.companyName && b.bidderName.toLowerCase() === bid.companyName.toLowerCase()) ||
+            (b.bidderName && bid.bidderName && b.bidderName.toLowerCase() === bid.bidderName.toLowerCase())
           );
 
           // Initial criteria
@@ -284,18 +330,31 @@ export default function BidEvaluationPage() {
             technicalCriteria,
             financialCriteria,
             evaluationNotes: existingBidder?.evaluationNotes ?? (bid.notes || ""),
-            evaluatorName: existingBidder?.evaluatorName ?? (user?.name || "Jane Doe"),
-            evaluatorRole: existingBidder?.evaluatorRole ?? (user?.roles?.includes("officer") ? "Officer" : "Senior Designer"),
+            evaluatorName: (existingBidder?.lastSaved && existingBidder.lastSaved !== "Never")
+              ? existingBidder.evaluatorName
+              : (user?.name || existingBidder?.evaluatorName || "Jane Doe"),
+            evaluatorRole: (existingBidder?.lastSaved && existingBidder.lastSaved !== "Never")
+              ? existingBidder.evaluatorRole
+              : (dbOfficerRole || existingBidder?.evaluatorRole || "Procurement Officer"),
             lastSaved: existingBidder?.lastSaved ?? "Never"
           };
         });
 
         baseData.bidders = dbBidders;
+      } else if (!baseData.bidders || baseData.bidders.length === 0) {
+        baseData.bidders = [];
       }
     } catch (bidsErr) {
+      if (!baseData.bidders || baseData.bidders.length === 0) {
+        baseData.bidders = [];
+      }
       console.warn("Could not fetch real bids from database:", bidsErr);
     }
 
+    if (Date.now() < ignorePollUntilRef.current) {
+      console.log("Ignoring background poll result during transition.");
+      return;
+    }
     setData(baseData);
 
     // Automatically select the correct bidder
@@ -320,12 +379,16 @@ export default function BidEvaluationPage() {
       }
     }
     
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
-  }, [tenderNo, bidIdParam]);
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [tenderNo, bidIdParam, isDirty]);
 
   // Handle bidder selection
   const handleSelectBidder = (bidderId: string) => {
@@ -350,9 +413,10 @@ export default function BidEvaluationPage() {
 
   // Toast Helper
   const showToast = (message: string, type: "success" | "error" | "info" | "warning") => {
-    setToast({ message, type });
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToast(null);
+      setToasts(prev => prev.filter(t => t.id !== id));
     }, 4000);
   };
 
@@ -448,23 +512,52 @@ export default function BidEvaluationPage() {
   const compositeScore = Math.round((techSubtotal * 0.7 + (isTechPassed ? finSubtotal * 0.3 : 0.0)) * 100) / 100;
 
   // Confirm & Unlock action for submitted evaluations
-  const handleConfirmUnlock = () => {
+  const handleConfirmUnlock = async () => {
     if (unlockPin === "ABC123") {
       if (!data || !activeBidder) return;
-      const updatedBidders = data.bidders.map(b => {
-        if (b.bidderId === selectedBidderId) {
-          return {
-            ...b,
-            status: "In Progress"
-          };
+      try {
+        ignorePollUntilRef.current = Date.now() + 6000;
+        setUnlocking(true);
+        const res = await fetch(`${BASE_URL}/api/evaluations/mock/${tenderNo}/save`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            bidderId: selectedBidderId,
+            technicalCriteria: activeBidder.technicalCriteria,
+            financialCriteria: activeBidder.financialCriteria,
+            notes: activeBidder.evaluationNotes || notesText,
+            status: "In Progress",
+            evaluatorName: user?.name || activeBidder.evaluatorName || "Officer",
+            evaluatorRole: dbOfficerRole || activeBidder.evaluatorRole || "Procurement Officer"
+          })
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const updatedBidders = data.bidders.map(b => {
+            if (b.bidderId === selectedBidderId) {
+              return {
+                ...b,
+                status: "In Progress",
+                lastSaved: json.data?.lastSaved || b.lastSaved
+              };
+            }
+            return b;
+          });
+          setData({ ...data, bidders: updatedBidders });
+          setActiveModal(null);
+          setUnlockPin("");
+          setUnlockPinError(false);
+          showToast(`Unlocked evaluation for ${activeBidder.bidderName}. You can now edit and resubmit.`, "success");
+        } else {
+          showToast("Failed to unlock evaluation on the server.", "error");
         }
-        return b;
-      });
-      setData({ ...data, bidders: updatedBidders });
-      setActiveModal(null);
-      setUnlockPin("");
-      setUnlockPinError(false);
-      showToast(`Unlocked evaluation for ${activeBidder.bidderName}. You can now edit and resubmit.`, "success");
+      } catch (err) {
+        console.error("Unlock error:", err);
+        showToast("Error connecting to server to unlock evaluation.", "error");
+      } finally {
+        setUnlocking(false);
+      }
     } else {
       setUnlockPinError(true);
     }
@@ -485,7 +578,7 @@ export default function BidEvaluationPage() {
           notes: notesText,
           status: "In Progress",
           evaluatorName: user?.name || activeBidder.evaluatorName || "Officer",
-          evaluatorRole: user?.roles?.includes("officer") ? "Officer" : (activeBidder.evaluatorRole || "Evaluator")
+          evaluatorRole: dbOfficerRole || activeBidder.evaluatorRole || "Procurement Officer"
         })
       });
 
@@ -538,7 +631,7 @@ export default function BidEvaluationPage() {
           financialCriteria: activeBidder.financialCriteria,
           notes: notesText,
           evaluatorName: user?.name || activeBidder.evaluatorName || "Officer",
-          evaluatorRole: user?.roles?.includes("officer") ? "Officer" : (activeBidder.evaluatorRole || "Evaluator")
+          evaluatorRole: dbOfficerRole || activeBidder.evaluatorRole || "Procurement Officer"
         })
       });
 
@@ -649,10 +742,406 @@ export default function BidEvaluationPage() {
       }, idx * 300 + 500);
     });
   };
-  // Mock score sheet download
+
+  const handleDownloadTenderDoc = (docName: string, docUrl?: string) => {
+    const key = `tender::${docName}`;
+    setDownloadingDocs(prev => [...prev, key]);
+    setTimeout(() => {
+      downloadDocument(docName, docUrl || "");
+      setDownloadingDocs(prev => prev.filter(d => d !== key));
+      setDownloadedDocs(prev => [...prev, key]);
+    }, 850);
+  };
+
+  const downloadAllTenderDocuments = () => {
+    tenderDocs.forEach((doc, idx) => {
+      const docName = doc.name;
+      const docUrl = doc.url;
+      const key = `tender::${docName}`;
+      setDownloadingDocs(prev => [...prev, key]);
+      setTimeout(() => {
+        downloadDocument(docName, docUrl);
+        setDownloadingDocs(prev => prev.filter(d => d !== key));
+        setDownloadedDocs(prev => [...prev, key]);
+      }, idx * 300 + 500);
+    });
+  };
+  // PDF and Excel score sheet download
   const handleDownloadScoreSheet = () => {
     if (!activeBidder || !downloadFormat) return;
-    showToast(`Downloading score sheet in ${downloadFormat.toUpperCase()} format...`, "success");
+
+    // Log report generation event in timeline
+    if (tenderUuid) {
+      const formatLabel = downloadFormat === "pdf" ? "PDF" : "Excel";
+      addTimelineEvent(
+        tenderUuid,
+        "REPORT_GENERATED",
+        `Report Generated: Bid Evaluation Score Sheet for ${activeBidder.bidderName} downloaded as ${formatLabel}.`,
+        user?.name || "Officer",
+        dbOfficerRole || "Procurement Officer"
+      ).catch(err => console.warn("Failed to log report generation:", err));
+    }
+
+    if (downloadFormat === "pdf") {
+      try {
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        // 1. Watermark background
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(242, 238, 236); // Very light watermark
+        const stepX = 75;
+        const stepY = 50;
+        for (let x = -20; x < pageWidth + 80; x += stepX) {
+          for (let y = -20; y < pageHeight + 80; y += stepY) {
+            doc.text("TENDEREASE.LK", x, y, {
+              align: "center",
+              angle: 30
+            });
+          }
+        }
+
+        // 2. Header Section
+        // Logo branding (fallback to stylized text if not found)
+        try {
+          doc.addImage("/logo.png", "PNG", 14, 8, 41.2, 18);
+        } catch (e) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.setTextColor(149, 48, 2); // #953002
+          doc.text("TenderEase.lk", 14, 18);
+          
+          doc.setFontSize(7);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(120, 120, 120);
+          doc.text("SRI LANKA GOVERNMENT TENDERING PLATFORM", 14, 23);
+        }
+
+        // Divider line
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.5);
+        doc.line(14, 27, pageWidth - 14, 27);
+
+        // Header Metadata details (top right)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Tender Ref: ${data.tenderNo || "-"}`, pageWidth - 14, 12, { align: "right" });
+        doc.text(`Tender Title: ${data.tenderTitle || "-"}`, pageWidth - 14, 17, { align: "right" });
+        doc.setFont("helvetica", "normal");
+        doc.text(`Generated On: ${new Date().toLocaleString("en-GB").replace(", ", ", at ")}`, pageWidth - 14, 22, { align: "right" });
+
+        // 3. Document Title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(13);
+        doc.setTextColor(30, 41, 59); // Slate-800
+        doc.text("TECHNICAL EVALUATION REPORT", pageWidth / 2, 38, { align: "center" });
+
+        // 4. Metadata Box
+        doc.setDrawColor(240, 235, 230);
+        doc.setFillColor(253, 251, 247);
+        doc.roundedRect(14, 44, pageWidth - 28, 28, 4, 4, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(149, 48, 2); // Brand color
+        doc.text("EVALUATION & BIDDER DETAILS", 18, 50);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(60, 60, 60);
+
+        // Helper to format compliance status properly
+        const getComplianceDisplay = (status: string) => {
+          if (!status) return "PENDING";
+          const upper = status.toUpperCase().trim();
+          if (upper === "PASS" || upper === "PASSED") return "PASSED";
+          if (upper === "FAIL" || upper === "FAILED") return "FAILED";
+          return upper;
+        };
+
+        const formattedCompliance = getComplianceDisplay(activeBidder.complianceStatus);
+
+        // Columns in meta box
+        doc.text(`Bidder Name: ${activeBidder.bidderName}`, 18, 56);
+        doc.text(`Bidder ID: ${activeBidder.bidderId}`, 18, 61);
+        doc.text(`Compliance: ${formattedCompliance}`, 18, 66);
+
+        const evaluatorName = user?.name || activeBidder.evaluatorName || "Jane Doe";
+        const evaluatorRole = activeBidder.evaluatorRole || dbOfficerRole || "Senior Evaluator";
+        doc.text(`Evaluator: ${evaluatorName}`, pageWidth / 2 + 10, 56);
+        doc.text(`Evaluator Role: ${evaluatorRole}`, pageWidth / 2 + 10, 61);
+        doc.text(`Evaluation Status: ${activeBidder.status}`, pageWidth / 2 + 10, 66);
+
+        let currentY = 78;
+
+        // 5. Technical Criteria Table
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Technical Criteria Evaluation Summary", 14, currentY);
+        currentY += 4;
+
+        const techRows = activeBidder.technicalCriteria.map(c => [
+          c.name,
+          `${c.weight}%`,
+          c.score.toFixed(1),
+          `${(c.score * (c.weight / 100)).toFixed(2)}`,
+          c.comment || "No comment provided"
+        ]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [["Criterion Name", "Weight", "Score (0-100)", "Weighted Score", "Evaluator Comments"]],
+          body: techRows,
+          foot: [["Total Technical Score", "", "", `${techSubtotal.toFixed(2)} / 100`, ""]],
+          theme: "striped",
+          headStyles: { fillColor: [149, 48, 2], textColor: 255, fontStyle: "bold", fontSize: 8.5 },
+          footStyles: { fillColor: [253, 245, 235], textColor: [149, 48, 2], fontStyle: "bold", fontSize: 8.5 },
+          bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+          margin: { left: 14, right: 14 },
+          didDrawPage: (data) => {
+            currentY = data.cursor.y;
+          }
+        });
+
+        currentY += 10;
+
+        // Check page overflow
+        if (currentY > pageHeight - 60) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // 6. Financial Criteria Table
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Financial Criteria Evaluation Summary", 14, currentY);
+        currentY += 4;
+
+        const finRows = activeBidder.financialCriteria.map(c => [
+          c.name,
+          `${c.weight}%`,
+          c.score.toFixed(1),
+          `${(c.score * (c.weight / 100)).toFixed(2)}`,
+          c.comment || "No comment provided"
+        ]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [["Criterion Name", "Weight", "Score (0-100)", "Weighted Score", "Evaluator Comments"]],
+          body: finRows,
+          foot: [["Total Financial Score", "", "", `${finSubtotal.toFixed(2)} / 100`, ""]],
+          theme: "striped",
+          headStyles: { fillColor: [149, 48, 2], textColor: 255, fontStyle: "bold", fontSize: 8.5 },
+          footStyles: { fillColor: [253, 245, 235], textColor: [149, 48, 2], fontStyle: "bold", fontSize: 8.5 },
+          bodyStyles: { fontSize: 8, textColor: [50, 50, 50] },
+          margin: { left: 14, right: 14 },
+          didDrawPage: (data) => {
+            currentY = data.cursor.y;
+          }
+        });
+
+        currentY += 10;
+
+        // Check page overflow
+        if (currentY > pageHeight - 70) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // 7. Composite Scores Summary
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Composite Score Summary & Compliance Status", 14, currentY);
+        currentY += 4;
+
+        doc.setDrawColor(230, 230, 230);
+        doc.setFillColor(250, 250, 250);
+        doc.roundedRect(14, currentY, pageWidth - 28, 22, 3, 3, "FD");
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Weighted Technical Score (70%): ${(techSubtotal * 0.7).toFixed(2)}`, 18, currentY + 6);
+        doc.text(`Weighted Financial Score (30%): ${(isTechPassed ? finSubtotal * 0.3 : 0.0).toFixed(2)}`, 18, currentY + 12);
+        doc.text(`Compliance Result: ${formattedCompliance}`, 18, currentY + 18);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(149, 48, 2);
+        doc.text(`COMPOSITE SCORE: ${compositeScore.toFixed(2)} / 100`, pageWidth - 85, currentY + 12);
+
+        currentY += 30;
+
+        // Check page overflow
+        if (currentY > pageHeight - 50) {
+          doc.addPage();
+          currentY = 20;
+        }
+
+        // 8. Evaluation Notes
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text("Evaluation Notes / Comments", 14, currentY);
+        currentY += 5;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(60, 60, 60);
+        const notes = activeBidder.evaluationNotes || notesText || "No evaluation notes provided.";
+        const splitNotes = doc.splitTextToSize(notes, pageWidth - 28);
+        doc.text(splitNotes, 14, currentY);
+
+        currentY += (splitNotes.length * 4) + 15;
+
+        // Check page overflow for signatures
+        if (currentY > pageHeight - 40) {
+          doc.addPage();
+          currentY = 25;
+        }
+
+        // 9. Signatures Block
+        doc.setDrawColor(200, 200, 200);
+        doc.line(14, currentY, 70, currentY);
+        doc.line(pageWidth - 70, currentY, pageWidth - 14, currentY);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Evaluator Signature", 14, currentY + 5);
+        doc.text("Authorized Verification", pageWidth - 70, currentY + 5);
+
+        doc.setFont("helvetica", "normal");
+        doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}`, 14, currentY + 10);
+        doc.text("TenderEase Security Seal Verified", pageWidth - 70, currentY + 10);
+        // Page Footer (Page Numbers)
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(7);
+          doc.setTextColor(150, 150, 150);
+          doc.text(
+            `Page ${i} of ${pageCount}  •  Confidential Procurement System Tenderease.lk © 2026. All Rights reserved.`,
+            pageWidth / 2,
+            pageHeight - 8,
+            { align: "center" }
+          );
+        }
+
+        // Save PDF file
+        const fileName = `Technical_Evaluation_Report_${activeBidder.bidderName.replace(/\s+/g, "_")}_${data.tenderNo}.pdf`;
+        doc.save(fileName);
+        showToast("Score sheet PDF report downloaded successfully!", "success");
+      } catch (pdfErr) {
+        console.error("PDF generation error:", pdfErr);
+        showToast("Failed to generate PDF. Please try again.", "error");
+      }
+    } else if (downloadFormat === "excel") {
+      try {
+        showToast("Downloading score sheet in Excel format...", "success");
+
+        const getComplianceDisplay = (status: string) => {
+          if (!status) return "PENDING";
+          const upper = status.toUpperCase().trim();
+          if (upper === "PASS" || upper === "PASSED") return "PASSED";
+          if (upper === "FAIL" || upper === "FAILED") return "FAILED";
+          return upper;
+        };
+
+        const formattedCompliance = getComplianceDisplay(activeBidder.complianceStatus);
+        const evaluatorName = user?.name || activeBidder.evaluatorName || "Jane Doe";
+        const evaluatorRole = activeBidder.evaluatorRole || dbOfficerRole || "Senior Evaluator";
+
+        // Headers & metadata
+        const wsData: any[][] = [
+          ["TENDEREASE.LK - Sri Lanka Public Procurement Platform"],
+          ["TECHNICAL EVALUATION REPORT"],
+          [`Tender Ref: ${data.tenderNo || "-"}`, `Tender Title: ${data.tenderTitle || "-"}`, `Generated On: ${new Date().toLocaleString("en-GB").replace(", ", ", at ")}`],
+          [],
+          ["EVALUATION & BIDDER DETAILS"],
+          ["Bidder Name", activeBidder.bidderName, "Evaluator Name", evaluatorName],
+          ["Bidder ID", activeBidder.bidderId, "Evaluator Role", evaluatorRole],
+          ["Compliance Status", formattedCompliance, "Evaluation Status", activeBidder.status],
+          [],
+          ["TECHNICAL CRITERIA EVALUATION"],
+          ["Criterion Name", "Weight", "Score (0-100)", "Weighted Score", "Evaluator Comments"]
+        ];
+
+        // Add tech rows
+        activeBidder.technicalCriteria.forEach(c => {
+          wsData.push([
+            c.name,
+            `${c.weight}%`,
+            c.score,
+            (c.score * (c.weight / 100)).toFixed(2),
+            c.comment || ""
+          ]);
+        });
+        wsData.push(["Total Technical Score", "", "", techSubtotal.toFixed(2), ""]);
+        
+        wsData.push([]);
+        wsData.push(["FINANCIAL CRITERIA EVALUATION"]);
+        wsData.push(["Criterion Name", "Weight", "Score (0-100)", "Weighted Score", "Evaluator Comments"]);
+
+        // Add fin rows
+        activeBidder.financialCriteria.forEach(c => {
+          wsData.push([
+            c.name,
+            `${c.weight}%`,
+            c.score,
+            (c.score * (c.weight / 100)).toFixed(2),
+            c.comment || ""
+          ]);
+        });
+        wsData.push(["Total Financial Score", "", "", finSubtotal.toFixed(2), ""]);
+
+        wsData.push([]);
+        wsData.push(["COMPOSITE SCORE SUMMARY"]);
+        wsData.push(["Weighted Technical Score (70%)", (techSubtotal * 0.7).toFixed(2)]);
+        wsData.push(["Weighted Financial Score (30%)", (isTechPassed ? finSubtotal * 0.3 : 0.0).toFixed(2)]);
+        wsData.push(["Compliance Result", formattedCompliance]);
+        wsData.push(["Composite Score", compositeScore.toFixed(2)]);
+
+        wsData.push([]);
+        wsData.push(["EVALUATION NOTES / COMMENTS"]);
+        wsData.push([activeBidder.evaluationNotes || notesText || "No notes provided."]);
+        wsData.push([]);
+        wsData.push(["Confidential Procurement System Tenderease.lk © 2026. All Rights reserved."]);
+
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws["!cols"] = [
+          { wch: 30 },
+          { wch: 20 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 40 }
+        ];
+
+        // Merge headers
+        ws["!merges"] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+          { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Evaluation Report");
+
+        const fileName = `Technical_Evaluation_Report_${activeBidder.bidderName.replace(/\s+/g, "_")}_${data.tenderNo}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        showToast("Score sheet Excel report downloaded successfully!", "success");
+      } catch (xlErr) {
+        console.error("Excel generation error:", xlErr);
+        showToast("Failed to generate Excel report. Please try again.", "error");
+      }
+    }
+
     setActiveModal(null);
     setDownloadFormat(null);
   };
@@ -756,8 +1245,12 @@ export default function BidEvaluationPage() {
                         <span>Ref No: <strong className="text-gray-700">{data.tenderNo}</strong></span>
                       </>
                     )}
-                    <span>•</span>
-                    <span>Dept: <strong className="text-gray-700">{data.department}</strong></span>
+                    {activeBidder && (
+                      <>
+                        <span>•</span>
+                        <span>Bid Ref No: <strong className="text-gray-700">{formatBidderId(activeBidder.bidderId)}</strong></span>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -768,7 +1261,8 @@ export default function BidEvaluationPage() {
 
                 <button
                   onClick={() => setIsSidebarOpen(true)}
-                  className="flex items-center gap-1.5 bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm shrink-0"
+                  disabled={!data?.bidders || data.bidders.length === 0}
+                  className="flex items-center gap-1.5 bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Search size={13} />
                   Select Bidder
@@ -799,48 +1293,58 @@ export default function BidEvaluationPage() {
           {/* --- MAIN GRID --- */}
           <div className="grid grid-cols-12 gap-8 items-start">
 
+            {(!data?.bidders || data.bidders.length === 0) && (
+              <div className="col-span-12 bg-white border border-gray-100 rounded-3xl p-10 shadow-sm flex flex-col items-center justify-center text-center space-y-4 min-h-[300px] animate-in fade-in duration-500">
+                <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center text-[#953002] mb-2">
+                  <Ban size={30} />
+                </div>
+                <h3 className="text-lg font-black text-gray-800 uppercase tracking-tight">No Bids to Evaluate</h3>
+                <p className="text-xs font-bold text-gray-400 max-w-md uppercase tracking-wider leading-relaxed">
+                  There are no bids to evaluate for the tender.
+                </p>
+              </div>
+            )}
+
             {/* 1. MIDDLE CONTENT SECTION */}
             {activeBidder && (
               <div key={selectedBidderId} className="col-span-12 lg:col-span-8 xl:col-span-8 space-y-8 animate-in fade-in slide-in-from-bottom-3 duration-500">
 
-                {/* --- BID DOCUMENTS --- */}
-                <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-                  <div className="flex items-center gap-2 text-xs font-extrabold text-gray-700 uppercase tracking-widest mb-4">
-                    <span>Bid Documents - {activeBidder.bidderName} ({formatBidderId(activeBidder.bidderId)})</span>
+                {/* --- DOCUMENTS SECTION: BID DOCUMENTS & TENDER DOCUMENTS --- */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* BID DOCUMENTS */}
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-gray-700 uppercase tracking-widest">
+                        <span>Bid Documents</span>
+                      </div>
+                      <p className="text-[11px] font-bold text-gray-400 mt-1">
+                        {activeBidder.documents.length} Submitted File{activeBidder.documents.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveModal("documents")}
+                      className="bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 hover:scale-105 active:scale-95 shrink-0"
+                    >
+                      <span>Bid Documents</span>
+                    </button>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {activeBidder.documents.slice(0, 4).map((doc, idx) => {
-                      const docName = typeof doc === "string" ? doc : doc.name;
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => handleDownloadDoc(docName)}
-                          className={`border rounded-2xl px-4 py-2.5 text-xs font-semibold transition-all flex items-center gap-2 ${
-                            downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`)
-                              ? "bg-gray-100 border-gray-200 text-gray-400 cursor-wait"
-                              : downloadedDocs.includes(`${activeBidder.bidderId}::${docName}`)
-                                ? "bg-green-50 border-green-200 text-green-700 font-bold"
-                                : "border-gray-200 hover:border-[#953002] bg-[#FAF9F6] text-gray-600 hover:text-[#953002] hover:bg-[#FFF7ED]"
-                          }`}
-                          disabled={downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`)}
-                        >
-                          {downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`) ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : downloadedDocs.includes(`${activeBidder.bidderId}::${docName}`) ? (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                          ) : null}
-                          <span>{docName}</span>
-                        </button>
-                      );
-                    })}
-                    {activeBidder.documents.length > 4 && (
-                      <button
-                        onClick={() => setActiveModal("documents")}
-                        className="text-xs font-bold text-[#953002] hover:underline px-2 py-1"
-                      >
-                        View All ({activeBidder.documents.length})
-                      </button>
-                    )}
+
+                  {/* TENDER DOCUMENTS */}
+                  <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-gray-700 uppercase tracking-widest">
+                        <span>Tender Documents</span>
+                      </div>
+                      <p className="text-[11px] font-bold text-gray-400 mt-1">
+                        {tenderDocs.length} Specification File{tenderDocs.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveModal("tenderDocuments")}
+                      className="bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 hover:scale-105 active:scale-95 shrink-0"
+                    >
+                      <span>Tender Documents</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1211,14 +1715,28 @@ export default function BidEvaluationPage() {
 
                 {/* Evaluation Info */}
                 <div className="border-t-2 border-gray-200 pt-5 space-y-3.5">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  <h4 className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                     Evaluation Info
                   </h4>
 
                   <div className="space-y-2.5 text-xs text-gray-700">
                     <div className="flex justify-between font-semibold">
                       <span className="text-gray-400">Evaluator</span>
-                      <span className="font-extrabold">{activeBidder.evaluatorName}</span>
+                      <span className="font-extrabold text-gray-900">
+                        {activeBidder.lastSaved !== "Never" 
+                          ? activeBidder.evaluatorName 
+                          : (user?.name || activeBidder.evaluatorName)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-gray-400">Evaluator Role</span>
+                      <span className="font-extrabold text-gray-900">
+                        {activeBidder.lastSaved !== "Never"
+                          ? (activeBidder.evaluatorRole && activeBidder.evaluatorRole !== "Senior Designer" 
+                              ? activeBidder.evaluatorRole 
+                              : dbOfficerRole)
+                          : (dbOfficerRole || activeBidder.evaluatorRole || "Procurement Officer")}
+                      </span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span className="text-gray-400">Bidder</span>
@@ -1278,8 +1796,17 @@ export default function BidEvaluationPage() {
                   )}
 
                   <button
-                    onClick={() => setActiveModal("download")}
-                    className="w-full flex items-center justify-center border border-[#953002]/20 hover:border-[#953002] bg-[#FFF7ED] hover:bg-[#ffecd6] py-3 rounded-2xl text-xs font-bold text-[#953002] transition-colors"
+                    onClick={() => {
+                      if (activeBidder?.status === "COMPLETED") {
+                        setActiveModal("download");
+                      }
+                    }}
+                    disabled={!activeBidder || activeBidder.status !== "COMPLETED"}
+                    className={`w-full flex items-center justify-center border py-3 rounded-2xl text-xs font-bold transition-all ${
+                      activeBidder?.status === "COMPLETED"
+                        ? "border-[#953002]/20 hover:border-[#953002] bg-[#FFF7ED] hover:bg-[#ffecd6] text-[#953002] cursor-pointer"
+                        : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                    }`}
                   >
                     Download Score Sheet
                   </button>
@@ -1419,10 +1946,11 @@ export default function BidEvaluationPage() {
                   </button>
                   <button 
                     onClick={handleConfirmUnlock}
-                    disabled={unlockPin.length < 4}
+                    disabled={unlockPin.length < 4 || unlocking}
                     className="flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10 disabled:opacity-50"
                   >
-                    Confirm & Unlock
+                    {unlocking && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    {unlocking ? "Unlocking..." : "Confirm & Unlock"}
                   </button>
                 </div>
               </div>
@@ -1594,7 +2122,7 @@ export default function BidEvaluationPage() {
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-md font-extrabold text-gray-800">Submitted Documents</h3>
+                    <h3 className="text-md font-extrabold text-gray-800">Submitted Bid Documents</h3>
                     <p className="text-xs text-gray-400 font-semibold">{activeBidder.bidderName} ({formatBidderId(activeBidder.bidderId)})</p>
                   </div>
                 </div>
@@ -1617,7 +2145,7 @@ export default function BidEvaluationPage() {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
-                            onClick={() => setPreviewDoc({ name: docName, url: docUrl })}
+                            onClick={() => setPreviewBidDoc({ name: docName, url: docUrl })}
                             className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-50 hover:bg-[#FFF7ED] text-[#953002] border border-[#953002]/10 hover:scale-105 transition-all"
                             title={`View ${docName}`}
                           >
@@ -1655,6 +2183,97 @@ export default function BidEvaluationPage() {
                   >
                     <Download className="w-4 h-4" />
                     <span>Download All ({activeBidder.documents.length} Files)</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveModal(null)}
+                    className="w-full border border-gray-200 hover:border-gray-300 py-3 rounded-2xl text-xs font-bold text-gray-500 hover:text-gray-700 bg-white transition-all"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+          {mounted && activeModal === "tenderDocuments" && createPortal(
+            <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-4">
+              <div className="bg-[#FAF9F6] border border-gray-100 rounded-3xl w-full max-w-lg shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto scrollbar-none animate-in fade-in zoom-in-95 duration-200">
+                <button
+                  onClick={() => setActiveModal(null)}
+                  className="absolute right-5 top-5 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFF7ED] text-[#953002] flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-md font-extrabold text-gray-800">Tender Specifications & Bidding Documents</h3>
+                    <p className="text-xs text-gray-400 font-semibold">{data.tenderTitle} ({data.tenderNo})</p>
+                  </div>
+                </div>
+                <p className="text-xs font-semibold text-gray-600 mb-4">
+                  The procurement authority has published the following {tenderDocs.length} tender documents. You can review or download them below:
+                </p>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 mb-6 scrollbar-none">
+                  {tenderDocs.map((doc, idx) => {
+                    const docName = doc.name;
+                    const docUrl = doc.url;
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3.5 bg-white border border-gray-100 rounded-2xl hover:border-gray-200 transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileText className="w-5 h-5 text-gray-400 shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-gray-700 block truncate">{docName}</span>
+                            {doc.size && <span className="text-[10px] text-gray-400 font-medium">{doc.size}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => setPreviewTenderDoc({ name: docName, url: docUrl })}
+                            className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-50 hover:bg-[#FFF7ED] text-[#953002] border border-[#953002]/10 hover:scale-105 transition-all"
+                            title={`View ${docName}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadTenderDoc(docName, docUrl)}
+                            className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
+                              downloadingDocs.includes(`tender::${docName}`)
+                                ? "bg-gray-100 text-gray-400 cursor-wait"
+                                : downloadedDocs.includes(`tender::${docName}`)
+                                  ? "bg-green-50 text-green-600 border border-green-200/50"
+                                  : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] hover:scale-105"
+                            }`}
+                            disabled={downloadingDocs.includes(`tender::${docName}`)}
+                            title={`Download ${docName}`}
+                          >
+                            {downloadingDocs.includes(`tender::${docName}`) ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : downloadedDocs.includes(`tender::${docName}`) ? (
+                              <CheckCircle2 className="w-4 h-4" />
+                            ) : (
+                              <Download className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="space-y-3">
+                  <button
+                    onClick={downloadAllTenderDocuments}
+                    className="w-full bg-[#953002] hover:bg-[#7a2702] py-3 rounded-2xl text-xs font-bold text-white transition-all shadow-md shadow-[#953002]/15 flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download All Tender Files ({tenderDocs.length} Files)</span>
                   </button>
                   <button
                     onClick={() => setActiveModal(null)}
@@ -1750,7 +2369,159 @@ export default function BidEvaluationPage() {
             document.body
           )}
 
-          {mounted && previewDoc && activeBidder && createPortal(
+          {/* ── 1. DUAL SIDE-BY-SIDE DOCUMENT COMPARISON MODAL ── */}
+          {mounted && previewBidDoc && previewTenderDoc && createPortal(
+            <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-[4px] flex flex-col items-center justify-center p-3 md:p-6 overflow-hidden">
+              <div className="bg-[#FAF9F6] border border-gray-100 rounded-3xl w-full max-w-7xl h-[92vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {/* Top Header */}
+                <div className="bg-white border-b border-gray-100 px-6 py-3.5 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF7ED] text-[#953002] flex items-center justify-center">
+                      <Eye className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-gray-800">Dual Document Comparison View</h3>
+                      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                        Comparing Bidder Proposal side-by-side with Tender Specifications
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setPreviewBidDoc(null); setPreviewTenderDoc(null); }}
+                    className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                    title="Close Dual View"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Grid: 2 Equal Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 flex-grow overflow-hidden bg-gray-100/50">
+                  {/* LEFT PANE: Bid Document */}
+                  <div className="bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
+                    <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FileText className="w-4.5 h-4.5 text-[#953002] shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-xs font-extrabold text-gray-800 block truncate">{previewBidDoc.name}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block truncate">
+                            {activeBidder ? `${activeBidder.bidderName} (${formatBidderId(activeBidder.bidderId)})` : "Bidder"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleDownloadDoc(previewBidDoc.name)}
+                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
+                            downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                              ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
+                              : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                                ? "bg-green-50 text-green-700 border border-green-200 font-bold"
+                                : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
+                          }`}
+                          disabled={downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)}
+                          title="Download Bid Document"
+                        >
+                          {downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`) ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                          ) : (
+                            <Download size={14} />
+                          )}
+                          {downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                            ? "Downloading..."
+                            : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                              ? "Downloaded"
+                              : "Download"}
+                        </button>
+                        <button
+                          onClick={() => setPreviewBidDoc(null)}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                          title="Close Bid Document"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-grow overflow-hidden bg-white relative flex flex-col h-full w-full">
+                      {previewBidDoc.url ? (
+                        <iframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
+                          <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
+                          <p className="text-sm font-bold text-gray-700">No online file path found for {previewBidDoc.name}</p>
+                          <p className="text-xs text-gray-400 mt-1">This document is local or simulated.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* RIGHT PANE: Tender Document */}
+                  <div className="bg-white border border-gray-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
+                    <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <FileText className="w-4.5 h-4.5 text-[#953002] shrink-0" />
+                        <div className="min-w-0">
+                          <span className="text-xs font-extrabold text-gray-800 block truncate">{previewTenderDoc.name}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block truncate">{data.tenderTitle} ({data.tenderNo})</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleDownloadTenderDoc(previewTenderDoc.name, previewTenderDoc.url)}
+                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
+                            downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                              ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
+                              : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
+                                ? "bg-green-50 text-green-700 border border-green-200 font-bold"
+                                : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
+                          }`}
+                          disabled={downloadingDocs.includes(`tender::${previewTenderDoc.name}`)}
+                          title="Download Tender Document"
+                        >
+                          {downloadingDocs.includes(`tender::${previewTenderDoc.name}`) ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : downloadedDocs.includes(`tender::${previewTenderDoc.name}`) ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                          ) : (
+                            <Download size={14} />
+                          )}
+                          {downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                            ? "Downloading..."
+                            : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
+                              ? "Downloaded"
+                              : "Download"}
+                        </button>
+                        <button
+                          onClick={() => setPreviewTenderDoc(null)}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                          title="Close Tender Document"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-grow overflow-hidden bg-white relative flex flex-col h-full w-full">
+                      {previewTenderDoc.url ? (
+                        <iframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
+                          <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
+                          <p className="text-sm font-bold text-gray-700">No online file path found for {previewTenderDoc.name}</p>
+                          <p className="text-xs text-gray-400 mt-1">This document is local or simulated.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+          {/* ── 2. SINGLE BID DOCUMENT PREVIEW MODAL (WHEN TENDER DOC IS NOT OPEN) ── */}
+          {mounted && previewBidDoc && !previewTenderDoc && createPortal(
             <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-[4px] flex flex-col items-center justify-center p-4 md:p-8 scrollbar-none overflow-hidden">
               <div className="bg-[#FAF9F6] border border-gray-100 rounded-3xl w-full max-w-4xl h-[85vh] shadow-2xl flex flex-col overflow-hidden scrollbar-none animate-in fade-in zoom-in-95 duration-200">
                 {/* Header */}
@@ -1760,38 +2531,72 @@ export default function BidEvaluationPage() {
                       <FileText className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-extrabold text-gray-800">{previewDoc.name}</h3>
-                      <p className="text-[10.8px] text-gray-400 font-bold uppercase tracking-widest mt-0">{activeBidder.bidderName}</p>
+                      <h3 className="text-sm font-extrabold text-gray-800">{previewBidDoc.name}</h3>
+                      <p className="text-[10.8px] text-gray-400 font-bold uppercase tracking-widest mt-0">
+                        {activeBidder ? `${activeBidder.bidderName} (${formatBidderId(activeBidder.bidderId)})` : "Bidder"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Custom Styled Dropdown for View Tender Document */}
+                    {tenderDocs.length > 0 && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsCompareDropdownOpen(!isCompareDropdownOpen)}
+                          className="flex items-center gap-2 bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95"
+                        >
+                          <span>Tender Documents</span>
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCompareDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isCompareDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setIsCompareDropdownOpen(false)} />
+                            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-3xl shadow-xl p-2 z-20 animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                              {tenderDocs.map((td) => (
+                                <button
+                                  key={td.name}
+                                  onClick={() => {
+                                    setPreviewTenderDoc({ name: td.name, url: td.url });
+                                    setIsCompareDropdownOpen(false);
+                                  }}
+                                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-gray-700 hover:bg-[#FFF7ED] hover:text-[#953002] transition-all text-left"
+                                >
+                                  <span className="truncate">{td.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <button
-                      onClick={() => handleDownloadDoc(previewDoc.name)}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                        downloadingDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`)
+                      onClick={() => handleDownloadDoc(previewBidDoc.name)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
+                        downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                           ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
-                          : downloadedDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`)
+                          : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                             ? "bg-green-50 text-green-700 border border-green-200 font-bold"
                             : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
                       }`}
-                      disabled={downloadingDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`)}
+                      disabled={downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)}
                       title="Download Document"
                     >
-                      {downloadingDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`) ? (
+                      {downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`) ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : downloadedDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`) ? (
+                      ) : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`) ? (
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
                       ) : (
                         <Download size={14} />
                       )}
-                      {downloadingDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`)
+                      {downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                         ? "Downloading..."
-                        : downloadedDocs.includes(`${activeBidder.bidderId}::${previewDoc.name}`)
+                        : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                           ? "Downloaded"
                           : "Download"}
                     </button>
                     <button
-                      onClick={() => setPreviewDoc(null)}
+                      onClick={() => setPreviewBidDoc(null)}
                       className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
                       title="Close Preview"
                     >
@@ -1802,12 +2607,12 @@ export default function BidEvaluationPage() {
 
                 {/* Content Viewer Body */}
                 <div className="flex-grow overflow-hidden bg-white relative scrollbar-none flex flex-col h-full w-full">
-                  {previewDoc.url ? (
-                    <iframe src={previewDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
+                  {previewBidDoc.url ? (
+                    <iframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
                       <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
-                      <p className="text-sm font-bold text-gray-700">No online file path found for {previewDoc.name}</p>
+                      <p className="text-sm font-bold text-gray-700">No online file path found for {previewBidDoc.name}</p>
                       <p className="text-xs text-gray-400 mt-1">This document is local or simulated.</p>
                     </div>
                   )}
@@ -1817,29 +2622,144 @@ export default function BidEvaluationPage() {
             document.body
           )}
 
-          {mounted && toast && createPortal(
-            <div className={`fixed top-6 right-6 w-max max-w-[90vw] whitespace-nowrap z-[100000] flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${toast.type === "success" ? "bg-[#E8F8F0] border-[#27AE60]/20 text-[#27AE60]" :
-              toast.type === "error" ? "bg-red-50 border-red-200 text-red-750" :
-                toast.type === "warning" ? "bg-[#FFF7ED] border-[#953002]/20 text-[#953002]" :
-                  "bg-[#EBF5FF] border-[#3B82F6]/20 text-[#1E3A8A]"
-              }`}>
-              <div className="flex items-center gap-2.5">
-                {toast.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
-                {toast.type === "error" && <AlertTriangle className="w-5 h-5 text-red-500" />}
-                {toast.type === "warning" && <AlertTriangle className="w-5 h-5 text-[#953002]" />}
-                {toast.type === "info" && <HelpCircle className="w-5 h-5 text-[#3B82F6]" />}
-                <span className="text-[13px] font-bold tracking-tight">{toast.message}</span>
+          {/* ── 3. SINGLE TENDER DOCUMENT PREVIEW MODAL (WHEN BID DOC IS NOT OPEN) ── */}
+          {mounted && previewTenderDoc && !previewBidDoc && createPortal(
+            <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-[4px] flex flex-col items-center justify-center p-4 md:p-8 scrollbar-none overflow-hidden">
+              <div className="bg-[#FAF9F6] border border-gray-100 rounded-3xl w-full max-w-4xl h-[85vh] shadow-2xl flex flex-col overflow-hidden scrollbar-none animate-in fade-in zoom-in-95 duration-200">
+                {/* Header */}
+                <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFF7ED] text-[#953002] flex items-center justify-center">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-extrabold text-gray-800">{previewTenderDoc.name}</h3>
+                      <p className="text-[10.8px] text-gray-400 font-bold uppercase tracking-widest mt-0">
+                        {data.tenderTitle} ({data.tenderNo})
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Custom Styled Dropdown for View Bid Document */}
+                    {activeBidder && activeBidder.documents.length > 0 && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsCompareDropdownOpen(!isCompareDropdownOpen)}
+                          className="flex items-center gap-2 bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm hover:scale-105 active:scale-95"
+                        >
+                          <span>Bid Documents</span>
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCompareDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {isCompareDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setIsCompareDropdownOpen(false)} />
+                            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-100 rounded-3xl shadow-xl p-2 z-20 animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                              {activeBidder.documents.map((bd, idx) => {
+                                const name = typeof bd === "string" ? bd : bd.name;
+                                const url = typeof bd === "string" ? "" : bd.url;
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      setPreviewBidDoc({ name, url });
+                                      setIsCompareDropdownOpen(false);
+                                    }}
+                                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-gray-700 hover:bg-[#FFF7ED] hover:text-[#953002] transition-all text-left"
+                                  >
+                                    <span className="truncate">{name}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => handleDownloadTenderDoc(previewTenderDoc.name, previewTenderDoc.url)}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
+                        downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                          ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
+                          : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
+                            ? "bg-green-50 text-green-700 border border-green-200 font-bold"
+                            : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
+                      }`}
+                      disabled={downloadingDocs.includes(`tender::${previewTenderDoc.name}`)}
+                      title="Download Document"
+                    >
+                      {downloadingDocs.includes(`tender::${previewTenderDoc.name}`) ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : downloadedDocs.includes(`tender::${previewTenderDoc.name}`) ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <Download size={14} />
+                      )}
+                      {downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                        ? "Downloading..."
+                        : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
+                          ? "Downloaded"
+                          : "Download"}
+                    </button>
+                    <button
+                      onClick={() => setPreviewTenderDoc(null)}
+                      className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
+                      title="Close Preview"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content Viewer Body */}
+                <div className="flex-grow overflow-hidden bg-white relative scrollbar-none flex flex-col h-full w-full">
+                  {previewTenderDoc.url ? (
+                    <iframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
+                      <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
+                      <p className="text-sm font-bold text-gray-700">No online file path found for {previewTenderDoc.name}</p>
+                      <p className="text-xs text-gray-400 mt-1">This document is local or simulated.</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <button 
-                onClick={() => setToast(null)}
-                className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${toast.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
-                  toast.type === "error" ? "text-red-750/60 hover:text-red-750" :
-                    toast.type === "warning" ? "text-[#953002]/60 hover:text-[#953002]" :
-                      "text-[#1E3A8A]/60 hover:text-[#1E3A8A]"
+            </div>,
+            document.body
+          )}
+
+          {mounted && toasts.length > 0 && createPortal(
+            <div className="fixed top-6 right-6 z-[100000] flex flex-col gap-3 items-end pointer-events-none">
+              {toasts.map((t) => (
+                <div
+                  key={t.id}
+                  className={`w-max max-w-[90vw] whitespace-nowrap pointer-events-auto flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
+                    t.type === "success" ? "bg-[#E8F8F0] border-[#27AE60]/20 text-[#27AE60]" :
+                      t.type === "error" ? "bg-red-50 border-red-200 text-red-750" :
+                        t.type === "warning" ? "bg-[#FFF7ED] border-[#953002]/20 text-[#953002]" :
+                          "bg-[#EBF5FF] border-[#3B82F6]/20 text-[#1E3A8A]"
                   }`}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+                >
+                  <div className="flex items-center gap-2.5">
+                    {t.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
+                    {t.type === "error" && <AlertTriangle className="w-5 h-5 text-red-500" />}
+                    {t.type === "warning" && <AlertTriangle className="w-5 h-5 text-[#953002]" />}
+                    {t.type === "info" && <HelpCircle className="w-5 h-5 text-[#3B82F6]" />}
+                    <span className="text-[13px] font-bold tracking-tight">{t.message}</span>
+                  </div>
+                  <button 
+                    onClick={() => setToasts(prev => prev.filter(item => item.id !== t.id))}
+                    className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${
+                      t.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
+                        t.type === "error" ? "text-red-750/60 hover:text-red-750" :
+                          t.type === "warning" ? "text-[#953002]/60 hover:text-[#953002]" :
+                            "text-[#1E3A8A]/60 hover:text-[#1E3A8A]"
+                    }`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
             </div>,
             document.body
           )}

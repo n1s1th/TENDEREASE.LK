@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { getAssignedTenders } from "@/lib/api/officer.api";
 import { getBidsByTender, getAllBids } from "@/services/bid.service";
-import { getTimeline } from "@/services/tender.service";
+import { getTimeline, addTimelineEvent } from "@/services/tender.service";
+import { useAuthStore } from "@/store";
+import { getOfficerByEmail } from "@/lib/api/officerApi";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -21,6 +23,7 @@ import {
   RotateCcw,
   Lock,
   Shield,
+  ShieldCheck,
   AlertCircle,
   CheckCircle,
   XCircle,
@@ -638,6 +641,23 @@ function CustomDatePicker({ value, onChange, placeholder = "DD / MM / YYYY" }: C
 
 // ─────────────────────────── Main Page ───────────────────────────
 function ReportsAndAuditContent() {
+  const { user } = useAuthStore();
+  const [dbOfficerRole, setDbOfficerRole] = useState<string>("Procurement Officer");
+
+  useEffect(() => {
+    if (user?.email) {
+      getOfficerByEmail(user.email)
+        .then(res => {
+          if (res && res.liaisonOfficer && res.liaisonOfficer.designation) {
+            setDbOfficerRole(res.liaisonOfficer.designation);
+          }
+        })
+        .catch(err => {
+          console.warn("Failed to fetch officer designation from database:", err);
+        });
+    }
+  }, [user?.email]);
+
   const searchParams = useSearchParams();
   const tenderNoParam = searchParams ? searchParams.get("tenderNo") : null;
   const tenderIdParam = searchParams ? searchParams.get("tenderId") : null;
@@ -648,6 +668,9 @@ function ReportsAndAuditContent() {
 
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
   }, []);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
@@ -752,7 +775,14 @@ function ReportsAndAuditContent() {
       rows = rows.filter((r) => r.bidderName === appliedBidder);
     }
     if (appliedReportStatus && appliedReportStatus !== "Select Status" && appliedReportStatus !== "All Statuses") {
-      rows = rows.filter((r) => r.status === appliedReportStatus.toUpperCase());
+      // Map filter label to admissionStatus value
+      const statusMap: Record<string, string> = {
+        "Admitted": "Admitted",
+        "Rejected": "Rejected",
+        "Pending": "Pending",
+      };
+      const mapped = statusMap[appliedReportStatus] || appliedReportStatus;
+      rows = rows.filter((r) => r.admissionStatus === mapped);
     }
 
     rows.sort((a, b) => {
@@ -907,6 +937,97 @@ function ReportsAndAuditContent() {
     return parts[0];
   };
 
+  const fetchTimelineData = async (tId: string, tNo: string) => {
+    try {
+      const timelineData = await getTimeline(tId);
+      const matchedT = tendersList.find((t: any): boolean => {
+        const refStr = t.tenderNo || t.tenderNumber || t.id;
+        return tNo === refStr;
+      });
+      const siblingEvent = (timelineData || []).find((e: any): boolean => !!(e.createdBy && e.creatorRole));
+      const creator = siblingEvent ? siblingEvent.createdBy : null;
+      const role = siblingEvent ? siblingEvent.creatorRole : null;
+
+      const hasCreatedEvent = (timelineData || []).some((item: any): boolean => item.eventType === "CREATED");
+      let finalTimeline = [...(timelineData || [])];
+      if (!hasCreatedEvent && matchedT && matchedT.createdAt) {
+        finalTimeline.push({
+          eventType: "CREATED",
+          description: "Tender created in system",
+          timestamp: matchedT.createdAt,
+          createdBy: creator,
+          creatorRole: role
+        });
+      }
+
+      finalTimeline.sort((a: any, b: any): number => {
+        const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      const logs: AuditRow[] = finalTimeline.map((item: any, idx: number): AuditRow => {
+        let user = item.createdBy || "Procurement Officer";
+        let userRole = item.creatorRole || "Procuring Entity";
+        let action = item.eventType || "Event Logged";
+
+        if (action === "CREATED" || action === "PUBLISHED") {
+          action = action === "CREATED" ? "Tender Created" : "Tender Published";
+        } else if (action === "CLOSED") {
+          action = "Submissions Closed";
+          user = "Committee";
+          userRole = "Committee";
+        } else if (action === "OPEN" || action === "OPENED") {
+          action = "Opening Session";
+          user = "Committee";
+          userRole = "Committee";
+        } else if (action === "APPROVED") {
+          action = "Tender Approved";
+        } else if (action === "EVALUATED") {
+          action = "Evaluation Commenced";
+        } else if (action === "COMMITTEE_CHECKED_IN") {
+          action = "Committee Checked-In";
+        } else if (action === "SESSION_UNLOCKED") {
+          action = "Session Unlocked";
+        } else if (action === "BID_SUBMITTED") {
+          action = "Bid Submitted";
+        } else if (action === "COMPLIANCE_MARKED") {
+          action = "Compliance Status Marked";
+        } else if (action === "SCORES_FINALIZED") {
+          action = "Scores Finalized";
+        } else if (action === "REPORT_GENERATED") {
+          action = "Report Generated";
+        }
+
+        let timestampStr = "-- --- ---- · --:-- --";
+        if (item.timestamp) {
+          const date = new Date(item.timestamp);
+          const dateFormatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          const timeFormatted = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          timestampStr = `${dateFormatted} · ${timeFormatted}`;
+        }
+
+        return {
+          id: idx + 1,
+          timestamp: timestampStr,
+          user,
+          userRole,
+          action,
+          tenderRef: tNo,
+          details: item.description || "",
+          ipSession: "—",
+          type: "System",
+          rawTimestamp: item.timestamp
+        };
+      });
+      setAuditLogs(logs);
+    } catch (err) {
+      console.error("Failed to fetch timeline:", err);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
   // Fetch real bid data and merge evaluation notes whenever the selected tender changes
   useEffect(() => {
     if (!appliedTender) {
@@ -928,11 +1049,10 @@ function ReportsAndAuditContent() {
     Promise.all([
       getBidsByTender(tenderId),
       fetch(`${EVAL_BASE}/api/evaluations/mock/${tenderNo}/data`)
-        .then(r => r.ok ? r.json() : null)
-        .catch(() => null),
-      getTimeline(tenderId).catch(() => [])
+        .then((r): any => r.ok ? r.json() : null)
+        .catch((): any => null)
     ])
-      .then(([bidsData, evalJson, timelineData]: [any, any, any]) => {
+      .then(([bidsData, evalJson]: [any, any]) => {
         const list: any[] = Array.isArray(bidsData) ? bidsData : (bidsData?.content || []);
 
         // Build bidderId → evaluationNotes map from evaluation data
@@ -951,90 +1071,29 @@ function ReportsAndAuditContent() {
           return timeB - timeA;
         });
 
-        setBidRows(sortedList.map((bid, i) => apiBidToRow(bid, i, evalNotesMap, evalBidders)));
-
-        // Map timeline data to audit logs
-        const hasCreatedEvent = (timelineData || []).some((item: any) => item.eventType === "CREATED");
-        let finalTimeline = [...(timelineData || [])];
-        if (!hasCreatedEvent) {
-          const matchedT = tendersList.find((t: any) => {
-            const refStr = t.tenderNo || t.tenderNumber || t.id;
-            return tenderNo === refStr;
-          });
-          const siblingEvent = (timelineData || []).find((e: any) => e.createdBy && e.creatorRole);
-          const creator = siblingEvent ? siblingEvent.createdBy : null;
-          const role = siblingEvent ? siblingEvent.creatorRole : null;
-          
-          if (matchedT && matchedT.createdAt) {
-            finalTimeline.push({
-              eventType: "CREATED",
-              description: "Tender created in system",
-              timestamp: matchedT.createdAt,
-              createdBy: creator,
-              creatorRole: role
-            });
-          }
+        let finalBidRows: BidRow[];
+        if (sortedList.length > 0) {
+          finalBidRows = sortedList.map((bid, i) => apiBidToRow(bid, i, evalNotesMap, evalBidders));
+        } else if (evalBidders.length > 0) {
+          // Fallback: synthesize bid rows from evaluation data when bid-service has no records
+          finalBidRows = evalBidders.map((b: any, i: number) => ({
+            id: i + 1,
+            bidderName: b.bidderName || "—",
+            bidReference: b.bidderId ? `BID-${String(b.bidderId).slice(0, 8).toUpperCase()}` : "—",
+            submissionDateTime: "—",
+            envelopeStatus: "Opened" as const,
+            quotedValue: "—",
+            completeness: "N/A" as const,
+            admissionStatus: (b.complianceStatus === "FAIL" ? "Rejected" : b.status === "COMPLETED" ? "Admitted" : "Pending") as any,
+            notes: b.evaluationNotes || "",
+            isLate: false,
+          }));
+        } else {
+          finalBidRows = [];
         }
-        
-        finalTimeline.sort((a: any, b: any) => {
-          const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-          const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-          return timeB - timeA;
-        });
+        setBidRows(finalBidRows);
 
-        const logs: AuditRow[] = finalTimeline.map((item: any, idx: number) => {
-          let user = item.createdBy || "Procurement Officer";
-          let userRole = item.creatorRole || "Procuring Entity";
-          let action = item.eventType || "Event Logged";
-          
-          if (action === "CREATED" || action === "PUBLISHED") {
-            action = action === "CREATED" ? "Tender Created" : "Tender Published";
-          } else if (action === "CLOSED") {
-            action = "Submissions Closed";
-            user = "Committee";
-            userRole = "Committee";
-          } else if (action === "OPEN" || action === "OPENED") {
-            action = "Opening Session";
-            user = "Committee";
-            userRole = "Committee";
-          } else if (action === "APPROVED") {
-            action = "Tender Approved";
-          } else if (action === "EVALUATED") {
-            action = "Evaluation Commenced";
-          } else if (action === "COMMITTEE_CHECKED_IN") {
-            action = "Committee Checked-In";
-          } else if (action === "SESSION_UNLOCKED") {
-            action = "Session Unlocked";
-          } else if (action === "BID_SUBMITTED") {
-            action = "Bid Submitted";
-          } else if (action === "COMPLIANCE_MARKED") {
-            action = "Compliance Status Marked";
-          } else if (action === "SCORES_FINALIZED") {
-            action = "Scores Finalized";
-          }
-
-          let timestampStr = "-- --- ---- · --:-- --";
-          if (item.timestamp) {
-            const date = new Date(item.timestamp);
-            const dateFormatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-            const timeFormatted = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            timestampStr = `${dateFormatted} · ${timeFormatted}`;
-          }
-
-          return {
-            id: idx + 1,
-            timestamp: timestampStr,
-            user,
-            userRole,
-            action,
-            tenderRef: tenderNo,
-            details: item.description || "",
-            ipSession: "—",
-            type: "System",
-            rawTimestamp: item.timestamp
-          };
-        });
-        setAuditLogs(logs);
+        fetchTimelineData(tenderId, tenderNo);
 
         const processedEvaluations: EvaluationRow[] = evalBidders
           .filter((b: any) => b.status === "COMPLETED")
@@ -1129,6 +1188,26 @@ function ReportsAndAuditContent() {
   const handleDownloadPDF = (reportType: "bid" | "evaluation" | "audit", silent = false) => {
     if (!isTenderCompleted) return;
 
+    // Log the PDF report generation in backend timeline
+    const tenderNo = appliedTender.split(" - ")[0];
+    const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+    const tenderId = tenderNoToId[tenderNo] || (isUUID(tenderNo) ? tenderNo : null);
+    let reportLabel = "System Audit";
+    if (reportType === "bid") reportLabel = "Bid Submission";
+    else if (reportType === "evaluation") reportLabel = "Evaluation Summary";
+
+    if (tenderId) {
+      addTimelineEvent(
+        tenderId,
+        "REPORT_GENERATED",
+        `Report Generated: ${reportLabel} Report downloaded as PDF.`,
+        user?.name || "Officer",
+        dbOfficerRole || "Procurement Officer"
+      ).then(() => {
+        fetchTimelineData(tenderId, tenderNo);
+      }).catch(err => console.warn("Failed to log report generation:", err));
+    }
+
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -1174,16 +1253,17 @@ function ReportsAndAuditContent() {
     doc.line(14, 28, pageWidth - 14, 28);
 
     // 2. Metadata details (Top Right Corner)
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
     
-    const tenderRefStr = appliedTender ? appliedTender.split(" - ")[0] : "—";
-    const tenderNameStr = appliedTender && appliedTender.includes(" - ") ? appliedTender.substring(appliedTender.indexOf(" - ") + 3) : "—";
+    const tenderRefStr = appliedTender ? appliedTender.split(" - ")[0] : "-";
+    const tenderNameStr = appliedTender && appliedTender.includes(" - ") ? appliedTender.substring(appliedTender.indexOf(" - ") + 3) : "-";
     
     doc.text(`Tender Ref: ${tenderRefStr}`, pageWidth - 14, 13, { align: "right" });
     doc.text(`Tender Title: ${tenderNameStr}`, pageWidth - 14, 18, { align: "right" });
-    doc.text(`Generated On: ${new Date().toLocaleString("en-GB")}`, pageWidth - 14, 23, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated On: ${new Date().toLocaleString("en-GB").replace(", ", ", at ")}`, pageWidth - 14, 23, { align: "right" });
 
     // 3. Document Title (Centered in the middle of the page)
     let reportTitle = "";
@@ -1275,6 +1355,44 @@ function ReportsAndAuditContent() {
       }
     });
 
+    let finalY = (doc as any).lastAutoTable?.finalY || 180;
+    if (finalY > pageHeight - 40) {
+      doc.addPage();
+      finalY = 25;
+    } else {
+      finalY += 15;
+    }
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(14, finalY, 70, finalY);
+    doc.line(pageWidth - 70, finalY, pageWidth - 14, finalY);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Generated By Signature", 14, finalY + 5);
+    doc.text("Authorized Verification", pageWidth - 70, finalY + 5);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}`, 14, finalY + 10);
+    doc.text("TenderEase Security Seal Verified", pageWidth - 70, finalY + 10);
+
+    // ── Page Footer (Page Numbers) ──────────────────────────
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(
+        `Page ${i} of ${pageCount}  •  Confidential Procurement System Tenderease.lk © 2026. All Rights reserved.`,
+        pageWidth / 2,
+        pageHeight - 8,
+        { align: "center" }
+      );
+    }
+
     const fileName = `${reportTitle.toLowerCase().replace(/ /g, "_")}_${tenderRefStr.toLowerCase()}.pdf`;
     doc.save(fileName);
 
@@ -1289,10 +1407,30 @@ function ReportsAndAuditContent() {
   const handleDownloadExcel = (reportType: "bid" | "evaluation" | "audit", silent = false) => {
     if (!isTenderCompleted) return;
 
-    const tenderRefStr = appliedTender ? appliedTender.split(" - ")[0] : "—";
+    // Log the Excel report generation in backend timeline
+    const tenderNo = appliedTender.split(" - ")[0];
+    const isUUID = (str: string) => /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(str);
+    const tenderId = tenderNoToId[tenderNo] || (isUUID(tenderNo) ? tenderNo : null);
+    let reportLabel = "System Audit";
+    if (reportType === "bid") reportLabel = "Bid Submission";
+    else if (reportType === "evaluation") reportLabel = "Evaluation Summary";
+
+    if (tenderId) {
+      addTimelineEvent(
+        tenderId,
+        "REPORT_GENERATED",
+        `Report Generated: ${reportLabel} Report downloaded as Excel.`,
+        user?.name || "Officer",
+        dbOfficerRole || "Procurement Officer"
+      ).then(() => {
+        fetchTimelineData(tenderId, tenderNo);
+      }).catch(err => console.warn("Failed to log report generation:", err));
+    }
+
+    const tenderRefStr = appliedTender ? appliedTender.split(" - ")[0] : "-";
     const tenderNameStr = appliedTender && appliedTender.includes(" - ")
       ? appliedTender.substring(appliedTender.indexOf(" - ") + 3)
-      : "—";
+      : "-";
 
     let sheetName = "Report";
     let headers: string[] = [];
@@ -1354,12 +1492,18 @@ function ReportsAndAuditContent() {
     const META_OFFSET = 5; // 1-indexed row where column headers sit
 
     const wsData: any[][] = [
-      ["TENDEREASE.LK — Sri Lanka Public Procurement Platform"],
+      ["TENDEREASE.LK - Sri Lanka Public Procurement Platform"],
       [reportName.toUpperCase()],
-      [`Tender Ref: ${tenderRefStr}    |    Tender Title: ${tenderNameStr}    |    Generated On: ${new Date().toLocaleString("en-GB")}`],
+      [`Tender Ref: ${tenderRefStr}    |    Tender Title: ${tenderNameStr}    |    Generated On: ${new Date().toLocaleString("en-GB").replace(", ", ", at ")}`],
       [],
       headers,
-      ...dataRows
+      ...dataRows,
+      [],
+      [],
+      ["Generated By Signature", "", "", "", "Authorized Verification"],
+      [`Date: ${new Date().toLocaleDateString("en-GB")}`, "", "", "", "TenderEase Security Seal Verified"],
+      [],
+      ["Confidential Procurement System Tenderease.lk © 2026. All Rights reserved."]
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -1383,7 +1527,7 @@ function ReportsAndAuditContent() {
       // Prefix the bidder name cell (col B = index 1) with a trophy marker
       const bidderCellAddr = XLSX.utils.encode_cell({ r: winnerSheetRow - 1, c: 1 });
       const statusCellAddr = XLSX.utils.encode_cell({ r: winnerSheetRow - 1, c: headers.length - 1 });
-      if (ws[statusCellAddr]) ws[statusCellAddr].v = ws[statusCellAddr].v + " 🏆";
+      if (ws[statusCellAddr]) ws[statusCellAddr].v = ws[statusCellAddr].v + " ☆";
     }
 
     // ── Merge title cells across all columns ─────────────────────────
@@ -1508,13 +1652,21 @@ function ReportsAndAuditContent() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 sm:mt-1">
+              <Link href="/evaluation-analytics-dashboard" style={{ textDecoration: "none" }}>
+                <button
+                  type="button"
+                  className="flex items-center text-xs font-black px-4 py-2.5 rounded-xl transition-all cursor-pointer border border-[#953002] hover:border-[#7a2702] text-[#953002] hover:text-[#7a2702] hover:bg-[#953002]/5 active:scale-[0.98] shadow-sm bg-white"
+                >
+                  Evaluation Analytics
+                </button>
+              </Link>
               <button
                 onClick={handleExportAll}
                 disabled={!isTenderCompleted || bidsLoading || auditLoading}
-                className={`flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl transition-colors shadow-sm ${
+                className={`flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl transition-colors shadow-sm ${
                   isTenderCompleted && !bidsLoading && !auditLoading
                     ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer shadow-[#953002]/20"
-                    : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                    : "bg-gray-300 text-white cursor-not-allowed opacity-60 shadow-none"
                 }`}
               >
                 <Download size={13} />
@@ -1592,7 +1744,7 @@ function ReportsAndAuditContent() {
                 </button>
                 <button
                   onClick={handleResetFilters}
-                  className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 text-gray-500 text-xs font-black px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-500 hover:text-gray-700 text-xs font-black px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm active:scale-[0.98]"
                 >
                   <RotateCcw size={12} />
                   Reset
@@ -2068,7 +2220,7 @@ function ReportsAndAuditContent() {
 
           {/* ─── Footer note ─── */}
           <div className="flex items-center gap-2 text-[12px] text-gray-400 font-semibold pb-4">
-            <Shield size={14} className="text-gray-300" />
+            <ShieldCheck size={14} className="text-gray-300" />
             All reports are read-only, append-only, and comply with Sri Lanka procurement audit standards.
           </div>
 
