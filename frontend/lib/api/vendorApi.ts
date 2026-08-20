@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { OrgData, OfficerData } from '../../store/vendorRegistrationStore';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/vendors';
+const API_BASE_URL = process.env.NEXT_PUBLIC_USER_API_URL 
+  ? `${process.env.NEXT_PUBLIC_USER_API_URL}/v1/vendors` 
+  : 'http://localhost:8081/api/v1/vendors';
 
 export const verifyRegistration = async (certificateNo: string) => {
   const response = await axios.post(`${API_BASE_URL}/verify-registration`, { certificateNo });
