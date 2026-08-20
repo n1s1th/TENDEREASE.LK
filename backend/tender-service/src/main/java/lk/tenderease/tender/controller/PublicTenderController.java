@@ -2,6 +2,7 @@ package lk.tenderease.tender.controller;
 
 import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ContactDTO;
 import lk.tenderease.tender.dto.response.TenderAmendmentDTO;
@@ -82,6 +83,28 @@ public class PublicTenderController {
         return tenderService.getAddenda(id);
     }
 
+    @GetMapping("/{id}/addenda/{addendumId}/versions")
+    public List<AddendumVersionResponse> getAddendumVersionHistory(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getAddendumVersionHistory(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/current")
+    public AddendumVersionResponse getCurrentAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getCurrentAddendumVersion(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/{versionNumber}")
+    public AddendumVersionResponse getAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId,
+            @PathVariable Integer versionNumber) {
+        return tenderService.getAddendumVersion(id, addendumId, versionNumber);
+    }
+
     @GetMapping("/{id}/clarifications")
     public List<ClarificationDTO> getClarifications(@PathVariable UUID id) {
         return tenderService.getClarifications(id);
@@ -116,7 +139,7 @@ public class PublicTenderController {
     public ResponseEntity<Void> addTimelineEvent(
             @PathVariable UUID id,
             @RequestBody TimelineDTO request) {
-        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription());
+        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription(), request.getCreatedBy(), request.getCreatorRole());
         return ResponseEntity.ok().build();
     }
 

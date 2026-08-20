@@ -80,7 +80,7 @@ public class VendorProfile {
     private LocalDateTime updatedAt;
     private String createdBy;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "vendor_departments", joinColumns = @JoinColumn(name = "vendor_id"))
     @Column(name = "department_name")
     @Builder.Default

@@ -11,7 +11,8 @@ import {
   Copy,
   Check,
   ClipboardList,
-  FileEdit
+  FileEdit,
+  FilePlus
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +25,7 @@ interface Tender {
   tenderNo: string;
   title: string;
   category: string;
+  department?: string;
   status: string;
   closingDate: string;
   role: string;
@@ -50,6 +52,10 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -178,24 +184,25 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg text-center w-[15%]">Tender ID</th>
-              <th className="py-4 px-6 text-center w-[35%]">Tender Title</th>
-              <th className="py-4 px-6 text-center w-[10%]">Category</th>
-              <th className="py-4 px-6 text-center w-[15%]">Status</th>
-              <th className="py-4 px-6 text-center w-[15%]">Opening Date</th>
-              <th className="py-4 px-6 rounded-tr-lg text-center w-[10%]">Actions</th>
+              <th className="py-4 px-6 rounded-tl-lg text-center w-[10%]">Tender ID</th>
+              <th className="py-4 px-6 text-center w-[30%]">Tender Title</th>
+              <th className="py-4 px-6 text-center w-[15%]">Category</th>
+              <th className="py-4 px-6 text-center w-[15%]">Department</th>
+              <th className="py-4 px-6 text-center w-[10%]">Status</th>
+              <th className="py-4 px-6 text-center w-[12%]">Opening Date</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[8%]">Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-20 text-center">
+                <td colSpan={7} className="px-6 py-20 text-center">
                   <div className="w-8 h-8 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
                 </td>
               </tr>
             ) : paginatedTenders.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-gray-500 font-bold italic">No tenders found matching your criteria...</td>
+                <td colSpan={7} className="text-center py-12 text-gray-500 font-bold italic">No tenders found matching your criteria...</td>
               </tr>
             ) : paginatedTenders.map((tender, idx) => (
               <tr key={tender.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-all group">
@@ -208,6 +215,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                   <span className="text-[14px] font-bold text-gray-900 group-hover:text-[#9A3B12] transition-colors">{tender.title}</span>
                 </td>
                 <td className="px-6 py-6 text-center font-bold text-[13px] text-gray-500">{tender.category}</td>
+                <td className="px-6 py-6 text-center font-bold text-[13px] text-gray-500">{tender.department || "IT Division"}</td>
                 <td className="px-6 py-6 text-center">
                   <span className={`inline-flex px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest border ${getStatusStyle(tender.status)} whitespace-nowrap`}>
                     {formatStatus(tender.status)}
@@ -253,6 +261,19 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                       </button>
                     )}
                     
+                    {/* Addenda Button (Hidden for Evaluation/Completed) */}
+                    {(tender.status === "PENDING_OPENING" || tender.status === "OPEN" || tender.status === "PUBLISHED" || tender.status === "APPROVED") && (
+                      <button 
+                        onClick={() => router.push(`/officer-dashboard/tenders/${tender.id}/addenda`)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye"
+                      >
+                        <FilePlus className="w-5 h-5" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
+                          Manage Addenda
+                        </span>
+                      </button>
+                    )}
+                    
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
@@ -282,15 +303,15 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
       </div>
 
       {/* Pagination */}
-      <div className="p-6 border-t border-gray-50 flex items-center justify-between bg-white/50">
+      <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between bg-white/50">
         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
           SHOWING {paginatedTenders.length} OF {totalElements} TENDERS
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button 
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            className="w-10 h-10 rounded-lg border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:border-gray-500 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -299,10 +320,10 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
             <button 
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`w-10 h-10 rounded-lg flex items-center justify-center text-[13px] font-black transition-all ${
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-black transition-all cursor-pointer ${
                 currentPage === page 
-                  ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20' 
-                  : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
+                  ? 'bg-[#953002] text-white shadow-md shadow-[#953002]/20 border border-[#953002]' 
+                  : 'border border-gray-200 text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30'
               }`}
             >
               {page}
@@ -312,7 +333,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
           <button 
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            className="w-10 h-10 rounded-lg border border-gray-400 flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:border-gray-500 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

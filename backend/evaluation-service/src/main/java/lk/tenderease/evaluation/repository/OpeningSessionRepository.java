@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface OpeningSessionRepository extends JpaRepository<OpeningSession, UUID> {
     Optional<OpeningSession> findByTenderId(UUID tenderId);
+    Optional<OpeningSession> findFirstByTenderIdOrderByScheduledOpeningTimeDesc(UUID tenderId);
 }

@@ -26,4 +26,5 @@ public interface VendorRegistrationService {
     VendorProfileResponse approveVendor(UUID id);
     VendorProfileResponse rejectVendor(UUID id, String reason);
     VendorProfileResponse getVendorByEmail(String email);
+    org.springframework.core.io.Resource getDocumentFile(UUID id, UUID docId);
 }

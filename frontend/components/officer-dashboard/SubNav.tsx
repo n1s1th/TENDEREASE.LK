@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, HelpCircle } from "lucide-react";
 import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
 
 export default function SubNav() {
@@ -11,19 +11,17 @@ export default function SubNav() {
   const notificationSummary = useOfficerDashboardStore((s) => s.notificationSummary);
   const fetchNotificationSummary = useOfficerDashboardStore((s) => s.fetchNotificationSummary);
 
-  // Hide SubNav on the main officer dashboard page
-  if (pathname === "/officer-dashboard") return null;
-
-  const isTenders = pathname.startsWith("/officer-dashboard/tenders");
-  const isRegistration = pathname.startsWith("/officer-dashboard/registration");
-  const isClarifications = pathname.startsWith("/officer-dashboard/clarifications");
-  const isNotifications = pathname.startsWith("/officer-dashboard/notifications");
-
-  const unreadCount = notificationSummary?.unread ?? 0;
-
   useEffect(() => {
     fetchNotificationSummary();
   }, [fetchNotificationSummary]);
+
+  const isTenders = pathname === "/officer-dashboard" || pathname.startsWith("/officer-dashboard/tenders");
+  const isRegistration = pathname.startsWith("/officer-dashboard/registration");
+  const isClarifications = pathname.startsWith("/officer-dashboard/clarifications");
+  const isQa = pathname.startsWith("/officer-dashboard/qa");
+  const isNotifications = pathname.startsWith("/officer-dashboard/notifications");
+
+  const unreadCount = notificationSummary?.unread ?? 0;
 
   return (
     <div className="dash-subnav" id="dashboard-subnav">
@@ -39,7 +37,7 @@ export default function SubNav() {
       }}>
         <div className="dash-subnav-tabs">
           <Link
-            href="/officer-dashboard/tenders/pending"
+            href="/officer-dashboard"
             className={`dash-subnav-tab ${isTenders ? "dash-subnav-tab--active" : ""}`}
           >
             Tenders
@@ -54,7 +52,15 @@ export default function SubNav() {
             href="/officer-dashboard/clarifications"
             className={`dash-subnav-tab ${isClarifications ? "dash-subnav-tab--active" : ""}`}
           >
-            Clarifications
+            Tender Clarifications
+          </Link>
+          <Link
+            href="/officer-dashboard/qa"
+            className={`dash-subnav-tab ${isQa ? "dash-subnav-tab--active" : ""}`}
+            style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}
+          >
+            <HelpCircle size={14} />
+            Global Q&A
           </Link>
         </div>
 

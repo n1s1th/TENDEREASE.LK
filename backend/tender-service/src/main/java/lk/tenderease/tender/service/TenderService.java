@@ -7,6 +7,7 @@ import lk.tenderease.tender.dto.request.DocumentUploadRequest;
 import lk.tenderease.tender.dto.request.TenderScheduleRequest;
 import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ComplianceChecklistResponse;
 import lk.tenderease.tender.dto.response.ContactDTO;
@@ -258,11 +259,21 @@ public interface TenderService {
 
     List<TenderAmendmentDTO> getAddenda(UUID tenderId);
 
+    TenderAmendmentDTO createAddendum(UUID tenderId, lk.tenderease.tender.dto.request.CreateAddendumRequest request, org.springframework.web.multipart.MultipartFile file, String callerUserId);
+
+    AddendumVersionResponse uploadAddendumVersion(UUID tenderId, Long addendumId, org.springframework.web.multipart.MultipartFile file, String changeDescription, String callerUserId);
+
+    List<AddendumVersionResponse> getAddendumVersionHistory(UUID tenderId, Long addendumId);
+
+    AddendumVersionResponse getAddendumVersion(UUID tenderId, Long addendumId, Integer versionNumber);
+
+    AddendumVersionResponse getCurrentAddendumVersion(UUID tenderId, Long addendumId);
+
     List<ClarificationDTO> getClarifications(UUID tenderId);
 
     List<TimelineDTO> getTimeline(UUID tenderId);
 
-    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description);
+    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description, String createdBy, String creatorRole);
 
     List<ContactDTO> getContacts(UUID tenderId);
 

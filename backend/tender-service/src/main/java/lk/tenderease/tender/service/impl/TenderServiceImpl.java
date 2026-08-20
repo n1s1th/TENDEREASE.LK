@@ -32,6 +32,14 @@ import lk.tenderease.tender.repository.FundingSourceRepository;
 import lk.tenderease.tender.repository.MinistryRepository;
 import lk.tenderease.tender.repository.SbdTemplateRepository;
 import lk.tenderease.tender.dto.event.TenderSubmittedEvent;
+import lk.tenderease.tender.dto.request.CreateAddendumRequest;
+import lk.tenderease.tender.entity.AddendumVersion;
+import lk.tenderease.tender.exception.AddendumNotFoundException;
+import lk.tenderease.tender.exception.AddendumVersionConflictException;
+import lk.tenderease.tender.exception.AddendumVersionNotFoundException;
+import lk.tenderease.tender.exception.TenderNotFoundException;
+import lk.tenderease.tender.repository.AddendumVersionRepository;
+import lk.tenderease.tender.service.CloudinaryService;
 import lk.tenderease.tender.repository.TenderAmendmentRepository;
 import lk.tenderease.tender.repository.TenderClarificationRepository;
 import lk.tenderease.tender.repository.TenderContactRepository;
@@ -53,6 +61,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
@@ -60,6 +69,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
+import org.springframework.web.multipart.MultipartFile;
 import lk.tenderease.common.exception.BusinessException;
 import lk.tenderease.tender.enums.DocumentType;
 
@@ -75,6 +85,8 @@ public class TenderServiceImpl implements TenderService {
     private final TenderRepository tenderRepository;
     private final TenderDocumentRepository documentRepository;
     private final TenderAmendmentRepository amendmentRepository;
+    private final AddendumVersionRepository addendumVersionRepository;
+    private final CloudinaryService cloudinaryService;
     private final TenderClarificationRepository clarificationRepository;
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
@@ -702,6 +714,136 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    @Transactional
+    public TenderAmendmentDTO createAddendum(UUID tenderId, CreateAddendumRequest request, MultipartFile file, String callerUserId) {
+        log.info("Creating addendum for tender ID: {} by user: {}", tenderId, callerUserId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new TenderNotFoundException("Tender not found with ID: " + tenderId));
+
+        int nextAmendmentNumber = amendmentRepository.findByTenderIdOrderByCreatedAtDesc(tenderId).size() + 1;
+
+        TenderAmendment amendment = TenderAmendment.builder()
+                .tender(tender)
+                .amendmentNumber(nextAmendmentNumber)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .newClosingDate(request.getNewClosingDate())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        TenderAmendment savedAmendment = amendmentRepository.save(amendment);
+
+        if (request.getNewClosingDate() != null) {
+            tender.setClosingDate(request.getNewClosingDate());
+            tenderRepository.save(tender);
+        }
+
+        if (file != null && !file.isEmpty()) {
+            String changeDesc = request.getChangeDescription() != null && !request.getChangeDescription().isBlank()
+                    ? request.getChangeDescription()
+                    : "Initial version";
+            uploadAddendumVersionInternal(tender, savedAmendment, file, changeDesc, callerUserId);
+        }
+
+        return mapAmendment(savedAmendment);
+    }
+
+    @Override
+    @Transactional
+    public AddendumVersionResponse uploadAddendumVersion(UUID tenderId, Long addendumId, MultipartFile file, String changeDescription, String callerUserId) {
+        log.info("Uploading version for addendum ID: {} on tender ID: {}", addendumId, tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new TenderNotFoundException("Tender not found with ID: " + tenderId));
+
+        TenderAmendment addendum = amendmentRepository.findById(addendumId)
+                .orElseThrow(() -> AddendumNotFoundException.of(addendumId));
+
+        if (!addendum.getTender().getId().equals(tenderId)) {
+            throw new BusinessException("Addendum does not belong to the specified tender");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("File is empty or missing");
+        }
+
+        return uploadAddendumVersionInternal(tender, addendum, file, changeDescription, callerUserId);
+    }
+
+    private AddendumVersionResponse uploadAddendumVersionInternal(Tender tender, TenderAmendment addendum, MultipartFile file, String changeDescription, String callerUserId) {
+        Integer maxVersion = addendumVersionRepository.findMaxVersionNumber(addendum.getId());
+        int nextVersion = (maxVersion != null ? maxVersion : 0) + 1;
+
+        String folder = String.format("tenderease/tenders/%s/addenda/%d/v%d", tender.getId(), addendum.getId(), nextVersion);
+        Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, folder);
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "addendum_v" + nextVersion + ".pdf";
+        }
+
+        AddendumVersion version = AddendumVersion.builder()
+                .addendum(addendum)
+                .versionNumber(nextVersion)
+                .cloudinaryPublicId((String) uploadResult.get("public_id"))
+                .cloudinaryUrl((String) uploadResult.get("url"))
+                .secureUrl((String) uploadResult.get("secure_url"))
+                .originalFilename(originalFilename)
+                .contentType(file.getContentType() != null ? file.getContentType() : "application/pdf")
+                .fileSize(file.getSize())
+                .changeDescription(changeDescription)
+                .uploadedBy(callerUserId)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        try {
+            AddendumVersion savedVersion = addendumVersionRepository.save(version);
+            addendum.setCurrentVersionNumber(nextVersion);
+            amendmentRepository.save(addendum);
+            log.info("Addendum version {} saved successfully with ID: {}", nextVersion, savedVersion.getId());
+            return mapAddendumVersion(savedVersion);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            log.error("Conflict creating addendum version: {}", ex.getMessage());
+            throw AddendumVersionConflictException.of(addendum.getId(), nextVersion);
+        }
+    }
+
+    @Override
+    public List<AddendumVersionResponse> getAddendumVersionHistory(UUID tenderId, Long addendumId) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findByAddendumIdOrderByVersionNumberAsc(addendumId).stream()
+                .map(this::mapAddendumVersion)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public AddendumVersionResponse getAddendumVersion(UUID tenderId, Long addendumId, Integer versionNumber) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findByAddendumIdAndVersionNumber(addendumId, versionNumber)
+                .map(this::mapAddendumVersion)
+                .orElseThrow(() -> AddendumVersionNotFoundException.of(addendumId, versionNumber));
+    }
+
+    @Override
+    public AddendumVersionResponse getCurrentAddendumVersion(UUID tenderId, Long addendumId) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findTopByAddendumIdOrderByVersionNumberDesc(addendumId)
+                .map(this::mapAddendumVersion)
+                .orElseThrow(() -> new AddendumVersionNotFoundException("No versions found for addendum ID: " + addendumId));
+    }
+
+    private TenderAmendment validateTenderAndAddendum(UUID tenderId, Long addendumId) {
+        if (!tenderRepository.existsById(tenderId)) {
+            throw new TenderNotFoundException("Tender not found with ID: " + tenderId);
+        }
+        TenderAmendment addendum = amendmentRepository.findById(addendumId)
+                .orElseThrow(() -> AddendumNotFoundException.of(addendumId));
+        if (!addendum.getTender().getId().equals(tenderId)) {
+            throw new BusinessException("Addendum does not belong to the specified tender");
+        }
+        return addendum;
+    }
+
+    @Override
     public List<ClarificationDTO> getClarifications(UUID tenderId) {
         return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId).stream()
                 .map(clarification -> {
@@ -734,15 +876,50 @@ public class TenderServiceImpl implements TenderService {
             }
             java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
             if (response != null) {
-                String orgName = (String) response.get("organizationName");
-                if (orgName != null && !orgName.trim().isEmpty()) {
-                    info.put("name", orgName);
-                    String designation = (String) response.get("headDesignation");
-                    if (designation != null && !designation.trim().isEmpty()) {
-                        info.put("role", designation);
-                    } else {
-                        info.put("role", "Procuring Entity");
+                // Prefer the liaison officer's personal full name for the USER column
+                java.util.Map<?, ?> liaisonOfficer = null;
+                Object liaisonObj = response.get("liaisonOfficer");
+                if (liaisonObj instanceof java.util.Map) {
+                    liaisonOfficer = (java.util.Map<?, ?>) liaisonObj;
+                }
+
+                String fullName = null;
+                String designation = null;
+
+                if (liaisonOfficer != null) {
+                    String liaisonName = (String) liaisonOfficer.get("name");
+                    String liaisonTitle = (String) liaisonOfficer.get("title");
+                    String liaisonDesignation = (String) liaisonOfficer.get("designation");
+                    if (liaisonName != null && !liaisonName.trim().isEmpty()) {
+                        // Prefix with title if available (e.g. "Mr. John Doe")
+                        fullName = (liaisonTitle != null && !liaisonTitle.trim().isEmpty())
+                                ? liaisonTitle + ". " + liaisonName
+                                : liaisonName;
                     }
+                    if (liaisonDesignation != null && !liaisonDesignation.trim().isEmpty()) {
+                        designation = liaisonDesignation;
+                    }
+                }
+
+                // Fall back to organization name if liaison officer name is not available
+                if (fullName == null || fullName.trim().isEmpty()) {
+                    String orgName = (String) response.get("organizationName");
+                    if (orgName != null && !orgName.trim().isEmpty()) {
+                        fullName = orgName;
+                    }
+                }
+                if (designation == null || designation.trim().isEmpty()) {
+                    String headDesignation = (String) response.get("headDesignation");
+                    if (headDesignation != null && !headDesignation.trim().isEmpty()) {
+                        designation = headDesignation;
+                    }
+                }
+
+                if (fullName != null && !fullName.trim().isEmpty()) {
+                    info.put("name", fullName);
+                }
+                if (designation != null && !designation.trim().isEmpty()) {
+                    info.put("role", designation);
                 }
             }
         } catch (Exception e) {
@@ -764,14 +941,163 @@ public class TenderServiceImpl implements TenderService {
                             .eventType(event.getEventType())
                             .description(event.getDescription())
                             .timestamp(event.getTimestamp())
+                            .createdBy(event.getCreatedBy())
+                            .creatorRole(event.getCreatorRole())
                             .build();
-                    if (event.getEventType() == TimelineEventType.CREATED || event.getEventType() == TimelineEventType.PUBLISHED) {
-                        dto.setCreatedBy(creatorInfo.get("name"));
-                        dto.setCreatorRole(creatorInfo.get("role"));
+                    if (dto.getCreatedBy() == null || dto.getCreatedBy().isBlank()) {
+                        if (event.getEventType() == TimelineEventType.CREATED || event.getEventType() == TimelineEventType.PUBLISHED) {
+                            dto.setCreatedBy(creatorInfo.get("name"));
+                            dto.setCreatorRole(creatorInfo.get("role"));
+                        }
                     }
                     return dto;
                 })
                 .collect(Collectors.toCollection(java.util.ArrayList::new));
+
+        // Dynamically synthesize/enrich events from other microservices
+        if (tender != null) {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            
+            // Define asynchronous tasks for external service calls in parallel to speed up loading
+            java.util.concurrent.CompletableFuture<Void> openingTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String sessionUrl = "http://localhost:8084/api/v1/opening/tender/" + tenderId;
+                    java.util.Map<?, ?> sessionResponse = restTemplate.getForObject(sessionUrl, java.util.Map.class);
+                    if (sessionResponse != null && sessionResponse.get("data") != null) {
+                        java.util.Map<?, ?> sessionData = (java.util.Map<?, ?>) sessionResponse.get("data");
+                        String sessionIdStr = (String) sessionData.get("id");
+                        Object actualOpeningTimeObj = sessionData.get("actualOpeningTime");
+                        String openedBy = (String) sessionData.get("openedBy");
+                        
+                        if (actualOpeningTimeObj != null) {
+                            LocalDateTime actualOpeningTime = parseLocalDateTime(actualOpeningTimeObj);
+                            synchronized (dtos) {
+                                dtos.add(TimelineDTO.builder()
+                                        .eventType(TimelineEventType.SESSION_UNLOCKED)
+                                        .description("Session Unlocked: Bid opening session unlocked.")
+                                        .timestamp(actualOpeningTime)
+                                        .createdBy(openedBy != null ? openedBy : "Procurement Officer")
+                                        .creatorRole("Committee")
+                                        .build());
+                            }
+                        }
+                        
+                        if (sessionIdStr != null) {
+                            String attendanceUrl = "http://localhost:8084/api/v1/opening/session/" + sessionIdStr + "/attendance";
+                            java.util.Map<?, ?> attendanceResponse = restTemplate.getForObject(attendanceUrl, java.util.Map.class);
+                            if (attendanceResponse != null && attendanceResponse.get("data") != null) {
+                                java.util.List<?> attendanceList = (java.util.List<?>) attendanceResponse.get("data");
+                                synchronized (dtos) {
+                                    for (Object itemObj : attendanceList) {
+                                        java.util.Map<?, ?> attendee = (java.util.Map<?, ?>) itemObj;
+                                        String officerName = (String) attendee.get("officerName");
+                                        String designation = (String) attendee.get("designation");
+                                        Object attendanceTimeObj = attendee.get("attendanceTime");
+                                        if (officerName != null) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.COMMITTEE_CHECKED_IN)
+                                                    .description("Committee Checked-In: " + officerName + " (" + (designation != null ? designation : "Officer") + ")")
+                                                    .timestamp(parseLocalDateTime(attendanceTimeObj))
+                                                    .createdBy(officerName)
+                                                    .creatorRole(designation != null ? designation : "Committee Member")
+                                                    .build());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            java.util.concurrent.CompletableFuture<Void> bidsTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String bidsUrl = "http://localhost:8083/api/bids/tender/" + tenderId;
+                    java.util.Map<?, ?> bidsResponse = restTemplate.getForObject(bidsUrl, java.util.Map.class);
+                    if (bidsResponse != null && bidsResponse.get("data") != null) {
+                        java.util.List<?> bidsList = (java.util.List<?>) bidsResponse.get("data");
+                        synchronized (dtos) {
+                            for (Object bidObj : bidsList) {
+                                java.util.Map<?, ?> bid = (java.util.Map<?, ?>) bidObj;
+                                String companyName = (String) bid.get("companyName");
+                                String bidderName = (String) bid.get("bidderName");
+                                Object submittedAtObj = bid.get("submittedAt");
+                                if (companyName != null) {
+                                    dtos.add(TimelineDTO.builder()
+                                            .eventType(TimelineEventType.BID_SUBMITTED)
+                                            .description("Bid Submitted: " + companyName + " submitted a bid proposal.")
+                                            .timestamp(parseLocalDateTime(submittedAtObj))
+                                            .createdBy(bidderName != null ? bidderName : "Bidder")
+                                            .creatorRole("Bidder")
+                                            .build());
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            java.util.concurrent.CompletableFuture<Void> evalTask = java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    String tenderNo = tender.getTenderNumber() != null ? tender.getTenderNumber() : tenderId.toString();
+                    String evalUrl = "http://localhost:8084/api/evaluations/mock/" + tenderNo + "/data";
+                    java.util.Map<?, ?> evalResponse = restTemplate.getForObject(evalUrl, java.util.Map.class);
+                    if (evalResponse != null && evalResponse.get("data") != null) {
+                        java.util.Map<?, ?> evalData = (java.util.Map<?, ?>) evalResponse.get("data");
+                        java.util.List<?> biddersList = (java.util.List<?>) evalData.get("bidders");
+                        if (biddersList != null) {
+                            synchronized (dtos) {
+                                for (Object bidderObj : biddersList) {
+                                    java.util.Map<?, ?> bidder = (java.util.Map<?, ?>) bidderObj;
+                                    String bidderName = (String) bidder.get("bidderName");
+                                    String complianceStatus = (String) bidder.get("complianceStatus");
+                                    String status = (String) bidder.get("status");
+                                    String evaluatorName = (String) bidder.get("evaluatorName");
+                                    String evaluatorRole = (String) bidder.get("evaluatorRole");
+                                    Object lastSavedObj = bidder.get("lastSaved");
+                                    
+                                    if (bidderName != null) {
+                                        if ("FAIL".equalsIgnoreCase(complianceStatus)) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.COMPLIANCE_MARKED)
+                                                    .description("Compliance Status Marked: " + bidderName + " failed compliance review.")
+                                                    .timestamp(parseLocalDateTime(lastSavedObj))
+                                                    .createdBy(evaluatorName != null ? evaluatorName : "Procurement Officer")
+                                                    .creatorRole(evaluatorRole != null ? evaluatorRole : "Procuring Entity")
+                                                    .build());
+                                        }
+                                        
+                                        if ("COMPLETED".equalsIgnoreCase(status) || "Submitted".equalsIgnoreCase(status)) {
+                                            dtos.add(TimelineDTO.builder()
+                                                    .eventType(TimelineEventType.SCORES_FINALIZED)
+                                                    .description("Scores Finalized: Consensus scoring submitted for " + bidderName + ".")
+                                                    .timestamp(parseLocalDateTime(lastSavedObj))
+                                                    .createdBy(evaluatorName != null ? evaluatorName : "Procurement Officer")
+                                                    .creatorRole(evaluatorRole != null ? evaluatorRole : "Procuring Entity")
+                                                    .build());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            });
+
+            // Wait for all async tasks to complete with a safety timeout of 3 seconds
+            try {
+                java.util.concurrent.CompletableFuture.allOf(openingTask, bidsTask, evalTask)
+                        .get(3, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.warn("Timeline parallel tasks execution timed out or interrupted: {}", e.getMessage());
+            }
+        }
 
         boolean hasCreated = databaseEvents.stream()
                 .anyMatch(event -> event.getEventType() == TimelineEventType.CREATED);
@@ -785,28 +1111,84 @@ public class TenderServiceImpl implements TenderService {
                     .creatorRole(creatorInfo.get("role"))
                     .build();
             dtos.add(synthesizedCreated);
-            
-            // Re-sort list by timestamp descending
-            dtos.sort((a, b) -> {
-                if (a.getTimestamp() == null) return 1;
-                if (b.getTimestamp() == null) return -1;
-                return b.getTimestamp().compareTo(a.getTimestamp());
-            });
         }
+
+        // Re-sort list by timestamp descending
+        dtos.sort((a, b) -> {
+            if (a.getTimestamp() == null) return 1;
+            if (b.getTimestamp() == null) return -1;
+            return b.getTimestamp().compareTo(a.getTimestamp());
+        });
 
         return dtos;
     }
 
     @Override
     public List<ContactDTO> getContacts(UUID tenderId) {
-        return contactRepository.findByTenderId(tenderId).stream()
+        List<ContactDTO> contacts = contactRepository.findByTenderId(tenderId).stream()
                 .map(contact -> ContactDTO.builder()
                         .officerName(contact.getOfficerName())
                         .designation(contact.getDesignation())
                         .email(contact.getEmail())
                         .phone(contact.getPhone())
+                        .department("Procurement Office")
                         .build())
                 .collect(Collectors.toList());
+
+        if (contacts.isEmpty()) {
+            Tender tender = tenderRepository.findById(tenderId).orElse(null);
+            if (tender != null && tender.getCreatedBy() != null && !tender.getCreatedBy().trim().isEmpty() && !tender.getCreatedBy().equalsIgnoreCase("dev-user")) {
+                try {
+                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    String createdBy = tender.getCreatedBy();
+                    String url = "http://localhost:8081/api/officers";
+                    if (createdBy.contains("@")) {
+                        url += "/email/" + createdBy;
+                    } else {
+                        url += "/keycloak/" + createdBy;
+                    }
+                    java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
+                    if (response != null) {
+                        java.util.Map<?, ?> liaison = (java.util.Map<?, ?>) response.get("liaisonOfficer");
+                        String officerName = liaison != null ? (String) liaison.get("name") : (String) response.get("organizationName");
+                        String designation = liaison != null ? (String) liaison.get("designation") : (String) response.get("headDesignation");
+                        String email = liaison != null ? (String) liaison.get("email") : (String) response.get("officialEmail");
+                        String phone = liaison != null ? (String) liaison.get("mobileNumber") : (String) response.get("personalLandPhone");
+                        String department = tender.getDepartment() != null ? tender.getDepartment().getName() : (String) response.get("organizationName");
+
+                        contacts.add(ContactDTO.builder()
+                                .officerName(officerName != null ? officerName : "Procurement Officer")
+                                .designation(designation != null ? designation : "Officer")
+                                .email(email != null ? email : "Not Provided")
+                                .phone(phone != null ? phone : "Not Provided")
+                                .department(department)
+                                .build());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to fetch creator contact info from user-service for key: {}", tender.getCreatedBy(), e);
+                    // Add fallback basic contact using tender details
+                    String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                    contacts.add(ContactDTO.builder()
+                            .officerName("Procurement Officer")
+                            .designation("Contact Person")
+                            .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                            .phone("Not Provided")
+                            .department(department)
+                            .build());
+                }
+            } else if (tender != null) {
+                 // Add fallback basic contact using tender details
+                 String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                 contacts.add(ContactDTO.builder()
+                         .officerName("Procurement Officer")
+                         .designation("Contact Person")
+                         .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                         .phone("Not Provided")
+                         .department(department)
+                         .build());
+            }
+        }
+        return contacts;
     }
 
     @Override
@@ -951,13 +1333,36 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private TenderAmendmentDTO mapAmendment(TenderAmendment amendment) {
+        List<AddendumVersion> versions = addendumVersionRepository.findByAddendumIdOrderByVersionNumberAsc(amendment.getId());
+        AddendumVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
+
         return TenderAmendmentDTO.builder()
                 .id(amendment.getId())
                 .amendmentNumber(amendment.getAmendmentNumber())
                 .title(amendment.getTitle())
                 .description(amendment.getDescription())
+                .currentVersionNumber(amendment.getCurrentVersionNumber() != null ? amendment.getCurrentVersionNumber() : (latest != null ? latest.getVersionNumber() : null))
+                .currentVersion(latest != null ? mapAddendumVersion(latest) : null)
+                .totalVersions(versions.size())
                 .newClosingDate(amendment.getNewClosingDate())
                 .createdAt(amendment.getCreatedAt())
+                .build();
+    }
+
+    private AddendumVersionResponse mapAddendumVersion(AddendumVersion version) {
+        if (version == null) {
+            return null;
+        }
+        return AddendumVersionResponse.builder()
+                .id(version.getId())
+                .versionNumber(version.getVersionNumber())
+                .secureUrl(version.getSecureUrl())
+                .originalFilename(version.getOriginalFilename())
+                .contentType(version.getContentType())
+                .fileSize(version.getFileSize())
+                .changeDescription(version.getChangeDescription())
+                .uploadedBy(version.getUploadedBy())
+                .createdAt(version.getCreatedAt())
                 .build();
     }
 
@@ -1191,7 +1596,7 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     @Transactional
-    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description) {
+    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description, String createdBy, String creatorRole) {
         Tender tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
         
@@ -1200,8 +1605,42 @@ public class TenderServiceImpl implements TenderService {
                 .eventType(eventType)
                 .description(description)
                 .timestamp(LocalDateTime.now())
+                .createdBy(createdBy)
+                .creatorRole(creatorRole)
                 .build();
         timelineRepository.save(event);
-        log.info("Timeline event saved: {} - {} for tender {}", eventType, description, tenderId);
+        log.info("Timeline event saved: {} - {} by {} ({}) for tender {}", eventType, description, createdBy, creatorRole, tenderId);
+    }
+
+    private LocalDateTime parseLocalDateTime(Object obj) {
+        if (obj == null) return null;
+        String str = obj.toString();
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ISO_DATE_TIME);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            return LocalDateTime.parse(str, java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"));
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            // format used for date string without time
+            return java.time.LocalDate.parse(str, java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")).atStartOfDay();
+        } catch (Exception e) {
+            // ignore
+        }
+        return LocalDateTime.now();
     }
 }
