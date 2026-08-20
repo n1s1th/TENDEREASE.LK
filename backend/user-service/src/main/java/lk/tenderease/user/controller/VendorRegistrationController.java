@@ -24,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 
 import java.util.UUID;
 
@@ -113,5 +115,24 @@ public class VendorRegistrationController {
             @Parameter(description = "Vendor UUID") @PathVariable UUID id,
             @RequestParam String reason) {
         return ResponseEntity.ok(vendorRegistrationService.rejectVendor(id, reason));
+    }
+
+    @GetMapping("/{id}/documents/{docId}")
+    @Operation(summary = "Download a vendor document")
+    public ResponseEntity<Resource> downloadDocument(
+            @PathVariable UUID id,
+            @PathVariable UUID docId) {
+        Resource file = vendorRegistrationService.getDocumentFile(id, docId);
+        String filename = file.getFilename();
+        VendorProfileResponse profile = vendorRegistrationService.getVendorById(id);
+        String originalName = profile.getDocuments().stream()
+                .filter(d -> d.getDocId().equals(docId))
+                .map(lk.tenderease.user.dto.response.VendorDocumentResponse::getOriginalFileName)
+                .findFirst()
+                .orElse(filename);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + originalName + "\"")
+                .body(file);
     }
 }
