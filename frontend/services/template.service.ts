@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store";
 
-const API_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
 
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {

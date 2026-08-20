@@ -61,8 +61,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/tenderease}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/tenderease/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://158.178.227.145:8080/realms/tenderease/protocol/openid-connect/certs}
 
 server:
   port: ${PORT:8082}

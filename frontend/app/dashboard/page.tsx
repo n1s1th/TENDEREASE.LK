@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store";
 import { useAuth } from "@/providers/AuthProvider";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { getVendorByEmail } from "@/lib/api/vendorApi";
 import { getOfficerByEmail } from "@/lib/api/officerApi";
 import {
@@ -168,6 +169,7 @@ export default function MemberDashboard() {
   else if (vendorData) displayRole = "Registered Vendor";
 
   return (
+    <ProtectedRoute>
     <div className="bg-[#FAF9F6] min-h-screen py-10 px-4 sm:px-6 lg:px-8 font-inter">
       <div className="max-w-6xl mx-auto space-y-8">
         
@@ -589,5 +591,6 @@ export default function MemberDashboard() {
 
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
