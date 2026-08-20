@@ -32,6 +32,14 @@ import lk.tenderease.tender.repository.FundingSourceRepository;
 import lk.tenderease.tender.repository.MinistryRepository;
 import lk.tenderease.tender.repository.SbdTemplateRepository;
 import lk.tenderease.tender.dto.event.TenderSubmittedEvent;
+import lk.tenderease.tender.dto.request.CreateAddendumRequest;
+import lk.tenderease.tender.entity.AddendumVersion;
+import lk.tenderease.tender.exception.AddendumNotFoundException;
+import lk.tenderease.tender.exception.AddendumVersionConflictException;
+import lk.tenderease.tender.exception.AddendumVersionNotFoundException;
+import lk.tenderease.tender.exception.TenderNotFoundException;
+import lk.tenderease.tender.repository.AddendumVersionRepository;
+import lk.tenderease.tender.service.CloudinaryService;
 import lk.tenderease.tender.repository.TenderAmendmentRepository;
 import lk.tenderease.tender.repository.TenderClarificationRepository;
 import lk.tenderease.tender.repository.TenderContactRepository;
@@ -53,6 +61,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.nio.file.Files;
@@ -60,6 +69,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.io.IOException;
+import org.springframework.web.multipart.MultipartFile;
 import lk.tenderease.common.exception.BusinessException;
 import lk.tenderease.tender.enums.DocumentType;
 
@@ -75,6 +85,8 @@ public class TenderServiceImpl implements TenderService {
     private final TenderRepository tenderRepository;
     private final TenderDocumentRepository documentRepository;
     private final TenderAmendmentRepository amendmentRepository;
+    private final AddendumVersionRepository addendumVersionRepository;
+    private final CloudinaryService cloudinaryService;
     private final TenderClarificationRepository clarificationRepository;
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
@@ -702,6 +714,136 @@ public class TenderServiceImpl implements TenderService {
     }
 
     @Override
+    @Transactional
+    public TenderAmendmentDTO createAddendum(UUID tenderId, CreateAddendumRequest request, MultipartFile file, String callerUserId) {
+        log.info("Creating addendum for tender ID: {} by user: {}", tenderId, callerUserId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new TenderNotFoundException("Tender not found with ID: " + tenderId));
+
+        int nextAmendmentNumber = amendmentRepository.findByTenderIdOrderByCreatedAtDesc(tenderId).size() + 1;
+
+        TenderAmendment amendment = TenderAmendment.builder()
+                .tender(tender)
+                .amendmentNumber(nextAmendmentNumber)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .newClosingDate(request.getNewClosingDate())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        TenderAmendment savedAmendment = amendmentRepository.save(amendment);
+
+        if (request.getNewClosingDate() != null) {
+            tender.setClosingDate(request.getNewClosingDate());
+            tenderRepository.save(tender);
+        }
+
+        if (file != null && !file.isEmpty()) {
+            String changeDesc = request.getChangeDescription() != null && !request.getChangeDescription().isBlank()
+                    ? request.getChangeDescription()
+                    : "Initial version";
+            uploadAddendumVersionInternal(tender, savedAmendment, file, changeDesc, callerUserId);
+        }
+
+        return mapAmendment(savedAmendment);
+    }
+
+    @Override
+    @Transactional
+    public AddendumVersionResponse uploadAddendumVersion(UUID tenderId, Long addendumId, MultipartFile file, String changeDescription, String callerUserId) {
+        log.info("Uploading version for addendum ID: {} on tender ID: {}", addendumId, tenderId);
+        Tender tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new TenderNotFoundException("Tender not found with ID: " + tenderId));
+
+        TenderAmendment addendum = amendmentRepository.findById(addendumId)
+                .orElseThrow(() -> AddendumNotFoundException.of(addendumId));
+
+        if (!addendum.getTender().getId().equals(tenderId)) {
+            throw new BusinessException("Addendum does not belong to the specified tender");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("File is empty or missing");
+        }
+
+        return uploadAddendumVersionInternal(tender, addendum, file, changeDescription, callerUserId);
+    }
+
+    private AddendumVersionResponse uploadAddendumVersionInternal(Tender tender, TenderAmendment addendum, MultipartFile file, String changeDescription, String callerUserId) {
+        Integer maxVersion = addendumVersionRepository.findMaxVersionNumber(addendum.getId());
+        int nextVersion = (maxVersion != null ? maxVersion : 0) + 1;
+
+        String folder = String.format("tenderease/tenders/%s/addenda/%d/v%d", tender.getId(), addendum.getId(), nextVersion);
+        Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, folder);
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "addendum_v" + nextVersion + ".pdf";
+        }
+
+        AddendumVersion version = AddendumVersion.builder()
+                .addendum(addendum)
+                .versionNumber(nextVersion)
+                .cloudinaryPublicId((String) uploadResult.get("public_id"))
+                .cloudinaryUrl((String) uploadResult.get("url"))
+                .secureUrl((String) uploadResult.get("secure_url"))
+                .originalFilename(originalFilename)
+                .contentType(file.getContentType() != null ? file.getContentType() : "application/pdf")
+                .fileSize(file.getSize())
+                .changeDescription(changeDescription)
+                .uploadedBy(callerUserId)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        try {
+            AddendumVersion savedVersion = addendumVersionRepository.save(version);
+            addendum.setCurrentVersionNumber(nextVersion);
+            amendmentRepository.save(addendum);
+            log.info("Addendum version {} saved successfully with ID: {}", nextVersion, savedVersion.getId());
+            return mapAddendumVersion(savedVersion);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            log.error("Conflict creating addendum version: {}", ex.getMessage());
+            throw AddendumVersionConflictException.of(addendum.getId(), nextVersion);
+        }
+    }
+
+    @Override
+    public List<AddendumVersionResponse> getAddendumVersionHistory(UUID tenderId, Long addendumId) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findByAddendumIdOrderByVersionNumberAsc(addendumId).stream()
+                .map(this::mapAddendumVersion)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public AddendumVersionResponse getAddendumVersion(UUID tenderId, Long addendumId, Integer versionNumber) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findByAddendumIdAndVersionNumber(addendumId, versionNumber)
+                .map(this::mapAddendumVersion)
+                .orElseThrow(() -> AddendumVersionNotFoundException.of(addendumId, versionNumber));
+    }
+
+    @Override
+    public AddendumVersionResponse getCurrentAddendumVersion(UUID tenderId, Long addendumId) {
+        validateTenderAndAddendum(tenderId, addendumId);
+        return addendumVersionRepository.findTopByAddendumIdOrderByVersionNumberDesc(addendumId)
+                .map(this::mapAddendumVersion)
+                .orElseThrow(() -> new AddendumVersionNotFoundException("No versions found for addendum ID: " + addendumId));
+    }
+
+    private TenderAmendment validateTenderAndAddendum(UUID tenderId, Long addendumId) {
+        if (!tenderRepository.existsById(tenderId)) {
+            throw new TenderNotFoundException("Tender not found with ID: " + tenderId);
+        }
+        TenderAmendment addendum = amendmentRepository.findById(addendumId)
+                .orElseThrow(() -> AddendumNotFoundException.of(addendumId));
+        if (!addendum.getTender().getId().equals(tenderId)) {
+            throw new BusinessException("Addendum does not belong to the specified tender");
+        }
+        return addendum;
+    }
+
+    @Override
     public List<ClarificationDTO> getClarifications(UUID tenderId) {
         return clarificationRepository.findByTenderIdOrderByAskedAtDesc(tenderId).stream()
                 .map(clarification -> {
@@ -983,14 +1125,70 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public List<ContactDTO> getContacts(UUID tenderId) {
-        return contactRepository.findByTenderId(tenderId).stream()
+        List<ContactDTO> contacts = contactRepository.findByTenderId(tenderId).stream()
                 .map(contact -> ContactDTO.builder()
                         .officerName(contact.getOfficerName())
                         .designation(contact.getDesignation())
                         .email(contact.getEmail())
                         .phone(contact.getPhone())
+                        .department("Procurement Office")
                         .build())
                 .collect(Collectors.toList());
+
+        if (contacts.isEmpty()) {
+            Tender tender = tenderRepository.findById(tenderId).orElse(null);
+            if (tender != null && tender.getCreatedBy() != null && !tender.getCreatedBy().trim().isEmpty() && !tender.getCreatedBy().equalsIgnoreCase("dev-user")) {
+                try {
+                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    String createdBy = tender.getCreatedBy();
+                    String url = "http://localhost:8081/api/officers";
+                    if (createdBy.contains("@")) {
+                        url += "/email/" + createdBy;
+                    } else {
+                        url += "/keycloak/" + createdBy;
+                    }
+                    java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
+                    if (response != null) {
+                        java.util.Map<?, ?> liaison = (java.util.Map<?, ?>) response.get("liaisonOfficer");
+                        String officerName = liaison != null ? (String) liaison.get("name") : (String) response.get("organizationName");
+                        String designation = liaison != null ? (String) liaison.get("designation") : (String) response.get("headDesignation");
+                        String email = liaison != null ? (String) liaison.get("email") : (String) response.get("officialEmail");
+                        String phone = liaison != null ? (String) liaison.get("mobileNumber") : (String) response.get("personalLandPhone");
+                        String department = tender.getDepartment() != null ? tender.getDepartment().getName() : (String) response.get("organizationName");
+
+                        contacts.add(ContactDTO.builder()
+                                .officerName(officerName != null ? officerName : "Procurement Officer")
+                                .designation(designation != null ? designation : "Officer")
+                                .email(email != null ? email : "Not Provided")
+                                .phone(phone != null ? phone : "Not Provided")
+                                .department(department)
+                                .build());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to fetch creator contact info from user-service for key: {}", tender.getCreatedBy(), e);
+                    // Add fallback basic contact using tender details
+                    String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                    contacts.add(ContactDTO.builder()
+                            .officerName("Procurement Officer")
+                            .designation("Contact Person")
+                            .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                            .phone("Not Provided")
+                            .department(department)
+                            .build());
+                }
+            } else if (tender != null) {
+                 // Add fallback basic contact using tender details
+                 String department = tender.getDepartment() != null ? tender.getDepartment().getName() : "Procurement Office";
+                 contacts.add(ContactDTO.builder()
+                         .officerName("Procurement Officer")
+                         .designation("Contact Person")
+                         .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                         .phone("Not Provided")
+                         .department(department)
+                         .build());
+            }
+        }
+        return contacts;
     }
 
     @Override
@@ -1135,13 +1333,36 @@ public class TenderServiceImpl implements TenderService {
     }
 
     private TenderAmendmentDTO mapAmendment(TenderAmendment amendment) {
+        List<AddendumVersion> versions = addendumVersionRepository.findByAddendumIdOrderByVersionNumberAsc(amendment.getId());
+        AddendumVersion latest = versions.isEmpty() ? null : versions.get(versions.size() - 1);
+
         return TenderAmendmentDTO.builder()
                 .id(amendment.getId())
                 .amendmentNumber(amendment.getAmendmentNumber())
                 .title(amendment.getTitle())
                 .description(amendment.getDescription())
+                .currentVersionNumber(amendment.getCurrentVersionNumber() != null ? amendment.getCurrentVersionNumber() : (latest != null ? latest.getVersionNumber() : null))
+                .currentVersion(latest != null ? mapAddendumVersion(latest) : null)
+                .totalVersions(versions.size())
                 .newClosingDate(amendment.getNewClosingDate())
                 .createdAt(amendment.getCreatedAt())
+                .build();
+    }
+
+    private AddendumVersionResponse mapAddendumVersion(AddendumVersion version) {
+        if (version == null) {
+            return null;
+        }
+        return AddendumVersionResponse.builder()
+                .id(version.getId())
+                .versionNumber(version.getVersionNumber())
+                .secureUrl(version.getSecureUrl())
+                .originalFilename(version.getOriginalFilename())
+                .contentType(version.getContentType())
+                .fileSize(version.getFileSize())
+                .changeDescription(version.getChangeDescription())
+                .uploadedBy(version.getUploadedBy())
+                .createdAt(version.getCreatedAt())
                 .build();
     }
 

@@ -14,6 +14,9 @@ public class TenderAmendmentDTO {
     private Integer amendmentNumber;
     private String title;
     private String description;
+    private Integer currentVersionNumber;
+    private AddendumVersionResponse currentVersion;
+    private Integer totalVersions;
     private LocalDateTime newClosingDate;
     private LocalDateTime createdAt;
 }

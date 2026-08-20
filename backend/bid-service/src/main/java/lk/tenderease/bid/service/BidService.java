@@ -70,6 +70,16 @@ public class BidService {
     }
 
     /**
+     * Returns all bids submitted by a specific bidder email.
+     */
+    public List<BidResponse> getBidsByBidderEmail(String bidderEmail) {
+        log.info("Fetching bids for bidder: {}", bidderEmail);
+        return bidRepository.findByBidderEmail(bidderEmail).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Submits a new bid with regulatory compliance validations.
      */
     @org.springframework.transaction.annotation.Transactional

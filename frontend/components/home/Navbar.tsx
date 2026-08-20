@@ -13,7 +13,7 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "Tenders", href: "/tenders" },
   { label: "How it Works", href: "/how-it-works" },
-  { label: "Help / FAQ", href: "/help" },
+  { label: "Help / FAQ", href: "/qa" },
 ];
 
 const trendingSearches = [
@@ -65,9 +65,9 @@ export default function Navbar() {
     if (hasAdminRole) return '/admin';
     if (hasCaoRole) return '/cao-dashboard';
     if (hasOfficerRole) return '/officer-dashboard';
-    if (hasVendorRole) return '/vendor-profile';
+    if (hasVendorRole) return '/dashboard';
     if (hasPendingRegistration) return '/registration-pending';
-    return null;
+    return '/dashboard';
   };
   const dashboardPath = getDashboardPath();
 

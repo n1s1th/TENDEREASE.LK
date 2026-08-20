@@ -15,4 +15,18 @@ public class CurrentUser {
         }
         return authentication.getName();
     }
+
+    /**
+     * Returns the authenticated user's ID, or "anonymous" if no user is logged in.
+     * Used for endpoints that allow unauthenticated access (e.g., public question submission).
+     */
+    public String userIdOrAnonymous() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || "anonymousUser".equals(authentication.getName())) {
+            return "anonymous";
+        }
+        return authentication.getName();
+    }
 }

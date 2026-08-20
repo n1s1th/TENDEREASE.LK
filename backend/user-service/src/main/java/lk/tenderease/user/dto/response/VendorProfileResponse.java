@@ -35,6 +35,7 @@ public class VendorProfileResponse {
     private String rejectionReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<String> departments;
 
     @Data
     @Builder

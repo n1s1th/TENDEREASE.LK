@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = "http://localhost:8083/api/bids";
+const BASE_URL = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
