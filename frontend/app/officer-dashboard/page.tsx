@@ -13,6 +13,13 @@ export default function OfficerDashboardPage() {
   const { activeTendersCount, fetchDashboardMetrics } = useEvaluationStore();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
   useEffect(() => {
     fetchDashboardMetrics().finally(() => setLoading(false));
   }, [fetchDashboardMetrics]);

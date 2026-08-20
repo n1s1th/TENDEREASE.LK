@@ -98,6 +98,12 @@ export default function BidOpeningPage() {
   const fallbackTender = SEED_TENDERS_FALLBACK[id] || Object.values(SEED_TENDERS_FALLBACK).find(t => t.tenderNumber === id);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, []);
+
+  useEffect(() => {
     if (id) {
       getTenderById(id)
         .then((res) => {
@@ -106,7 +112,7 @@ export default function BidOpeningPage() {
           }
         })
         .catch((err) => {
-          console.error("Error fetching tender by ID direct:", err);
+          console.warn("Error fetching tender by ID direct:", err);
           // Fallback to searching by keyword/tender number
           getTenders(0, 10, { keyword: id })
             .then((res) => {
@@ -116,26 +122,38 @@ export default function BidOpeningPage() {
                 setTender(found);
               }
             })
-            .catch((err2) => console.error("Error fetching tender by search:", err2));
+            .catch((err2) => console.warn("Error fetching tender by search:", err2));
         });
     }
   }, [id]);
 
   useEffect(() => {
-    if (tender?.id) {
-      fetchSession(tender.id);
-    } else if (id && id.length > 10) {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      if (isUuid) {
-        fetchSession(id);
-      }
-    }
+    const tenderIdToFetch = tender?.id || (id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) ? id : null);
+    if (!tenderIdToFetch) return;
+
+    // Initial fetch (normal, shows loading spinner if needed)
+    fetchSession(tenderIdToFetch);
+
+    // Polling interval (silent, background fetch)
+    const sessionInterval = setInterval(() => {
+      fetchSession(tenderIdToFetch, true);
+    }, 3000);
+
+    return () => clearInterval(sessionInterval);
   }, [id, tender?.id, fetchSession]);
 
   useEffect(() => {
-    if (session?.id) {
-      fetchAttendance(session.id);
-    }
+    if (!session?.id) return;
+
+    // Initial fetch (normal, shows loading spinner if needed)
+    fetchAttendance(session.id);
+
+    // Polling interval (silent, background fetch)
+    const attendanceInterval = setInterval(() => {
+      fetchAttendance(session.id, true);
+    }, 3000);
+
+    return () => clearInterval(attendanceInterval);
   }, [session?.id, fetchAttendance]);
 
   // Fallback to demo data if not loading and no session found
@@ -146,7 +164,7 @@ export default function BidOpeningPage() {
       <div className="bg-[#FAF9F6] min-h-screen flex flex-col items-center justify-center font-inter">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 text-[#953002] animate-spin" />
-          <span className="text-[12px] font-black tracking-widest text-[#953002] uppercase animate-pulse">Loading Bid Opening...</span>
+          <span className="text-[12px] font-black tracking-widest text-[#953002] uppercase animate-pulse">Loading Bid Opening and Attendance...</span>
         </div>
       </div>
     );

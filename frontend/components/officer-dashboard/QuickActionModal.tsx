@@ -111,7 +111,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
           extra: (
             <div className="space-y-2">
               <label className="text-[11px] font-black text-gray-900 ml-1 uppercase tracking-widest block mb-1.5">Select Approved Tender</label>
-              <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
+              <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
                 {isLoading ? (
                   <div className="text-center py-8">
                     <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -158,7 +158,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
           extra: (
             <div className="space-y-2">
               <label className="text-[11px] font-black text-gray-900 ml-1 uppercase tracking-widest block mb-1.5">Recent Records</label>
-              <div className="max-h-[180px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
+              <div className="max-h-[260px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
                 {isLoading ? (
                   <div className="text-center py-4">
                     <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -198,7 +198,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
           extra: (
             <div className="space-y-2">
               <label className="text-[11px] font-black text-gray-900 ml-1 uppercase tracking-widest block mb-1.5">Select Tender</label>
-              <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
+              <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
                 {isLoading ? (
                   <div className="text-center py-8">
                     <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -277,7 +277,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         }
       `}} />
       <div 
-        className="bg-white rounded-[32px] w-full max-w-[420px] overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 border border-gray-100"
+        className="bg-white rounded-[32px] w-full max-w-[500px] overflow-hidden shadow-xl animate-in zoom-in-95 duration-200 border border-gray-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -304,17 +304,11 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         <div className="p-6">
           {content.extra}
 
-          <div className="mt-8 flex gap-3">
-            <button 
-              onClick={onClose}
-              className={`${hasPrimaryButton ? "flex-1" : "w-full"} py-3 px-4 rounded-[16px] border border-gray-200 bg-white font-black text-xs uppercase tracking-widest text-gray-700 hover:bg-gray-50 transition-all`}
-            >
-              {type === "Opening Logs" ? "Close" : "Cancel"}
-            </button>
-            {hasPrimaryButton && (
+          {hasPrimaryButton && (
+            <div className="mt-8">
               <button 
                 disabled={isPrimaryDisabled}
-                className={`flex-[1.5] py-3 px-4 rounded-[16px] font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${
+                className={`w-full py-3 px-4 rounded-[16px] font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${
                   isPrimaryDisabled
                     ? "bg-gray-100 text-gray-400 border-transparent cursor-not-allowed"
                     : "bg-[#953002] text-white border-transparent hover:bg-[#802801] shadow-lg shadow-[#953002]/20"
@@ -323,8 +317,8 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
               >
                 {content.primaryAction}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

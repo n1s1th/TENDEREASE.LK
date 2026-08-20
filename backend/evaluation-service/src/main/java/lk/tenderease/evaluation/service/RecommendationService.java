@@ -37,6 +37,17 @@ public class RecommendationService {
         if (status == RecommendationNote.RecommendationStatus.REJECTED && reason != null) {
             note.setRejectionReason(reason);
         }
+
+        if (status == RecommendationNote.RecommendationStatus.APPROVED) {
+            try {
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String url = "http://localhost:8082/api/v1/tenders/" + note.getTenderId() + "/status?status=AWARDED";
+                restTemplate.put(url, null);
+                System.out.println("Tender status synchronized to AWARDED for tender: " + note.getTenderId());
+            } catch (Exception e) {
+                System.err.println("Failed to update tender status to AWARDED: " + e.getMessage());
+            }
+        }
         
         return repository.save(note);
     }

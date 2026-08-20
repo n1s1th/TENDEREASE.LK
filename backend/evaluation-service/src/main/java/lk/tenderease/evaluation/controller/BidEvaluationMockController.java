@@ -215,24 +215,8 @@ public class BidEvaluationMockController {
                 BidderEvaluationState bid4 = new BidderEvaluationState("BID-004", "Green Spaces Ltd.", "Not Started", "PENDING");
                 initialStates.put("BID-004", bid4);
             } else {
-                // Bidder 5: Evaluation Failed (Technical scored < 75)
-                BidderEvaluationState bid5 = new BidderEvaluationState("BID-005", "Cloudify", "Submitted", "FAIL");
-                bid5.technicalCriteria.get(0).score = 40;
-                bid5.technicalCriteria.get(0).comment = "Unclear methodology description.";
-                bid5.technicalCriteria.get(1).score = 50;
-                bid5.technicalCriteria.get(1).comment = "Inadequate CV profiles.";
-                bid5.technicalCriteria.get(2).score = 45;
-                bid5.technicalCriteria.get(2).comment = "Schedules are not realistic.";
-                bid5.technicalCriteria.get(3).score = 35;
-                bid5.technicalCriteria.get(3).comment = "Poor references.";
-                
-                bid5.evaluationNotes = "Failed to meet minimum technical threshold.";
-                bid5.lastSaved = "18 Feb 2026, 16:45";
-                initialStates.put("BID-005", bid5);
-
-                // Bidder 6: Not Reviewed (Not Started)
-                BidderEvaluationState bid6 = new BidderEvaluationState("BID-006", "DataSafe", "Not Started", "PENDING");
-                initialStates.put("BID-006", bid6);
+                // Do not pre-populate mock evaluation state for other tenders.
+                // This ensures they start completely empty on their first run.
             }
             
             return initialStates;
@@ -241,29 +225,58 @@ public class BidEvaluationMockController {
         // Query database and enrich/override in-memory states
         UUID tenderUuid = resolveTenderUuid(tenderNo);
 
+        // Fetch all bids for this tender from bid-service in one call to get real company names
+        Map<String, String> bidIdToCompanyName = new HashMap<>();
+        try {
+            RestTemplate bidRestTemplate = new RestTemplate();
+            String bidsUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid.toString();
+            Object bidsResponse = bidRestTemplate.getForObject(bidsUrl, Object.class);
+            List<?> bidList = null;
+            if (bidsResponse instanceof Map) {
+                Object data = ((Map<?, ?>) bidsResponse).get("data");
+                if (data instanceof List) {
+                    bidList = (List<?>) data;
+                }
+            } else if (bidsResponse instanceof List) {
+                bidList = (List<?>) bidsResponse;
+            }
+            if (bidList != null) {
+                for (Object bidObj : bidList) {
+                    if (bidObj instanceof Map) {
+                        Map<?, ?> bidMap = (Map<?, ?>) bidObj;
+                        Object id = bidMap.get("id");
+                        Object company = bidMap.get("companyName");
+                        if (id != null && company != null && !company.toString().isBlank()) {
+                            bidIdToCompanyName.put(id.toString(), company.toString());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not fetch bids from bid-service for tender " + tenderUuid + ": " + e.getMessage());
+        }
+
         try {
             List<Evaluation> dbEvaluations = evaluationRepository.findByTenderId(tenderUuid);
             for (Evaluation eval : dbEvaluations) {
                 String bidIdStr = eval.getBidId().toString();
                 BidderEvaluationState bidderState = states.get(bidIdStr);
                 if (bidderState == null) {
-                    String bidderName = "Bidder " + bidIdStr.substring(0, 8);
-                    try {
-                        RestTemplate restTemplate = new RestTemplate();
-                        String bidUrl = "http://localhost:8083/api/bids/" + eval.getBidId();
-                        Map<?, ?> bidResponse = restTemplate.getForObject(bidUrl, Map.class);
-                        if (bidResponse != null && bidResponse.get("data") != null) {
-                            Map<?, ?> bidData = (Map<?, ?>) bidResponse.get("data");
-                            bidderName = bidData.get("companyName") != null ? bidData.get("companyName").toString() : 
-                                         (bidData.get("bidderName") != null ? bidData.get("bidderName").toString() : bidderName);
-                        }
-                    } catch (Exception e) {
-                        // ignore
-                    }
-                    bidderState = new BidderEvaluationState(bidIdStr, bidderName, 
-                            eval.getStatus() == EvaluationStatus.COMPLETED ? "COMPLETED" : "In Progress", 
+                    // Use real company name from bid-service lookup, fall back to short UUID only if unavailable
+                    String companyName = bidIdToCompanyName.get(bidIdStr);
+                    String bidderName = (companyName != null && !companyName.isBlank())
+                            ? companyName
+                            : ("Bidder " + (bidIdStr.length() > 8 ? bidIdStr.substring(0, 8).toUpperCase() : bidIdStr));
+                    bidderState = new BidderEvaluationState(bidIdStr, bidderName,
+                            eval.getStatus() == EvaluationStatus.COMPLETED ? "COMPLETED" : "In Progress",
                             eval.getComplianceStatus() != null ? eval.getComplianceStatus().toString() : "PENDING");
                     states.put(bidIdStr, bidderState);
+                } else if (bidderState.bidderName == null || bidderState.bidderName.startsWith("Bidder ")) {
+                    // Overwrite placeholder names for existing states
+                    String companyName = bidIdToCompanyName.get(bidIdStr);
+                    if (companyName != null && !companyName.isBlank()) {
+                        bidderState.bidderName = companyName;
+                    }
                 }
 
                 bidderState.status = eval.getStatus() == EvaluationStatus.COMPLETED ? "COMPLETED" : "In Progress";
@@ -296,6 +309,20 @@ public class BidEvaluationMockController {
                         if (c.name.equalsIgnoreCase(criteriaName)) {
                             c.score = val;
                             c.comment = comment;
+                        }
+                    }
+                }
+            }
+
+            // Final pass: fix any remaining placeholder names using the lookup map
+            // This covers states already in tenderStates cache that were created before the lookup
+            if (!bidIdToCompanyName.isEmpty()) {
+                for (Map.Entry<String, BidderEvaluationState> entry : states.entrySet()) {
+                    BidderEvaluationState s = entry.getValue();
+                    if (s.bidderName == null || s.bidderName.startsWith("Bidder ")) {
+                        String companyName = bidIdToCompanyName.get(entry.getKey());
+                        if (companyName != null && !companyName.isBlank()) {
+                            s.bidderName = companyName;
                         }
                     }
                 }
