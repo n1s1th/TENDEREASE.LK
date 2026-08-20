@@ -16,8 +16,9 @@ import {
   AlertTriangle,
   ArrowLeft,
   SendHorizontal,
-  FolderOpen
+  FolderOpen,
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface DynamicTenderPreviewProps {
   sections: TemplateSection[];
@@ -29,7 +30,7 @@ function Field({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">
         {label}
       </dt>
-      <dd className="text-sm text-foreground">{value || "—"}</dd>
+      <dd className="text-sm text-foreground font-medium">{value || "—"}</dd>
     </div>
   );
 }
@@ -39,6 +40,7 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
   const {
     baseData,
     dynamicData,
+    referenceData,
     isSubmitting,
     error,
     setShowPreview,
@@ -46,21 +48,52 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
     reset,
   } = useDynamicTenderCreationStore();
 
+  // Resolve names from reference data instead of showing raw IDs
+  const ministryName =
+    referenceData.ministries.find((m) => String(m.id) === String(baseData.ministryId))?.name ||
+    baseData.ministryId || "—";
+
+  const departmentName =
+    referenceData.departments.find((d) => String(d.id) === String(baseData.departmentAgencyId))?.name ||
+    baseData.departmentAgencyId || "—";
+
+  const procurementTypeName =
+    referenceData.procurementTypes.find(
+      (p) => String(p.code ?? p.id) === String(baseData.procurementType)
+    )?.name || baseData.procurementType || "—";
+
+  const biddingMethodName =
+    referenceData.biddingMethods.find(
+      (b) => String(b.code ?? b.id) === String(baseData.biddingMethod)
+    )?.name || baseData.biddingMethod || "—";
+
+  const fundingSourceName =
+    referenceData.fundingSources.find(
+      (f) => String(f.code ?? f.id) === String(baseData.fundingSource)
+    )?.name || baseData.fundingSource || "—";
+
+  const tenderTypeName =
+    referenceData.tenderTypes.find(
+      (t) => String(t.code ?? t.id) === String(baseData.tenderType)
+    )?.name || baseData.tenderType || "—";
+
   const handleSubmit = async () => {
     const tenderId = await submitTender();
-    
+
     if (tenderId) {
       try {
         await api.submitForApproval(tenderId);
-        alert(`Tender submitted for approval successfully! Reference: ${baseData.referenceNumber}`);
+        toast.success(`Tender submitted for approval! Reference: ${baseData.referenceNumber}`);
         reset();
-        router.push('/tenders');
+        router.push("/tenders");
       } catch (err: any) {
-        alert(`Tender created (ID: ${tenderId}) but failed to submit for approval: ${err.message}`);
+        toast.warning(
+          `Tender created (ID: ${tenderId}) but failed to submit for approval: ${err.message}`
+        );
       }
     } else {
       const currentError = useDynamicTenderCreationStore.getState().error;
-      alert(`Failed to create tender: ${currentError || "Unknown error occurred"}`);
+      toast.error(`Failed to create tender: ${currentError || "Unknown error occurred"}`);
     }
   };
 
@@ -69,11 +102,9 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
       <div className="flex items-start gap-3 rounded-md border border-warning/30 bg-warning/5 px-5 py-3.5">
         <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-foreground">
-            Please review carefully
-          </p>
+          <p className="text-sm font-semibold text-foreground">Please review carefully</p>
           <p className="text-xs text-grey-5 mt-0.5">
-            You cannot edit after submission.
+            You cannot edit after submission. Click "Edit Information" to go back and make changes.
           </p>
         </div>
       </div>
@@ -84,7 +115,7 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
         </div>
       )}
 
-      {/* ── Base Details ───────────────────────────────────────── */}
+      {/* ── Core Details ─────────────────────────────────────────── */}
       <Card>
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-2.5">
@@ -96,27 +127,41 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
         </CardHeader>
         <CardContent className="pt-5">
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Field label="Tender Title" value={baseData.title || ''} />
-            <Field label="Reference Number" value={baseData.referenceNumber || ''} />
-            <Field label="Procurement Type" value={baseData.procurementType || ''} />
-            <Field label="Bidding Method" value={baseData.biddingMethod || ''} />
-            <Field label="Ministry" value={baseData.ministryId || ''} />
-            <Field label="Department" value={baseData.departmentAgencyId || ''} />
-            <Field label="Estimated Budget (LKR)" value={baseData.estimatedBudget || ''} />
-            <Field label="Funding Source" value={baseData.fundingSource || ''} />
-            <Field label="Tender Type" value={baseData.tenderType || ''} />
+            <div className="sm:col-span-2 lg:col-span-3 space-y-0.5">
+              <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">Tender Title</dt>
+              <dd className="text-sm text-foreground font-medium">{baseData.title || "—"}</dd>
+            </div>
+            <Field label="Reference Number" value={baseData.referenceNumber || ""} />
+            <Field label="Procurement Type" value={procurementTypeName} />
+            <Field label="Bidding Method" value={biddingMethodName} />
+            <Field label="Ministry" value={ministryName} />
+            <Field label="Department / Agency" value={departmentName} />
+            <Field
+              label="Estimated Budget (LKR)"
+              value={
+                baseData.estimatedBudget
+                  ? `LKR ${Number(baseData.estimatedBudget).toLocaleString()}`
+                  : ""
+              }
+            />
+            <Field label="Funding Source" value={fundingSourceName} />
+            <Field label="Tender Type" value={tenderTypeName} />
           </dl>
           {baseData.description && (
             <div className="mt-6 pt-5 border-t border-border">
-              <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">Description</dt>
-              <dd className="text-sm text-foreground whitespace-pre-wrap">{baseData.description}</dd>
+              <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">
+                Description
+              </dt>
+              <dd className="text-sm text-foreground whitespace-pre-wrap bg-grey-1/30 p-4 rounded-md border border-border">
+                {baseData.description}
+              </dd>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* ── Dynamic Sections ───────────────────────────────────── */}
-      {sections.map((section, idx) => (
+      {/* ── Dynamic Template Sections ──────────────────────────────── */}
+      {sections.map((section) => (
         <Card key={section.id}>
           <CardHeader className="border-b border-border bg-grey-1/30">
             <div className="flex items-center gap-2.5">
@@ -128,17 +173,24 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
           </CardHeader>
           <CardContent className="pt-5">
             <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {section.fields.map(field => {
+              {section.fields.map((field) => {
                 let displayVal = dynamicData[field.id];
+
                 if (Array.isArray(displayVal)) {
                   displayVal = displayVal.join(", ");
                 }
-                
-                // For long text areas
-                if (field.type === 'PARAGRAPH') {
+
+                if (field.type === "CURRENCY" && displayVal) {
+                  displayVal = `LKR ${Number(displayVal).toLocaleString()}`;
+                }
+
+                if (field.type === "PARAGRAPH") {
                   return (
                     <div key={field.id} className="col-span-full">
-                      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">{field.title}</dt>
+                      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider mb-2">
+                        {field.title}
+                        {field.required && <span className="text-error ml-1">*</span>}
+                      </dt>
                       <dd className="text-sm text-foreground whitespace-pre-wrap bg-grey-1/30 p-4 rounded-md border border-border">
                         {displayVal || "—"}
                       </dd>
@@ -146,14 +198,34 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
                   );
                 }
 
-                return <Field key={field.id} label={field.title} value={displayVal} />;
+                if (field.type === "FILE_UPLOAD" || field.type === "DOCUMENT_UPLOAD") {
+                  return (
+                    <div key={field.id} className="col-span-full space-y-0.5">
+                      <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">
+                        {field.title}
+                        {field.required && <span className="text-error ml-1">*</span>}
+                      </dt>
+                      <dd className="text-sm text-grey-5 italic">File upload (pending attachment)</dd>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={field.id} className="space-y-0.5">
+                    <dt className="text-xs font-medium text-grey-4 uppercase tracking-wider">
+                      {field.title}
+                      {field.required && <span className="text-error ml-1">*</span>}
+                    </dt>
+                    <dd className="text-sm text-foreground font-medium">{displayVal || "—"}</dd>
+                  </div>
+                );
               })}
             </dl>
           </CardContent>
         </Card>
       ))}
 
-      {/* ── Actions ─────────────────────────────────────────────── */}
+      {/* ── Actions ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between pt-5 mt-10">
         <Button
           variant="outline"
@@ -161,7 +233,7 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
           onClick={() => setShowPreview(false)}
           disabled={isSubmitting}
         >
-          <ArrowLeft data-icon="inline-start" className="size-4" />
+          <ArrowLeft className="size-4 mr-2" />
           Edit Information
         </Button>
 
@@ -176,7 +248,7 @@ export function DynamicTenderPreview({ sections }: DynamicTenderPreviewProps) {
           ) : (
             <>
               Submit for Approval
-              <SendHorizontal data-icon="inline-end" className="size-4" />
+              <SendHorizontal className="size-4 ml-2" />
             </>
           )}
         </Button>

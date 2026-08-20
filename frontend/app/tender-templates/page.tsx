@@ -6,7 +6,7 @@ import { templateService } from "@/services/template.service";
 import { useTemplateDesignerStore, getDefaultSections } from "@/store/tender-template/template-designer.store";
 import { Button } from "@/components/ui/button";
 import { Toaster, toast } from "sonner";
-import { Plus, LayoutTemplate, Clock, Archive, FileText, ChevronRight, Eye, Play, Edit2 } from "lucide-react";
+import { Plus, LayoutTemplate, Clock, Archive, FileText, ChevronRight, Eye, Edit2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { TemplatePreviewModal } from "@/components/tender/template/TemplatePreviewModal";
 
@@ -157,67 +157,93 @@ export default function TenderTemplatesDashboard() {
               </div>
 
               {/* Dynamic Database Templates */}
-              {templates.map((template) => (
-                <div 
-                  key={template.id} 
-                  className="group bg-white border border-grey-2 rounded-xl p-6 hover:border-primary/50 hover:shadow-md transition-all flex flex-col h-full relative overflow-hidden"
-                >
-                  {/* Status Ribbon */}
-                  <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[10px] font-bold tracking-wider uppercase ${
-                    template.status === 'PUBLISHED' ? 'bg-emerald-100 text-emerald-800 border-b border-l border-emerald-200' :
-                    template.status === 'ARCHIVED' ? 'bg-grey-2 text-grey-6 border-b border-l border-grey-3' :
-                    'bg-amber-100 text-amber-800 border-b border-l border-amber-200'
-                  }`}>
-                    {template.status}
-                  </div>
+              {templates.map((template) => {
+                const isPublished = template.status === 'PUBLISHED';
+                const isArchived = template.status === 'ARCHIVED';
 
-                  <div className="bg-primary/5 w-12 h-12 rounded-lg flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  
-                  <h3 className="text-lg font-bold text-foreground mb-2 pr-20">
-                    {template.name}
-                  </h3>
-                  
-                  <p className="text-sm text-grey-5 mb-6 line-clamp-2 min-h-[40px]">
-                    {template.description || "No description provided format for this template."}
-                  </p>
-                  
-                  {/* Action Buttons Row */}
-                  <div className="mt-auto pt-4 border-t border-grey-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center text-xs text-grey-5">
-                      <Clock className="w-3 h-3 mr-1" />
-                      V{template.version} • {new Date(template.updatedAt || template.createdAt).toLocaleDateString()}
+                const handleCardClick = () => {
+                  if (isPublished) handleUseTemplate({ stopPropagation: () => {} } as any, template);
+                  else if (!isArchived) handleOpenTemplate(template);
+                };
+
+                return (
+                  <div
+                    key={template.id}
+                    onClick={!isArchived ? handleCardClick : undefined}
+                    className={`group bg-white border rounded-xl p-6 transition-all flex flex-col h-full relative overflow-hidden
+                      ${isArchived
+                        ? 'border-grey-2 opacity-60 cursor-not-allowed'
+                        : isPublished
+                          ? 'border-grey-2 hover:border-primary/60 hover:shadow-lg cursor-pointer'
+                          : 'border-grey-2 hover:border-amber-400/60 hover:shadow-md cursor-pointer'
+                      }`}
+                  >
+                    {/* Status Ribbon */}
+                    <div className={`absolute top-0 right-0 px-4 py-1.5 rounded-bl-xl text-[10px] font-bold tracking-wider uppercase ${
+                      isPublished ? 'bg-emerald-100 text-emerald-800 border-b border-l border-emerald-200' :
+                      isArchived  ? 'bg-grey-2 text-grey-6 border-b border-l border-grey-3' :
+                      'bg-amber-100 text-amber-800 border-b border-l border-amber-200'
+                    }`}>
+                      {template.status}
                     </div>
-                    
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleOpenTemplate(template); }}
-                        className="p-1.5 text-grey-5 hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
-                        title="Edit Template"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={(e) => handlePreviewClick(e, template)}
-                        className="p-1.5 text-grey-5 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
-                        title="Preview Template"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {template.status === 'PUBLISHED' && (
-                        <button 
-                          onClick={(e) => handleUseTemplate(e, template)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-primary hover:bg-primary-hover rounded-md shadow-sm transition-colors"
-                          title="Use Template"
+
+                    {/* Icon */}
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm
+                      ${isPublished ? 'bg-primary/10 text-primary' : isArchived ? 'bg-grey-2 text-grey-5' : 'bg-amber-50 text-amber-600'}`}>
+                      <FileText className="w-6 h-6" />
+                    </div>
+
+                    <h3 className="text-lg font-bold text-foreground mb-2 pr-20">
+                      {template.name}
+                    </h3>
+
+                    <p className="text-sm text-grey-5 mb-6 line-clamp-2 min-h-[40px]">
+                      {template.description || 'No description provided for this template.'}
+                    </p>
+
+                    {/* Footer */}
+                    <div className="mt-auto pt-4 border-t border-grey-2 flex items-center justify-between gap-2">
+                      {/* Left: meta + icon actions */}
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center text-xs text-grey-5">
+                          <Clock className="w-3 h-3 mr-1" />
+                          V{template.version} • {new Date(template.updatedAt || template.createdAt).toLocaleDateString()}
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleOpenTemplate(template); }}
+                          className="p-1 text-grey-4 hover:text-primary hover:bg-primary/10 rounded transition-colors"
+                          title="Edit in Designer"
                         >
-                          <Play className="w-3 h-3 fill-current" /> Use
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePreviewClick(e, template); }}
+                          className="p-1 text-grey-4 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                          title="Preview Fields"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Right: primary CTA */}
+                      {isPublished ? (
+                        <div className="flex items-center text-xs font-bold text-primary">
+                          Use Template <ChevronRight className="w-4 h-4 ml-1" />
+                        </div>
+                      ) : !isArchived ? (
+                        <div className="flex items-center text-xs font-semibold text-amber-600">
+                          Edit Draft <ChevronRight className="w-4 h-4 ml-1" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center text-xs text-grey-5">
+                          <Archive className="w-3.5 h-3.5 mr-1" /> Archived
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+
             </div>
           )}
         </div>

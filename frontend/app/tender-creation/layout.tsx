@@ -5,6 +5,6 @@ export default function TenderCreationLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ProtectedRoute allowedRoles={["PROCUREMENT_OFFICER"]}>{children}</ProtectedRoute>;
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 

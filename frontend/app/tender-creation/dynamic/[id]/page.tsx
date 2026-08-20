@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDynamicTenderCreationStore } from "@/store/tender-creation/dynamic-creation.store";
 import { templateService } from "@/services/template.service";
-import { StepIndicator } from "@/components/tender/creation/StepIndicator";
-import type { StepIndex } from "@/lib/types/tender-creation.types";
+import { DynamicStepIndicator } from "@/components/tender/creation/dynamic/DynamicStepIndicator";
 import { BaseDetailsStep } from "@/components/tender/creation/dynamic/BaseDetailsStep";
 import { DynamicSectionStep } from "@/components/tender/creation/dynamic/DynamicSectionStep";
 import { DynamicTenderPreview } from "@/components/tender/creation/dynamic/DynamicTenderPreview";
 import { Button } from "@/components/ui/button";
-import { Save, ChevronLeft, ChevronRight, Eye, Loader2, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Loader2, ArrowLeft } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
 export default function DynamicTenderCreationPage() {
   const params = useParams();
@@ -25,23 +25,25 @@ export default function DynamicTenderCreationPage() {
     showPreview,
     isSubmitting,
     error,
+    baseData,
+    dynamicData,
     nextStep,
     prevStep,
     goToStep,
     setShowPreview,
     setTemplateId,
     fetchReferenceData,
+    reset,
   } = useDynamicTenderCreationStore();
 
+  // Reset store on fresh page load so step/data from previous session is cleared
   useEffect(() => {
+    reset();
     if (id) {
       loadTemplate(id);
+      fetchReferenceData();
     }
   }, [id]);
-
-  useEffect(() => {
-    fetchReferenceData();
-  }, [fetchReferenceData]);
 
   const loadTemplate = async (templateId: string) => {
     try {
@@ -68,7 +70,7 @@ export default function DynamicTenderCreationPage() {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-grey-1 gap-4">
         <h2 className="text-2xl font-bold text-foreground">Template Not Found</h2>
-        <button 
+        <button
           onClick={() => router.push('/tender-templates')}
           className="flex items-center text-primary hover:underline"
         >
@@ -83,20 +85,76 @@ export default function DynamicTenderCreationPage() {
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
 
-  const handleSaveDraft = () => {
-    alert("Save as Draft \u2014 not yet wired to backend.");
+  // Build step labels: "Core Details" + one per template section
+  const stepLabels = ["Core Details", ...sections.map((s: any) => s.title || "Section")];
+
+  // ── Mandatory field validation ──────────────────────────────
+  const validateCurrentStep = (): boolean => {
+    if (currentStep === 0) {
+      // Validate base mandatory fields
+      const missing: string[] = [];
+      if (!baseData.title?.trim())              missing.push("Tender Title");
+      if (!baseData.referenceNumber?.trim())    missing.push("Reference Number");
+      if (!baseData.procurementType)            missing.push("Procurement Type");
+      if (!baseData.ministryId)                 missing.push("Ministry");
+      if (!baseData.departmentAgencyId)         missing.push("Department / Agency");
+      if (!baseData.estimatedBudget)            missing.push("Estimated Budget");
+      if (!baseData.tenderType)                 missing.push("Tender Type");
+      if (!baseData.biddingMethod)              missing.push("Bidding Method");
+
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+        return false;
+      }
+      return true;
+    }
+
+    // Validate dynamic section fields
+    const section = sections[currentStep - 1];
+    if (!section) return true;
+
+    const missing: string[] = [];
+    for (const field of section.fields) {
+      if (!field.required) continue;
+      const val = dynamicData[field.id];
+      const isEmpty =
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        (Array.isArray(val) && val.length === 0);
+      if (isEmpty) missing.push(field.title);
+    }
+
+    if (missing.length > 0) {
+      toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+      return false;
+    }
+    return true;
   };
 
-  // ── Preview mode ────────────────────────────────────────
+  const handleNext = () => {
+    if (!validateCurrentStep()) return;
+    nextStep(totalSteps - 1);
+  };
+
+  const handleReview = () => {
+    if (!validateCurrentStep()) return;
+    setShowPreview(true);
+  };
+
+  // ── Preview mode ────────────────────────────────────────────
   if (showPreview) {
     return (
       <div className="min-h-screen bg-grey-1">
+        <Toaster position="top-right" richColors />
         <div className="border-b border-border bg-white">
           <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
             <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Review Dynamic Tender
+              Review Tender — {template.name}
             </h1>
-            <span className="text-xs font-medium text-grey-4">Preview</span>
+            <span className="text-xs font-medium text-grey-4 bg-primary/10 text-primary px-3 py-1 rounded-full">
+              Preview
+            </span>
           </div>
         </div>
 
@@ -107,31 +165,39 @@ export default function DynamicTenderCreationPage() {
     );
   }
 
-  // ── Normal wizard mode ──────────────────────────────────
+  // ── Normal wizard mode ──────────────────────────────────────
   return (
     <div className="min-h-screen bg-grey-1">
+      <Toaster position="top-right" richColors />
+
       {/* Top bar */}
-      <div className="border-b border-border bg-white">
+      <div className="border-b border-border bg-white sticky top-0 z-10 shadow-sm">
         <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {template.name}
-            </h1>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                {template.name}
+              </h1>
+              <p className="text-xs text-grey-5 mt-0.5">
+                Step {currentStep + 1} of {totalSteps} — {stepLabels[currentStep]}
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-medium text-grey-4">
-            Step {currentStep + 1} of {totalSteps}
+          <span className="hidden sm:flex items-center text-xs font-medium text-grey-5 bg-grey-1 px-3 py-1.5 rounded-full border border-grey-2">
+            {stepLabels[currentStep]}
           </span>
         </div>
       </div>
 
       {/* Main content */}
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
-        {/* StepIndicator handles max 5 standard steps, we constrain it visually */}
-        <StepIndicator
-          currentStep={(currentStep > 4 ? 4 : currentStep) as StepIndex}
+        {/* Dynamic step indicator */}
+        <DynamicStepIndicator
+          steps={stepLabels}
+          currentStep={currentStep}
           onStepClick={(step) => goToStep(step)}
         />
 
@@ -152,19 +218,7 @@ export default function DynamicTenderCreationPage() {
 
         {/* Bottom action bar */}
         <div className="flex items-center justify-between pt-5 border-t border-border">
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-            >
-              <Save data-icon="inline-start" className="size-4" />
-              Save as Draft
-            </Button>
-          </div>
-
-          <div className="flex gap-3">
+          <div>
             <Button
               type="button"
               variant="outline"
@@ -172,24 +226,22 @@ export default function DynamicTenderCreationPage() {
               onClick={prevStep}
               disabled={isFirstStep}
             >
-              <ChevronLeft data-icon="inline-start" className="size-4" />
+              <ChevronLeft className="size-4 mr-1" />
               Previous
             </Button>
+          </div>
 
+          <div className="flex gap-3">
             {!isLastStep && (
-              <Button type="button" size="sm" onClick={() => nextStep(totalSteps - 1)}>
+              <Button type="button" size="sm" onClick={handleNext}>
                 Next Step
-                <ChevronRight data-icon="inline-end" className="size-4" />
+                <ChevronRight className="size-4 ml-1" />
               </Button>
             )}
 
             {isLastStep && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setShowPreview(true)}
-              >
-                <Eye data-icon="inline-start" className="size-4" />
+              <Button type="button" size="sm" onClick={handleReview}>
+                <Eye className="size-4 mr-1" />
                 Review Tender
               </Button>
             )}
