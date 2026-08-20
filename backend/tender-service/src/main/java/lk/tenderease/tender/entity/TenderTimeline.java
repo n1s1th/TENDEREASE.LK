@@ -26,6 +26,12 @@ public class TenderTimeline {
 
     private LocalDateTime timestamp;
 
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "creator_role")
+    private String creatorRole;
+
     @ManyToOne
     @JoinColumn(name = "tender_id")
     private Tender tender;

@@ -139,7 +139,7 @@ public class PublicTenderController {
     public ResponseEntity<Void> addTimelineEvent(
             @PathVariable UUID id,
             @RequestBody TimelineDTO request) {
-        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription());
+        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription(), request.getCreatedBy(), request.getCreatorRole());
         return ResponseEntity.ok().build();
     }
 

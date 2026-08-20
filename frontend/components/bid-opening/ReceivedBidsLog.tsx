@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import { ShieldCheck, FileText, ChevronRight, Lock, AlertTriangle, ClipboardList, Copy, Check } from "lucide-react";
 import { useOpeningStore } from "@/store/opening/opening.store";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
-import { getBidsByTender, evaluateBid } from "@/services/bid.service";
 import BidEvaluationModal from "./BidEvaluationModal";
+import { useAuthStore } from "@/store";
+import { getBidsByTender, evaluateBid } from "@/services/bid.service";
 
 export default function ReceivedBidsLog() {
+  const { user } = useAuthStore();
   const { session } = useOpeningStore();
   const { fetchEvaluationsByTender, toggleFlag, updateComplianceStatus } = useEvaluationStore();
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,6 +43,20 @@ export default function ReceivedBidsLog() {
       }
 
       try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
+        let mockEvaluations: any[] = [];
+        try {
+          const mockRes = await fetch(`${baseUrl}/api/evaluations/mock/${session.tenderId}/data?t=${Date.now()}`);
+          if (mockRes.ok) {
+            const mockJson = await mockRes.json();
+            if (mockJson.data && mockJson.data.bidders) {
+              mockEvaluations = mockJson.data.bidders;
+            }
+          }
+        } catch (mockErr) {
+          console.warn("Failed to fetch mock evaluations for lock check:", mockErr);
+        }
+
         const data = await getBidsByTender(session.tenderId);
         let mapped: any[] = [];
         if (data) {
@@ -57,6 +73,19 @@ export default function ReceivedBidsLog() {
             }
             if (docsCount === 0) docsCount = 1; // Fallback to Technical Proposal.pdf
 
+            const evalState = mockEvaluations.find((b: any) =>
+              b.bidderId === bid.id ||
+              b.bidderId?.toLowerCase() === bid.id?.toLowerCase() ||
+              b.bidderId === String(bid.id) ||
+              (b.bidderName && bid.companyName && b.bidderName.toLowerCase() === bid.companyName.toLowerCase()) ||
+              (b.bidderName && bid.bidderName && b.bidderName.toLowerCase() === bid.bidderName.toLowerCase())
+            );
+
+            const isBeingEvaluatedByOther = !!(evalState && 
+              evalState.status === "In Progress" && 
+              evalState.evaluatorName && 
+              evalState.evaluatorName !== user?.name);
+
             return {
               id: bid.id,
               no: (idx + 1).toString(),
@@ -70,7 +99,9 @@ export default function ReceivedBidsLog() {
               bidData: bid.bidData,
               technicalScore: bid.technicalScore,
               financialScore: bid.financialScore,
-              notes: bid.notes
+              notes: bid.notes,
+              isBeingEvaluatedByOther,
+              evaluatorName: evalState?.evaluatorName || ""
             };
           });
         }
@@ -99,7 +130,19 @@ export default function ReceivedBidsLog() {
         console.error("Failed to load bids:", err);
       }
     };
+    
     loadBids();
+
+    let interval: NodeJS.Timeout | null = null;
+    if (session?.status === 'OPEN') {
+      interval = setInterval(() => {
+        loadBids();
+      }, 3000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [session?.tenderId, session?.status, fetchEvaluationsByTender]);
 
   const handleUpdateBid = async (no: string, updates: any) => {
@@ -239,11 +282,15 @@ export default function ReceivedBidsLog() {
                         setSelectedBid(row);
                         setIsEvalModalOpen(true);
                       }}
-                      className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye cursor-pointer"
+                      className={`p-2 rounded-xl transition-all relative group/eye cursor-pointer ${
+                        row.isBeingEvaluatedByOther 
+                          ? "text-amber-500 hover:bg-amber-50"
+                          : "text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50"
+                      }`}
                     >
                       <ClipboardList className="w-5 h-5" />
                       <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
-                        Evaluate Bids
+                        {row.isBeingEvaluatedByOther ? `Already being evaluated by ${row.evaluatorName}` : "Evaluate Bids"}
                       </span>
                     </button>
                     <button 
@@ -274,15 +321,15 @@ export default function ReceivedBidsLog() {
         </table>
       </div>
 
-      <div className="p-6 border-t border-gray-50 flex justify-between items-center bg-white/50 relative z-10">
+      <div className="px-6 py-4 border-t border-gray-50 flex justify-between items-center bg-white/50 relative z-10">
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
           SHOWING {visibleBids.length} OF {bids.length} ENTRIES
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button 
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
           </button>
@@ -291,10 +338,10 @@ export default function ReceivedBidsLog() {
             <button 
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`w-10 h-10 rounded-lg flex items-center justify-center text-[13px] font-black transition-all ${
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-black transition-all cursor-pointer ${
                 currentPage === page 
-                  ? 'bg-[#953002] text-white shadow-lg shadow-[#953002]/20' 
-                  : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
+                  ? 'bg-[#953002] text-white shadow-md shadow-[#953002]/20 border border-[#953002]' 
+                  : 'border border-gray-200 text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30'
               }`}
             >
               {page}
@@ -304,7 +351,7 @@ export default function ReceivedBidsLog() {
           <button 
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
