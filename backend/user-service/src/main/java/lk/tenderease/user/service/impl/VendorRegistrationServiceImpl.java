@@ -32,6 +32,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 
 @Slf4j
 @Service
@@ -306,6 +310,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
                 .rejectionReason(profile.getRejectionReason())
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
+                .departments(profile.getDepartments())
                 .build();
     }
 
@@ -327,5 +332,26 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
         VendorProfile profile = vendorProfileRepository.findByOfficialEmail(email)
                 .orElseThrow(() -> new RuntimeException("Vendor not found with email: " + email));
         return mapToProfileResponse(profile);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource getDocumentFile(UUID vendorId, UUID docId) {
+        VendorProfile profile = findVendorOrThrow(vendorId);
+        VendorDocument doc = vendorDocumentRepository.findById(docId)
+                .filter(d -> d.getVendorProfile().getId().equals(vendorId))
+                .orElseThrow(() -> new RuntimeException("Document not found: " + docId));
+
+        try {
+            Path path = Paths.get(doc.getFilePath());
+            Resource resource = new UrlResource(path.toUri());
+            if (resource.exists() || resource.isReadable()) {
+                return resource;
+            } else {
+                throw new RuntimeException("Could not read file: " + doc.getFilePath());
+            }
+        } catch (java.net.MalformedURLException e) {
+            throw new RuntimeException("Error reading file: " + doc.getFilePath(), e);
+        }
     }
 }
