@@ -86,23 +86,6 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
       <div className="pt-8 border-t border-gray-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 items-end">
 
-          {/* STATUS */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">
-              Status
-            </label>
-            <select 
-              value={filters.status}
-              onChange={(e) => handleInputChange("status", e.target.value)}
-              className="w-full border border-gray-100 bg-white rounded-xl px-4 py-3 text-sm font-bold text-black-2 focus:ring-2 focus:ring-primary/20 focus:border-primary/30 cursor-pointer transition-all"
-            >
-              <option>All Statuses</option>
-              <option>Open</option>
-              <option>Upcoming</option>
-              <option>Closed</option>
-            </select>
-          </div>
-
           {/* DATE TYPE */}
           <div className="space-y-3">
             <label className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] px-1">

@@ -26,14 +26,24 @@ export default function TendersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [triggerFetch, setTriggerFetch] = useState(0);
+  const [activeTab, setActiveTab] = useState("open");
   const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     async function fetchTenders() {
+      if (activeTab === "saved") return;
+
       setLoading(true);
       try {
+        const currentFilters = { ...filters };
+        if (activeTab === "open") {
+          currentFilters.status = "All Statuses";
+        } else if (activeTab === "closed") {
+          currentFilters.status = "CLOSED";
+        }
+
         // Backend pagination is 0-indexed
-        const data = await getTenders(currentPage - 1, 10, filters);
+        const data = await getTenders(currentPage - 1, 10, currentFilters);
 
         // Handle both Array response and Page object response
         if (Array.isArray(data)) {
@@ -55,7 +65,7 @@ export default function TendersPage() {
       }
     }
     fetchTenders();
-  }, [currentPage, triggerFetch]);
+  }, [currentPage, triggerFetch, activeTab]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -91,7 +101,7 @@ export default function TendersPage() {
 
         {/* Results Section */}
         <div className="space-y-8 animate-in fade-in duration-700">
-          <Tabs defaultValue="all" className="w-full space-y-6">
+          <Tabs defaultValue="open" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end px-2 gap-4">
               <div className="space-y-4">
                 <div className="space-y-1">
@@ -100,8 +110,11 @@ export default function TendersPage() {
                 </div>
                 
                 <TabsList className="bg-gray-5/50 border border-gray-100 p-1 rounded-xl">
-                  <TabsTrigger value="all" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                    All Tenders
+                  <TabsTrigger value="open" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Open Tenders
+                  </TabsTrigger>
+                  <TabsTrigger value="closed" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Closed Tenders
                   </TabsTrigger>
                   {isAuthenticated && (
                     <TabsTrigger value="saved" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -112,11 +125,31 @@ export default function TendersPage() {
               </div>
 
               <span className="text-xs font-black text-gray-3 uppercase tracking-widest mb-2 sm:mb-0">
-                {loading ? "Synchronizing..." : `${totalCount} Tenders Available`}
+                {loading ? "Synchronizing..." : activeTab === "saved" ? "" : `${totalCount} Tenders Available`}
               </span>
             </div>
 
-            <TabsContent value="all" className="m-0 focus-visible:outline-none">
+            <TabsContent value="open" className="m-0 focus-visible:outline-none">
+              {loading ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                  <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <TenderTable data={tenders} />
+
+                  <TenderPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / 10) || 1}
+                    totalItems={totalCount}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="closed" className="m-0 focus-visible:outline-none">
               {loading ? (
                 <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
                   <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
