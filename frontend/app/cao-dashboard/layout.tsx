@@ -3,6 +3,7 @@ import SubNav from "@/components/cao-dashboard/SubNav";
 import Toast from "@/components/cao-dashboard/Toast";
 import ConfirmApprovalModal from "@/components/cao-dashboard/modals/ConfirmApprovalModal";
 import ConfirmRejectionModal from "@/components/cao-dashboard/modals/ConfirmRejectionModal";
+import WelcomeHeader from "@/components/cao-dashboard/WelcomeHeader";
 
 import type { Metadata } from "next";
 
@@ -25,6 +26,7 @@ export default function CAODashboardLayout({
         margin: "0 auto",
         padding: "1.75rem 1.5rem 1.25rem",
       }}>
+        <WelcomeHeader />
         <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
           <div style={{ width: 4, height: 60, background: "#953002", borderRadius: 4, marginTop: "0.2rem" }}></div>
           <div>

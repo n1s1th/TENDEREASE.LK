@@ -39,7 +39,7 @@ const reportApi = axios.create({
 const evaluationApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084/api/v1',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 5000,
+  timeout: 15000,
 });
 
 // ── Tenders ──────────────────────────────────────────────────
@@ -154,7 +154,7 @@ export async function fetchRecommendations(status?: RecommendationStatus): Promi
 }
 
 export async function updateRecommendationStatus(id: number, status: RecommendationStatus, reason?: string): Promise<void> {
-  await evaluationApi.patch(`/recommendations/${id}/status`, null, {
+  await evaluationApi.patch(`/recommendations/${id}/status`, {}, {
     params: { status, ...(reason ? { reason } : {}) }
   });
 }

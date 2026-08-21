@@ -124,7 +124,7 @@ export default function RecommendationReviewModal() {
               </div>
               <div className="dash-bidder-scores">
                 <div className="dash-bidder-score">
-                  <div className="dash-bidder-score-value">{recommendation.finalScore}</div>
+                  <div className="dash-bidder-score-value">{Number(recommendation.finalScore).toFixed(2)}</div>
                   <div className="dash-bidder-score-label">Final Score</div>
                 </div>
                 <div className="dash-bidder-score">
