@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 
 import Footer from "@/components/home/Footer";
 
+
 export default function OfficerDashboardLayout({
   children,
 }: {
@@ -23,6 +24,7 @@ export default function OfficerDashboardLayout({
 }) {
   return (
     <div className="dash-page">
+
       <SubNav />
       <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
       <Footer />

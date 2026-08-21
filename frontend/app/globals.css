@@ -203,7 +203,7 @@
    Navbar — Premium Top Bar + Search Bar
    ══════════════════════════════════════════════════════════════ */
 
-@layer base {
+@layer components {
 
 .te-navbar {
 
