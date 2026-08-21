@@ -54,6 +54,12 @@ spring:
             allowed-origins:
               - "http://localhost:3000"
               - "http://localhost:3001"
+              - "https://tenderease-lk.vercel.app"
+            allowed-origin-patterns:
+              - "https://*.vercel.app"
+              - "https://tenderease-lk*.vercel.app"
+
+            
             allowed-methods:
               - GET
               - POST
