@@ -6,14 +6,13 @@ import { FileText, Share2, Facebook, Twitter, Linkedin, Youtube } from "lucide-r
 export default function Footer() {
   return (
     <footer style={{ width: "100%", fontFamily: "inherit" }}>
-      {/* ── Top Newsletter Bar ── */}
+      {/* ── Top Call-to-Action Bar ── */}
       <div
         style={{
           background: "#953002", // burnt orange
           padding: "2.5rem 1.5rem",
         }}
       >
-
         <div
           style={{
             maxWidth: 1100,
@@ -22,49 +21,63 @@ export default function Footer() {
             flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "1rem",
+            gap: "1.5rem",
           }}
         >
           <div>
-            <h3 style={{ fontSize: "1rem", fontWeight: 700, color: "#fff", margin: 0 }}>
-              Stay Updated on Tender Opportunities
+            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, color: "#fff", margin: 0 }}>
+              Ready to grow your business?
             </h3>
-            <p style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
-              Get the latest tenders delivered to your inbox every week.
+            <p style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem", margin: "0.25rem 0 0" }}>
+              Join Sri Lanka's trusted digital tendering platform today.
             </p>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <input
-              type="email"
-              placeholder="Your email address"
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <Link
+              href="/vendor-registration"
               style={{
-                width: 240,
-                padding: "0.5rem 0.75rem",
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "0.6rem 1.5rem",
                 borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: "rgba(255,255,255,0.1)",
-                color: "#fff",
-                fontSize: "0.8rem",
-                outline: "none",
-              }}
-            />
-            <button
-              style={{
-                padding: "0.5rem 1.25rem",
-                borderRadius: 6,
-                border: "none",
                 background: "#FFB401",
                 color: "#111827",
                 fontWeight: 700,
-                fontSize: "0.8rem",
-                cursor: "pointer",
+                fontSize: "0.85rem",
+                textDecoration: "none",
                 transition: "background 0.2s",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#ffc633")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = "#FFB401")}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#ffc633")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.background = "#FFB401")}
             >
-              Subscribe
-            </button>
+              Register as Vendor
+            </Link>
+            <Link
+              href="/tenders"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "0.6rem 1.5rem",
+                borderRadius: 6,
+                background: "rgba(255,255,255,0.1)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.25)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                textDecoration: "none",
+                transition: "background 0.2s, border-color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.15)";
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.1)";
+                (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.25)";
+              }}
+            >
+              Browse Tenders
+            </Link>
           </div>
         </div>
       </div>
@@ -81,7 +94,7 @@ export default function Footer() {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1.5fr 1fr 1fr 1fr",
+              gridTemplateColumns: "1.5fr 1fr 1fr",
               gap: "2rem",
               marginBottom: "2rem",
             }}
@@ -151,7 +164,7 @@ export default function Footer() {
                 {[
                   { name: "Browse Tenders", href: "/tenders" },
                   { name: "How It Works", href: "/how-it-works" },
-                  { name: "Register as Vendor", href: "/vendor-registration" },
+                  { name: "News & Events", href: "/news" },
                   { name: "Help / FAQ", href: "/qa" },
                 ].map((link) => (
                   <li key={link.name}>
@@ -163,32 +176,20 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Categories */}
+            {/* Get Started */}
             <div>
               <h4 style={{ color: "#FFB401", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
-                Categories
+                Get Started
               </h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {["Construction", "IT & Infrastructure", "Healthcare", "Education", "Logistics"].map((link) => (
-                  <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
-                      {link}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h4 style={{ color: "#FFB401", fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em", marginBottom: "0.75rem", textTransform: "uppercase" }}>
-                Resources
-              </h4>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {["Tender Guidelines", "Bid Templates", "Procurement Policy", "Vendor Handbook", "Contact Support"].map((link) => (
-                  <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
-                      {link}
+                {[
+                  { name: "Register as Vendor", href: "/vendor-registration" },
+                  { name: "Register as Officer", href: "/officer-registration" },
+                  { name: "Tender Templates", href: "/tender-templates" },
+                ].map((link) => (
+                  <li key={link.name}>
+                    <Link href={link.href} style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
+                      {link.name}
                     </Link>
                   </li>
                 ))}

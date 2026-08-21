@@ -16,9 +16,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -185,7 +185,7 @@
 @layer base {
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
 
   html {
@@ -2024,13 +2024,13 @@
 
 .cf-section {
   position: relative;
-  background: linear-gradient(180deg, #fefcfa 0%, #fff 100%);
+  background: linear-gradient(180deg, #fdfbfa 0%, #ffffff 100%);
   padding: 6rem 1.5rem;
   overflow: hidden;
 }
 
 .cf-inner {
-  max-width: 1100px;
+  max-width: 1140px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -2077,102 +2077,64 @@
   line-height: 1.7;
 }
 
-/* ── Top row: 2 large cards ── */
+/* ── Symmetrical 4-Column Grid ── */
 .cf-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  margin-bottom: 1.25rem;
-}
-
-/* ── Bottom row: 3 compact cards ── */
-.cf-grid-bottom {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
   margin-bottom: 3.5rem;
 }
 
 /* ── Card ── */
 .cf-card {
   position: relative;
-  background: #fff;
-  border: 1px solid #f0eeec;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(149, 48, 2, 0.06);
   border-radius: 20px;
   padding: 2.25rem 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   cursor: default;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-}
-
-/* colored left accent bar */
-.cf-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 1.5rem;
-  bottom: 1.5rem;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--accent-color, #953002);
-  opacity: 0;
-  transform: scaleY(0.3);
-  transition: opacity 0.3s, transform 0.3s;
-}
-
-.cf-card:hover::before {
-  opacity: 1;
-  transform: scaleY(1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.3s ease;
 }
 
 .cf-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(149, 48, 2, 0.05);
-  border-color: #e8e4e0;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(149, 48, 2, 0.08), 0 4px 12px rgba(0, 0, 0, 0.01);
+  border-color: rgba(149, 48, 2, 0.2);
 }
 
-/* ── Feature number watermark ── */
-.cf-card-number {
-  position: absolute;
-  top: -6px;
-  right: 14px;
-  font-size: 5.5rem;
-  font-weight: 900;
-  color: rgba(0, 0, 0, 0.025);
-  line-height: 1;
-  pointer-events: none;
-  transition: color 0.3s;
-}
-
-.cf-card:hover .cf-card-number {
-  color: rgba(149, 48, 2, 0.04);
+/* Card Header */
+.cf-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  width: 100%;
 }
 
 /* ── Icon wrapper ── */
 .cf-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 }
 
 .cf-card:hover .cf-icon-wrap {
   transform: scale(1.06);
 }
 
-/* Icon color variants — also set the accent bar color */
-.cf-icon-wrap--brand  { background: #fef2ee; --accent-color: #953002; }
-.cf-icon-wrap--orange { background: #fff7ed; --accent-color: #c2410c; }
-.cf-icon-wrap--green  { background: #ecfdf5; --accent-color: #15803d; }
-.cf-icon-wrap--purple { background: #f5f3ff; --accent-color: #7c3aed; }
-.cf-icon-wrap--cyan   { background: #ecfeff; --accent-color: #0891b2; }
+.cf-icon-wrap--brand  { background: rgba(149, 48, 2, 0.06); }
+.cf-icon-wrap--amber  { background: rgba(255, 180, 1, 0.1); }
+.cf-icon-wrap--copper { background: rgba(184, 74, 20, 0.08); }
 
 /* ── Tag pill ── */
 .cf-tag {
@@ -2185,7 +2147,7 @@
   text-transform: uppercase;
   padding: 0.25rem 0.65rem;
   border-radius: 50px;
-  background: rgba(149, 48, 2, 0.06);
+  background: rgba(149, 48, 2, 0.05);
   color: #953002;
 }
 
@@ -2194,23 +2156,23 @@
   font-size: 1.15rem;
   font-weight: 700;
   color: #111827;
-  margin: 0;
+  margin: 0 0 0.5rem;
 }
 
 .cf-card-desc {
   font-size: 0.875rem;
   color: #6b7280;
-  line-height: 1.7;
+  line-height: 1.65;
   margin: 0;
 }
 
 /* ── Stats row ── */
 .cf-stats {
   display: flex;
-  gap: 2rem;
-  margin-top: 0.5rem;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid #f3f0ee;
+  border-top: 1px solid rgba(149, 48, 2, 0.06);
 }
 
 .cf-stat {
@@ -2220,7 +2182,7 @@
 }
 
 .cf-stat-value {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #953002;
 }
@@ -2259,15 +2221,17 @@
   box-shadow: 0 8px 24px rgba(149, 48, 2, 0.3);
 }
 
-/* ── Mobile ── */
+/* ── Mobile Responsive Fallback ── */
 @media (max-width: 768px) {
-  .cf-grid,
-  .cf-grid-bottom {
-    grid-template-columns: 1fr;
+  .cf-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 
   .cf-card {
     padding: 1.75rem 1.5rem;
+    grid-column: span 4 !important;
   }
 
   .cf-stats {
