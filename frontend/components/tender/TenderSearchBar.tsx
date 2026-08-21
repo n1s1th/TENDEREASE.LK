@@ -100,36 +100,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
       {/* Filter Grid */}
       <div className="pt-8 border-t border-gray-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 items-end">
-
-          {/* CATEGORY */}
-          <div className="space-y-3">
-            <label className={labelClass}>Category</label>
-            <select
-              value={filters.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              className={inputClass}
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* STATUS */}
-          <div className="space-y-3">
-            <label className={labelClass}>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleInputChange("status", e.target.value)}
-              className={inputClass}
-            >
-              <option>All Statuses</option>
-              <option>Open</option>
-              <option>Upcoming</option>
-              <option>Closed</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 items-end">
 
           {/* DATE TYPE */}
           <div className="space-y-3">
