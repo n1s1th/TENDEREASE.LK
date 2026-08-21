@@ -1,17 +1,17 @@
 package lk.tenderease.user.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
+import java.nio.file.*;
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FileStorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 20L * 1024 * 1024; // 20 MB
@@ -21,30 +21,38 @@ public class FileStorageService {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
 
-    private final S3Service s3Service;
+    @Value("${app.upload.base-dir:./uploads}")
+    private String baseUploadDir;
 
     public String store(MultipartFile file, UUID vendorId, String documentType) {
         validateFile(file);
 
         String safeFileName = UUID.randomUUID() + "_" + sanitizeFilename(file.getOriginalFilename());
-        String key = "vendors/" + vendorId.toString() + "/" + documentType.toLowerCase() + "/" + safeFileName;
+        Path targetDir = Paths.get(baseUploadDir, "vendors", vendorId.toString(), documentType.toLowerCase());
 
         try {
-            s3Service.uploadFile(key, file);
-            log.info("Stored file in S3 at: {}", key);
-            return key;
+            Files.createDirectories(targetDir);
+            Path targetPath = targetDir.resolve(safeFileName);
+            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.info("Stored file at: {}", targetPath);
+            return targetPath.toString();
         } catch (IOException e) {
-            log.error("Failed to store file in S3: {}", e.getMessage());
+            log.error("Failed to store file: {}", e.getMessage());
             throw new RuntimeException("Could not store the file. Please try again.", e);
         }
     }
 
     public void delete(String filePath) {
         try {
-            s3Service.deleteFile(filePath);
-            log.info("Deleted file from S3: {}", filePath);
-        } catch (Exception e) {
-            log.error("Failed to delete file {} from S3: {}", filePath, e.getMessage());
+            Path path = Paths.get(filePath);
+            boolean deleted = Files.deleteIfExists(path);
+            if (deleted) {
+                log.info("Deleted file: {}", filePath);
+            } else {
+                log.warn("File not found for deletion: {}", filePath);
+            }
+        } catch (IOException e) {
+            log.error("Failed to delete file {}: {}", filePath, e.getMessage());
         }
     }
 

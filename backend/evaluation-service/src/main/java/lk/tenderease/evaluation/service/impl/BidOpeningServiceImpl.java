@@ -64,10 +64,30 @@ public class BidOpeningServiceImpl implements BidOpeningService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public OpeningSessionResponse getOpeningSession(UUID tenderId) {
         OpeningSession session = sessionRepository.findFirstByTenderIdOrderByScheduledOpeningTimeDesc(tenderId)
                 .orElseGet(() -> createDefaultSession(tenderId));
+
+        // Sync scheduled opening time with tender closing date if session is still SCHEDULED
+        if (session.getStatus() == OpeningStatus.SCHEDULED) {
+            try {
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderId;
+                java.util.Map<?, ?> response = restTemplate.getForObject(tenderServiceUrl, java.util.Map.class);
+                if (response != null && response.get("closingDate") != null) {
+                    LocalDateTime closingDate = parseClosingDate(response.get("closingDate"));
+                    if (closingDate != null && !closingDate.equals(session.getScheduledOpeningTime())) {
+                        session.setScheduledOpeningTime(closingDate);
+                        session = sessionRepository.save(session);
+                        log.info("Synced scheduled opening time to: {}", closingDate);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to sync closingDate from tender-service: {}", e.getMessage());
+            }
+        }
+
         return mapper.toDto(session);
     }
 
@@ -75,10 +95,50 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         log.info("Creating default opening session for tender: {}", tenderId);
         OpeningSession session = new OpeningSession();
         session.setTenderId(tenderId);
-        // Default to 7 days from now if not specified (in real scenario, get from tender-service)
-        session.setScheduledOpeningTime(LocalDateTime.now().plusDays(7));
+        
+        LocalDateTime openingTime = null;
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderId;
+            java.util.Map<?, ?> response = restTemplate.getForObject(tenderServiceUrl, java.util.Map.class);
+            if (response != null && response.get("closingDate") != null) {
+                openingTime = parseClosingDate(response.get("closingDate"));
+                log.info("Fetched closingDate from tender-service for default session: {}", openingTime);
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch closingDate from tender-service for default session: {}", e.getMessage());
+        }
+
+        if (openingTime == null) {
+            openingTime = LocalDateTime.now().plusDays(7);
+        }
+
+        session.setScheduledOpeningTime(openingTime);
         session.setStatus(OpeningStatus.SCHEDULED);
         return sessionRepository.save(session);
+    }
+
+    private LocalDateTime parseClosingDate(Object closingDateObj) {
+        if (closingDateObj == null) return null;
+        if (closingDateObj instanceof List) {
+            List<?> list = (List<?>) closingDateObj;
+            int year = list.size() > 0 ? ((Number) list.get(0)).intValue() : 2026;
+            int month = list.size() > 1 ? ((Number) list.get(1)).intValue() : 1;
+            int day = list.size() > 2 ? ((Number) list.get(2)).intValue() : 1;
+            int hour = list.size() > 3 ? ((Number) list.get(3)).intValue() : 0;
+            int minute = list.size() > 4 ? ((Number) list.get(4)).intValue() : 0;
+            int second = list.size() > 5 ? ((Number) list.get(5)).intValue() : 0;
+            return LocalDateTime.of(year, month, day, hour, minute, second);
+        } else {
+            String dateStr = closingDateObj.toString();
+            if (dateStr.contains("Z")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("Z"));
+            }
+            if (dateStr.contains("+")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("+"));
+            }
+            return LocalDateTime.parse(dateStr);
+        }
     }
 
     @Override

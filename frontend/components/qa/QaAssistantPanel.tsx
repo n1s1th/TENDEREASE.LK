@@ -1,8 +1,7 @@
 "use client";
 
-import { Bot, Send, Sparkles, TriangleAlert, Loader2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Bot, Send, Sparkles, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 
 const suggestions = [
   "How do I register as a vendor?",
@@ -12,112 +11,73 @@ const suggestions = [
 
 export default function QaAssistantPanel() {
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Hello, I'm the TenderEase AI Assistant! Ask me any general questions about the platform.",
+      text: "Hello, I'm the TenderEase Assistant. How can I help you today?",
     },
   ]);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, loading]);
-
-  const sendMessage = async (value = input) => {
+  const sendMessage = (value = input) => {
     const trimmed = value.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed) return;
 
-    // Add user message
     setMessages((current) => [
       ...current,
       { role: "user", text: trimmed },
+      {
+        role: "assistant",
+        text: "This assistant gives general guidance only. Official answers are shown in the public Q&A list.",
+      },
     ]);
     setInput("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
-      });
-
-      const data = await res.json();
-      
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: data.answer || "I received an empty response." },
-      ]);
-    } catch (error) {
-      console.error("Chat API error:", error);
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: "Sorry, I couldn't connect to my AI server right now." },
-      ]);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
-    <Card className="lg:sticky lg:top-32 h-fit flex flex-col">
-      <CardHeader className="border-b border-border flex flex-row items-center gap-3">
-        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
-          <Bot className="h-4 w-4 text-primary" />
+    <aside className="lg:sticky lg:top-32 h-fit overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-premium">
+      <div className="bg-secondary px-6 py-5 text-black-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-white/80 flex items-center justify-center text-primary">
+            <Bot size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-black">TenderEase Assistant</h2>
+            <p className="text-[11px] font-black uppercase tracking-widest text-black-2/70">General Guidance</p>
+          </div>
         </div>
-        <div>
-          <CardTitle>TenderEase Assistant</CardTitle>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">AI Powered</p>
-        </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="pt-5 flex flex-col gap-4">
-        <div 
-          ref={scrollRef}
-          className="h-[320px] overflow-y-auto no-scrollbar flex flex-col gap-3 pr-1"
-        >
+      <div className="p-5 space-y-4">
+        <div className="max-h-[320px] overflow-y-auto no-scrollbar space-y-3 pr-1">
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
-              className={`rounded-md px-4 py-3 text-sm max-w-[90%] ${
+              className={`rounded-2xl px-4 py-3 text-sm font-semibold leading-6 ${
                 message.role === "assistant"
-                  ? "bg-muted text-foreground self-start rounded-tl-sm"
-                  : "bg-primary text-primary-foreground self-end rounded-tr-sm"
+                  ? "bg-[#fff7e6] text-gray-1"
+                  : "ml-8 bg-primary text-white"
               }`}
             >
               {message.text}
             </div>
           ))}
-          {loading && (
-            <div className="bg-muted text-foreground self-start rounded-tl-sm rounded-md px-4 py-3 text-sm flex items-center gap-2">
-              <Loader2 size={16} className="animate-spin text-primary" />
-              Thinking...
-            </div>
-          )}
         </div>
 
-        <div className="border-t border-border pt-4 space-y-3 shrink-0">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            <Sparkles size={14} className="text-primary" />
+        <div className="border-t border-gray-100 pt-4 space-y-3">
+          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gray-3">
+            <Sparkles size={14} className="text-secondary" />
             Try Asking
           </div>
-          <div className="flex flex-col gap-2">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                disabled={loading}
-                onClick={() => sendMessage(suggestion)}
-                className="w-full rounded-md border border-border bg-card px-4 py-2.5 text-left text-sm text-foreground transition-all hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => sendMessage(suggestion)}
+              className="w-full rounded-xl border border-gray-100 bg-white px-4 py-3 text-left text-xs font-bold text-gray-2 transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary"
+            >
+              {suggestion}
+            </button>
+          ))}
         </div>
 
         <form
@@ -125,29 +85,27 @@ export default function QaAssistantPanel() {
             event.preventDefault();
             sendMessage();
           }}
-          className="flex items-center gap-2 shrink-0 pt-2"
+          className="flex items-center gap-2"
         >
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            disabled={loading}
             placeholder="Type your question..."
-            className="min-w-0 flex-1 rounded-md border border-border bg-card px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-0 flex-1 rounded-xl border border-gray-100 bg-gray-5/30 px-4 py-3 text-sm font-semibold outline-none transition-all focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading}
-            className="h-9 w-9 shrink-0 rounded-md bg-primary text-primary-foreground flex items-center justify-center transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-11 w-11 shrink-0 rounded-xl bg-secondary text-primary flex items-center justify-center transition-all hover:shadow-secondary active:scale-95"
           >
-            <Send size={16} />
+            <Send size={18} />
           </button>
         </form>
 
-        <div className="flex items-start gap-2 rounded-md bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground shrink-0 border border-warning/20">
+        <div className="flex items-start gap-2 rounded-xl bg-warning/10 px-4 py-3 text-[11px] font-bold leading-5 text-gray-2">
           <TriangleAlert size={14} className="mt-0.5 shrink-0 text-warning" />
-          AI responses are for platform guidance only.
+          AI responses are for guidance only. Official answers are shown on the left.
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </aside>
   );
 }

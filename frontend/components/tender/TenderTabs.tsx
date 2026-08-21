@@ -19,7 +19,7 @@ export default function TenderTabs({ tender }: any) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white border border-gray-100 rounded-3xl p-10 shadow-sm space-y-10">
       
       <DetailsTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 

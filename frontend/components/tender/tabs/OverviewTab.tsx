@@ -1,131 +1,73 @@
 "use client";
 
-import { CheckCircle2, Info, Target, TrendingUp, Building2, Layers, FileSearch, CircleDollarSign } from "lucide-react";
-import type { TenderDetailsDTO } from "@/lib/types/tender.types";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CheckCircle2, Info, Target, TrendingUp } from "lucide-react";
 
-export default function OverviewTab({ tender }: { tender: TenderDetailsDTO }) {
+export default function OverviewTab({ tender }: any) {
   const overview = tender?.projectOverview || tender?.description || "No project overview available.";
-
-  const scopeItems = tender?.scopeOfWork
-    ? tender.scopeOfWork.split("\n").filter((i) => i.trim() !== "")
+  
+  // Backend scopeOfWork is a string, but UI expects list. Let's adapt.
+  const scopeItems = tender?.scopeOfWork 
+    ? tender.scopeOfWork.split("\n").filter((i: string) => i.trim() !== "")
     : ["Refer to the technical documentation for the full scope of work."];
 
-  const formatBudget = (amount?: number) => {
-    if (!amount) return "TBA";
-    return new Intl.NumberFormat("en-LK", {
-      style: "currency",
-      currency: "LKR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const metaCards = [
-    {
-      icon: <Building2 className="h-4 w-4 text-info" />,
-      label: "Ministry",
-      value: tender?.ministryName || "N/A",
-    },
-    {
-      icon: <Building2 className="h-4 w-4 text-primary" />,
-      label: "Department",
-      value: tender?.departmentName || "N/A",
-    },
-    {
-      icon: <Layers className="h-4 w-4 text-warning" />,
-      label: "Procurement Type",
-      value: tender?.procurementType?.replace(/_/g, " ") || "N/A",
-    },
-    {
-      icon: <FileSearch className="h-4 w-4 text-success" />,
-      label: "Bidding Method",
-      value: tender?.biddingMethod?.replace(/_/g, " ") || "N/A",
-    },
-    {
-      icon: <CircleDollarSign className="h-4 w-4 text-success" />,
-      label: "Estimated Budget",
-      value: formatBudget(tender?.estimatedBudget),
-    },
-    ...(tender?.fundingSourceName
-      ? [{
-          icon: <TrendingUp className="h-4 w-4 text-secondary" />,
-          label: "Funding Source",
-          value: tender.fundingSourceName,
-        }]
-      : []),
-  ];
-
   return (
-    <div className="space-y-6">
-      {/* PROJECT OVERVIEW */}
-      <Card>
-        <CardHeader className="border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
-              <Info className="h-4 w-4 text-primary" />
+    <div className="space-y-10">
+      {/* PROJECT OVERVIEW - FULL WIDTH */}
+      <section className="bg-white rounded-[2rem] p-8 sm:p-12 border border-gray-100 shadow-premium relative overflow-hidden group">
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-secondary/10 rounded-full blur-3xl opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+        
+        <div className="relative z-10 space-y-8">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-primary/5 rounded-2xl flex items-center justify-center text-primary border border-primary/10 shadow-sm">
+              <Info size={28} />
             </div>
-            <CardTitle>Project Overview</CardTitle>
+            <div className="space-y-1">
+              <h2 className="text-3xl font-black text-black-1 tracking-tight">Project Overview</h2>
+              <p className="text-xs font-bold text-gray-3 uppercase tracking-[0.2em]">Detailed Business Context</p>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-5">
-          <div className="prose prose-gray max-w-none mb-5">
-            <p className="text-sm text-foreground leading-[1.6] whitespace-pre-line">
+          
+          <div className="prose prose-gray max-w-none">
+            <p className="text-lg text-gray-1 leading-[1.8] font-medium whitespace-pre-line">
               {overview}
             </p>
           </div>
-          <div className="flex items-center gap-2 pt-4 border-t border-border">
-            <TrendingUp size={16} className="text-success" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+
+          <div className="flex items-center gap-3 pt-6 border-t border-gray-5">
+            <TrendingUp size={18} className="text-success" />
+            <span className="text-[11px] font-black text-gray-3 uppercase tracking-widest">
               Verified Strategic Initiative • Priority Level: High
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* PROCUREMENT METADATA */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {metaCards.map((card, i) => (
-          <Card key={i}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="flex items-center justify-center h-10 w-10 rounded-md bg-grey-1 border border-border">
-                {card.icon}
+      {/* SCOPE OF WORK - FULL WIDTH GRID */}
+      <section className="space-y-8">
+        <div className="flex items-center gap-4 px-4">
+          <div className="w-12 h-12 bg-gray-5 rounded-2xl flex items-center justify-center text-gray-3 border border-gray-5">
+            <Target size={24} />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-3xl font-black text-black-1 tracking-tight">Scope of Work</h2>
+            <p className="text-xs font-bold text-gray-3 uppercase tracking-[0.2em]">Deliverables & Responsibilities</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {scopeItems.map((item: string, i: number) => (
+            <div 
+              key={i} 
+              className="flex items-start gap-4 p-8 rounded-[2rem] bg-white border border-gray-100 hover:border-primary/20 hover:shadow-premium transition-all duration-300 group cursor-default"
+            >
+              <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center group-hover:bg-primary transition-colors shrink-0 mt-0.5 shadow-sm">
+                <CheckCircle2 className="text-primary group-hover:text-white" size={16} />
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{card.label}</p>
-                <p className="text-sm font-semibold text-foreground">{card.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* SCOPE OF WORK */}
-      <Card>
-        <CardHeader className="border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
-              <Target className="h-4 w-4 text-primary" />
+              <span className="text-base text-black-2 font-bold leading-relaxed">{item}</span>
             </div>
-            <CardTitle>Scope of Work</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {scopeItems.map((item, i) => (
-              <div key={i} className="flex items-start gap-3 p-4 rounded-md border border-border bg-grey-1 hover:border-primary/20 transition-colors">
-                <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                <span className="text-sm text-foreground">{item}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
-

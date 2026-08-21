@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, MessageSquare, Clock, CheckCircle2, ChevronRight, Globe, FileText } from "lucide-react";
+import { Search, MessageSquare, Clock, CheckCircle2, ChevronRight } from "lucide-react";
 import type { ClarificationItem } from "@/lib/types/officer-dashboard.types";
 import { fetchAllClarifications } from "@/lib/api/officer-dashboard.api";
 
-type TabFilter = "all" | "tender" | "global" | "pending" | "answered";
+type TabFilter = "all" | "pending" | "answered";
+
+// Removed mock data to use real database data
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -41,19 +43,10 @@ export default function ClarificationsPage() {
     load();
   }, []);
 
-  const isGlobalQuestion = (c: ClarificationItem) => {
-    return !c.tenderId || c.tenderId.trim() === "" || c.tenderTitle === "Global" || c.tenderId === "global";
-  };
-
   const filtered = clarifications.filter((c) => {
     const isPending = !c.answer;
-    const isGlobal = isGlobalQuestion(c);
-    
     if (tab === "pending" && !isPending) return false;
     if (tab === "answered" && isPending) return false;
-    if (tab === "tender" && isGlobal) return false;
-    if (tab === "global" && !isGlobal) return false;
-    
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -67,8 +60,6 @@ export default function ClarificationsPage() {
 
   const counts = {
     all: clarifications.length,
-    tender: clarifications.filter((c) => !isGlobalQuestion(c)).length,
-    global: clarifications.filter((c) => isGlobalQuestion(c)).length,
     pending: clarifications.filter((c) => !c.answer).length,
     answered: clarifications.filter((c) => c.answer).length,
   };
@@ -82,7 +73,7 @@ export default function ClarificationsPage() {
             Clarification Requests
           </h1>
           <p style={{ color: "var(--te-gray-4)", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-            Review and respond to vendor questions across all tenders and global queries
+            Review and respond to vendor questions across all tenders
           </p>
         </div>
       </div>
@@ -109,8 +100,8 @@ export default function ClarificationsPage() {
       </div>
 
       {/* Tab Filter */}
-      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "2px solid var(--te-border, #e2e8f0)", overflowX: "auto" }}>
-        {(["all", "tender", "global", "pending", "answered"] as TabFilter[]).map((t) => (
+      <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "2px solid var(--te-border, #e2e8f0)" }}>
+        {(["all", "pending", "answered"] as TabFilter[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -125,13 +116,9 @@ export default function ClarificationsPage() {
               borderBottom: tab === t ? "2.5px solid #2563eb" : "2.5px solid transparent",
               marginBottom: "-2px",
               transition: "all 0.2s",
-              whiteSpace: "nowrap",
             }}
           >
-            {t === "all" ? "All" : 
-             t === "tender" ? "Tender Specific" :
-             t === "global" ? "Global Q&A" :
-             t.charAt(0).toUpperCase() + t.slice(1)} ({counts[t]})
+            {t.charAt(0).toUpperCase() + t.slice(1)} ({counts[t]})
           </button>
         ))}
       </div>
@@ -164,11 +151,9 @@ export default function ClarificationsPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {filtered.map((c) => {
           const isPending = !c.answer;
-          const isGlobal = isGlobalQuestion(c);
-          
           return (
             <div
-              key={`${c.tenderId || 'global'}-${c.id}`}
+              key={`${c.tenderId}-${c.id}`}
               style={{
                 background: "#fff",
                 border: "1px solid var(--te-border, #e2e8f0)",
@@ -185,18 +170,11 @@ export default function ClarificationsPage() {
                 e.currentTarget.style.boxShadow = "none";
                 e.currentTarget.style.borderColor = "var(--te-border, #e2e8f0)";
               }}
-              onClick={() => {
-                if (isGlobal) {
-                  // For global QA, we might have a different detail page, or we pass null as tenderId
-                  router.push(`/officer-dashboard/clarifications/global/${c.id}`);
-                } else {
-                  router.push(`/officer-dashboard/clarifications/${c.tenderId}/${c.id}`);
-                }
-              }}
+              onClick={() => router.push(`/officer-dashboard/clarifications/${c.tenderId}/${c.id}`)}
             >
               {/* Top row: status + tender info */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                   <span style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -214,31 +192,9 @@ export default function ClarificationsPage() {
                     {isPending ? <Clock size={11} /> : <CheckCircle2 size={11} />}
                     {isPending ? "Pending" : "Answered"}
                   </span>
-                  
-                  {/* Global vs Tender Badge */}
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.35rem",
-                    padding: "0.2rem 0.75rem",
-                    borderRadius: "20px",
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                    background: isGlobal ? "#e0e7ff" : "#f1f5f9",
-                    color: isGlobal ? "#3730a3" : "#475569",
-                    border: isGlobal ? "1px solid #c7d2fe" : "1px solid #e2e8f0",
-                  }}>
-                    {isGlobal ? <Globe size={11} /> : <FileText size={11} />}
-                    {isGlobal ? "Global Q&A" : "Tender Specific"}
+                  <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)", fontWeight: 500 }}>
+                    {c.category} / {c.department}
                   </span>
-
-                  {!isGlobal && c.category && c.department && (
-                    <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)", fontWeight: 500 }}>
-                      {c.category} / {c.department}
-                    </span>
-                  )}
                 </div>
                 <ChevronRight size={18} style={{ color: "var(--te-gray-4)" }} />
               </div>
@@ -246,13 +202,11 @@ export default function ClarificationsPage() {
               {/* Tender title + number */}
               <div style={{ marginBottom: "0.5rem" }}>
                 <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--te-gray-1)" }}>
-                  {isGlobal ? "General Platform Clarification" : c.tenderTitle}
+                  {c.tenderTitle}
                 </span>
-                {!isGlobal && c.tenderNumber && (
-                  <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)", marginLeft: "0.75rem" }}>
-                    {c.tenderNumber}
-                  </span>
-                )}
+                <span style={{ fontSize: "0.8rem", color: "var(--te-gray-4)", marginLeft: "0.75rem" }}>
+                  {c.tenderNumber}
+                </span>
               </div>
 
               {/* Question preview */}

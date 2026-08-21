@@ -61,6 +61,7 @@ public interface TenderService {
      * @throws lk.tenderease.tender.exception.TenderNotFoundException if tender is not found
      */
     TenderDetailResponse getTenderById(UUID id);
+    TenderDetailResponse getTenderByNumber(String tenderNumber);
     byte[] viewDocument(UUID docId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
@@ -252,6 +253,7 @@ public interface TenderService {
     Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
+    TenderDetailsDTO getPublicTenderByNumber(String tenderNumber);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);
 
@@ -278,19 +280,4 @@ public interface TenderService {
     void submitClarification(UUID tenderId, ClarificationRequestDTO request, String bidderEmail);
 
     ClarificationDTO answerClarification(UUID tenderId, Long clarificationId, ClarificationAnswerRequestDTO request);
-
-    /**
-     * Replaces an existing document with a new version, creating an Addendum record.
-     * The old file is kept on disk; the new file is stored with version incremented.
-     *
-     * @param tenderId    the tender UUID
-     * @param docId       the document UUID to replace
-     * @param newFile     the new file bytes
-     * @param changeNote  human-readable description of what changed
-     * @param callerUserId the officer's user ID
-     * @return the new TenderAmendmentDTO
-     */
-    TenderAmendmentDTO replaceDocument(UUID tenderId, UUID docId,
-                                       org.springframework.web.multipart.MultipartFile newFile,
-                                       String changeNote, String callerUserId);
 }

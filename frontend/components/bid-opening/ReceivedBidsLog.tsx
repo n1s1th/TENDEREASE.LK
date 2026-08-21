@@ -21,7 +21,7 @@ export default function ReceivedBidsLog() {
 
   const [bids, setBids] = useState<any[]>([]);
 
-  const [selectedBid, setSelectedBid] = useState<any>(null);
+   const [selectedBid, setSelectedBid] = useState<any>(null);
   const [isEvalModalOpen, setIsEvalModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export default function ReceivedBidsLog() {
   useEffect(() => {
     const loadBids = async () => {
       if (!session?.tenderId) return;
-
+      
       // Bids should only be fetched and displayed after the bid opening session is opened or concluded (OPEN or CLOSED)
       if (session.status !== 'OPEN' && session.status !== 'CLOSED') {
         setBids([]);
@@ -81,9 +81,9 @@ export default function ReceivedBidsLog() {
               (b.bidderName && bid.bidderName && b.bidderName.toLowerCase() === bid.bidderName.toLowerCase())
             );
 
-            const isBeingEvaluatedByOther = !!(evalState &&
-              evalState.status === "In Progress" &&
-              evalState.evaluatorName &&
+            const isBeingEvaluatedByOther = !!(evalState && 
+              evalState.status === "In Progress" && 
+              evalState.evaluatorName && 
               evalState.evaluatorName !== user?.name);
 
             return {
@@ -112,10 +112,10 @@ export default function ReceivedBidsLog() {
             mapped = mapped.map(bid => {
               const evalItem = evaluations.find((e: any) => e.id === bid.id || e.bidId === bid.id);
               if (evalItem) {
-                return {
-                  ...bid,
-                  isFlagged: evalItem.isFlagged,
-                  status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus
+                return { 
+                  ...bid, 
+                  isFlagged: evalItem.isFlagged, 
+                  status: evalItem.complianceStatus === 'PENDING' ? 'VERIFIED' : evalItem.complianceStatus 
                 };
               }
               return bid;
@@ -130,7 +130,7 @@ export default function ReceivedBidsLog() {
         console.error("Failed to load bids:", err);
       }
     };
-
+    
     loadBids();
 
     let interval: NodeJS.Timeout | null = null;
@@ -210,9 +210,9 @@ export default function ReceivedBidsLog() {
         <table className="w-full text-center border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg">NO</th>
-              <th className="py-4 px-4">BID REF.</th>
-              <th className="py-4 px-4">BIDDER NAME</th>
+              <th className="py-4 px-6 rounded-tl-lg text-center">NO</th>
+              <th className="py-4 px-4 text-center">BID REF.</th>
+              <th className="py-4 px-4 text-center">BIDDER NAME</th>
               <th className="py-4 px-4 text-center">SUBMITTED AT</th>
               <th className="py-4 px-4 text-center">DOCS</th>
               <th className="py-4 px-4 text-center">AMOUNT</th>
@@ -229,10 +229,10 @@ export default function ReceivedBidsLog() {
               </tr>
             ) : visibleBids.map((row, idx) => (
               <tr key={row.no} className={`border-b border-gray-100 hover:bg-gray-50/80 transition-all ${idx % 2 === 0 ? 'bg-white' : 'bg-[#F2F4F7]'} ${row.isFlagged ? 'bg-red-50/30' : ''}`}>
-                <td className="py-4 px-6">
+                <td className="py-4 px-6 text-center">
                   <div className="font-bold text-xs text-gray-400">{row.no}</div>
                 </td>
-                <td className="py-4 px-4">
+                <td className="py-4 px-4 text-center">
                   <div className="font-bold text-sm text-gray-900">{row.ref}</div>
                 </td>
                 <td className="py-4 px-4 text-center">
@@ -252,54 +252,57 @@ export default function ReceivedBidsLog() {
                 <td className="py-4 px-4 text-center relative">
                   <div className="relative flex items-center justify-center">
                     {row.isFlagged && (
-                      <svg
-                        viewBox="0 0 24 24"
+                      <svg 
+                        viewBox="0 0 24 24" 
                         className="w-3.5 h-3.5 text-red-500 fill-red-500 absolute translate-x-16 shrink-0"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
                         strokeLinejoin="round"
                       >
                         <line x1="4" y1="22" x2="4" y2="2" />
                         <path d="M4 2h15l-6 5l6 5H4z" />
                       </svg>
                     )}
-                    <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-md border uppercase tracking-widest ${row.status === "COMPLIANT"
-                        ? "bg-green-50 text-green-600 border-green-200"
+                    <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-md border uppercase tracking-widest ${
+                      row.status === "COMPLIANT" 
+                        ? "bg-green-50 text-green-600 border-green-200" 
                         : row.status?.toUpperCase() === "SUBMITTED"
                           ? "bg-[#FFF7ED] text-[#953002] border-[#953002]/20"
                           : "bg-gray-50 text-gray-600 border-gray-200"
-                      }`}>
+                    }`}>
                       {row.status}
                     </span>
                   </div>
                 </td>
                 <td className="py-4 px-4 text-center">
                   <div className="flex items-center justify-center gap-1.5">
-                    <button
+                    <button 
                       onClick={() => {
                         setSelectedBid(row);
                         setIsEvalModalOpen(true);
                       }}
-                      className={`p-2 rounded-xl transition-all relative group/eye cursor-pointer ${row.isBeingEvaluatedByOther
+                      className={`p-2 rounded-xl transition-all relative group/eye cursor-pointer ${
+                        row.isBeingEvaluatedByOther 
                           ? "text-amber-500 hover:bg-amber-50"
                           : "text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50"
-                        }`}
+                      }`}
                     >
                       <ClipboardList className="w-5 h-5" />
                       <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 group-hover/eye:opacity-100 pointer-events-none transition-all duration-200 shadow-lg whitespace-nowrap z-[110] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-gray-900">
                         {row.isBeingEvaluatedByOther ? `Already being evaluated by ${row.evaluatorName}` : "Evaluate Bids"}
                       </span>
                     </button>
-                    <button
+                    <button 
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopyId(row.id, row.ref);
                       }}
-                      className={`p-2 rounded-xl transition-all relative group/copy cursor-pointer ${copiedId === row.id
-                          ? "bg-green-50 text-green-600"
+                      className={`p-2 rounded-xl transition-all relative group/copy cursor-pointer ${
+                        copiedId === row.id 
+                          ? "bg-green-50 text-green-600" 
                           : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        }`}
+                      }`}
                     >
                       {copiedId === row.id ? (
                         <Check className="w-5 h-5" />
@@ -323,28 +326,29 @@ export default function ReceivedBidsLog() {
           SHOWING {visibleBids.length} OF {bids.length} ENTRIES
         </span>
         <div className="flex items-center gap-1.5">
-          <button
+          <button 
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
           >
             <ChevronRight className="w-4 h-4 rotate-180" />
           </button>
-
+          
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-            <button
+            <button 
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-black transition-all cursor-pointer ${currentPage === page
-                  ? 'bg-[#953002] text-white shadow-md shadow-[#953002]/20 border border-[#953002]'
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-black transition-all cursor-pointer ${
+                currentPage === page 
+                  ? 'bg-[#953002] text-white shadow-md shadow-[#953002]/20 border border-[#953002]' 
                   : 'border border-gray-200 text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30'
-                }`}
+              }`}
             >
               {page}
             </button>
           ))}
 
-          <button
+          <button 
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             className="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-[#953002]/5 hover:text-[#953002] hover:border-[#953002]/30 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500 disabled:hover:border-gray-200"
@@ -354,7 +358,7 @@ export default function ReceivedBidsLog() {
         </div>
       </div>
 
-      <BidEvaluationModal
+      <BidEvaluationModal 
         isOpen={isEvalModalOpen}
         onClose={() => setIsEvalModalOpen(false)}
         bid={selectedBid}

@@ -94,7 +94,7 @@ export default function BidOpeningPage() {
   const id = params?.id as string;
   const { session, fetchSession, fetchAttendance, isLoading } = useOpeningStore();
   const [tender, setTender] = useState<any | null>(null);
-
+  
   const fallbackTender = SEED_TENDERS_FALLBACK[id] || Object.values(SEED_TENDERS_FALLBACK).find(t => t.tenderNumber === id);
 
   useEffect(() => {
@@ -180,9 +180,9 @@ export default function BidOpeningPage() {
       {/* --- Breadcrumbs / Sub-Navigation --- */}
       <nav className="bg-white px-6 sm:px-10 py-4 flex items-center justify-between border-b border-gray-100">
         <div className="flex items-center gap-6 text-sm font-bold text-gray-500 whitespace-nowrap">
-          <Link href="/tenders" className="flex items-center gap-2 hover:text-[#953002] transition-colors group">
+          <Link href="/officer-dashboard" className="flex items-center gap-2 hover:text-[#953002] transition-colors group">
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            Back to Tenders
+            Back to Officer Dashboard
           </Link>
         </div>
 

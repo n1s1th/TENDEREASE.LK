@@ -9,6 +9,4 @@ import java.util.UUID;
 public interface TenderTimelineRepository extends JpaRepository<TenderTimeline, Long> {
 
     List<TenderTimeline> findByTenderIdOrderByTimestampDesc(UUID tenderId);
-
-    boolean existsByTenderIdAndEventTypeAndDescription(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description);
 }

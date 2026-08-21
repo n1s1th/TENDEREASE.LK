@@ -17,6 +17,4 @@ public interface BidRepository extends JpaRepository<Bid, UUID> {
     List<Bid> findByBidderEmail(String bidderEmail);
 
     List<Bid> findByStatus(String status);
-
-    boolean existsByTenderIdAndBidderEmail(UUID tenderId, String bidderEmail);
 }

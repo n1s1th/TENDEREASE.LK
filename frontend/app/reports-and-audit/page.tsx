@@ -134,9 +134,9 @@ function formatQuotedValue(amount: number | null | undefined, currency: string |
 }
 
 function apiBidToRow(
-  bid: any,
-  index: number,
-  evalNotesMap: Record<string, string> = {},
+  bid: any, 
+  index: number, 
+  evalNotesMap: Record<string, string> = {}, 
   evalBidders: any[] = []
 ): BidRow {
   const evaluationObj = evalBidders.find((eb: any) => eb.bidderId === bid.id || eb.bidderName === bid.bidderName);
@@ -386,23 +386,24 @@ function CustomSelect({ value, onChange, options, placeholder, emptyText }: Cust
               .map((opt) => {
                 const isSelected = value === opt;
                 return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      onChange(opt);
-                      setIsOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center justify-between cursor-pointer ${isSelected
-                        ? "bg-[#953002]/5 text-[#953002]"
-                        : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
-                      }`}
-                  >
-                    <span>{opt}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-[#953002] shrink-0" />}
-                  </button>
-                );
-              })
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-xs font-semibold rounded-xl transition-all flex items-center justify-between cursor-pointer ${
+                    isSelected
+                      ? "bg-[#953002]/5 text-[#953002]"
+                      : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
+                  }`}
+                >
+                  <span>{opt}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#953002] shrink-0" />}
+                </button>
+              );
+            })
           )}
         </div>
       )}
@@ -601,14 +602,15 @@ function CustomDatePicker({ value, onChange, placeholder = "DD / MM / YYYY" }: C
                   key={i}
                   type="button"
                   onClick={() => handleSelectDay(dayObj)}
-                  className={`h-7 w-7 text-xs rounded-lg transition-all flex items-center justify-center mx-auto cursor-pointer ${!dayObj.isCurrentMonth
+                  className={`h-7 w-7 text-xs rounded-lg transition-all flex items-center justify-center mx-auto cursor-pointer ${
+                    !dayObj.isCurrentMonth
                       ? "text-gray-300 hover:bg-gray-50"
                       : isSelected
-                        ? "bg-[#953002] text-white font-bold"
-                        : isToday
-                          ? "border border-[#953002] text-[#953002] font-bold hover:bg-[#953002]/5"
-                          : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
-                    }`}
+                      ? "bg-[#953002] text-white font-bold"
+                      : isToday
+                      ? "border border-[#953002] text-[#953002] font-bold hover:bg-[#953002]/5"
+                      : "text-gray-700 hover:bg-[#953002]/5 hover:text-[#953002]"
+                  }`}
                 >
                   {dayObj.day}
                 </button>
@@ -821,7 +823,7 @@ function ReportsAndAuditContent() {
       .then((res) => {
         const content = res.data?.content || [];
         setTendersList(content);
-
+        
         // Keep selected tender if it exists in the new list
         const exists = content.some((t: any) => {
           const refStr = t.tenderNo || t.tenderNumber || t.id;
@@ -848,7 +850,7 @@ function ReportsAndAuditContent() {
       } else if (tenderIdParam) {
         matchedTender = tendersList.find((t: any) => t.id === tenderIdParam);
       }
-
+      
       if (matchedTender) {
         const tenderStr = `${matchedTender.tenderNo || matchedTender.tenderNumber || matchedTender.id} - ${matchedTender.title}`;
         setTender(tenderStr);
@@ -868,7 +870,7 @@ function ReportsAndAuditContent() {
     const isBidderSelected = bidder && bidder !== "Select Bidder" && bidder !== "All Bidders";
     const isDateSelected = !!(dateFrom || dateTo);
     const isStatusSelected = reportStatus && reportStatus !== "Select Status" && reportStatus !== "All Statuses";
-
+    
     if (isBidderSelected && isDateSelected && isStatusSelected) {
       return "No tenders found for bidder with selected status and date range.";
     }
@@ -1099,11 +1101,11 @@ function ReportsAndAuditContent() {
           .map((bidder: any) => {
             const techSubtotal = bidder.technicalCriteria?.reduce((sum: number, c: any) => sum + (c.score || 0) * ((c.weight || 0) / 100), 0) || 0;
             const finSubtotal = bidder.financialCriteria?.reduce((sum: number, c: any) => sum + (c.score || 0) * ((c.weight || 0) / 100), 0) || 0;
-
+            
             const technicalScore = techSubtotal * 0.7;
             const financialScore = techSubtotal >= 75 ? (finSubtotal * 0.3) : 0;
             const compositeScore = technicalScore + financialScore;
-
+            
             return {
               rank: 0,
               bidder: bidder.bidderName,
@@ -1215,10 +1217,10 @@ function ReportsAndAuditContent() {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.setTextColor(235, 230, 228); // Faint but slightly darker
-
+      
       const stepX = 75;
       const stepY = 50;
-
+      
       for (let x = -20; x < pageWidth + 80; x += stepX) {
         for (let y = -20; y < pageHeight + 80; y += stepY) {
           doc.text("TENDEREASE.LK", x, y, {
@@ -1240,7 +1242,7 @@ function ReportsAndAuditContent() {
       doc.setFontSize(16);
       doc.setTextColor(149, 48, 2); // #953002
       doc.text("TENDEREASE.LK", 14, 20);
-
+      
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(100, 100, 100);
@@ -1255,10 +1257,10 @@ function ReportsAndAuditContent() {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
-
+    
     const tenderRefStr = appliedTender ? appliedTender.split(" - ")[0] : "-";
     const tenderNameStr = appliedTender && appliedTender.includes(" - ") ? appliedTender.substring(appliedTender.indexOf(" - ") + 3) : "-";
-
+    
     doc.text(`Tender Ref: ${tenderRefStr}`, pageWidth - 14, 13, { align: "right" });
     doc.text(`Tender Title: ${tenderNameStr}`, pageWidth - 14, 18, { align: "right" });
     doc.setFont("helvetica", "normal");
@@ -1554,11 +1556,11 @@ function ReportsAndAuditContent() {
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
     // Fire all 6 downloads sequentially with a small gap (silent=true suppresses individual toasts)
-    handleDownloadPDF("bid", true); await delay(300);
-    handleDownloadExcel("bid", true); await delay(300);
-    handleDownloadPDF("evaluation", true); await delay(300);
-    handleDownloadExcel("evaluation", true); await delay(300);
-    handleDownloadPDF("audit", true); await delay(300);
+    handleDownloadPDF("bid", true);           await delay(300);
+    handleDownloadExcel("bid", true);         await delay(300);
+    handleDownloadPDF("evaluation", true);    await delay(300);
+    handleDownloadExcel("evaluation", true);  await delay(300);
+    handleDownloadPDF("audit", true);         await delay(300);
     handleDownloadExcel("audit", true);
 
     // Single consolidated toast (overrides individual toasts from above)
@@ -1642,7 +1644,7 @@ function ReportsAndAuditContent() {
                   Reports &amp; Audit
                 </h1>
                 <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-2">
-                  <Link href="http://localhost:3000/officer-dashboard" className="hover:text-[#953002] transition-colors">Officer Dashboard</Link>
+                  <Link href="/officer-dashboard" className="hover:text-[#953002] transition-colors">Officer Dashboard</Link>
                   <ChevronRight size={11} className="text-gray-400 shrink-0" />
                   <Link href="/reports-and-audit" className="hover:text-[#953002] transition-colors">Reports &amp; Audit</Link>
                   <ChevronRight size={11} className="text-gray-400 shrink-0" />
@@ -1662,10 +1664,11 @@ function ReportsAndAuditContent() {
               <button
                 onClick={handleExportAll}
                 disabled={!isTenderCompleted || bidsLoading || auditLoading}
-                className={`flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl transition-colors shadow-sm ${isTenderCompleted && !bidsLoading && !auditLoading
+                className={`flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl transition-colors shadow-sm ${
+                  isTenderCompleted && !bidsLoading && !auditLoading
                     ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer shadow-[#953002]/20"
                     : "bg-gray-300 text-white cursor-not-allowed opacity-60 shadow-none"
-                  }`}
+                }`}
               >
                 <Download size={13} />
                 {bidsLoading || auditLoading ? "Loading…" : "Export All Reports"}
@@ -1759,15 +1762,17 @@ function ReportsAndAuditContent() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 text-[15px] font-black whitespace-nowrap transition-all border-b-2 cursor-pointer ${activeTab === tab.key
+                  className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 text-[15px] font-black whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                    activeTab === tab.key
                       ? "border-[#953002] text-[#953002] bg-[#FFF7ED]"
                       : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    }`}
+                  }`}
                 >
                   {tab.label}
                   {tab.count !== undefined && (
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${activeTab === tab.key ? "bg-[#953002] text-white" : "bg-gray-100 text-gray-500"
-                      }`}>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                      activeTab === tab.key ? "bg-[#953002] text-white" : "bg-gray-100 text-gray-500"
+                    }`}>
                       {tab.count}
                     </span>
                   )}
@@ -1792,10 +1797,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadPDF("bid")}
                         disabled={!isTenderCompleted || bidsLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !bidsLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !bidsLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileText size={13} />
                         {bidsLoading ? "…" : "PDF"}
@@ -1803,10 +1809,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadExcel("bid")}
                         disabled={!isTenderCompleted || bidsLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !bidsLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !bidsLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileSpreadsheet size={13} />
                         {bidsLoading ? "…" : "Excel"}
@@ -1852,8 +1859,8 @@ function ReportsAndAuditContent() {
                         ) : !appliedTender ? (
                           <tr>
                             <td colSpan={6} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
-                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders"
-                                ? "No tender selected. Please select a tender to view submissions for this bidder."
+                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
+                                ? "No tender selected. Please select a tender to view submissions for this bidder." 
                                 : "No tender selected. Please select a tender to view data."}
                             </td>
                           </tr>
@@ -1866,8 +1873,8 @@ function ReportsAndAuditContent() {
                         ) : filteredBidRows.length === 0 ? (
                           <tr>
                             <td colSpan={6} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
-                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders"
-                                ? "No submissions found for the selected bidder in this tender."
+                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
+                                ? "No submissions found for the selected bidder in this tender." 
                                 : "No bid submissions logged for this tender."}
                             </td>
                           </tr>
@@ -1941,10 +1948,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadPDF("evaluation")}
                         disabled={!isTenderCompleted || bidsLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !bidsLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !bidsLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileText size={13} />
                         {bidsLoading ? "…" : "PDF"}
@@ -1952,10 +1960,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadExcel("evaluation")}
                         disabled={!isTenderCompleted || bidsLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !bidsLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !bidsLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileSpreadsheet size={13} />
                         {bidsLoading ? "…" : "Excel"}
@@ -1992,16 +2001,16 @@ function ReportsAndAuditContent() {
                         ) : !appliedTender ? (
                           <tr>
                             <td colSpan={9} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
-                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders"
-                                ? "No tender selected. Please select a tender to view evaluation reports for this bidder."
+                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
+                                ? "No tender selected. Please select a tender to view evaluation reports for this bidder." 
                                 : "No tender selected. Please select a tender to view data."}
                             </td>
                           </tr>
                         ) : filteredEvaluations.length === 0 ? (
                           <tr>
                             <td colSpan={9} className="px-5 py-10 text-center text-[14px] font-semibold text-gray-400">
-                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders"
-                                ? "No evaluations found for the selected bidder in this tender."
+                              {appliedBidder && appliedBidder !== "Select Bidder" && appliedBidder !== "All Bidders" 
+                                ? "No evaluations found for the selected bidder in this tender." 
                                 : "No evaluations found for this tender."}
                             </td>
                           </tr>
@@ -2015,23 +2024,23 @@ function ReportsAndAuditContent() {
                                     {row.rank}
                                   </span>
                                 </td>
-                                <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.bidder}</td>
-                                <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.technicalScore} max={70} /></div></td>
-                                <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.financialScore} max={30} /></div></td>
-                                <td className="px-3 py-3.5 text-center">
-                                  <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-lg border bg-[#FFF7ED] text-[#953002] border-[#953002]/20 uppercase tracking-wider`}>
-                                    {row.compliancePassed ? "PASSED" : "FAILED"}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(2)}</td>
-                                <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{row.evaluator}</td>
-                                <td className="px-3 py-3.5 text-center"><StatusBadge status={row.status} /></td>
-                                <td className="px-3 py-3.5 text-center">
-                                  <button onClick={() => setNotePopup({ open: true, bid: row.bidder, tender: appliedTender || "TND-2024-0041", note: row.notes || "No notes available." })}>
-                                    <FileText size={18} className="text-gray-400 hover:text-[#953002] cursor-pointer mx-auto transition-colors" />
-                                  </button>
-                                </td>
-                              </tr>
+                            <td className="px-3 py-3.5 font-black text-gray-800 text-center">{row.bidder}</td>
+                            <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.technicalScore} max={70} /></div></td>
+                            <td className="px-3 py-3.5 w-40 text-center"><div className="mx-auto max-w-[150px]"><ScoreBar value={row.financialScore} max={30} /></div></td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-lg border bg-[#FFF7ED] text-[#953002] border-[#953002]/20 uppercase tracking-wider`}>
+                                {row.compliancePassed ? "PASSED" : "FAILED"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3.5 font-black text-[#953002] text-sm text-center">{row.compositeScore.toFixed(2)}</td>
+                            <td className="px-3 py-3.5 font-semibold text-gray-500 text-center">{row.evaluator}</td>
+                            <td className="px-3 py-3.5 text-center"><StatusBadge status={row.status} /></td>
+                            <td className="px-3 py-3.5 text-center">
+                              <button onClick={() => setNotePopup({ open: true, bid: row.bidder, tender: appliedTender || "TND-2024-0041", note: row.notes || "No notes available." })}>
+                                <FileText size={18} className="text-gray-400 hover:text-[#953002] cursor-pointer mx-auto transition-colors" />
+                              </button>
+                            </td>
+                          </tr>
                             ));
                           })()
                         )}
@@ -2090,10 +2099,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadPDF("audit")}
                         disabled={!isTenderCompleted || auditLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !auditLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !auditLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileText size={13} />
                         {auditLoading ? "…" : "PDF"}
@@ -2101,10 +2111,11 @@ function ReportsAndAuditContent() {
                       <button
                         onClick={() => handleDownloadExcel("audit")}
                         disabled={!isTenderCompleted || auditLoading}
-                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${isTenderCompleted && !auditLoading
+                        className={`flex items-center justify-center gap-1.5 text-[12px] font-black w-20 py-1.5 rounded-xl transition-all shadow-sm ${
+                          isTenderCompleted && !auditLoading
                             ? "bg-[#953002] hover:bg-[#7a2702] text-white cursor-pointer"
                             : "bg-gray-200 border border-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                          }`}
+                        }`}
                       >
                         <FileSpreadsheet size={13} />
                         {auditLoading ? "…" : "Excel"}
@@ -2284,21 +2295,23 @@ function ReportsAndAuditContent() {
       {mounted && toasts.length > 0 && createPortal(
         <div className="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none">
           {toasts.map((t) => (
-            <div
-              key={t.id}
-              className={`w-max max-w-[90vw] flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border pointer-events-auto transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${t.type === "success" ? "bg-white border-[#27AE60]/30 text-[#27AE60]" :
-                  "bg-white border-red-200 text-red-750"
-                }`}
+            <div 
+              key={t.id} 
+              className={`w-max max-w-[90vw] flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border pointer-events-auto transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
+                t.type === "success" ? "bg-white border-[#27AE60]/30 text-[#27AE60]" :
+                "bg-white border-red-200 text-red-750"
+              }`}
             >
               <div className="flex items-center gap-2.5">
                 {t.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
                 <span className="text-[13px] font-bold tracking-tight">{t.message}</span>
               </div>
-              <button
+              <button 
                 onClick={() => dismissToast(t.id)}
-                className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${t.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
-                    "text-red-750/60 hover:text-red-750"
-                  }`}
+                className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${
+                  t.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
+                  "text-red-750/60 hover:text-red-750"
+                }`}
               >
                 <X className="w-3.5 h-3.5" />
               </button>

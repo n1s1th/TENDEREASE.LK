@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 interface Props {
   filters: {
     keyword: string;
+    category: string;
     status: string;
     dateType: string;
     fromDate: string;

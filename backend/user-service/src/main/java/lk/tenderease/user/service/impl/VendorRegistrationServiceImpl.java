@@ -184,7 +184,7 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
             throw new RuntimeException("Terms and Conditions must be accepted to submit.");
         }
 
-        profile.setStatus(VendorStatus.SUBMITTED);
+        profile.setStatus(VendorStatus.APPROVED);
         profile.setTermsAccepted(true);
         profile.setTermsAcceptedAt(LocalDateTime.now());
         profile.setUpdatedAt(LocalDateTime.now());

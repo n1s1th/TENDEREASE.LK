@@ -11,7 +11,7 @@ const INITIAL_VIDEOS: VideoGuide[] = [
     id: 1,
     thumbnail:
       "https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=600&auto=format&fit=crop",
-    title: "How to register as a vendor on TenderHub",
+    title: "How to register as a vendor on TenderEase",
     youtubeUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     duration: "3:24",
   },

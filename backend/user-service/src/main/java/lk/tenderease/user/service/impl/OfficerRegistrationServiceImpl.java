@@ -169,16 +169,6 @@ public class OfficerRegistrationServiceImpl implements OfficerRegistrationServic
 
     @Override
     @Transactional(readOnly = true)
-    public OfficerProfileResponse getOfficerByEmail(String email) {
-        log.debug("Fetching officer by email: {}", email);
-        return officerRepository.findByOfficialEmail(email)
-                .map(this::mapToProfileResponse)
-                .orElseThrow(() -> new OfficerNotFoundException("Officer not found with email: " + email));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    @Cacheable(value = "officers", key = "#id")
     public OfficerProfileResponse getOfficerById(UUID id) {
         log.debug("Fetching officer by ID: {}", id);
         final Officer officer = findOfficerOrThrow(id);

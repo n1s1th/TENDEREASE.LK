@@ -191,35 +191,8 @@ export async function deleteRegistration(id: string): Promise<void> {
 
 // ── Clarifications ───────────────────────────────────────────
 export async function fetchAllClarifications(): Promise<ClarificationItem[]> {
-  let tenderClarifications: ClarificationItem[] = [];
-  try {
-    const res = await tenderApi.get('/officer/dashboard/clarifications');
-    tenderClarifications = res.data;
-  } catch (error) {
-    console.error("Failed to fetch tender clarifications", error);
-  }
-
-  let globalClarifications: ClarificationItem[] = [];
-  try {
-    const { getQaQuestions } = await import('@/services/qa.service');
-    const qaRes = await getQaQuestions({ size: 100, category: "ALL" });
-    globalClarifications = qaRes.content.map(q => ({
-      id: q.id,
-      tenderId: "global",
-      tenderTitle: "Global",
-      question: q.questionText,
-      answer: q.answer?.answerText,
-      askedAt: q.createdAt,
-      answeredAt: q.answer?.createdAt,
-      bidderEmail: q.userId || "Vendor",
-      category: q.category
-    }));
-  } catch (error) {
-    console.error("Failed to fetch global QA questions", error);
-  }
-
-  const all = [...tenderClarifications, ...globalClarifications];
-  return all.sort((a, b) => new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime());
+  const res = await tenderApi.get('/officer/dashboard/clarifications');
+  return res.data;
 }
 
 export async function fetchClarifications(tenderId: string): Promise<ClarificationItem[]> {

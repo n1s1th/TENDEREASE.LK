@@ -2,17 +2,17 @@ package lk.tenderease.tender.enums;
 
 public enum TimelineEventType {
     CREATED,
-    SUBMITTED,
-    APPROVED,
-    REJECTED,
     PUBLISHED,
-    OPENED,
-    EVALUATION_STARTED,
-    AWARDED,
-    NO_BID,
-    CLOSED,
-    CANCELLED,
     AMENDED,
-    REPORT_GENERATED,
-    EVALUATED
+    CLOSED,
+    APPROVED,
+    OPENED,
+    EVALUATED,
+    AWARDED,
+    COMMITTEE_CHECKED_IN,
+    SESSION_UNLOCKED,
+    BID_SUBMITTED,
+    COMPLIANCE_MARKED,
+    SCORES_FINALIZED,
+    REPORT_GENERATED
 }
