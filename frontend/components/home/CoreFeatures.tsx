@@ -1,77 +1,53 @@
 "use client";
 
 import {
-  BarChart2,
-  Bell,
-  Cpu,
-  ShieldCheck,
-  Zap,
+  UserCheck,
+  Lock,
+  Scale,
+  Fingerprint,
   ArrowRight,
 } from "lucide-react";
 
-const topFeatures = [
+const pillars = [
   {
-    icon: BarChart2,
+    id: "verified-onboarding",
+    icon: UserCheck,
     iconVariant: "brand",
     iconColor: "#953002",
-    tag: "Analytics",
-    number: "01",
-    title: "KPI Dashboards",
+    tag: "KYC Verification",
+    title: "Verified Onboarding",
     description:
-      "Track procurement performance, vendor activity, and key metrics through intuitive, real-time dashboards.",
-    stats: [
-      { value: "98%", label: "Uptime" },
-      { value: "12+", label: "Widget Types" },
-      { value: "Real-time", label: "Data Sync" },
-    ],
+      "All registered vendors undergo rigorous identity and business registry verification before joining, ensuring a pool of legitimate partners.",
   },
   {
-    icon: Cpu,
-    iconVariant: "green",
-    iconColor: "#15803d",
-    tag: "AI Powered",
-    number: "02",
-    title: "AI Smart Matching",
+    id: "encrypted-vaults",
+    icon: Lock,
+    iconVariant: "amber",
+    iconColor: "#FFB401",
+    tag: "Data Security",
+    title: "Encrypted Bid Vaults",
     description:
-      "Discover the most relevant tenders automatically based on your vendor profile, category, and past bidding history.",
-    stats: [
-      { value: "95%", label: "Match Rate" },
-      { value: "3x", label: "Faster Discovery" },
-      { value: "Smart", label: "Filtering" },
-    ],
-  },
-];
-
-const bottomFeatures = [
-  {
-    icon: Bell,
-    iconVariant: "orange",
-    iconColor: "#c2410c",
-    tag: "Alerts",
-    number: "03",
-    title: "Smart Notifications",
-    description:
-      "Real-time alerts for new tenders, approaching deadlines, bid updates, and status changes.",
+      "Bids are stored in secure, encrypted vaults that remain completely sealed and inaccessible until the exact public opening time.",
   },
   {
-    icon: ShieldCheck,
-    iconVariant: "purple",
-    iconColor: "#7c3aed",
-    tag: "Compliance",
-    number: "04",
-    title: "Audit & Transparency",
+    id: "legal-compliance",
+    icon: Scale,
+    iconVariant: "copper",
+    iconColor: "#B84A14",
+    tag: "Legal Validity",
+    title: "Legally Binding",
     description:
-      "Full audit logs and compliance tracking for every action — ensuring accountability at every step.",
+      "Fully compliant with the Electronic Transactions Act of Sri Lanka, rendering digital signatures, logs, and awards 100% legally binding.",
   },
   {
-    icon: Zap,
-    iconVariant: "cyan",
-    iconColor: "#0891b2",
-    tag: "Performance",
-    number: "05",
-    title: "Instant Processing",
+    id: "audit-trail",
+    icon: Fingerprint,
+    iconVariant: "brand",
+    iconColor: "#953002",
+    tag: "Transparency",
+    title: "Immutable Audit Trail",
     description:
-      "Lightning-fast bid submissions, document verification, and real-time procurement updates.",
+      "Every query, response, bid modification, and evaluation score is recorded on a permanent log that cannot be altered, ensuring full compliance.",
   },
 ];
 
@@ -81,56 +57,29 @@ export default function CoreFeatures() {
       <div className="cf-inner">
         {/* Header */}
         <div className="cf-header">
-          <span className="cf-badge">Platform</span>
+          <span className="cf-badge">Security</span>
           <h2 className="cf-title">
-            Built for <span className="cf-title-accent">Modern</span>{" "}
-            Procurement
+            Built on <span className="cf-title-accent">Absolute</span> Trust
           </h2>
           <p className="cf-subtitle">
-            Everything you need to run an efficient, transparent, and
-            intelligent tendering process
+            A digital tendering environment designed to ensure compliance, legal validity, and complete confidentiality.
           </p>
         </div>
 
-        {/* Top row — 2 large cards with stats */}
+        {/* Symmetrical 4-Column Grid */}
         <div className="cf-grid">
-          {topFeatures.map((feature) => {
-            const Icon = feature.icon;
+          {pillars.map((pillar) => {
+            const Icon = pillar.icon;
             return (
-              <div key={feature.number} className="cf-card">
-                <span className="cf-card-number">{feature.number}</span>
-                <span className="cf-tag">{feature.tag}</span>
-                <div className={`cf-icon-wrap cf-icon-wrap--${feature.iconVariant}`}>
-                  <Icon size={24} color={feature.iconColor} strokeWidth={1.8} />
+              <div key={pillar.id} className="cf-card">
+                <div className="cf-card-header">
+                  <span className="cf-tag">{pillar.tag}</span>
+                  <div className={`cf-icon-wrap cf-icon-wrap--${pillar.iconVariant}`}>
+                    <Icon size={22} color={pillar.iconColor} strokeWidth={1.8} />
+                  </div>
                 </div>
-                <h3 className="cf-card-title">{feature.title}</h3>
-                <p className="cf-card-desc">{feature.description}</p>
-                <div className="cf-stats">
-                  {feature.stats.map((stat) => (
-                    <div key={stat.label} className="cf-stat">
-                      <span className="cf-stat-value">{stat.value}</span>
-                      <span className="cf-stat-label">{stat.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom row — 3 compact cards */}
-        <div className="cf-grid-bottom">
-          {bottomFeatures.map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <div key={feature.number} className="cf-card">
-                <span className="cf-card-number">{feature.number}</span>
-                <span className="cf-tag">{feature.tag}</span>
-                <div className={`cf-icon-wrap cf-icon-wrap--${feature.iconVariant}`}>
-                  <Icon size={24} color={feature.iconColor} strokeWidth={1.8} />
-                </div>
-                <h3 className="cf-card-title">{feature.title}</h3>
-                <p className="cf-card-desc">{feature.description}</p>
+                <h3 className="cf-card-title">{pillar.title}</h3>
+                <p className="cf-card-desc">{pillar.description}</p>
               </div>
             );
           })}
@@ -138,8 +87,8 @@ export default function CoreFeatures() {
 
         {/* CTA */}
         <div className="cf-cta-wrap">
-          <a href="/features" className="cf-cta">
-            View All Features <ArrowRight size={16} />
+          <a href="/security" className="cf-cta">
+            Learn More About Security <ArrowRight size={16} />
           </a>
         </div>
       </div>
