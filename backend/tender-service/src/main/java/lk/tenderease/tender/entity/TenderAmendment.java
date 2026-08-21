@@ -4,10 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tender_amendment")
@@ -29,27 +26,22 @@ public class TenderAmendment {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "current_version_number")
-    private Integer currentVersionNumber;
+    /** Human-readable note about what changed (e.g., "Closing date extended") */
+    @Column(name = "change_note", columnDefinition = "TEXT")
+    private String changeNote;
+
+    private Integer version;
 
     private LocalDateTime previousClosingDate;
     private LocalDateTime newClosingDate;
 
     private LocalDateTime createdAt;
 
+    /** Optional: the new TenderDocument version uploaded with this amendment */
+    @Column(name = "document_id")
+    private UUID documentId;
+
     @ManyToOne
     @JoinColumn(name = "tender_id")
     private Tender tender;
-
-    @OneToMany(mappedBy = "addendum", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<AddendumVersion> versions = new ArrayList<>();
-
-    /**
-     * Returns the latest version (highest version number), if any.
-     */
-    public Optional<AddendumVersion> getLatestVersion() {
-        return versions.stream()
-                .max(Comparator.comparingInt(AddendumVersion::getVersionNumber));
-    }
 }

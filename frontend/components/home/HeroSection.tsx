@@ -1,15 +1,20 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useHeroStore } from "@/store";
 
 export default function HeroSection() {
   // ── Consume store — no local dummy data ───────────────────
   const slides = useHeroStore((s) => s.slides);
+  const categories = useHeroStore((s) => s.categories);
   const currentSlideIndex = useHeroStore((s) => s.currentSlide);
+  const searchQuery = useHeroStore((s) => s.searchQuery);
+  const selectedCategory = useHeroStore((s) => s.selectedCategory);
   const nextSlide = useHeroStore((s) => s.nextSlide);
   const prevSlide = useHeroStore((s) => s.prevSlide);
   const setSlide = useHeroStore((s) => s.setSlide);
+  const setSearchQuery = useHeroStore((s) => s.setSearchQuery);
+  const setSelectedCategory = useHeroStore((s) => s.setSelectedCategory);
 
   const slide = slides[currentSlideIndex];
 
@@ -31,7 +36,7 @@ export default function HeroSection() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/hero01.jpg')",
+          backgroundImage: "url('/hero-bg.png')",
           backgroundSize: "cover",
           backgroundPosition: "center 40%",
           zIndex: 0,
@@ -84,6 +89,41 @@ export default function HeroSection() {
           gap: "2.5rem", marginTop: "-1.5rem",
         }}
       >
+        {/* Search bar */}
+        <div
+          style={{
+            display: "flex", alignItems: "center", background: "#fff",
+            borderRadius: 6, overflow: "hidden",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.18)", height: 52,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flex: "1.4", padding: "0 1rem" }}>
+            <Search size={16} style={{ color: "#953002", flexShrink: 0 }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Find tender here"
+              style={{ flex: 1, border: "none", background: "transparent", fontSize: "0.9rem", color: "#111827", outline: "none" }}
+            />
+          </div>
+          <div style={{ width: 1, height: 28, background: "#e5e7eb", flexShrink: 0 }} />
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{ flex: 1, padding: "0 1rem", height: "100%", border: "none", background: "transparent", fontSize: "0.875rem", color: "#374151", outline: "none", cursor: "pointer" }}
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <button
+            style={{ padding: "0 1.75rem", height: "100%", background: "#953002", color: "#fff", border: "none", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", letterSpacing: "0.01em" }}
+          >
+            Search
+          </button>
+        </div>
+
         {/* Bottom-left text block */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <span

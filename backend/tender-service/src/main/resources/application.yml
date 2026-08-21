@@ -134,11 +134,14 @@ logging:
 app:
   name: Tender Service
   version: 1.0.0
-  upload-dir: "C:\\Users\\Peduru\\Desktop\\TENDEREASE.LK\\backend\\uploads"
+  upload-dir: "./uploads"
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
 
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:madn9ltp}
-  api-key: ${CLOUDINARY_API_KEY:129558664824389}
-  api-secret: ${CLOUDINARY_API_SECRET:7OhoKeqHgOyugmWEVakTX6Bi_XM}
+# AWS S3 Configuration
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:}
+    region: ${AWS_REGION:ap-south-1}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}

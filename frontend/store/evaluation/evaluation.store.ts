@@ -121,8 +121,6 @@ export const useEvaluationStore = create<EvaluationState>()(
       fetchDashboardMetrics: async () => {
         try {
           const metrics = await getDashboardMetrics();
-          // Use active tenders + total bids from the backend (real data).
-          // Other KPI counts are kept at 0 — backend has seed/test data for those.
           set({
             activeTendersCount: metrics.active,
             totalBidsCount: metrics.bids,

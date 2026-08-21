@@ -155,6 +155,21 @@ public class OfficerRegistrationController {
     }
 
     /**
+     * Get officer profile by official email.
+     * Internal endpoint for cross-service communication.
+     */
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Get officer by email", description = "Retrieve officer profile by email")
+    @ApiResponse(responseCode = "200", description = "Officer retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Officer not found")
+    public ResponseEntity<OfficerProfileResponse> getOfficerByEmail(
+            @Parameter(description = "Official Email", example = "officer@gov.lk")
+            @PathVariable String email) {
+        log.debug("Fetching officer by email: {}", email);
+        return ResponseEntity.ok(officerRegistrationService.getOfficerByEmail(email));
+    }
+
+    /**
      * Get officer profile by registration reference ID.
      * Requires ROLE_ADMIN.
      */
