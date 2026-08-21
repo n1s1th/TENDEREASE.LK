@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,6 +55,7 @@ import java.util.UUID;
 public class TenderController {
 
     private final TenderService tenderService;
+    private final lk.tenderease.tender.service.CurrentBidderEmailResolver currentBidderEmailResolver;
 
     // ══════════════════════════════════════════════════════════════════════════
     // REFERENCE DATA — Public (no auth required)
@@ -139,9 +141,14 @@ public class TenderController {
         @ApiResponse(responseCode = "409", description = "Tender number already exists")
     })
     public ResponseEntity<TenderResponse> createTender(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader,
             @Valid @RequestBody CreateTenderRequest request) {
-        // Use a dummy user ID for development since Keycloak is disabled
-        TenderResponse response = tenderService.createTender(request, "dev-user-id");
+        
+        String createdByUserId = currentBidderEmailResolver.resolve(authorizationHeader, userEmailHeader)
+                .orElse("dev-user-id");
+                
+        TenderResponse response = tenderService.createTender(request, createdByUserId);
         return ResponseEntity.status(201).body(response);
     }
 
@@ -155,13 +162,8 @@ public class TenderController {
         @ApiResponse(responseCode = "404", description = "Tender not found")
     })
     public ResponseEntity<TenderDetailResponse> getTenderById(
-            @Parameter(description = "Tender UUID or Number") @PathVariable String id) {
-        try {
-            UUID uuid = UUID.fromString(id);
-            return ResponseEntity.ok(tenderService.getTenderById(uuid));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.ok(tenderService.getTenderByNumber(id));
-        }
+            @Parameter(description = "Tender UUID") @PathVariable UUID id) {
+        return ResponseEntity.ok(tenderService.getTenderById(id));
     }
 
     @PutMapping("/{id}")
@@ -445,13 +447,36 @@ public class TenderController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping(value = "/{id}/status")
     @Operation(summary = "Update tender status", description = "Updates status of a tender. Public/internal use.")
     public ResponseEntity<TenderResponse> updateStatus(
             @PathVariable UUID id,
-            @RequestParam TenderStatus status) {
+            @RequestParam TenderStatus status,
+            @RequestParam(required = false) String reason) {
         log.info("REST request to update tender {} status to {}", id, status);
-        TenderResponse response = tenderService.updateTenderStatus(id, status, null, "system-user");
+        TenderResponse response = tenderService.updateTenderStatus(id, status, reason, "system-user");
         return ResponseEntity.ok(response);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ADDENDA — Document Version Replacement
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping(value = "/{id}/documents/{docId}/replace", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // @PreAuthorize("hasRole('PROCUREMENT_OFFICER') or hasRole('ADMIN')")
+    @Operation(summary = "Replace document (create addendum)",
+            description = "Uploads a new version of a document. Creates an Addendum record and records an AMENDED timeline event.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Document replaced and addendum created"),
+        @ApiResponse(responseCode = "400", description = "File is empty or document does not belong to tender"),
+        @ApiResponse(responseCode = "404", description = "Tender or document not found")
+    })
+    public ResponseEntity<lk.tenderease.tender.dto.response.TenderAmendmentDTO> replaceDocument(
+            @Parameter(description = "Tender UUID") @PathVariable UUID id,
+            @Parameter(description = "Document UUID to replace") @PathVariable UUID docId,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "changeNote", required = false) String changeNote) {
+        log.info("REST request to replace document {} for tender {}", docId, id);
+        return ResponseEntity.ok(tenderService.replaceDocument(id, docId, file, changeNote, "dev-user-id"));
     }
 }

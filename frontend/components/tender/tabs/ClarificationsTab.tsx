@@ -6,8 +6,17 @@ import {
   Send,
   Loader2,
   Info,
+  MessageSquare,
 } from "lucide-react";
 import { submitClarification } from "@/services/tender.service";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ClarificationsTab({
   clarifications = [],
@@ -19,8 +28,6 @@ export default function ClarificationsTab({
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
-
-  console.log("Tender ID:", tenderId); // ✅ now correct
 
   const [localClarifications, setLocalClarifications] =
     useState<any[]>(clarifications);
@@ -70,104 +77,113 @@ export default function ClarificationsTab({
   const hasClarifications = localClarifications.length > 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black">
-            Clarifications & Inquiries
-          </h2>
-          <p className="text-sm text-gray-500">
-            Official responses to vendor queries.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className={`px-6 py-2 rounded-xl font-bold ${
-            showForm ? "bg-gray-200" : "bg-black text-white"
-          }`}
-        >
-          {showForm ? "Cancel" : "Submit Question"}
-        </button>
-      </div>
-
-      {/* FORM */}
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 border p-4 rounded-xl"
-        >
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="w-full p-3 border rounded"
-            placeholder="Type your question..."
-          />
-
-          <button
-            type="submit"
-            disabled={isSubmitting || !question.trim()}
-            className="bg-black text-white px-4 py-2 rounded flex items-center gap-2"
-          >
-            {isSubmitting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
-            Submit
-          </button>
-        </form>
-      )}
-
-      {/* LIST */}
-      {!hasClarifications ? (
-        <div className="text-center py-10">
-          <AlertCircle size={32} />
-          <p>No clarifications yet</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {localClarifications.map((c: any, index: number) => (
-            <div key={index} className="border p-4 rounded-xl">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-bold">
-                  Ticket Q-{c.id}
-                </span>
-
-                <span
-                  className={`text-xs ${
-                    c.answer
-                      ? "text-green-600"
-                      : "text-orange-600"
-                  }`}
-                >
-                  {c.answer ? "Resolved" : "Pending"}
-                </span>
-              </div>
-
-              <p className="font-semibold">{c.question}</p>
-
-              {c.answer ? (
-                <p className="mt-2 text-gray-600">
-                  {c.answer}
-                </p>
-              ) : (
-                <p className="mt-2 text-gray-400 italic">
-                  Awaiting response...
-                </p>
-              )}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="border-b border-border flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10">
+              <MessageSquare className="h-4 w-4 text-primary" />
             </div>
-          ))}
-        </div>
-      )}
+            <div>
+              <CardTitle>Clarifications & Inquiries</CardTitle>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowForm(!showForm)}
+            variant={showForm ? "outline" : "default"}
+            size="sm"
+          >
+            {showForm ? "Cancel" : "Submit Question"}
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-6">
+          {/* FORM */}
+          {showForm && (
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 border border-border p-5 rounded-md bg-grey-1"
+            >
+              <Textarea
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Type your question here..."
+                className="min-h-[100px] bg-white"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !question.trim()}
+                  size="sm"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  Submit
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* LIST */}
+          {!hasClarifications ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center">
+              <div className="h-12 w-12 rounded-full bg-grey-1 flex items-center justify-center mb-4 text-muted-foreground">
+                <AlertCircle size={24} />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-1">No Clarifications Yet</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                No questions have been submitted for this tender.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {localClarifications.map((c: any, index: number) => (
+                <div key={index} className="border border-border p-5 rounded-md bg-white hover:border-primary/20 transition-colors">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[10px] font-bold bg-grey-1 px-2 py-0.5 rounded uppercase tracking-wider text-muted-foreground">
+                      Ticket Q-{c.id}
+                    </span>
+
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                        c.answer
+                          ? "bg-success/10 text-success border border-success/20"
+                          : "bg-warning/10 text-warning border border-warning/20"
+                      }`}
+                    >
+                      {c.answer ? "Resolved" : "Pending"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm font-semibold text-foreground">{c.question}</p>
+
+                  {c.answer ? (
+                    <div className="mt-3 bg-grey-1 p-3 rounded text-sm text-muted-foreground border-l-2 border-primary">
+                      {c.answer}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-muted-foreground italic">
+                      Awaiting response...
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* NOTICE */}
-      <div className="bg-yellow-50 border p-4 rounded-xl flex gap-2">
-        <Info size={18} />
-        <p className="text-sm">
-          Submit before deadline. Responses are official.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="p-4 flex items-center gap-3 bg-warning/5 border border-warning/10">
+          <Info className="text-warning shrink-0" size={20} />
+          <p className="text-sm font-medium text-warning/90">
+            <span className="font-semibold">Important:</span> Submit your questions before the clarification deadline. All responses are official.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
