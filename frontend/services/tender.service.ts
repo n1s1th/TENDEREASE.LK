@@ -1,7 +1,8 @@
 import { useAuthStore } from "@/store";
 
 const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
-  || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
+  ? `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL}/api/tenders`
+  : (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
