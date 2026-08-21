@@ -1,5 +1,17 @@
-import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2 } from "lucide-react";
+"use client";
+
+import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2, Bookmark, Check, Mail, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { useSavedTendersStore } from "@/store/saved-tenders.store";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function TenderHeader({ tender }: any) {
   const formatBudget = (amount: any) => {
@@ -19,34 +31,31 @@ export default function TenderHeader({ tender }: any) {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-[2rem] p-8 sm:p-10 shadow-premium relative overflow-hidden group">
-      {/* Decorative Background Element using Brand Secondary */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/10 rounded-full blur-3xl -mr-32 -mt-32 transition-transform group-hover:scale-110 duration-700"></div>
-      
-      <div className="relative z-10">
+    <Card className="overflow-hidden">
+      <CardContent className="p-6 sm:p-8">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
-          <div className="space-y-6 max-w-4xl">
+          <div className="space-y-4 max-w-4xl">
             {/* Status and ID */}
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1 bg-success/10 text-success text-[10px] font-black uppercase tracking-wider rounded-lg border border-success/10">
-                <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-success/10 text-success text-xs font-semibold rounded-md border border-success/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
                 {tender?.status || "OPEN"}
               </div>
-              <div className="px-3 py-1 bg-gray-5 text-gray-3 text-[10px] font-black uppercase tracking-wider rounded-lg border border-gray-5">
+              <div className="px-2.5 py-0.5 bg-muted text-muted-foreground text-xs font-semibold rounded-md border border-border">
                 ID: {tender?.tenderNumber || "TBA"}
               </div>
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-info/10 text-info text-[10px] font-black uppercase tracking-wider rounded-lg border border-info/20">
-                <ShieldCheck size={12} />
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 bg-info/10 text-info text-xs font-semibold rounded-md border border-info/20">
+                <ShieldCheck size={14} />
                 Verified
               </div>
             </div>
 
             {/* Title & Description */}
-            <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl font-black text-black-1 leading-[1.15] tracking-tight">
+            <div className="space-y-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
                 {tender?.title || "Loading Title..."}
               </h1>
-              <p className="text-base text-gray-2 font-medium leading-relaxed max-w-3xl">
+              <p className="text-sm text-muted-foreground">
                 {tender?.description || "No description available for this tender."}
               </p>
             </div>
@@ -56,61 +65,162 @@ export default function TenderHeader({ tender }: any) {
           <div className="flex flex-row lg:flex-col items-center gap-3 w-full lg:w-auto">
             {tender?.id ? (
               <Link href={`/tenders/${tender.id}/apply`} className="flex-1 lg:w-full">
-                <button className="w-full bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:shadow-primary shadow-sm active:scale-[0.98]">
+                <Button className="w-full uppercase font-bold tracking-wider" size="lg">
                   Apply Now
-                </button>
+                </Button>
               </Link>
             ) : (
-              <button className="flex-1 lg:w-full bg-primary hover:bg-primary/90 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:shadow-primary shadow-sm active:scale-[0.98] opacity-50 cursor-not-allowed">
+              <Button disabled className="flex-1 lg:w-full uppercase font-bold tracking-wider" size="lg">
                 Apply Now
-              </button>
+              </Button>
             )}
-            <button className="p-4 bg-white border border-gray-100 text-gray-3 hover:text-primary hover:border-primary/20 rounded-2xl transition-all shadow-sm active:scale-[0.98]">
-              <Share2 size={20} />
-            </button>
+            <div className="flex gap-2">
+              <SaveTenderButton tender={tender} />
+              <ShareTenderButton tender={tender} />
+            </div>
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="mt-12 pt-10 border-t border-gray-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="mt-8 pt-8 border-t border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <InfoItem 
-              icon={<Calendar className="text-error" size={24} />} 
+              icon={<Calendar className="text-primary" size={20} />} 
               label="Closing Date" 
               value={tender?.closingDate ? new Date(tender.closingDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "TBA"} 
             />
             <InfoItem 
-              icon={<CircleDollarSign className="text-success" size={24} />} 
+              icon={<CircleDollarSign className="text-primary" size={20} />} 
               label="Estimated Budget" 
               value={formatBudget(tender?.estimatedBudget)} 
             />
             <InfoItem 
-              icon={<Building2 className="text-info" size={24} />} 
+              icon={<Building2 className="text-primary" size={20} />} 
               label="Department" 
               value={tender?.departmentName || "TBA"} 
             />
             <InfoItem 
-              icon={<Clock className="text-warning" size={24} />} 
+              icon={<Clock className="text-primary" size={20} />} 
               label="Time Remaining" 
               value={formatTimeRemaining(tender?.timeRemaining)} 
             />
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-5 group">
-      <div className="w-14 h-14 rounded-2xl bg-gray-5 flex items-center justify-center border border-gray-100 group-hover:bg-white group-hover:border-primary/10 group-hover:shadow-premium transition-all duration-300">
+    <div className="flex items-center gap-4">
+      <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
         {icon}
       </div>
       <div className="flex flex-col">
-        <span className="text-[10px] font-black text-gray-3 uppercase tracking-[0.2em] mb-1">{label}</span>
-        <span className="text-sm font-bold text-black-2 group-hover:text-primary transition-colors">{value}</span>
+        <span className="text-xs font-medium text-muted-foreground mb-0.5">{label}</span>
+        <span className="text-sm font-semibold text-foreground">{value}</span>
       </div>
     </div>
+  );
+}
+
+function SaveTenderButton({ tender }: { tender: any }) {
+  const { savedTenders, saveTender, removeTender, isSaved } = useSavedTendersStore();
+  
+  if (!tender?.id) return null;
+  
+  const saved = isSaved(tender.id);
+
+  const toggleSave = () => {
+    if (saved) {
+      removeTender(tender.id);
+    } else {
+      saveTender({
+        id: tender.id,
+        tenderNumber: tender.tenderNumber,
+        title: tender.title,
+        departmentName: tender.departmentName,
+        closingDate: tender.closingDate,
+        status: tender.status,
+        estimatedBudget: tender.estimatedBudget
+      });
+    }
+  };
+
+  return (
+    <Button 
+      variant={saved ? "default" : "outline"} 
+      size="icon" 
+      className="shrink-0 h-11 w-11 transition-all"
+      onClick={toggleSave}
+      title={saved ? "Remove from saved" : "Save this tender"}
+    >
+      <Bookmark size={18} fill={saved ? "currentColor" : "none"} />
+    </Button>
+  );
+}
+
+function ShareTenderButton({ tender }: { tender: any }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL:", err);
+    }
+  };
+
+  const getEmailContent = () => {
+    const subject = encodeURIComponent(`Check out this tender: ${tender?.title || "TenderEase"}`);
+    const body = encodeURIComponent(
+      `I found this tender on TenderEase and thought you might be interested:\n\n` +
+      `Title: ${tender?.title || "N/A"}\n` +
+      `Department: ${tender?.departmentName || "N/A"}\n\n` +
+      `View Tender Details:\n${window.location.href}`
+    );
+    return { subject, body };
+  };
+
+  const handleEmailShare = () => {
+    const { subject, body } = getEmailContent();
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleGmailShare = () => {
+    const { subject, body } = getEmailContent();
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${subject}&body=${body}`, '_blank');
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant={copied ? "default" : "outline"} 
+          size="icon" 
+          className={`shrink-0 h-11 w-11 transition-all ${copied ? "bg-success text-success-foreground hover:bg-success/90" : ""}`}
+          title="Share this tender"
+        >
+          {copied ? <Check size={18} /> : <Share2 size={18} />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer gap-2">
+          <LinkIcon size={16} className="text-muted-foreground" />
+          <span>Copy Link</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleGmailShare} className="cursor-pointer gap-2">
+          <Mail size={16} className="text-muted-foreground" />
+          <span>Share via Gmail</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEmailShare} className="cursor-pointer gap-2">
+          <Mail size={16} className="text-muted-foreground" />
+          <span>Share via Default Email App</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

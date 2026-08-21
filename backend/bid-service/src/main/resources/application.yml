@@ -41,8 +41,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/tenderease}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/tenderease/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://158.178.227.145:8080/realms/tenderease/protocol/openid-connect/certs}
 
 server:
   port: ${PORT:8083}
@@ -82,3 +82,11 @@ logging:
 app:
   name: Bid Service
   version: 1.0.0
+
+# AWS S3 Configuration
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:}
+    region: ${AWS_REGION:ap-south-1}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}

@@ -8,7 +8,6 @@ import { officerRegistrationSchema, type OfficerRegistrationFormData } from '../
 import { registerOfficer, extractErrors, extractSupportId } from '../../lib/api/officerApi';
 import { useOfficerStore, EMPTY_DRAFT, type OfficerFormDraft } from '../../store/officerRegistrationStore';
 import axios from 'axios';
-import { useAuthStore } from '@/store';
 
 // ────────────────────────────────────────────────────────
 //  Constants
@@ -67,9 +66,6 @@ export default function OfficerRegistrationPage() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  const user = useAuthStore((s) => s.user);
-  const setOfficerRegistration = useAuthStore((s) => s.setOfficerRegistration);
-
   const {
     register,
     handleSubmit,
@@ -82,28 +78,11 @@ export default function OfficerRegistrationPage() {
   });
 
   useEffect(() => {
-    // Determine default values from Keycloak user profile
-    const defaultEmail = user?.email || '';
-    const defaultName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name || '' : '';
-
-    let initialValues = { ...EMPTY_DRAFT };
-
-    // Restore draft if present
     if (formDraft && formDraft !== EMPTY_DRAFT) {
-      initialValues = { ...formDraft };
+      resetForm(formDraft);
     }
-
-    // Force current authenticated user's email (read-only)
-    initialValues.liaisonEmail = defaultEmail;
-
-    // Prefill liaison name only if it hasn't been modified yet
-    if (!initialValues.liaisonName) {
-      initialValues.liaisonName = defaultName;
-    }
-
-    resetForm(initialValues);
     setHydrated(true);
-  }, [user, resetForm]);
+  }, []);
 
   // ── Save draft on field change via subscription (avoids infinite re-render) ──
   useEffect(() => {
@@ -133,7 +112,7 @@ export default function OfficerRegistrationPage() {
       if (user?.id) {
         data.keycloakUserId = user.id;
       }
-      
+
       const response = await registerOfficer(data);
       setResult({
         success: true,
@@ -190,16 +169,16 @@ export default function OfficerRegistrationPage() {
 
           {/* ─── Registration Form ─── */}
           <form onSubmit={handleSubmit(onSubmit, (validationErrors) => {
-              // Scroll to the first error field so the user can see it
-              const firstErrorKey = Object.keys(validationErrors)[0];
-              if (firstErrorKey) {
-                const el = document.querySelector(`[name="${firstErrorKey}"]`);
-                if (el) {
-                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  (el as HTMLElement).focus?.();
-                }
+            // Scroll to the first error field so the user can see it
+            const firstErrorKey = Object.keys(validationErrors)[0];
+            if (firstErrorKey) {
+              const el = document.querySelector(`[name="${firstErrorKey}"]`);
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                (el as HTMLElement).focus?.();
               }
-            })} className="space-y-0">
+            }
+          })} className="space-y-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
 
               {/* ── Procuring Entity Type ── */}
@@ -426,12 +405,7 @@ export default function OfficerRegistrationPage() {
                 <label className="block text-sm font-medium text-gray-700">
                   Email <span className="text-red-500">*</span>
                 </label>
-                <input 
-                  {...register('liaisonEmail')} 
-                  type="email" 
-                  className={`${inputCls} bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed`} 
-                  readOnly 
-                />
+                <input {...register('liaisonEmail')} type="email" className={inputCls} />
                 {errors.liaisonEmail && <p className="text-red-500 text-xs">{errors.liaisonEmail.message}</p>}
               </div>
             </div>

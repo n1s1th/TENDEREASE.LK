@@ -7,7 +7,6 @@ import Step3Documents from './steps/Step3Documents';
 import Step4Review from './steps/Step4Review';
 import { useVendorStore } from '../../store/vendorRegistrationStore';
 import Navbar from '../../components/home/Navbar';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function VendorRegistrationPage() {
   const { currentStep, setStep } = useVendorStore();
@@ -28,8 +27,7 @@ export default function VendorRegistrationPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* <Navbar /> */}
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 mt-16">
@@ -88,6 +86,5 @@ export default function VendorRegistrationPage() {
         </div>
       </main>
     </div>
-    </ProtectedRoute>
   );
 }

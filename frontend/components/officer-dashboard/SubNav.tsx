@@ -15,8 +15,6 @@ export default function SubNav() {
     fetchNotificationSummary();
   }, [fetchNotificationSummary]);
 
-  const isTenders = pathname === "/officer-dashboard" || pathname.startsWith("/officer-dashboard/tenders");
-  const isRegistration = pathname.startsWith("/officer-dashboard/registration");
   const isClarifications = pathname.startsWith("/officer-dashboard/clarifications");
   const isQa = pathname.startsWith("/officer-dashboard/qa");
   const isNotifications = pathname.startsWith("/officer-dashboard/notifications");
@@ -25,7 +23,6 @@ export default function SubNav() {
 
   return (
     <div className="dash-subnav" id="dashboard-subnav">
-      {/* Same max-width container as home page navbar */}
       <div style={{
         maxWidth: 1200,
         margin: "0 auto",
@@ -36,43 +33,66 @@ export default function SubNav() {
         height: 64,
       }}>
         <div className="dash-subnav-tabs">
-          <Link
-            href="/officer-dashboard"
-            className={`dash-subnav-tab ${isTenders ? "dash-subnav-tab--active" : ""}`}
-          >
-            Tenders
-          </Link>
-          <Link
-            href="/officer-dashboard/registration"
-            className={`dash-subnav-tab ${isRegistration ? "dash-subnav-tab--active" : ""}`}
-          >
-            Registration
-          </Link>
-          <Link
-            href="/officer-dashboard/clarifications"
-            className={`dash-subnav-tab ${isClarifications ? "dash-subnav-tab--active" : ""}`}
-          >
-            Tender Clarifications
-          </Link>
-          <Link
-            href="/officer-dashboard/qa"
-            className={`dash-subnav-tab ${isQa ? "dash-subnav-tab--active" : ""}`}
-            style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}
-          >
-            <HelpCircle size={14} />
-            Global Q&A
-          </Link>
+          {(isQa || isClarifications || isNotifications) && (
+            <Link
+              href="/officer-dashboard"
+              className="dash-subnav-tab"
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", color: "var(--te-gray-3)" }}
+            >
+              <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>&larr;</span>
+              Back to Dashboard
+            </Link>
+          )}
         </div>
 
         <Link
           href="/officer-dashboard/notifications"
-          className={`dash-subnav-tab ${isNotifications ? "dash-subnav-tab--active" : ""}`}
-          style={{ paddingRight: 0 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            background: isNotifications ? "var(--te-primary-light, #fff5f0)" : "transparent",
+            color: isNotifications ? "var(--te-primary)" : "var(--te-gray-3)",
+            transition: "all 0.2s ease",
+            textDecoration: "none"
+          }}
+          title="Notifications"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--te-primary-light, #fff5f0)";
+            e.currentTarget.style.color = "var(--te-primary)";
+          }}
+          onMouseLeave={(e) => {
+            if (!isNotifications) {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--te-gray-3)";
+            }
+          }}
         >
-          <Bell size={16} style={{ marginRight: '0.25rem' }} />
-          Notification Center
+          <Bell size={20} />
           {unreadCount > 0 && (
-            <span className="dash-notification-badge" style={{ marginLeft: '0.5rem' }}>{unreadCount}</span>
+            <span style={{
+              position: "absolute",
+              top: "2px",
+              right: "2px",
+              background: "#ef4444",
+              color: "white",
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              minWidth: "16px",
+              height: "16px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 4px",
+              boxShadow: "0 0 0 2px #fff"
+            }}>
+              {unreadCount}
+            </span>
           )}
         </Link>
       </div>

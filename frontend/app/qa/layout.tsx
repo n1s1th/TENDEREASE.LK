@@ -5,5 +5,8 @@ export default function QaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <QaLayoutComponent>{children}</QaLayoutComponent>;
+  return (
+    <QaLayoutComponent>{children}</QaLayoutComponent>
+  );
 }
+

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
 export type FieldType = 'SHORT_ANSWER' | 'PARAGRAPH' | 'CHECKBOXES' | 'DROPDOWN' | 'DATE' | 'TIME' | 'FILE_UPLOAD' | 'NUMBER' | 'DOCUMENT_UPLOAD' | 'CURRENCY';
@@ -139,7 +140,9 @@ export const getDefaultSections = (): TemplateSection[] => [
   }
 ];
 
-export const useTemplateDesignerStore = create<TemplateDesignerState>((set, get) => ({
+export const useTemplateDesignerStore = create<TemplateDesignerState>()(
+  persist(
+    (set, get) => ({
   id: null,
   templateCode: null,
   name: 'Standard Procurement Template',
@@ -289,4 +292,20 @@ export const useTemplateDesignerStore = create<TemplateDesignerState>((set, get)
       })
     }))
   })),
-}));
+    }),
+    {
+      name: 'template-designer',
+      // Only persist data fields — skip UI selection state
+      partialize: (state) => ({
+        id: state.id,
+        templateCode: state.templateCode,
+        name: state.name,
+        description: state.description,
+        version: state.version,
+        status: state.status,
+        sections: state.sections,
+      }),
+    }
+  )
+);
+

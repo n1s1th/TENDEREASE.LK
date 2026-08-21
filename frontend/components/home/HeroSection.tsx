@@ -1,15 +1,20 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useHeroStore } from "@/store";
 
 export default function HeroSection() {
   // ── Consume store — no local dummy data ───────────────────
   const slides = useHeroStore((s) => s.slides);
+  const categories = useHeroStore((s) => s.categories);
   const currentSlideIndex = useHeroStore((s) => s.currentSlide);
+  const searchQuery = useHeroStore((s) => s.searchQuery);
+  const selectedCategory = useHeroStore((s) => s.selectedCategory);
   const nextSlide = useHeroStore((s) => s.nextSlide);
   const prevSlide = useHeroStore((s) => s.prevSlide);
   const setSlide = useHeroStore((s) => s.setSlide);
+  const setSearchQuery = useHeroStore((s) => s.setSearchQuery);
+  const setSelectedCategory = useHeroStore((s) => s.setSelectedCategory);
 
   const slide = slides[currentSlideIndex];
 
@@ -31,7 +36,7 @@ export default function HeroSection() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/hero01.jpg')",
+          backgroundImage: "url('/hero-bg.png')",
           backgroundSize: "cover",
           backgroundPosition: "center 40%",
           zIndex: 0,
@@ -84,6 +89,7 @@ export default function HeroSection() {
           gap: "2.5rem", marginTop: "-1.5rem",
         }}
       >
+
         {/* Bottom-left text block */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <span

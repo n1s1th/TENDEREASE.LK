@@ -1,5 +1,8 @@
 package lk.tenderease.tender.dto.response;
 
+import lk.tenderease.tender.enums.BiddingMethod;
+import lk.tenderease.tender.enums.TenderStatus;
+import lk.tenderease.tender.enums.TenderType;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -22,12 +25,29 @@ public class TenderDetailsDTO {
     private String scopeOfWork;
 
     private BigDecimal estimatedBudget;
+
+    // Ministry / Department
+    private Long ministryId;
+    private String ministryName;
+    private Long departmentId;
     private String departmentName;
+
+    // Funding
+    private Long fundingSourceId;
+    private String fundingSourceName;
+
+    // Classification
     private String procurementType;
+    private BiddingMethod biddingMethod;
+    private TenderType tenderType;
+
+    private TenderStatus status;
     private java.util.Map<String, Object> dynamicData;
 
     private LocalDateTime openingDate;
     private LocalDateTime closingDate;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     // 🔥 UI
     private long timeRemaining;
@@ -38,4 +58,4 @@ public class TenderDetailsDTO {
     private List<ClarificationDTO> clarifications;
     private List<TimelineDTO> timeline;
     private List<ContactDTO> contacts;
-}
+}

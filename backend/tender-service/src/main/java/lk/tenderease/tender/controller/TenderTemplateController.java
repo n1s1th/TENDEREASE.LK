@@ -66,4 +66,11 @@ public class TenderTemplateController {
         tenderTemplateService.archiveTemplate(id);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a template")
+    public ResponseEntity<Void> deleteTemplate(@PathVariable UUID id) {
+        tenderTemplateService.deleteTemplate(id);
+        return ResponseEntity.noContent().build();
+    }
 }

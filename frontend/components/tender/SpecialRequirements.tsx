@@ -1,39 +1,36 @@
 import { ShieldAlert, Info } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function SpecialRequirements({ tender }: { tender: any }) {
   const requirements = tender?.specialRequirements || 
     "No special requirements or conditions have been listed for this tender.";
 
   return (
-    <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-premium relative overflow-hidden group">
-      {/* Subtle Background Icon Pattern */}
-      <div className="absolute -right-4 -bottom-4 opacity-[0.03] transform group-hover:scale-110 transition-transform duration-700">
-        <ShieldAlert size={120} />
-      </div>
-
-      <div className="flex gap-6 items-start relative z-10">
-        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20 transition-transform duration-500 group-hover:rotate-6">
-          <ShieldAlert className="text-white" size={24} />
-        </div>
-        
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-0.5">
-              Special Requirements & Conditions
-            </h2>
-            <div className="h-px bg-gray-5 flex-1 min-w-[50px]"></div>
+    <Card className="overflow-hidden bg-muted/30">
+      <CardContent className="p-6">
+        <div className="flex gap-4 items-start">
+          <div className="w-10 h-10 bg-primary/10 rounded-md flex items-center justify-center shrink-0">
+            <ShieldAlert className="text-primary" size={20} />
           </div>
           
-          <p className="text-sm font-bold text-black-2 leading-relaxed max-w-5xl">
-            {requirements}
-          </p>
+          <div className="flex flex-col space-y-2 flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
+                Special Requirements & Conditions
+              </h2>
+            </div>
+            
+            <p className="text-sm font-medium text-foreground leading-relaxed">
+              {requirements}
+            </p>
 
-          <div className="flex items-center gap-2 pt-2">
-            <Info size={14} className="text-secondary" />
-            <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Mandatory Compliance Required</span>
+            <div className="flex items-center gap-2 pt-1">
+              <Info size={14} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Mandatory Compliance Required</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
