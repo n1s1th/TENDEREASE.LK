@@ -14,6 +14,7 @@ import type {
   PaginationState,
   ClarificationItem,
 } from '@/lib/types/officer-dashboard.types';
+import { getOfficerQuestions } from '@/services/qa.service';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
@@ -115,7 +116,29 @@ export async function fetchDashboardNotifications(
       performedBy: c.bidderEmail || 'Vendor',
       isRead: readNotifications.has(`clarification-${c.tenderId}-${c.id}`),
       actionUrl: `/officer-dashboard/clarifications/${c.tenderId}/${c.id}`,
-    }))
+    }));
+
+  let globalNotifications: DashboardNotification[] = [];
+  try {
+    const globalQaRes = await getOfficerQuestions({ status: "PENDING", size: 50 });
+    globalNotifications = globalQaRes.content.map((q: any) => ({
+      id: `global-qa-${q.id}`,
+      tenderId: 'global',
+      title: 'Global Q&A Request',
+      message: `New platform question: ${q.questionText.substring(0, 50)}...`,
+      type: 'clarification_received' as const,
+      status: 'pending' as const,
+      recipients: q.askedBy || 'Anonymous',
+      time: q.createdAt,
+      performedBy: q.askedBy || 'User',
+      isRead: readNotifications.has(`global-qa-${q.id}`),
+      actionUrl: `/officer-dashboard/qa`,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch global QA for notifications:", err);
+  }
+
+  const allNotifications = [...notifications, ...globalNotifications]
     .filter((n) => {
       if (type && type !== 'all' && n.type !== type) return false;
       if (status && status !== 'all' && n.status !== status) return false;
@@ -124,7 +147,7 @@ export async function fetchDashboardNotifications(
       return n.title.toLowerCase().includes(q) || n.message.toLowerCase().includes(q);
     });
 
-  return notifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  return allNotifications.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 }
 
 export async function fetchNotificationSummary(): Promise<NotificationSummary> {
@@ -190,36 +213,16 @@ export async function deleteRegistration(id: string): Promise<void> {
 }
 
 // ── Clarifications ───────────────────────────────────────────
-export async function fetchAllClarifications(): Promise<ClarificationItem[]> {
-  let tenderClarifications: ClarificationItem[] = [];
+export async function fetchAllClarifications(officerEmail?: string): Promise<ClarificationItem[]> {
   try {
-    const res = await tenderApi.get('/officer/dashboard/clarifications');
-    tenderClarifications = res.data;
+    const params = officerEmail ? { officerEmail } : {};
+    const res = await tenderApi.get('/officer/dashboard/clarifications', { params });
+    const tenderClarifications: ClarificationItem[] = res.data;
+    return tenderClarifications.sort((a, b) => new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime());
   } catch (error) {
     console.error("Failed to fetch tender clarifications", error);
+    return [];
   }
-
-  let globalClarifications: ClarificationItem[] = [];
-  try {
-    const { getQaQuestions } = await import('@/services/qa.service');
-    const qaRes = await getQaQuestions({ size: 100, category: "ALL" });
-    globalClarifications = qaRes.content.map(q => ({
-      id: q.id,
-      tenderId: "global",
-      tenderTitle: "Global",
-      question: q.questionText,
-      answer: q.answer?.answerText,
-      askedAt: q.createdAt,
-      answeredAt: q.answer?.createdAt,
-      bidderEmail: q.userId || "Vendor",
-      category: q.category
-    }));
-  } catch (error) {
-    console.error("Failed to fetch global QA questions", error);
-  }
-
-  const all = [...tenderClarifications, ...globalClarifications];
-  return all.sort((a, b) => new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime());
 }
 
 export async function fetchClarifications(tenderId: string): Promise<ClarificationItem[]> {

@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
 @RequestMapping("/api/tenders")
@@ -58,10 +60,13 @@ public class PublicTenderController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenderStatus status,
-            @RequestParam(required = false) ProcurementType procurementType) {
+            @RequestParam(required = false) ProcurementType procurementType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String dateType) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, fromDate, toDate, dateType, pageable);
     }
 
     @GetMapping("/{id}")

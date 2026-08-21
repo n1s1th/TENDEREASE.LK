@@ -58,9 +58,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -707,16 +711,49 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status,
-            ProcurementType procurementType, Pageable pageable) {
-        String keyword = search == null ? "" : search;
+            ProcurementType procurementType, LocalDate fromDate, LocalDate toDate, String dateType, Pageable pageable) {
+        
+        Specification<Tender> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // Keyword
+            if (search != null && !search.trim().isEmpty()) {
+                String pattern = "%" + search.toLowerCase() + "%";
+                Predicate titleLike = cb.like(cb.lower(root.get("title")), pattern);
+                Predicate numberLike = cb.like(cb.lower(root.get("tenderNumber")), pattern);
+                Predicate deptLike = cb.like(cb.lower(root.get("department").get("name")), pattern);
+                predicates.add(cb.or(titleLike, numberLike, deptLike));
+            }
 
-        if (status != null) {
-            return tenderRepository.searchWithStatus(keyword, status, procurementType, pageable)
-                    .map(this::mapToSummaryDTO);
-        }
+            // Procurement Type
+            if (procurementType != null) {
+                predicates.add(cb.equal(root.get("procurementType"), procurementType));
+            }
+            
+            // Status logic
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+                predicates.add(root.get("status").in(TenderStatus.PENDING_APPROVAL, TenderStatus.DRAFT).not());
+            } else {
+                predicates.add(root.get("status").in(TenderStatus.PENDING_APPROVAL, TenderStatus.DRAFT, TenderStatus.CLOSED, TenderStatus.CANCELLED).not());
+            }
+            
+            // Date logic
+            if (dateType != null && !dateType.equals("None Selected")) {
+                String dateField = dateType.equals("Closing Date") ? "closingDate" : "createdAt";
+                if (fromDate != null) {
+                    predicates.add(cb.greaterThanOrEqualTo(root.get(dateField), fromDate.atStartOfDay()));
+                }
+                if (toDate != null) {
+                    predicates.add(cb.lessThanOrEqualTo(root.get(dateField), toDate.atTime(23, 59, 59)));
+                }
+            }
 
-        return tenderRepository.searchWithoutStatus(keyword, procurementType, pageable)
-                .map(this::mapToSummaryDTO);
+            // Must add sorting to query using pageable.getSort() but Spring Data JPA automatically applies it via pageable.
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return tenderRepository.findAll(spec, pageable).map(this::mapToSummaryDTO);
     }
 
     @Override

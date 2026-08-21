@@ -287,8 +287,13 @@ public class OfficerDashboardService {
                 .build();
     }
 
-    public List<ClarificationDTO> getAllClarifications() {
+    public List<ClarificationDTO> getAllClarifications(String officerEmail) {
         return clarificationRepository.findAllByOrderByAskedAtDesc().stream()
+                .filter(c -> {
+                    if (officerEmail == null || officerEmail.isEmpty()) return true;
+                    Tender tender = c.getTender();
+                    return tender != null && officerEmail.equals(tender.getCreatedBy());
+                })
                 .map(this::mapToClarificationDTO)
                 .collect(Collectors.toList());
     }

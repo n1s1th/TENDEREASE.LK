@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, MessageSquare, Clock, CheckCircle2, ChevronRight, Globe, FileText } from "lucide-react";
 import type { ClarificationItem } from "@/lib/types/officer-dashboard.types";
 import { fetchAllClarifications } from "@/lib/api/officer-dashboard.api";
+import { useAuthStore } from "@/store/auth/auth.store";
 
-type TabFilter = "all" | "tender" | "global" | "pending" | "answered";
+type TabFilter = "all" | "pending" | "answered";
 
 function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -21,6 +23,7 @@ function relativeTime(dateStr: string): string {
 
 export default function ClarificationsPage() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const [clarifications, setClarifications] = useState<ClarificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabFilter>("all");
@@ -29,7 +32,7 @@ export default function ClarificationsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchAllClarifications();
+        const data = await fetchAllClarifications(user?.email);
         setClarifications(data);
       } catch (error) {
         console.error("Failed to load clarifications:", error);
@@ -39,7 +42,7 @@ export default function ClarificationsPage() {
       }
     }
     load();
-  }, []);
+  }, [user?.email]);
 
   const isGlobalQuestion = (c: ClarificationItem) => {
     return !c.tenderId || c.tenderId.trim() === "" || c.tenderTitle === "Global" || c.tenderId === "global";
@@ -51,8 +54,6 @@ export default function ClarificationsPage() {
     
     if (tab === "pending" && !isPending) return false;
     if (tab === "answered" && isPending) return false;
-    if (tab === "tender" && isGlobal) return false;
-    if (tab === "global" && !isGlobal) return false;
     
     if (search) {
       const q = search.toLowerCase();
@@ -67,14 +68,24 @@ export default function ClarificationsPage() {
 
   const counts = {
     all: clarifications.length,
-    tender: clarifications.filter((c) => !isGlobalQuestion(c)).length,
-    global: clarifications.filter((c) => isGlobalQuestion(c)).length,
     pending: clarifications.filter((c) => !c.answer).length,
     answered: clarifications.filter((c) => c.answer).length,
   };
 
   return (
     <div style={{ paddingTop: "1rem" }}>
+      {/* Back Link */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <Link 
+          href="/officer-dashboard" 
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", color: "var(--te-gray-3)", fontSize: "0.95rem", fontWeight: 600, textDecoration: "none", transition: "color 0.2s" }}
+          onMouseEnter={(e) => e.currentTarget.style.color = "var(--te-primary)"}
+          onMouseLeave={(e) => e.currentTarget.style.color = "var(--te-gray-3)"}
+        >
+          <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>&larr;</span> Back to Dashboard
+        </Link>
+      </div>
+
       {/* Page Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
@@ -110,7 +121,7 @@ export default function ClarificationsPage() {
 
       {/* Tab Filter */}
       <div style={{ display: "flex", gap: "0.25rem", marginBottom: "1.5rem", borderBottom: "2px solid var(--te-border, #e2e8f0)", overflowX: "auto" }}>
-        {(["all", "tender", "global", "pending", "answered"] as TabFilter[]).map((t) => (
+        {(["all", "pending", "answered"] as TabFilter[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -129,8 +140,6 @@ export default function ClarificationsPage() {
             }}
           >
             {t === "all" ? "All" : 
-             t === "tender" ? "Tender Specific" :
-             t === "global" ? "Global Q&A" :
              t.charAt(0).toUpperCase() + t.slice(1)} ({counts[t]})
           </button>
         ))}

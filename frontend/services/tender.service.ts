@@ -1,7 +1,8 @@
 import { useAuthStore } from "@/store";
 
 const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
-  || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
+  ? `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL}/api/tenders`
+  : (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -102,6 +103,8 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
     if (filters.keyword) params.append("keyword", filters.keyword);
     if (filters.status && filters.status !== "All Statuses")
       params.append("status", filters.status);
+    if (filters.dateType && filters.dateType !== "None Selected")
+      params.append("dateType", filters.dateType);
     if (filters.fromDate) params.append("fromDate", filters.fromDate);
     if (filters.toDate) params.append("toDate", filters.toDate);
 
