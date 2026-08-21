@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,6 +52,7 @@ import java.util.UUID;
 public class TenderController {
 
     private final TenderService tenderService;
+    private final lk.tenderease.tender.service.CurrentBidderEmailResolver currentBidderEmailResolver;
 
     // ══════════════════════════════════════════════════════════════════════════
     // REFERENCE DATA — Public (no auth required)
@@ -136,9 +138,14 @@ public class TenderController {
         @ApiResponse(responseCode = "409", description = "Tender number already exists")
     })
     public ResponseEntity<TenderResponse> createTender(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader,
             @Valid @RequestBody CreateTenderRequest request) {
-        // Use a dummy user ID for development since Keycloak is disabled
-        TenderResponse response = tenderService.createTender(request, "dev-user-id");
+        
+        String createdByUserId = currentBidderEmailResolver.resolve(authorizationHeader, userEmailHeader)
+                .orElse("dev-user-id");
+                
+        TenderResponse response = tenderService.createTender(request, createdByUserId);
         return ResponseEntity.status(201).body(response);
     }
 

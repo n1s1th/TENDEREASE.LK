@@ -61,6 +61,13 @@ public class BidService {
     }
 
     /**
+     * Checks if a user has already bid on a specific tender.
+     */
+    public boolean hasUserBid(UUID tenderId, String bidderEmail) {
+        return bidRepository.existsByTenderIdAndBidderEmail(tenderId, bidderEmail);
+    }
+
+    /**
      * Returns all bids in the system.
      */
     public List<BidResponse> getAllBids() {

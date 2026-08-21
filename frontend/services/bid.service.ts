@@ -90,6 +90,20 @@ export async function getBidsByTender(tenderId: string) {
   return json.data || json;
 }
 
+// Check if user has bid on a tender
+export async function checkUserHasBid(tenderId: string) {
+  const headers = getAuthHeaders();
+  const res = await fetch(`${BASE_URL}/tender/${tenderId}/has-bid`, {
+    method: "GET",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+  });
+  const json = await handleResponse(res);
+  return json.data === true;
+}
+
 // Evaluate bid
 export async function evaluateBid(bidId: string, evaluationData: any) {
   const headers = getAuthHeaders();

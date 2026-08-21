@@ -9,6 +9,7 @@ import { getTenders } from "@/services/tender.service";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bookmark } from "lucide-react";
 import { useSavedTendersStore } from "@/store/saved-tenders.store";
+import { useAuthStore } from "@/store";
 
 const INITIAL_FILTERS = {
   keyword: "",
@@ -25,6 +26,7 @@ export default function TendersPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [triggerFetch, setTriggerFetch] = useState(0);
+  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     async function fetchTenders() {
@@ -101,9 +103,11 @@ export default function TendersPage() {
                   <TabsTrigger value="all" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                     All Tenders
                   </TabsTrigger>
-                  <TabsTrigger value="saved" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                    <Bookmark size={14} className="mr-2 inline" /> Saved Tenders
-                  </TabsTrigger>
+                  {isAuthenticated && (
+                    <TabsTrigger value="saved" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      <Bookmark size={14} className="mr-2 inline" /> Saved Tenders
+                    </TabsTrigger>
+                  )}
                 </TabsList>
               </div>
 
@@ -132,9 +136,11 @@ export default function TendersPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="saved" className="m-0 focus-visible:outline-none">
-              <SavedTendersView />
-            </TabsContent>
+            {isAuthenticated && (
+              <TabsContent value="saved" className="m-0 focus-visible:outline-none">
+                <SavedTendersView />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>

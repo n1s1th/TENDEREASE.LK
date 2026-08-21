@@ -27,6 +27,14 @@ public interface OfficerRegistrationService {
     OfficerRegistrationSuccessResponse registerOfficer(CreateOfficerRegistrationRequest request);
 
     /**
+     * Get officer profile by official email.
+     *
+     * @param email the officer's email
+     * @return officer profile details
+     */
+    OfficerProfileResponse getOfficerByEmail(String email);
+
+    /**
      * Get officer profile by registration reference ID.
      *
      * @param referenceId the registration reference (e.g., OFF-2026-000123)

@@ -12,5 +12,7 @@ public enum TimelineEventType {
     NO_BID,
     CLOSED,
     CANCELLED,
-    AMENDED
+    AMENDED,
+    REPORT_GENERATED,
+    EVALUATED
 }

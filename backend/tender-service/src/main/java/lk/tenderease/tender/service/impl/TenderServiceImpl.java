@@ -37,6 +37,7 @@ import lk.tenderease.tender.repository.TenderDocumentRepository;
 import lk.tenderease.tender.repository.TenderRepository;
 import lk.tenderease.tender.repository.TenderScheduleRepository;
 import lk.tenderease.tender.repository.TenderTimelineRepository;
+import lk.tenderease.tender.service.S3Service;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,9 +82,14 @@ public class TenderServiceImpl implements TenderService {
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
+    private final S3Service s3Service;
+    private final org.springframework.web.client.RestTemplate restTemplate;
 
-    @Value("${app.upload-dir:../uploads}")
+    @Value("${app.upload-dir:./uploads}")
     private String uploadDir;
+
+    @Value("${services.user-service.url:http://localhost:8081}")
+    private String userServiceUrl;
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -143,6 +149,47 @@ public class TenderServiceImpl implements TenderService {
 
         Tender saved = tenderRepository.save(tender);
         log.info("Tender created with ID: {}", saved.getId());
+
+        // Fetch officer profile from user-service
+        String officerName = "Procurement Officer";
+        String designation = "Head of Procurement";
+        String email = createdByUserId != null && createdByUserId.contains("@") ? createdByUserId : "officer@tenderease.lk";
+        String phone = "+94 (0) 11 234 5678";
+
+        try {
+            if (email.contains("@")) {
+                log.info("Fetching officer profile for email: {}", email);
+                com.fasterxml.jackson.databind.JsonNode profile = restTemplate.getForObject(
+                        userServiceUrl + "/api/v1/officers/email/" + email,
+                        com.fasterxml.jackson.databind.JsonNode.class
+                );
+                
+                if (profile != null) {
+                    if (profile.has("liaisonOfficer") && !profile.get("liaisonOfficer").isNull()) {
+                        com.fasterxml.jackson.databind.JsonNode liaison = profile.get("liaisonOfficer");
+                        officerName = liaison.has("name") ? liaison.get("name").asText() : officerName;
+                        designation = liaison.has("designation") ? liaison.get("designation").asText() : designation;
+                        phone = liaison.has("mobile") ? liaison.get("mobile").asText() : phone;
+                    } else {
+                        officerName = profile.has("organizationName") ? profile.get("organizationName").asText() : officerName;
+                        designation = profile.has("headDesignation") ? profile.get("headDesignation").asText() : designation;
+                        phone = profile.has("personalLandPhone") ? profile.get("personalLandPhone").asText() : phone;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch officer profile for email {}. Using default contact info. Error: {}", email, e.getMessage());
+        }
+
+        // Create contact for the officer
+        lk.tenderease.tender.entity.TenderContact contact = lk.tenderease.tender.entity.TenderContact.builder()
+                .tender(saved)
+                .officerName(officerName)
+                .designation(designation)
+                .email(email)
+                .phone(phone)
+                .build();
+        contactRepository.save(contact);
 
         // Auto-record CREATED timeline event
         recordTimelineEvent(saved, TimelineEventType.CREATED,
@@ -262,7 +309,6 @@ public class TenderServiceImpl implements TenderService {
         return response;
     }
 
-    @Override
     public TenderDetailResponse getTenderByNumber(String tenderNumber) {
         log.info("Fetching tender detail for number: {}", tenderNumber);
         Tender tender = tenderRepository.findByTenderNumber(tenderNumber)
@@ -381,17 +427,14 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
-        // Save file to local storage
         String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
-        Path targetPath = Paths.get(uploadDir).resolve(fileName).toAbsolutePath();
-        log.info("Saving uploaded file to: {}", targetPath);
+        log.info("Saving uploaded file to S3 with key: {}", fileName);
 
         try {
-            Files.createDirectories(targetPath.getParent());
-            Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("File successfully saved to disk.");
+            s3Service.uploadFile(fileName, request.getFile());
+            log.info("File successfully uploaded to S3.");
         } catch (IOException e) {
-            log.error("CRITICAL: Failed to store file at {}. Error: {}", targetPath, e.getMessage());
+            log.error("CRITICAL: Failed to store file to S3. Error: {}", e.getMessage());
             throw new RuntimeException("Could not store file", e);
         }
 
@@ -668,7 +711,6 @@ public class TenderServiceImpl implements TenderService {
         return mapToDetailsDTO(tender);
     }
 
-    @Override
     public TenderDetailsDTO getPublicTenderByNumber(String tenderNumber) {
         log.info("Fetching public tender detail for number: {}", tenderNumber);
         Tender tender = tenderRepository.findByTenderNumber(tenderNumber)
@@ -719,7 +761,18 @@ public class TenderServiceImpl implements TenderService {
 
     @Override
     public List<ContactDTO> getContacts(UUID tenderId) {
-        return contactRepository.findByTenderId(tenderId).stream()
+        List<lk.tenderease.tender.entity.TenderContact> contacts = contactRepository.findByTenderId(tenderId);
+        
+        if (contacts.isEmpty()) {
+            return java.util.List.of(ContactDTO.builder()
+                    .officerName("Procurement Officer")
+                    .designation("Head of Procurement")
+                    .email("officer@tenderease.lk")
+                    .phone("+94 (0) 11 234 5678")
+                    .build());
+        }
+        
+        return contacts.stream()
                 .map(contact -> ContactDTO.builder()
                         .officerName(contact.getOfficerName())
                         .designation(contact.getDesignation())
@@ -1110,6 +1163,10 @@ public class TenderServiceImpl implements TenderService {
 
     private void recordTimelineEvent(Tender tender, TimelineEventType eventType, String description) {
         try {
+            if (timelineRepository.existsByTenderIdAndEventTypeAndDescription(tender.getId(), eventType, description)) {
+                log.debug("Timeline event '{}' already exists for tender {}, skipping duplicate", eventType, tender.getId());
+                return;
+            }
             TenderTimeline event = TenderTimeline.builder()
                     .tender(tender)
                     .eventType(eventType)
