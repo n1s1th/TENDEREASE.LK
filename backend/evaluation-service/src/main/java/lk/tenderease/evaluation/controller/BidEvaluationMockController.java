@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/evaluations/mock")
+@CrossOrigin(origins = "*")
 @Tag(name = "Mock Bid Evaluation API", description = "Mock APIs for frontend development of the Bid Evaluation panel")
 public class BidEvaluationMockController {
 
@@ -702,7 +703,28 @@ public class BidEvaluationMockController {
             }
         }
         
-        if (winningBidId != null) {
+        // Determine if all bids have been evaluated
+        boolean allEvaluated = false;
+        if (bidsList != null && !bidsList.isEmpty()) {
+            long completedCount = allEvaluations.stream()
+                    .filter(ev -> ev.getStatus() == EvaluationStatus.COMPLETED)
+                    .count();
+            if (completedCount >= bidsList.size()) {
+                allEvaluated = true;
+            }
+        } else {
+            // Fallback: check in-memory status map
+            boolean allSubmitted = true;
+            for (BidderEvaluationState s : bidderStates.values()) {
+                if (!"Submitted".equalsIgnoreCase(s.status)) {
+                    allSubmitted = false;
+                    break;
+                }
+            }
+            allEvaluated = allSubmitted;
+        }
+
+        if (allEvaluated && winningBidId != null) {
             try {
                 RestTemplate restTemplate = new RestTemplate();
                 String bidUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid;
@@ -729,52 +751,39 @@ public class BidEvaluationMockController {
             }
             
             // Save EvaluationResult
-            EvaluationResult evalResult = evaluationResultRepository.findByTenderId(tenderUuid)
-                    .orElse(new EvaluationResult());
-            evalResult.setTenderId(tenderUuid);
-            evalResult.setWinningBidId(winningBidId);
-            evalResult.setFinalScore(maxScore);
-            evalResult.setStatus("FINALIZED");
-            evalResult.setApprovedAt(LocalDateTime.now());
-            evaluationResultRepository.save(evalResult);
+            try {
+                EvaluationResult evalResult = evaluationResultRepository.findByTenderId(tenderUuid)
+                        .orElse(new EvaluationResult());
+                evalResult.setTenderId(tenderUuid);
+                evalResult.setWinningBidId(winningBidId);
+                evalResult.setFinalScore(maxScore);
+                evalResult.setStatus("FINALIZED");
+                evalResult.setApprovedAt(LocalDateTime.now());
+                evaluationResultRepository.save(evalResult);
+            } catch (Exception e) {
+                System.err.println("Failed to save EvaluationResult: " + e.getMessage());
+            }
 
             // Save RecommendationNote
-            RecommendationNote recNote = recommendationNoteRepository.findAllByOrderByCreatedAtDesc().stream()
-                    .filter(rn -> rn.getTenderId().equals(tenderNo))
-                    .findFirst()
-                    .orElse(new RecommendationNote());
-            
-            recNote.setTenderId(tenderNo);
-            recNote.setTenderName(tenderTitle);
-            recNote.setDepartment(departmentName);
-            recNote.setEstimatedBudget(estimatedBudget);
-            recNote.setBidderName(winningBidderName);
-            recNote.setRecommendedValue(winningBidAmount);
-            recNote.setFinalScore(maxScore.doubleValue());
-            recNote.setJustification(request.notes != null ? request.notes : "Recommended based on scoring criteria.");
-            recNote.setStatus(RecommendationNote.RecommendationStatus.PENDING);
-            recommendationNoteRepository.save(recNote);
-        }
-
-        // Determine if all bids have been evaluated
-        boolean allEvaluated = false;
-        if (bidsList != null && !bidsList.isEmpty()) {
-            long completedCount = allEvaluations.stream()
-                    .filter(ev -> ev.getStatus() == EvaluationStatus.COMPLETED)
-                    .count();
-            if (completedCount >= bidsList.size()) {
-                allEvaluated = true;
+            try {
+                RecommendationNote recNote = recommendationNoteRepository.findAllByOrderByCreatedAtDesc().stream()
+                        .filter(rn -> rn.getTenderId().equals(tenderNo))
+                        .findFirst()
+                        .orElse(new RecommendationNote());
+                
+                recNote.setTenderId(tenderNo);
+                recNote.setTenderName(tenderTitle);
+                recNote.setDepartment(departmentName);
+                recNote.setEstimatedBudget(estimatedBudget);
+                recNote.setBidderName(winningBidderName);
+                recNote.setRecommendedValue(winningBidAmount);
+                recNote.setFinalScore(maxScore.doubleValue());
+                recNote.setJustification(request.notes != null ? request.notes : "Recommended based on scoring criteria.");
+                recNote.setStatus(RecommendationNote.RecommendationStatus.PENDING);
+                recommendationNoteRepository.save(recNote);
+            } catch (Exception e) {
+                System.err.println("Failed to save RecommendationNote: " + e.getMessage());
             }
-        } else {
-            // Fallback: check in-memory status map
-            boolean allSubmitted = true;
-            for (BidderEvaluationState s : bidderStates.values()) {
-                if (!"Submitted".equalsIgnoreCase(s.status)) {
-                    allSubmitted = false;
-                    break;
-                }
-            }
-            allEvaluated = allSubmitted;
         }
 
         // Update tender status to CLOSED (which maps to COMPLETED) or EVALUATION in tender-service
@@ -918,5 +927,180 @@ public class BidEvaluationMockController {
         );
 
         return ResponseEntity.ok(ApiResponse.success(counts, "Status counts retrieved successfully"));
+    }
+
+    // ----------------------------------------------------
+    // AWARD PROCESSING MOCK ENDPOINTS
+    // ----------------------------------------------------
+
+    @GetMapping("/awards/tenders")
+    public ResponseEntity<List<Map<String, Object>>> getAwardTenders() {
+        List<Map<String, Object>> tenders = new ArrayList<>();
+        List<RecommendationNote> allNotes = recommendationNoteRepository.findAllByOrderByCreatedAtDesc();
+        Set<String> processedTenders = new HashSet<>();
+        
+        for (RecommendationNote note : allNotes) {
+            if (note.getTenderId() == null || processedTenders.contains(note.getTenderId())) {
+                continue;
+            }
+            
+            // Skip rejected tenders per user request
+            if (note.getStatus() == RecommendationNote.RecommendationStatus.REJECTED) {
+                continue;
+            }
+            
+            processedTenders.add(note.getTenderId());
+            
+            Map<String, Object> t = new HashMap<>();
+            t.put("id", note.getTenderId());
+            t.put("tenderNo", note.getTenderId());
+            t.put("title", note.getTenderName() != null ? note.getTenderName() : "Tender " + note.getTenderId());
+            t.put("department", note.getDepartment() != null ? note.getDepartment() : "N/A");
+            
+            String status = "PENDING_CAO";
+            if (note.getStatus() == RecommendationNote.RecommendationStatus.APPROVED) {
+                status = "APPROVED";
+            }
+            t.put("status", status);
+            tenders.add(t);
+        }
+        
+        return ResponseEntity.ok(tenders);
+    }
+
+    @GetMapping("/awards/tenders/{tenderId}/bidders")
+    public ResponseEntity<List<Map<String, Object>>> getAwardBidders(@PathVariable String tenderId) {
+        List<Map<String, Object>> bidders = new ArrayList<>();
+        
+        try {
+            UUID tId = resolveTenderUuid(tenderId);
+            List<Evaluation> evals = evaluationRepository.findByTenderId(tId);
+            
+            UUID winnerId = null;
+            EvaluationResult evalResult = evaluationResultRepository.findByTenderId(tId).orElse(null);
+            if (evalResult != null && evalResult.getWinningBidId() != null) {
+                winnerId = evalResult.getWinningBidId();
+            } else {
+                BigDecimal max = BigDecimal.ZERO;
+                for (Evaluation e : evals) {
+                    if (e.getComplianceStatus() == ComplianceStatus.COMPLIANT && e.getTotalScore() != null && e.getTotalScore().compareTo(max) > 0) {
+                        max = e.getTotalScore();
+                        winnerId = e.getBidId();
+                    }
+                }
+            }
+            
+            // Fetch real bid details
+            Map<String, Map<String, Object>> realBids = new HashMap<>();
+            try {
+                RestTemplate restTemplate = new RestTemplate();
+                String bidUrl = "http://localhost:8083/api/bids/tender/" + tId.toString();
+                Map<?, ?> bidsResponse = restTemplate.getForObject(bidUrl, Map.class);
+                if (bidsResponse != null && bidsResponse.get("data") != null) {
+                    List<?> bidsList = (List<?>) bidsResponse.get("data");
+                    for (Object bidObj : bidsList) {
+                        if (bidObj instanceof Map) {
+                            Map<?, ?> bidMap = (Map<?, ?>) bidObj;
+                            if (bidMap.get("id") != null) {
+                                String bId = bidMap.get("id").toString();
+                                Map<String, Object> details = new HashMap<>();
+                                details.put("companyName", bidMap.get("companyName") != null ? bidMap.get("companyName") : bidMap.get("bidderName"));
+                                details.put("bidAmount", bidMap.get("bidAmount"));
+                                details.put("bidderEmail", bidMap.get("bidderEmail"));
+                                realBids.put(bId, details);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception fetchEx) {
+                System.err.println("Failed to fetch bids from bid-service: " + fetchEx.getMessage());
+            }
+
+            for (Evaluation e : evals) {
+                Map<String, Object> bidder = new HashMap<>();
+                String bId = e.getBidId().toString();
+                bidder.put("bidderId", bId);
+                
+                String name = "Bidder " + bId.substring(0, 8);
+                String email = "vendor@tenderease.lk";
+                BigDecimal amount = BigDecimal.ZERO;
+                
+                if (realBids.containsKey(bId)) {
+                    Map<String, Object> details = realBids.get(bId);
+                    if (details.get("companyName") != null) {
+                        name = details.get("companyName").toString();
+                    }
+                    if (details.get("bidAmount") != null) {
+                        amount = new BigDecimal(details.get("bidAmount").toString());
+                    }
+                    if (details.get("bidderEmail") != null) {
+                        email = details.get("bidderEmail").toString();
+                    }
+                }
+                
+                bidder.put("bidderName", name);
+                bidder.put("bidderEmail", email);
+                bidder.put("score", e.getTotalScore() != null ? e.getTotalScore() : 0);
+                bidder.put("bidAmount", amount);
+                
+                if (winnerId != null && e.getBidId().equals(winnerId)) {
+                    bidder.put("status", "WINNER");
+                } else {
+                    bidder.put("status", "LOST");
+                }
+                bidders.add(bidder);
+            }
+        } catch (Exception ex) {}
+        
+        if (bidders.isEmpty() && "TND-0041".equals(tenderId)) {
+            Map<String, Object> b1 = new HashMap<>();
+            b1.put("bidderId", "BID-001");
+            b1.put("bidderName", "TechCorp Solutions");
+            b1.put("score", 92.5);
+            b1.put("bidAmount", 1250000);
+            b1.put("status", "WINNER");
+            bidders.add(b1);
+            
+            Map<String, Object> b2 = new HashMap<>();
+            b2.put("bidderId", "BID-002");
+            b2.put("bidderName", "Global IT Services");
+            b2.put("score", 84.0);
+            b2.put("bidAmount", 1400000);
+            b2.put("status", "LOST");
+            bidders.add(b2);
+        }
+
+        return ResponseEntity.ok(bidders);
+    }
+
+    @PostMapping("/awards/tenders/{tenderId}/emails")
+    public ResponseEntity<Map<String, String>> generateAwardEmails(
+            @PathVariable String tenderId, 
+            @RequestBody Map<String, String> payload) {
+        
+        String type = payload.get("type");
+        System.out.println("Generating " + type + " emails for tender " + tenderId);
+        
+        String emailBody = "";
+        if ("WINNER".equals(type)) {
+            emailBody = "Subject: Tender Award Notification - " + tenderId + "\n\n" +
+                        "Dear Bidder,\n\n" +
+                        "We are pleased to inform you that your bid for tender " + tenderId + " has been successful.\n" +
+                        "Our team will contact you shortly to finalize the contract details.\n\n" +
+                        "Congratulations,\nProcurement Team";
+        } else {
+            emailBody = "Subject: Tender Evaluation Outcome - " + tenderId + "\n\n" +
+                        "Dear Bidder,\n\n" +
+                        "Thank you for participating in tender " + tenderId + ".\n" +
+                        "After careful evaluation, we regret to inform you that your bid was not successful on this occasion.\n\n" +
+                        "We appreciate your effort and encourage you to participate in future opportunities.\n\n" +
+                        "Sincerely,\nProcurement Team";
+        }
+        System.out.println("Mock Email Content:\n" + emailBody);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Emails generated and saved successfully.");
+        return ResponseEntity.ok(response);
     }
 }
