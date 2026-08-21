@@ -42,7 +42,7 @@ export default function ApproveRecommendationModal() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-center">
-              <div className="text-3xl font-black text-slate-900 leading-none">{rec.finalScore}</div>
+              <div className="text-3xl font-black text-slate-900 leading-none">{Number(rec.finalScore).toFixed(2)}</div>
               <div className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest">Final Score</div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm text-center">
