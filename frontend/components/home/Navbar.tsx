@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import { login, logout, signup } from "@/lib/keycloak";
 import { useAuthStore } from "@/store";
 import { useAuth } from "@/providers/AuthProvider";
+import { getVendorByEmail } from "@/lib/api/vendorApi";
+import { getOfficerByEmail } from "@/lib/api/officerApi";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -52,9 +54,42 @@ export default function Navbar() {
   const registerDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [hasDbVendorProfile, setHasDbVendorProfile] = useState(false);
+  const [hasDbOfficerProfile, setHasDbOfficerProfile] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.email) {
+      setHasDbVendorProfile(false);
+      setHasDbOfficerProfile(false);
+      return;
+    }
+
+    const checkDbProfiles = async () => {
+      try {
+        const vendor = await getVendorByEmail(user.email!);
+        if (vendor) {
+          setHasDbVendorProfile(true);
+        }
+      } catch (err) {
+        // Not a vendor
+      }
+
+      try {
+        const officer = await getOfficerByEmail(user.email!);
+        if (officer) {
+          setHasDbOfficerProfile(true);
+        }
+      } catch (err) {
+        // Not an officer
+      }
+    };
+
+    checkDbProfiles();
+  }, [isAuthenticated, user]);
+
   // Check if user needs to register as officer or vendor
-  const hasOfficerRole = user?.roles?.includes('PROCUREMENT_OFFICER') ?? false;
-  const hasVendorRole = user?.roles?.includes('VENDOR') ?? false;
+  const hasOfficerRole = (user?.roles?.includes('PROCUREMENT_OFFICER') ?? false) || hasDbOfficerProfile;
+  const hasVendorRole = (user?.roles?.includes('VENDOR') ?? false) || hasDbVendorProfile;
   const hasAdminRole = user?.roles?.includes('ADMIN') ?? false;
   const hasCaoRole = user?.roles?.includes('CAO') ?? false;
   const hasPendingRegistration = officerRegistrationStatus === 'PENDING';
@@ -177,63 +212,70 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <div className="te-navbar__user">
-              {needsRoleRegistration && (
-                <div className="te-navbar__register-dropdown" ref={registerDropdownRef}>
-                  <div className="te-navbar__register-trigger">
-                    <Link href="/vendor-registration" className="te-navbar__btn te-navbar__btn--register-vendor">
-                      <Building2 size={14} />
-                      <span>Register as Vendor</span>
-                    </Link>
-                    <button
-                      className="te-navbar__register-arrow"
-                      onClick={() => setRegisterDropdownOpen((prev) => !prev)}
-                      aria-label="More registration options"
-                    >
-                      <ChevronDown size={14} className={registerDropdownOpen ? "te-navbar__arrow-rotated" : ""} />
-                    </button>
-                  </div>
-                  {registerDropdownOpen && (
-                    <div className="te-navbar__register-menu">
-                      <Link
-                        href="/officer-registration"
-                        className="te-navbar__register-menu-item"
-                        onClick={() => setRegisterDropdownOpen(false)}
-                      >
-                        <Shield size={14} />
-                        <span>Register as Officer</span>
+            <div className="te-navbar__user" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              {needsRoleRegistration ? (
+                <>
+                  <div className="te-navbar__register-dropdown" ref={registerDropdownRef}>
+                    <div className="te-navbar__register-trigger">
+                      <Link href="/vendor-registration" className="te-navbar__btn te-navbar__btn--register-vendor">
+                        <Building2 size={14} />
+                        <span>Register as Vendor</span>
                       </Link>
+                      <button
+                        className="te-navbar__register-arrow"
+                        onClick={() => setRegisterDropdownOpen((prev) => !prev)}
+                        aria-label="More registration options"
+                      >
+                        <ChevronDown size={14} className={registerDropdownOpen ? "te-navbar__arrow-rotated" : ""} />
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-              <div className="te-navbar__profile-container" ref={profileDropdownRef}>
-                <button
-                  className="te-navbar__user-avatar"
-                  onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                  aria-label="Profile menu"
-                >
-                  <UserIcon size={18} />
-                </button>
-                {profileDropdownOpen && (
-                  <div className="te-navbar__profile-menu">
-                    {dashboardPath && (
-                      <Link
-                        href={dashboardPath}
-                        className="te-navbar__profile-menu-item te-navbar__profile-menu-item--dashboard"
-                        onClick={() => setProfileDropdownOpen(false)}
-                      >
-                        <LayoutDashboard size={14} />
-                        <span>Dashboard</span>
-                      </Link>
+                    {registerDropdownOpen && (
+                      <div className="te-navbar__register-menu">
+                        <Link
+                          href="/officer-registration"
+                          className="te-navbar__register-menu-item"
+                          onClick={() => setRegisterDropdownOpen(false)}
+                        >
+                          <Shield size={14} />
+                          <span>Register as Officer</span>
+                        </Link>
+                      </div>
                     )}
-                    {dashboardPath && <div className="te-navbar__profile-menu-divider" />}
-                    <button onClick={logout} className="te-navbar__profile-menu-item te-navbar__profile-menu-item--signout">
-                      Sign Out
-                    </button>
                   </div>
-                )}
-              </div>
+                  <button onClick={logout} className="te-navbar__btn te-navbar__btn--signout">
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  {dashboardPath && (
+                    <Link
+                      href={dashboardPath}
+                      className="te-navbar__btn te-navbar__btn--signin"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+                    >
+                      <UserIcon size={14} />
+                      <span>My Profile</span>
+                    </Link>
+                  )}
+                  <div className="te-navbar__profile-container" ref={profileDropdownRef}>
+                    <button
+                      className="te-navbar__user-avatar"
+                      onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                      aria-label="Profile menu"
+                    >
+                      <UserIcon size={18} />
+                    </button>
+                    {profileDropdownOpen && (
+                      <div className="te-navbar__profile-menu">
+                        <button onClick={logout} className="te-navbar__profile-menu-item te-navbar__profile-menu-item--signout">
+                          Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -361,16 +403,8 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {needsRoleRegistration && (
+              {needsRoleRegistration ? (
                 <div className="te-navbar__mobile-register-group">
-                  <Link
-                    href="/officer-registration"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="te-navbar__mobile-register te-navbar__mobile-register--officer"
-                  >
-                    <Shield size={16} />
-                    <span>Register as Officer</span>
-                  </Link>
                   <Link
                     href="/vendor-registration"
                     onClick={() => setMobileMenuOpen(false)}
@@ -379,7 +413,26 @@ export default function Navbar() {
                     <Building2 size={16} />
                     <span>Register as Vendor</span>
                   </Link>
+                  <Link
+                    href="/officer-registration"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="te-navbar__mobile-register te-navbar__mobile-register--officer"
+                  >
+                    <Shield size={16} />
+                    <span>Register as Officer</span>
+                  </Link>
                 </div>
+              ) : (
+                dashboardPath && (
+                  <Link
+                    href={dashboardPath}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="te-navbar__mobile-link"
+                    style={{ fontWeight: 600, color: "#953002" }}
+                  >
+                    My Profile
+                  </Link>
+                )
               )}
               <button onClick={logout} className="te-navbar__mobile-signin te-navbar__mobile-signin--out">
                 Sign Out
