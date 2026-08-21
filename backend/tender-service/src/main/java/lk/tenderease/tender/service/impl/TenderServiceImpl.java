@@ -39,7 +39,6 @@ import lk.tenderease.tender.exception.AddendumVersionConflictException;
 import lk.tenderease.tender.exception.AddendumVersionNotFoundException;
 import lk.tenderease.tender.exception.TenderNotFoundException;
 import lk.tenderease.tender.repository.AddendumVersionRepository;
-import lk.tenderease.tender.service.CloudinaryService;
 import lk.tenderease.tender.repository.TenderAmendmentRepository;
 import lk.tenderease.tender.repository.TenderClarificationRepository;
 import lk.tenderease.tender.repository.TenderContactRepository;
@@ -89,7 +88,6 @@ public class TenderServiceImpl implements TenderService {
     private final TenderDocumentRepository documentRepository;
     private final TenderAmendmentRepository amendmentRepository;
     private final AddendumVersionRepository addendumVersionRepository;
-    private final CloudinaryService cloudinaryService;
     private final TenderClarificationRepository clarificationRepository;
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
@@ -812,21 +810,25 @@ public class TenderServiceImpl implements TenderService {
         Integer maxVersion = addendumVersionRepository.findMaxVersionNumber(addendum.getId());
         int nextVersion = (maxVersion != null ? maxVersion : 0) + 1;
 
-        String folder = String.format("tenderease/tenders/%s/addenda/%d/v%d", tender.getId(), addendum.getId(),
-                nextVersion);
-        Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, folder);
-
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             originalFilename = "addendum_v" + nextVersion + ".pdf";
         }
 
+        String key = String.format("tenderease/tenders/%s/addenda/%d/v%d_%s", tender.getId(), addendum.getId(),
+                nextVersion, originalFilename);
+        try {
+            s3Service.uploadFile(key, file);
+        } catch (java.io.IOException e) {
+            throw new BusinessException("Failed to upload file to S3");
+        }
+
         AddendumVersion version = AddendumVersion.builder()
                 .addendum(addendum)
                 .versionNumber(nextVersion)
-                .cloudinaryPublicId((String) uploadResult.get("public_id"))
-                .cloudinaryUrl((String) uploadResult.get("url"))
-                .secureUrl((String) uploadResult.get("secure_url"))
+                .cloudinaryPublicId(key)
+                .cloudinaryUrl("s3://" + key)
+                .secureUrl("s3://" + key)
                 .originalFilename(originalFilename)
                 .contentType(file.getContentType() != null ? file.getContentType() : "application/pdf")
                 .fileSize(file.getSize())
@@ -837,7 +839,7 @@ public class TenderServiceImpl implements TenderService {
 
         try {
             AddendumVersion savedVersion = addendumVersionRepository.save(version);
-            addendum.setCurrentVersionNumber(nextVersion);
+            addendum.setVersion(nextVersion);
             amendmentRepository.save(addendum);
             log.info("Addendum version {} saved successfully with ID: {}", nextVersion, savedVersion.getId());
             return mapAddendumVersion(savedVersion);
@@ -845,6 +847,20 @@ public class TenderServiceImpl implements TenderService {
             log.error("Conflict creating addendum version: {}", ex.getMessage());
             throw AddendumVersionConflictException.of(addendum.getId(), nextVersion);
         }
+    }
+
+    private AddendumVersionResponse mapAddendumVersion(AddendumVersion version) {
+        return AddendumVersionResponse.builder()
+                .id(version.getId())
+                .versionNumber(version.getVersionNumber())
+                .secureUrl(version.getSecureUrl())
+                .originalFilename(version.getOriginalFilename())
+                .contentType(version.getContentType())
+                .fileSize(version.getFileSize())
+                .changeDescription(version.getChangeDescription())
+                .uploadedBy(version.getUploadedBy())
+                .createdAt(version.getCreatedAt())
+                .build();
     }
 
     @Override
@@ -1185,7 +1201,43 @@ public class TenderServiceImpl implements TenderService {
             return b.getTimestamp().compareTo(a.getTimestamp());
         });
 
-        return dtos;
+        // Filter out unnecessary events to only show key milestones
+        java.util.List<TimelineEventType> allowedEvents = java.util.List.of(
+                TimelineEventType.CREATED,
+                TimelineEventType.APPROVED,
+                TimelineEventType.EVALUATION_STARTED,
+                TimelineEventType.AWARDED,
+                TimelineEventType.CLOSED,
+                TimelineEventType.AMENDED
+        );
+
+        return dtos.stream()
+                .filter(dto -> allowedEvents.contains(dto.getEventType()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    private LocalDateTime parseLocalDateTime(Object obj) {
+        if (obj == null) return LocalDateTime.now();
+        try {
+            return LocalDateTime.parse(obj.toString());
+        } catch (Exception e) {
+            return LocalDateTime.now();
+        }
+    }
+
+    @Override
+    public void addTimelineEvent(UUID tenderId, TimelineEventType eventType, String description, String createdBy, String creatorRole) {
+        Tender tender = tenderRepository.findById(tenderId).orElse(null);
+        if (tender != null) {
+            TenderTimeline timeline = TenderTimeline.builder()
+                    .tender(tender)
+                    .eventType(eventType)
+                    .description(description)
+                    .timestamp(LocalDateTime.now())
+                    .createdBy(createdBy != null ? createdBy : "System")
+                    .build();
+            timelineRepository.save(timeline);
+        }
     }
 
     @Override
@@ -1193,30 +1245,11 @@ public class TenderServiceImpl implements TenderService {
         List<lk.tenderease.tender.entity.TenderContact> contacts = contactRepository.findByTenderId(tenderId);
 
         if (contacts.isEmpty()) {
-            return java.util.List.of(ContactDTO.builder()
-                    .officerName("Procurement Officer")
-                    .designation("Head of Procurement")
-                    .email("officer@tenderease.lk")
-                    .phone("+94 (0) 11 234 5678")
-                    .build());
-        }
-
-        return contacts.stream()
-                .map(contact -> ContactDTO.builder()
-                        .officerName(contact.getOfficerName())
-                        .designation(contact.getDesignation())
-                        .email(contact.getEmail())
-                        .phone(contact.getPhone())
-                        .department("Procurement Office")
-                        .build())
-                .collect(Collectors.toList());
-
-        if (contacts.isEmpty()) {
             Tender tender = tenderRepository.findById(tenderId).orElse(null);
             if (tender != null && tender.getCreatedBy() != null && !tender.getCreatedBy().trim().isEmpty()
                     && !tender.getCreatedBy().equalsIgnoreCase("dev-user")) {
                 try {
-                    org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                    org.springframework.web.client.RestTemplate localRestTemplate = new org.springframework.web.client.RestTemplate();
                     String createdBy = tender.getCreatedBy();
                     String url = "http://localhost:8081/api/officers";
                     if (createdBy.contains("@")) {
@@ -1224,7 +1257,7 @@ public class TenderServiceImpl implements TenderService {
                     } else {
                         url += "/keycloak/" + createdBy;
                     }
-                    java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
+                    java.util.Map<?, ?> response = localRestTemplate.getForObject(url, java.util.Map.class);
                     if (response != null) {
                         java.util.Map<?, ?> liaison = (java.util.Map<?, ?>) response.get("liaisonOfficer");
                         String officerName = liaison != null ? (String) liaison.get("name")
@@ -1238,7 +1271,7 @@ public class TenderServiceImpl implements TenderService {
                         String department = tender.getDepartment() != null ? tender.getDepartment().getName()
                                 : (String) response.get("organizationName");
 
-                        contacts.add(ContactDTO.builder()
+                        return java.util.List.of(ContactDTO.builder()
                                 .officerName(officerName != null ? officerName : "Procurement Officer")
                                 .designation(designation != null ? designation : "Officer")
                                 .email(email != null ? email : "Not Provided")
@@ -1249,31 +1282,32 @@ public class TenderServiceImpl implements TenderService {
                 } catch (Exception e) {
                     log.warn("Failed to fetch creator contact info from user-service for key: {}",
                             tender.getCreatedBy(), e);
-                    // Add fallback basic contact using tender details
-                    String department = tender.getDepartment() != null ? tender.getDepartment().getName()
-                            : "Procurement Office";
-                    contacts.add(ContactDTO.builder()
-                            .officerName("Procurement Officer")
-                            .designation("Contact Person")
-                            .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
-                            .phone("Not Provided")
-                            .department(department)
-                            .build());
+                    // Fallthrough to fallback below
                 }
-            } else if (tender != null) {
-                // Add fallback basic contact using tender details
-                String department = tender.getDepartment() != null ? tender.getDepartment().getName()
-                        : "Procurement Office";
-                contacts.add(ContactDTO.builder()
-                        .officerName("Procurement Officer")
-                        .designation("Contact Person")
-                        .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
-                        .phone("Not Provided")
-                        .department(department)
-                        .build());
             }
+            
+            // Fallback basic contact using tender details
+            String department = (tender != null && tender.getDepartment() != null) ? tender.getDepartment().getName()
+                    : "Procurement Office";
+            return java.util.List.of(ContactDTO.builder()
+                    .officerName("Procurement Officer")
+                    .designation("Contact Person")
+                    .email("contact@" + department.toLowerCase().replace(" ", "") + ".gov.lk")
+                    .phone("Not Provided")
+                    .department(department)
+                    .build());
         }
-        return contacts;
+
+        return contacts.stream()
+                .map(contact -> ContactDTO.builder()
+                        .officerName(contact.getOfficerName())
+                        .designation(contact.getDesignation())
+                        .email(contact.getEmail())
+                        .phone(contact.getPhone())
+                        .department("Procurement Office")
+                        .build())
+                .collect(Collectors.toList());
+
     }
 
     @Override
