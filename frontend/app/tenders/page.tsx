@@ -7,7 +7,7 @@ import TenderSearchBar from "@/components/tender/TenderSearchBar";
 import TenderPagination from "@/components/tender/TenderPagination";
 import { getTenders } from "@/services/tender.service";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Search } from "lucide-react";
 import { useSavedTendersStore } from "@/store/saved-tenders.store";
 import { useAuthStore } from "@/store";
 
@@ -25,9 +25,17 @@ export default function TendersPage() {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [triggerFetch, setTriggerFetch] = useState(0);
+  const [debouncedFilters, setDebouncedFilters] = useState(INITIAL_FILTERS);
   const [activeTab, setActiveTab] = useState("open");
   const { isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   useEffect(() => {
     async function fetchTenders() {
@@ -35,7 +43,7 @@ export default function TendersPage() {
 
       setLoading(true);
       try {
-        const currentFilters = { ...filters };
+        const currentFilters = { ...debouncedFilters };
         if (activeTab === "open") {
           currentFilters.status = "All Statuses";
         } else if (activeTab === "closed") {
@@ -65,17 +73,11 @@ export default function TendersPage() {
       }
     }
     fetchTenders();
-  }, [currentPage, triggerFetch, activeTab]);
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    setTriggerFetch(prev => prev + 1);
-  };
+  }, [currentPage, debouncedFilters, activeTab]);
 
   const handleReset = () => {
     setFilters(INITIAL_FILTERS);
     setCurrentPage(1);
-    setTriggerFetch(prev => prev + 1);
   };
 
   return (
@@ -95,7 +97,6 @@ export default function TendersPage() {
         <TenderSearchBar
           filters={filters}
           onFilterChange={setFilters}
-          onSearch={handleSearch}
           onReset={handleReset}
         />
 
@@ -135,6 +136,17 @@ export default function TendersPage() {
                   <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                   <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
                 </div>
+              ) : tenders.length === 0 ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
+                    <Search size={24} className="text-gray-3" />
+                  </div>
+                  <p className="text-sm font-black text-black-2 uppercase tracking-widest">No Results</p>
+                  <p className="text-gray-2 text-sm font-medium text-center max-w-sm">
+                    No tenders found matching your criteria.
+                  </p>
+                  <button onClick={handleReset} className="mt-4 text-primary font-semibold text-xs uppercase tracking-widest hover:underline">Clear Filters</button>
+                </div>
               ) : (
                 <div className="space-y-6">
                   <TenderTable data={tenders} />
@@ -154,6 +166,17 @@ export default function TendersPage() {
                 <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
                   <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                   <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
+                </div>
+              ) : tenders.length === 0 ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
+                    <Search size={24} className="text-gray-3" />
+                  </div>
+                  <p className="text-sm font-black text-black-2 uppercase tracking-widest">No Results</p>
+                  <p className="text-gray-2 text-sm font-medium text-center max-w-sm">
+                    No closed tenders found matching your criteria.
+                  </p>
+                  <button onClick={handleReset} className="mt-4 text-primary font-semibold text-xs uppercase tracking-widest hover:underline">Clear Filters</button>
                 </div>
               ) : (
                 <div className="space-y-6">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import QaLayout from "@/components/qa/QaLayout";
 import QuestionForm from "@/components/qa/QuestionForm";
 import QuestionList from "@/components/qa/QuestionList";
 import QaAssistantPanel from "@/components/qa/QaAssistantPanel";
@@ -104,7 +103,7 @@ export default function QaPage() {
   }
 
   return (
-    <QaLayout>
+    <>
       <div className="relative">
         <div className="absolute -left-4 top-0 w-1 h-12 bg-primary rounded-full" />
         <div className="space-y-2 pl-6">
@@ -219,6 +218,6 @@ export default function QaPage() {
 
         <QaAssistantPanel />
       </div>
-    </QaLayout>
+    </>
   );
 }

@@ -249,7 +249,7 @@ public interface TenderService {
      */
     List<String> listTenderTypes();
 
-    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, Pageable pageable);
+    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, java.time.LocalDate fromDate, java.time.LocalDate toDate, String dateType, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
 

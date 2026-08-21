@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import {
   MessageSquare,
   Clock,
@@ -136,6 +137,18 @@ export default function OfficerQaPage() {
 
   return (
     <div style={{ paddingTop: "1rem" }}>
+      {/* Back Link */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <Link 
+          href="/officer-dashboard" 
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", color: "var(--te-gray-3)", fontSize: "0.95rem", fontWeight: 600, textDecoration: "none", transition: "color 0.2s" }}
+          onMouseEnter={(e) => e.currentTarget.style.color = "var(--te-primary)"}
+          onMouseLeave={(e) => e.currentTarget.style.color = "var(--te-gray-3)"}
+        >
+          <span style={{ fontSize: "1.2rem", lineHeight: 1 }}>&larr;</span> Back to Dashboard
+        </Link>
+      </div>
+
       {/* Page Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>

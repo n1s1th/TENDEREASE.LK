@@ -132,9 +132,10 @@ public class OfficerDashboardController {
     @GetMapping("/clarifications")
     @Operation(summary = "Get all tender clarification requests",
             description = "Returns vendor clarification questions across tenders for officer review")
-    public ResponseEntity<List<ClarificationDTO>> getAllClarifications() {
-        log.info("Officer dashboard: fetching all clarification requests");
-        return ResponseEntity.ok(dashboardService.getAllClarifications());
+    public ResponseEntity<List<ClarificationDTO>> getAllClarifications(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String officerEmail) {
+        log.info("Officer dashboard: fetching all clarification requests for {}", officerEmail);
+        return ResponseEntity.ok(dashboardService.getAllClarifications(officerEmail));
     }
 
     @GetMapping("/clarifications/{tenderId}")
