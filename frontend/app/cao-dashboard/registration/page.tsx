@@ -1,6 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
 import { User, Check, X, Mail, Phone, Building2, MapPin, Search } from "lucide-react";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import EmptyState from "@/components/cao-dashboard/EmptyState";
@@ -14,7 +16,7 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
   REJECTED: { bg: "#fee2e2", text: "#991b1b", label: "Rejected" },
 };
 
-function RegistrationContent() {
+function RegistrationPageContent() {
   const searchParams = useSearchParams();
   const registrations = useCAODashboardStore((s) => s.registrations);
   const registrationsLoading = useCAODashboardStore((s) => s.registrationsLoading);
@@ -35,6 +37,7 @@ function RegistrationContent() {
   const [approveTarget, setApproveTarget] = useState<RegistrationRequest | null>(null);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (registrationSearch) {
@@ -60,11 +63,19 @@ function RegistrationContent() {
     setApproveModalOpen(true);
   };
 
-  const handleConfirmApprove = () => {
+  const handleConfirmApprove = async () => {
+    if (submitting) return;
     if (approveTarget) {
-      acceptRegistration(approveTarget.officerId);
-      setApproveModalOpen(false);
-      setApproveTarget(null);
+      setSubmitting(true);
+      try {
+        await acceptRegistration(approveTarget.officerId);
+        setApproveModalOpen(false);
+        setApproveTarget(null);
+      } catch (err) {
+        // Error toast is handled by store
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -74,12 +85,20 @@ function RegistrationContent() {
     setRejectModalOpen(true);
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
+    if (submitting) return;
     if (rejectTarget && rejectReason.trim()) {
-      rejectRegistration(rejectTarget.officerId, rejectReason);
-      setRejectModalOpen(false);
-      setRejectTarget(null);
-      setRejectReason("");
+      setSubmitting(true);
+      try {
+        await rejectRegistration(rejectTarget.officerId, rejectReason);
+        setRejectModalOpen(false);
+        setRejectTarget(null);
+        setRejectReason("");
+      } catch (err) {
+        // Error toast is handled by store
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -283,10 +302,10 @@ function RegistrationContent() {
                         <Check size={16} /> Approve
                       </button>
                       <button
-                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold rounded-xl text-[#953002] bg-white border border-[#953002] hover:bg-[#fdf6f2] transition-all shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-bold rounded-xl text-[#953002] bg-white border border-[#953002] hover:bg-[#fdf6f2] transition-all shadow-sm"
                         onClick={() => handleReject(reg)}
                       >
-                        <X size={14} /> Reject
+                        <X size={16} /> Reject
                       </button>
                     </div>
                   )}
@@ -316,16 +335,18 @@ function RegistrationContent() {
             
             <div className="flex items-center justify-end gap-4">
               <button
-                className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm"
+                className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm disabled:opacity-50"
                 onClick={() => setApproveModalOpen(false)}
+                disabled={submitting}
               >
                 No, Cancel
               </button>
               <button
-                className="px-6 py-3 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md flex items-center gap-2 border border-[#953002]"
+                className="px-6 py-3 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md flex items-center gap-2 border border-[#953002] disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleConfirmApprove}
+                disabled={submitting}
               >
-                <Check size={18} /> Yes, Confirm Approval
+                <Check size={18} /> {submitting ? "Approving..." : "Yes, Confirm Approval"}
               </button>
             </div>
           </div>
@@ -358,17 +379,18 @@ function RegistrationContent() {
 
             <div className="flex items-center justify-end gap-4">
               <button
-                className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm"
+                className="px-6 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-sm disabled:opacity-50"
                 onClick={() => setRejectModalOpen(false)}
+                disabled={submitting}
               >
                 Cancel
               </button>
               <button
                 className="px-6 py-3 text-sm font-bold text-white bg-[#953002] hover:bg-[#752400] rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed border border-[#953002]"
                 onClick={handleConfirmReject}
-                disabled={!rejectReason.trim()}
+                disabled={!rejectReason.trim() || submitting}
               >
-                Confirm Rejection
+                {submitting ? "Rejecting..." : "Confirm Rejection"}
               </button>
             </div>
           </div>
@@ -378,10 +400,12 @@ function RegistrationContent() {
   );
 }
 
+import { Suspense } from "react";
+
 export default function RegistrationPage() {
   return (
-    <Suspense fallback={<div style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading...</div>}>
-      <RegistrationContent />
+    <Suspense fallback={<div className="dash-section" style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading...</div>}>
+      <RegistrationPageContent />
     </Suspense>
   );
 }

@@ -2,6 +2,7 @@ package lk.tenderease.tender.controller;
 
 import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ContactDTO;
 import lk.tenderease.tender.dto.response.TenderAmendmentDTO;
@@ -9,6 +10,7 @@ import lk.tenderease.tender.dto.response.TenderDetailsDTO;
 import lk.tenderease.tender.dto.response.TenderDocumentDTO;
 import lk.tenderease.tender.dto.response.TenderSummaryDTO;
 import lk.tenderease.tender.dto.response.TimelineDTO;
+import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
 import lk.tenderease.tender.service.TenderService;
@@ -54,15 +56,21 @@ public class PublicTenderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) TenderStatus status) {
+            @RequestParam(required = false) TenderStatus status,
+            @RequestParam(required = false) ProcurementType procurementType) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
     }
 
     @GetMapping("/{id}")
-    public TenderDetailsDTO getTenderById(@PathVariable UUID id) {
-        return tenderService.getPublicTenderById(id);
+    public TenderDetailsDTO getTenderById(@PathVariable String id) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            return tenderService.getPublicTenderById(uuid);
+        } catch (IllegalArgumentException e) {
+            return tenderService.getPublicTenderByNumber(id);
+        }
     }
 
     @GetMapping("/{id}/documents")
@@ -73,6 +81,28 @@ public class PublicTenderController {
     @GetMapping("/{id}/addenda")
     public List<TenderAmendmentDTO> getAddenda(@PathVariable UUID id) {
         return tenderService.getAddenda(id);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions")
+    public List<AddendumVersionResponse> getAddendumVersionHistory(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getAddendumVersionHistory(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/current")
+    public AddendumVersionResponse getCurrentAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId) {
+        return tenderService.getCurrentAddendumVersion(id, addendumId);
+    }
+
+    @GetMapping("/{id}/addenda/{addendumId}/versions/{versionNumber}")
+    public AddendumVersionResponse getAddendumVersion(
+            @PathVariable UUID id,
+            @PathVariable Long addendumId,
+            @PathVariable Integer versionNumber) {
+        return tenderService.getAddendumVersion(id, addendumId, versionNumber);
     }
 
     @GetMapping("/{id}/clarifications")
@@ -103,6 +133,14 @@ public class PublicTenderController {
     @GetMapping("/{id}/timeline")
     public List<TimelineDTO> getTimeline(@PathVariable UUID id) {
         return tenderService.getTimeline(id);
+    }
+
+    @PostMapping("/{id}/timeline")
+    public ResponseEntity<Void> addTimelineEvent(
+            @PathVariable UUID id,
+            @RequestBody TimelineDTO request) {
+        tenderService.addTimelineEvent(id, request.getEventType(), request.getDescription(), request.getCreatedBy(), request.getCreatorRole());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}/contact")

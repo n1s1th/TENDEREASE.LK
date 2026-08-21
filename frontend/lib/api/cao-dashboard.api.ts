@@ -54,7 +54,7 @@ export async function fetchDashboardTenders(
   if (tab === 'approved') status = 'PUBLISHED';
   
   const res = await api.get('/cao/tenders', {
-    params: { status, page, size: pageSize },
+    params: { status, page, size: pageSize, _t: Date.now() },
   });
   
   return {
@@ -81,8 +81,8 @@ export async function viewTenderDocument(docId: string): Promise<string> {
 export async function downloadTenderDocument(docId: string): Promise<Blob> {
   if (!docId) throw new Error("Document ID is required");
   
-  const fullUrl = `${api.defaults.baseURL}/cao/tenders/documents/${docId}/base64?t=${Date.now()}`;
-
+  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  
   const res = await axios.get(fullUrl, {
     withCredentials: false
   });
@@ -124,7 +124,7 @@ export async function fetchRegistrations(
   pageSize = 20,
 ): Promise<{ data: RegistrationRequest[]; pagination: PaginationState }> {
   const res = await userApi.get('/cao/registrations', {
-    params: { status: status || 'PENDING', page: page - 1, size: pageSize },
+    params: { status: status || 'PENDING', page: page - 1, size: pageSize, _t: Date.now() },
   });
   return {
     data: res.data.content || [],
@@ -148,7 +148,7 @@ export async function rejectRegistration(id: string, reason: string): Promise<vo
 // ── Recommendations ──────────────────────────────────────────
 export async function fetchRecommendations(status?: RecommendationStatus): Promise<Recommendation[]> {
   const res = await evaluationApi.get('/recommendations', {
-    params: { status }
+    params: { status, _t: Date.now() }
   });
   return res.data || [];
 }

@@ -47,6 +47,7 @@ export const useTenderCreationStore = create<TenderCreationState>()(
       currentStep: 0 as StepIndex,
       showPreview: false,
       formData: { ...INITIAL_FORM_DATA },
+      formErrors: {},
       referenceData: {
         tenderTypes: [],
         sbdTemplates: [],
@@ -75,10 +76,14 @@ export const useTenderCreationStore = create<TenderCreationState>()(
         set(
           (s) => ({
             currentStep: Math.max(s.currentStep - 1, 0) as StepIndex,
+            formErrors: {},
           }),
           false,
           "creation/prevStep"
         ),
+
+      setFormErrors: (errors) =>
+        set({ formErrors: errors }, false, "creation/setFormErrors"),
 
       goToStep: (step: StepIndex) =>
         set({ currentStep: step, showPreview: false }, false, "creation/goToStep"),
@@ -285,6 +290,7 @@ export const useTenderCreationStore = create<TenderCreationState>()(
             currentStep: 0 as StepIndex,
             showPreview: false,
             formData: { ...INITIAL_FORM_DATA, pendingFiles: [] },
+            formErrors: {},
             error: null,
             noticePreview: null,
           },

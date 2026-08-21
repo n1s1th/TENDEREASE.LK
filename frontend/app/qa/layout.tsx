@@ -1,3 +1,4 @@
+import QaLayoutComponent from "@/components/qa/QaLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function QaLayout({
@@ -5,5 +6,10 @@ export default function QaLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+  return (
+    <ProtectedRoute>
+      <QaLayoutComponent>{children}</QaLayoutComponent>
+    </ProtectedRoute>
+  );
 }
+

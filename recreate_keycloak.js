@@ -3,7 +3,7 @@ const http = require('http');
 async function run() {
   const adminUser = 'admin';
   const adminPass = 'admin';
-  const baseUrl = 'http://localhost:8080';
+  const baseUrl = 'http://158.178.227.145:8080';
   
   console.log("Getting admin token...");
   const tokenRes = await fetch(`${baseUrl}/realms/master/protocol/openid-connect/token`, {
@@ -57,7 +57,7 @@ async function run() {
     })
   });
 
-  const roles = ['ADMIN', 'PROCUREMENT_OFFICER', 'CAO', 'COMMITTEE', 'EVALUATOR', 'USER'];
+  const roles = ['ADMIN', 'PROCUREMENT_OFFICER', 'CAO', 'VENDOR'];
   console.log("Creating Roles...");
   for (const role of roles) {
     await fetch(`${baseUrl}/admin/realms/tenderease/roles`, {
@@ -68,12 +68,10 @@ async function run() {
   }
 
   const users = [
-    { username: 'admin', roles: ['ADMIN', 'USER'] },
-    { username: 'officer', roles: ['PROCUREMENT_OFFICER', 'USER'] },
-    { username: 'cao', roles: ['CAO', 'USER'] },
-    { username: 'committee', roles: ['COMMITTEE', 'USER'] },
-    { username: 'evaluator', roles: ['EVALUATOR', 'USER'] },
-    { username: 'vendor', roles: ['USER'] },
+    { username: 'admin', roles: ['ADMIN'] },
+    { username: 'officer', roles: ['PROCUREMENT_OFFICER'] },
+    { username: 'cao', roles: ['CAO'] },
+    { username: 'vendor', roles: ['VENDOR'] },
   ];
 
   console.log("Creating Users...");

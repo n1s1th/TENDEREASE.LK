@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "optional:file:../.env[.properties]"
   application:
     name: document-service
   
@@ -28,10 +30,7 @@ spring:
     baseline-on-migrate: true
   
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    addresses: ${RABBITMQ_ADDRESSES:amqps://ckjlipjh:hBXULY5GyLq-BcWm-_Tr7TGeVRSULquN@dog.lmq.cloudamqp.com/ckjlipjh}
   
   redis:
     host: ${REDIS_HOST:localhost}
@@ -42,8 +41,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/tenderease}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/tenderease/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://158.178.227.145:8080/realms/tenderease/protocol/openid-connect/certs}
 
 server:
   port: ${PORT:8088}

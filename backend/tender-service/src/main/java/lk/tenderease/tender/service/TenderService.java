@@ -7,6 +7,7 @@ import lk.tenderease.tender.dto.request.DocumentUploadRequest;
 import lk.tenderease.tender.dto.request.TenderScheduleRequest;
 import lk.tenderease.tender.dto.request.ClarificationAnswerRequestDTO;
 import lk.tenderease.tender.dto.request.ClarificationRequestDTO;
+import lk.tenderease.tender.dto.response.AddendumVersionResponse;
 import lk.tenderease.tender.dto.response.ClarificationDTO;
 import lk.tenderease.tender.dto.response.ComplianceChecklistResponse;
 import lk.tenderease.tender.dto.response.ContactDTO;
@@ -60,6 +61,7 @@ public interface TenderService {
      * @throws lk.tenderease.tender.exception.TenderNotFoundException if tender is not found
      */
     TenderDetailResponse getTenderById(UUID id);
+    TenderDetailResponse getTenderByNumber(String tenderNumber);
     byte[] viewDocument(UUID docId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
@@ -248,17 +250,30 @@ public interface TenderService {
      */
     List<String> listTenderTypes();
 
-    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, Pageable pageable);
+    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
+    TenderDetailsDTO getPublicTenderByNumber(String tenderNumber);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);
 
     List<TenderAmendmentDTO> getAddenda(UUID tenderId);
 
+    TenderAmendmentDTO createAddendum(UUID tenderId, lk.tenderease.tender.dto.request.CreateAddendumRequest request, org.springframework.web.multipart.MultipartFile file, String callerUserId);
+
+    AddendumVersionResponse uploadAddendumVersion(UUID tenderId, Long addendumId, org.springframework.web.multipart.MultipartFile file, String changeDescription, String callerUserId);
+
+    List<AddendumVersionResponse> getAddendumVersionHistory(UUID tenderId, Long addendumId);
+
+    AddendumVersionResponse getAddendumVersion(UUID tenderId, Long addendumId, Integer versionNumber);
+
+    AddendumVersionResponse getCurrentAddendumVersion(UUID tenderId, Long addendumId);
+
     List<ClarificationDTO> getClarifications(UUID tenderId);
 
     List<TimelineDTO> getTimeline(UUID tenderId);
+
+    void addTimelineEvent(UUID tenderId, lk.tenderease.tender.enums.TimelineEventType eventType, String description, String createdBy, String creatorRole);
 
     List<ContactDTO> getContacts(UUID tenderId);
 

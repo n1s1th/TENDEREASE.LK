@@ -1,11 +1,13 @@
 spring:
+  config:
+    import: "optional:file:../.env[.properties]"
   application:
     name: tender-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db?sslmode=require
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/tenderease_tender_db?sslmode=${DB_SSLMODE:require}
+    username: ${DB_USERNAME:${POSTGRES_USER:postgres}}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:postgres}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -13,7 +15,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -30,10 +32,7 @@ spring:
     validate-on-migrate: false
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    addresses: ${RABBITMQ_ADDRESSES:amqps://ckjlipjh:hBXULY5GyLq-BcWm-_Tr7TGeVRSULquN@dog.lmq.cloudamqp.com/ckjlipjh}
 
   mail:
     host: ${MAIL_HOST:localhost}
@@ -46,7 +45,7 @@ spring:
           auth: ${MAIL_SMTP_AUTH:false}
           starttls:
             enable: ${MAIL_SMTP_STARTTLS:false}
-  
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -62,8 +61,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/tenderease}
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8080/realms/tenderease/protocol/openid-connect/certs}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://158.178.227.145:8080/realms/tenderease/protocol/openid-connect/certs}
 
 server:
   port: ${PORT:8082}
@@ -73,7 +72,7 @@ server:
 
 eureka:
   client:
-    enabled: false   # 👈 ADD THIS LINE
+    enabled: false # 👈 ADD THIS LINE
     service-url:
       defaultZone: ${EUREKA_SERVER:http://localhost:8761/eureka/}
     fetch-registry: true
@@ -139,4 +138,7 @@ app:
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
 
-
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:madn9ltp}
+  api-key: ${CLOUDINARY_API_KEY:129558664824389}
+  api-secret: ${CLOUDINARY_API_SECRET:7OhoKeqHgOyugmWEVakTX6Bi_XM}

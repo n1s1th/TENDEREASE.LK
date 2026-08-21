@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/store";
 
-const API_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082';
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8082';
 
 function getAuthHeaders(): HeadersInit {
   const headers: HeadersInit = {
@@ -19,6 +19,9 @@ function getAuthHeaders(): HeadersInit {
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearAuth();
+    }
     let errorMessage = "An error occurred";
     try {
       const errorData = await res.json();
@@ -71,6 +74,17 @@ export const templateService = {
       method: "GET",
       headers: getAuthHeaders(),
     });
+    return handleResponse(res);
+  },
+
+  async deleteTemplate(id: string) {
+    const res = await fetch(`${API_URL}/api/v1/tender-templates/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.status === 204 || res.ok) {
+      return true;
+    }
     return handleResponse(res);
   }
 };

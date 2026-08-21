@@ -30,11 +30,64 @@ public class BidOpeningServiceImpl implements BidOpeningService {
     private final OpeningAttendanceRepository attendanceRepository;
     private final EvaluationMapper mapper;
 
+    @jakarta.annotation.PostConstruct
+    public void syncActiveSessionsToTenderService() {
+        new Thread(() -> {
+            try {
+                // Wait 4 seconds for services to fully initialize
+                Thread.sleep(4000);
+                log.info("Self-healing: Synchronizing active opening sessions to tender-service status...");
+                List<OpeningSession> openSessions = sessionRepository.findAll();
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                for (OpeningSession session : openSessions) {
+                    if (session.getStatus() == OpeningStatus.OPEN) {
+                        try {
+                            String getUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId();
+                            java.util.Map<?, ?> tender = restTemplate.getForObject(getUrl, java.util.Map.class);
+                            if (tender != null) {
+                                String currentStatus = (String) tender.get("status");
+                                if ("PUBLISHED".equals(currentStatus) || "PENDING_OPENING".equals(currentStatus)) {
+                                    String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId() + "/status?status=OPEN";
+                                    restTemplate.put(tenderServiceUrl, null);
+                                    log.info("Self-healed: Synced tender {} status to OPEN", session.getTenderId());
+                                }
+                            }
+                        } catch (Exception e) {
+                            log.error("Failed to sync tender {} status: {}", session.getTenderId(), e.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to sync active sessions: {}", e.getMessage());
+            }
+        }).start();
+    }
+
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public OpeningSessionResponse getOpeningSession(UUID tenderId) {
-        OpeningSession session = sessionRepository.findByTenderId(tenderId)
+        OpeningSession session = sessionRepository.findFirstByTenderIdOrderByScheduledOpeningTimeDesc(tenderId)
                 .orElseGet(() -> createDefaultSession(tenderId));
+
+        // Sync scheduled opening time with tender closing date if session is still SCHEDULED
+        if (session.getStatus() == OpeningStatus.SCHEDULED) {
+            try {
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderId;
+                java.util.Map<?, ?> response = restTemplate.getForObject(tenderServiceUrl, java.util.Map.class);
+                if (response != null && response.get("closingDate") != null) {
+                    LocalDateTime closingDate = parseClosingDate(response.get("closingDate"));
+                    if (closingDate != null && !closingDate.equals(session.getScheduledOpeningTime())) {
+                        session.setScheduledOpeningTime(closingDate);
+                        session = sessionRepository.save(session);
+                        log.info("Synced scheduled opening time to: {}", closingDate);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to sync closingDate from tender-service: {}", e.getMessage());
+            }
+        }
+
         return mapper.toDto(session);
     }
 
@@ -42,10 +95,50 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         log.info("Creating default opening session for tender: {}", tenderId);
         OpeningSession session = new OpeningSession();
         session.setTenderId(tenderId);
-        // Default to 7 days from now if not specified (in real scenario, get from tender-service)
-        session.setScheduledOpeningTime(LocalDateTime.now().plusDays(7));
+        
+        LocalDateTime openingTime = null;
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderId;
+            java.util.Map<?, ?> response = restTemplate.getForObject(tenderServiceUrl, java.util.Map.class);
+            if (response != null && response.get("closingDate") != null) {
+                openingTime = parseClosingDate(response.get("closingDate"));
+                log.info("Fetched closingDate from tender-service for default session: {}", openingTime);
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch closingDate from tender-service for default session: {}", e.getMessage());
+        }
+
+        if (openingTime == null) {
+            openingTime = LocalDateTime.now().plusDays(7);
+        }
+
+        session.setScheduledOpeningTime(openingTime);
         session.setStatus(OpeningStatus.SCHEDULED);
         return sessionRepository.save(session);
+    }
+
+    private LocalDateTime parseClosingDate(Object closingDateObj) {
+        if (closingDateObj == null) return null;
+        if (closingDateObj instanceof List) {
+            List<?> list = (List<?>) closingDateObj;
+            int year = list.size() > 0 ? ((Number) list.get(0)).intValue() : 2026;
+            int month = list.size() > 1 ? ((Number) list.get(1)).intValue() : 1;
+            int day = list.size() > 2 ? ((Number) list.get(2)).intValue() : 1;
+            int hour = list.size() > 3 ? ((Number) list.get(3)).intValue() : 0;
+            int minute = list.size() > 4 ? ((Number) list.get(4)).intValue() : 0;
+            int second = list.size() > 5 ? ((Number) list.get(5)).intValue() : 0;
+            return LocalDateTime.of(year, month, day, hour, minute, second);
+        } else {
+            String dateStr = closingDateObj.toString();
+            if (dateStr.contains("Z")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("Z"));
+            }
+            if (dateStr.contains("+")) {
+                dateStr = dateStr.substring(0, dateStr.indexOf("+"));
+            }
+            return LocalDateTime.parse(dateStr);
+        }
     }
 
     @Override
@@ -65,8 +158,28 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         OpeningAttendance attendance = new OpeningAttendance();
         attendance.setSession(session);
         attendance.setOfficerId(request.getOfficerId());
-        attendance.setOfficerName(request.getOfficerName());
-        attendance.setDesignation(request.getDesignation());
+
+        // Fetch details from officer registration (user-service) in real-time
+        String officerName = request.getOfficerName();
+        String designation = request.getDesignation();
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String userServiceUrl = "http://localhost:8081/api/officers/email/" + request.getOfficerId();
+            java.util.Map<?, ?> officerProfile = restTemplate.getForObject(userServiceUrl, java.util.Map.class);
+            if (officerProfile != null) {
+                if (officerProfile.get("name") != null) {
+                    officerName = officerProfile.get("name").toString();
+                }
+                if (officerProfile.get("designation") != null) {
+                    designation = officerProfile.get("designation").toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch officer profile from user-service for email {}: {}", request.getOfficerId(), e.getMessage());
+        }
+
+        attendance.setOfficerName(officerName);
+        attendance.setDesignation(designation);
         attendance.setOrganisation(request.getOrganisation());
         attendance.setRole(request.getRole());
 
@@ -103,8 +216,25 @@ public class BidOpeningServiceImpl implements BidOpeningService {
 
         log.info("Bid opening session {} started by {}", sessionId, officerName);
         
+        // Update the tender status in tender-service to 'OPEN'
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + session.getTenderId() + "/status?status=OPEN";
+            restTemplate.put(tenderServiceUrl, null);
+            log.info("Successfully updated tender status to OPEN in tender-service");
+        } catch (Exception e) {
+            log.error("Failed to update tender status in tender-service: {}", e.getMessage());
+        }
+        
         // TODO: Publish event to bid-service to unseal bids
         
         return mapper.toDto(sessionRepository.save(session));
+    }
+
+    @Override
+    @Transactional
+    public void deleteAttendance(UUID attendanceId) {
+        log.info("Deleting opening attendance with ID: {}", attendanceId);
+        attendanceRepository.deleteById(attendanceId);
     }
 }

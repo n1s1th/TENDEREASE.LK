@@ -13,5 +13,6 @@ import java.util.UUID;
 public interface VendorProfileRepository extends JpaRepository<VendorProfile, UUID> {
     boolean existsByRegistrationNumber(String registrationNumber);
     boolean existsByOfficialEmail(String officialEmail);
+    java.util.Optional<VendorProfile> findByOfficialEmail(String officialEmail);
     Page<VendorProfile> findByStatus(VendorStatus status, Pageable pageable);
 }

@@ -48,6 +48,7 @@ public class VendorProfile {
     private String officialEmail;
 
     private String officialTelephone;
+    private String cidaGrade;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -79,7 +80,7 @@ public class VendorProfile {
     private LocalDateTime updatedAt;
     private String createdBy;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "vendor_departments", joinColumns = @JoinColumn(name = "vendor_id"))
     @Column(name = "department_name")
     @Builder.Default

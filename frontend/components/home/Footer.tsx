@@ -105,7 +105,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <h2 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#fff", margin: 0, lineHeight: 1 }}>
-                    TenderHub
+                    TenderEase
                   </h2>
                   <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#FFB401", letterSpacing: "0.05em" }}>
                     .LK
@@ -148,10 +148,15 @@ export default function Footer() {
                 Quick Links
               </h4>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {["Browse Tenders", "How It Works", "Register as Vendor", "Sign In", "Help / FAQ"].map((link) => (
-                  <li key={link}>
-                    <Link href="#" style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
-                      {link}
+                {[
+                  { name: "Browse Tenders", href: "/tenders" },
+                  { name: "How It Works", href: "/how-it-works" },
+                  { name: "Register as Vendor", href: "/vendor-registration" },
+                  { name: "Help / FAQ", href: "/qa" },
+                ].map((link) => (
+                  <li key={link.name}>
+                    <Link href={link.href} style={{ color: "#9ca3af", textDecoration: "none", fontSize: "0.8rem", transition: "color 0.2s" }}>
+                      {link.name}
                     </Link>
                   </li>
                 ))}
@@ -205,7 +210,7 @@ export default function Footer() {
             }}
           >
             <p style={{ margin: 0, color: "rgba(255,255,255,0.35)" }}>
-              &copy; 2026 TenderHub.lk — All rights reserved
+              &copy; 2026 TenderEase.lk — All rights reserved
             </p>
             <div style={{ display: "flex", gap: "1.25rem" }}>
               <Link href="#" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Privacy Policy</Link>

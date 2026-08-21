@@ -70,6 +70,9 @@ export const officerRegistrationSchema = z
     termsAccepted: z.boolean().refine((val) => val === true, {
       message: 'You must accept the Terms and Conditions',
     }),
+
+    // Auth integration
+    keycloakUserId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // Provincial Council requires selecting which province

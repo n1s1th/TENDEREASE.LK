@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @Builder
@@ -21,4 +22,5 @@ public class BidResponse {
     private String currency;
     private String status;
     private String submittedAt;
+    private Map<String, Object> bidData;
 }

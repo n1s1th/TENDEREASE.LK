@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082"}/api/tenders`;
+const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
+  || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -26,6 +27,9 @@ function getAuthHeaders(): HeadersInit {
 // 🔥 Helper function to handle responses
 async function handleResponse(response: Response) {
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") {
+      useAuthStore.getState().clearAuth();
+    }
     const text = await response.text().catch(() => "");
     throw new Error(
       `API error: ${response.status} ${response.statusText} ${text}`
@@ -58,16 +62,12 @@ async function handleResponse(response: Response) {
   }
 }
 
-//  Common fetch wrapper with timeout
+//  Common fetch wrapper
 async function apiFetch(url: string, options: RequestInit = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
   try {
     const res = await fetch(url, {
       cache: "no-store",
       ...options,
-      signal: controller.signal,
       headers: {
         ...getAuthHeaders(),
         ...(options.headers || {}),
@@ -76,12 +76,7 @@ async function apiFetch(url: string, options: RequestInit = {}) {
 
     return handleResponse(res);
   } catch (error: any) {
-    if (error.name === "AbortError") {
-      throw new Error(`Request to ${url} timed out after 5 seconds`);
-    }
     throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -94,6 +89,23 @@ export async function getTenderById(id: string) {
     console.error("❌ Error fetching tender:", error);
     throw error;
   }
+}
+
+// Map UI categories to backend ProcurementType enums
+function mapCategoryToProcurementType(category: string): string | undefined {
+  if (!category || category === "All Categories") return undefined;
+  const cat = category.toLowerCase().trim();
+  if (cat.includes("construction") || cat.includes("works")) return "WORKS";
+  if (cat.includes("consulting") || cat.includes("consultancy")) return "CONSULTANCY";
+  if (cat.includes("it & technology") || cat.includes("it") || cat.includes("technology") || cat.includes("services")) return "SERVICES";
+  if (cat.includes("healthcare") || cat.includes("medical") || cat.includes("goods") || cat.includes("defense")) return "GOODS";
+  
+  const upper = category.toUpperCase().replace(/\s+/g, "_");
+  const validTypes = ["GOODS", "WORKS", "SERVICES", "CONSULTANCY", "CONSULTING_SERVICES", "NON_CONSULTING_SERVICES"];
+  if (validTypes.includes(upper)) {
+    return upper;
+  }
+  return undefined;
 }
 
 // 🔥 GET ALL TENDERS
@@ -109,6 +121,13 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
       params.append("status", filters.status);
     if (filters.fromDate) params.append("fromDate", filters.fromDate);
     if (filters.toDate) params.append("toDate", filters.toDate);
+    
+    if (filters.procurementType) {
+      params.append("procurementType", filters.procurementType);
+    } else if (filters.category) {
+      const type = mapCategoryToProcurementType(filters.category);
+      if (type) params.append("procurementType", type);
+    }
 
     return await apiFetch(`${BASE_URL}?${params.toString()}`);
   } catch (error) {
@@ -168,7 +187,54 @@ export async function getTimeline(id: string) {
   return apiFetch(`${BASE_URL}/${id}/timeline`);
 }
 
+export async function addTimelineEvent(
+  id: string,
+  eventType: string,
+  description: string,
+  createdBy?: string,
+  creatorRole?: string
+) {
+  return apiFetch(`${BASE_URL}/${id}/timeline`, {
+    method: "POST",
+    body: JSON.stringify({ eventType, description, createdBy, creatorRole }),
+  });
+}
+
 // 🔥 CONTACT
 export async function getContact(id: string) {
   return apiFetch(`${BASE_URL}/${id}/contact`);
 }
+
+// 🔥 UPDATE TENDER STATUS
+export async function updateTenderStatus(id: string, status: string) {
+  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
+  return apiFetch(`${secureBase}/${id}/status?status=${status}`, {
+    method: "PUT",
+  });
+}
+
+// 🔥 ADDENDA & VERSIONS
+export async function createAddendum(id: string, formData: FormData) {
+  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
+  return apiFetch(`${secureBase}/${id}/addenda`, {
+    method: "POST",
+    // Do NOT set Content-Type to application/json, let browser handle FormData + boundary
+    headers: { ...getAuthHeaders() },
+    body: formData,
+  });
+}
+
+export async function uploadAddendumVersion(id: string, addendumId: number, formData: FormData) {
+  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
+  return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`, {
+    method: "POST",
+    headers: { ...getAuthHeaders() },
+    body: formData,
+  });
+}
+
+export async function getAddendumVersions(id: string, addendumId: number) {
+  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
+  return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`);
+}
+

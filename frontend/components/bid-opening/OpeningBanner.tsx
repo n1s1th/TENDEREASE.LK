@@ -8,9 +8,10 @@ import { OpeningStatus } from "@/lib/types/opening.types";
 interface OpeningBannerProps {
   status: OpeningStatus;
   scheduledTime?: string;
+  actualOpeningTime?: string;
 }
 
-export default function OpeningBanner({ status, scheduledTime }: OpeningBannerProps) {
+export default function OpeningBanner({ status, scheduledTime, actualOpeningTime }: OpeningBannerProps) {
   const [timeLeft, setTimeLeft] = React.useState({
     days: "00",
     hours: "00",
@@ -18,14 +19,23 @@ export default function OpeningBanner({ status, scheduledTime }: OpeningBannerPr
     secs: "00"
   });
 
-  React.useEffect(() => {
-    if (!scheduledTime) return;
+  const isStarted = status === 'OPEN';
+  const isClosed = status === 'CLOSED';
 
-    const targetDate = new Date(scheduledTime);
+  React.useEffect(() => {
+    // Only count down if session has started (is OPEN) and actualOpeningTime is populated
+    if (!isStarted || !actualOpeningTime) {
+      setTimeLeft({ days: "00", hours: "00", mins: "00", secs: "00" });
+      return;
+    }
+
+    const commencementDate = new Date(actualOpeningTime);
+    // Target date is 15 days from the exact second of commencement
+    const targetTime = commencementDate.getTime() + 15 * 24 * 60 * 60 * 1000;
     
     const calculateTimeLeft = () => {
       const now = new Date();
-      const difference = targetDate.getTime() - now.getTime();
+      const difference = targetTime - now.getTime();
       
       if (difference <= 0) {
         setTimeLeft({ days: "00", hours: "00", mins: "00", secs: "00" });
@@ -48,10 +58,7 @@ export default function OpeningBanner({ status, scheduledTime }: OpeningBannerPr
     calculateTimeLeft();
     const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, [scheduledTime]);
-
-  const isStarted = status === 'OPEN';
-  const isClosed = status === 'CLOSED';
+  }, [isStarted, actualOpeningTime]);
 
   // Secondary Yellow / Amber Theme
   const activeColor = "#953002"; // Using the brand burnt orange/yellow

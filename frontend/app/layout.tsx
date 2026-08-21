@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TenderEase.lk — Government Tender Management",
+  title: "TenderEase.lk - Government Tender Management",
   description:
     "TenderEase.lk is Sri Lanka's digital government tender management platform for transparent and efficient procurement.",
 };

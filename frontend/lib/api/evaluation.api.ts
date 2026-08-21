@@ -85,3 +85,54 @@ export async function getDashboardMetrics(token?: string): Promise<{ active: num
   const json = await res.json();
   return json.data;
 }
+
+export async function toggleFlag(evaluationId: string, token?: string): Promise<any> {
+  const res = await fetch(`${BASE}/api/evaluations/admin/${evaluationId}/flag`, {
+    method: "POST",
+    headers: authHeaders(token)
+  });
+  if (!res.ok) throw new Error("Failed to toggle flag");
+  return res.json();
+}
+
+export async function updateComplianceStatus(evaluationId: string, status: string, token?: string): Promise<any> {
+  const res = await fetch(`${BASE}/api/evaluations/admin/${evaluationId}/compliance?status=${status}`, {
+    method: "PUT",
+    headers: authHeaders(token)
+  });
+  if (!res.ok) throw new Error("Failed to update compliance status");
+  return res.json();
+}
+
+export async function fetchDashboardMetrics(token?: string): Promise<ApiResponse<any>> {
+  const res = await fetch(`${BASE}/api/evaluations/admin/metrics`, {
+    headers: authHeaders(token)
+  });
+  if (!res.ok) throw new Error("Failed to fetch dashboard metrics");
+  return res.json();
+}
+
+export interface EvaluationStatusCounts {
+  technicalPassed: number;
+  financialPassed: number;
+  financialFailed: number;
+  evaluationFailed: number;
+  notReviewed: number;
+}
+
+export async function fetchEvaluationStatusCounts(token?: string): Promise<EvaluationStatusCounts> {
+  try {
+    const res = await fetch(`${BASE}/api/evaluations/mock/dashboard/status-counts`, {
+      headers: authHeaders(token)
+    });
+    if (!res.ok) {
+      console.warn("Failed to fetch evaluation status counts, returning defaults");
+      return { technicalPassed: 0, technicalFailed: 0, financialPassed: 0, financialFailed: 0, evaluationFailed: 0, notReviewed: 0 };
+    }
+    const json = await res.json();
+    return json.data;
+  } catch (error) {
+    console.warn("Error fetching evaluation status counts:", error);
+    return { technicalPassed: 0, technicalFailed: 0, financialPassed: 0, financialFailed: 0, evaluationFailed: 0, notReviewed: 0 };
+  }
+}

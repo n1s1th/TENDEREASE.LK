@@ -21,6 +21,7 @@ public class TenderSummaryDTO {
     private LocalDateTime closingDate;
     private TenderStatus status;
     private lk.tenderease.tender.enums.ProcurementType procurementType;
+    private LocalDateTime createdAt;
 
     // 🔥 UI IMPORTANT
     private long timeRemaining; // seconds

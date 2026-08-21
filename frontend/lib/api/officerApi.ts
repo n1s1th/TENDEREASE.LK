@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { OfficerRegistrationFormData } from '../validations/officerSchema';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_OFFICER_SERVICE_URL || 'http://localhost:8081/api/officers';
+const API_BASE_URL = 'http://localhost:8081/api/officers';
 
 export interface OfficerSuccessResponse {
   success: boolean;
@@ -100,11 +100,17 @@ export const registerOfficer = async (
       email: formData.liaisonEmail,
     },
     termsAccepted: formData.termsAccepted,
+    keycloakUserId: formData.keycloakUserId,
   };
 
   const response = await axios.post<OfficerSuccessResponse>(
     `${API_BASE_URL}/register`,
     payload
   );
+  return response.data;
+};
+
+export const getOfficerByEmail = async (email: string): Promise<any> => {
+  const response = await axios.get(`${API_BASE_URL}/email/${encodeURIComponent(email)}`);
   return response.data;
 };

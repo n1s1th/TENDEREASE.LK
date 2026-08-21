@@ -1,27 +1,53 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import TenderLayout from "@/components/tender/TenderLayout";
 import TenderTable from "@/components/tender/TenderTable";
 import TenderSearchBar from "@/components/tender/TenderSearchBar";
 import TenderPagination from "@/components/tender/TenderPagination";
 import { getTenders } from "@/services/tender.service";
+import { useSearchParams } from "next/navigation";
 
 const INITIAL_FILTERS = {
   keyword: "",
+  category: "All Categories",
   status: "All Statuses",
   dateType: "None Selected",
   fromDate: "",
   toDate: "",
 };
 
-export default function TendersPage() {
+function TendersPageContent() {
+  const searchParams = useSearchParams();
   const [tenders, setTenders] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  
+  const [filters, setFilters] = useState(() => {
+    const search = searchParams.get("search") || "";
+    const cat = searchParams.get("category") || "All Categories";
+    return {
+      ...INITIAL_FILTERS,
+      keyword: search,
+      category: cat,
+    };
+  });
+  
   const [triggerFetch, setTriggerFetch] = useState(0);
+
+  // Synchronize filter state when URL search parameters change
+  useEffect(() => {
+    const search = searchParams.get("search") || "";
+    const cat = searchParams.get("category") || "All Categories";
+    setFilters((prev) => ({
+      ...prev,
+      keyword: search,
+      category: cat,
+    }));
+    setCurrentPage(1);
+    setTriggerFetch((prev) => prev + 1);
+  }, [searchParams]);
 
   useEffect(() => {
     async function fetchTenders() {
@@ -71,8 +97,8 @@ export default function TendersPage() {
         <div className="relative">
           <div className="absolute -left-4 top-0 w-1 h-12 bg-primary rounded-full"></div>
           <div className="space-y-2 pl-6">
-            <h1 className="text-4xl font-black text-black-1 tracking-tight">Tender Portal</h1>
-            <p className="text-gray-2 font-medium">Explore and participate in high-value strategic procurement opportunities.</p>
+            <h1 className="text-4xl font-extrabold text-black-1 tracking-tight">Tender Portal</h1>
+            <p className="text-gray-2 font-normal">Explore and participate in <strong className="text-black-2 font-semibold">high-value strategic procurement</strong> opportunities.</p>
           </div>
         </div>
 
@@ -88,18 +114,20 @@ export default function TendersPage() {
         <div className="space-y-8 animate-in fade-in duration-700">
           <div className="flex justify-between items-end px-2">
             <div className="space-y-1">
-              <h2 className="text-xl font-black text-black-1 uppercase tracking-tight">Search Results</h2>
+              <h2 className="text-xl font-bold text-black-1 uppercase tracking-tight">Search Results</h2>
               <div className="h-1 w-12 bg-secondary rounded-full"></div>
             </div>
-            <span className="text-xs font-black text-gray-3 uppercase tracking-widest">
-              {loading ? "Synchronizing..." : `${totalCount} Tenders Available`}
+            <span className="text-xs font-semibold text-gray-3 uppercase tracking-widest">
+              {loading ? "Synchronizing..." : (
+                <><strong className="text-black-1 font-bold text-sm normal-case tracking-normal">{totalCount}</strong> Tenders Available</>
+              )}
             </span>
           </div>
 
           {loading ? (
             <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
               <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
+              <p className="text-sm font-semibold text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -116,5 +144,19 @@ export default function TendersPage() {
         </div>
       </div>
     </TenderLayout>
+  );
+}
+
+export default function TendersPage() {
+  return (
+    <Suspense fallback={
+      <TenderLayout>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-10 py-10 text-center text-gray-2">
+          Loading Tender Portal...
+        </div>
+      </TenderLayout>
+    }>
+      <TendersPageContent />
+    </Suspense>
   );
 }
