@@ -949,19 +949,40 @@ public class BidEvaluationMockController {
                 continue;
             }
             
+            String realStatus = "APPROVED";
+            String realTenderNo = note.getTenderId();
+            try {
+                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + note.getTenderId();
+                Map<?, ?> tenderDetail = restTemplate.getForObject(tenderServiceUrl, Map.class);
+                if (tenderDetail != null) {
+                    if (tenderDetail.get("status") != null) {
+                        realStatus = tenderDetail.get("status").toString();
+                    }
+                    if (tenderDetail.get("tenderNumber") != null) {
+                        realTenderNo = tenderDetail.get("tenderNumber").toString();
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore errors
+            }
+
             processedTenders.add(note.getTenderId());
             
             Map<String, Object> t = new HashMap<>();
             t.put("id", note.getTenderId());
-            t.put("tenderNo", note.getTenderId());
+            t.put("tenderNo", realTenderNo);
             t.put("title", note.getTenderName() != null ? note.getTenderName() : "Tender " + note.getTenderId());
             t.put("department", note.getDepartment() != null ? note.getDepartment() : "N/A");
             
-            String status = "PENDING_CAO";
+            String finalStatus = "PENDING_CAO";
             if (note.getStatus() == RecommendationNote.RecommendationStatus.APPROVED) {
-                status = "APPROVED";
+                finalStatus = "APPROVED";
             }
-            t.put("status", status);
+            if ("AWARDED".equals(realStatus)) {
+                finalStatus = "AWARDED";
+            }
+            t.put("status", finalStatus);
             tenders.add(t);
         }
         
