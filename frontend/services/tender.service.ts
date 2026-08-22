@@ -219,3 +219,15 @@ export async function getAddendumVersions(id: string, addendumId: number) {
   return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`);
 }
 
+// 🔥 SAVED TENDERS (BACKEND)
+export async function saveTender(id: string) {
+  return apiFetch(`${BASE_URL}/${id}/save`, { method: "POST" });
+}
+
+export async function unsaveTender(id: string) {
+  return apiFetch(`${BASE_URL}/${id}/save`, { method: "DELETE" });
+}
+
+export async function getSavedTenders() {
+  return apiFetch(`${BASE_URL}/saved?size=1000`); // fetch all for now
+}

@@ -293,4 +293,10 @@ public interface TenderService {
     TenderAmendmentDTO replaceDocument(UUID tenderId, UUID docId,
                                        org.springframework.web.multipart.MultipartFile newFile,
                                        String changeNote, String callerUserId);
+
+    // ── Saved Tenders ────────────────────────────────────────────────────────
+    
+    void saveTender(UUID tenderId, String userId);
+    void unsaveTender(UUID tenderId, String userId);
+    Page<TenderSummaryDTO> getSavedTenders(String userId, Pageable pageable);
 }

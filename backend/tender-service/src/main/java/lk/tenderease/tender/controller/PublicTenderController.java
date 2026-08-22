@@ -24,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -213,5 +214,41 @@ public class PublicTenderController {
         } catch (Exception e) {
             throw new RuntimeException("Download all failed", e);
         }
+    }
+
+    // ── Saved Tenders ────────────────────────────────────────────────────────
+
+    @PostMapping("/{id}/save")
+    public ResponseEntity<Void> saveTender(
+            @PathVariable UUID id,
+            @RequestHeader("X-User-Id") String userId) {
+        tenderService.saveTender(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/save")
+    public ResponseEntity<Void> unsaveTender(
+            @PathVariable UUID id,
+            @RequestHeader("X-User-Id") String userId) {
+        tenderService.unsaveTender(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/saved")
+    public Page<TenderSummaryDTO> getSavedTenders(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "createdAt,desc") String sort) {
+            
+        String[] sortParams = sort.split(",");
+        org.springframework.data.domain.Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
+                ? org.springframework.data.domain.Sort.Direction.ASC 
+                : org.springframework.data.domain.Sort.Direction.DESC;
+        String sortProperty = sortParams[0];
+        
+        Pageable pageable = PageRequest.of(page, size, org.springframework.data.domain.Sort.by(direction, sortProperty));
+        
+        return tenderService.getSavedTenders(userId, pageable);
     }
 }

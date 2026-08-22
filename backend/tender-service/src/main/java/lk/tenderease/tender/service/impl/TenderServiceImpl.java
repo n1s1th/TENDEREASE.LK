@@ -97,6 +97,7 @@ public class TenderServiceImpl implements TenderService {
     private final TenderTimelineRepository timelineRepository;
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
+    private final lk.tenderease.tender.repository.SavedTenderRepository savedTenderRepository;
     private final NotificationProducer notificationProducer;
     private final S3Service s3Service;
     private final org.springframework.web.client.RestTemplate restTemplate;
@@ -1858,5 +1859,35 @@ public class TenderServiceImpl implements TenderService {
         log.info("Document replacement complete. New doc ID: {}, Amendment ID: {}", savedNewDoc.getId(),
                 savedAmendment.getId());
         return mapAmendment(savedAmendment);
+    }
+
+    // ── Saved Tenders ────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void saveTender(UUID tenderId, String userId) {
+        if (!savedTenderRepository.existsByUserIdAndTenderId(userId, tenderId)) {
+            Tender tender = tenderRepository.findById(tenderId)
+                    .orElseThrow(() -> new RuntimeException("Tender not found with ID: " + tenderId));
+            
+            lk.tenderease.tender.entity.SavedTender saved = lk.tenderease.tender.entity.SavedTender.builder()
+                    .userId(userId)
+                    .tender(tender)
+                    .build();
+            
+            savedTenderRepository.save(saved);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unsaveTender(UUID tenderId, String userId) {
+        savedTenderRepository.deleteByUserIdAndTenderId(userId, tenderId);
+    }
+
+    @Override
+    public Page<TenderSummaryDTO> getSavedTenders(String userId, Pageable pageable) {
+        return savedTenderRepository.findByUserId(userId, pageable)
+                .map(savedTender -> mapToSummaryDTO(savedTender.getTender()));
     }
 }
