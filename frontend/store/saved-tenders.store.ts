@@ -29,7 +29,7 @@ export const useSavedTendersStore = create<SavedTendersState>()(
           const userId = useAuthStore.getState().user?.id;
           if (!userId) return state; // Only save if user is logged in
           if (state.savedTenders.find((t) => t.id === tender.id && t.userId === userId)) return state;
-          return { savedTenders: [...state.savedTenders, { ...tender, userId }] };
+          return { savedTenders: [{ ...tender, userId }, ...state.savedTenders] };
         }),
       removeTender: (id) =>
         set((state) => {

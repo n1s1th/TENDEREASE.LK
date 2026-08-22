@@ -12,10 +12,15 @@ export default function TenderActionsFooter({ tender }: { tender: any }) {
   const { isAuthenticated } = useAuthStore();
   const [hasBid, setHasBid] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   if (!tender?.id) return null;
   
-  const saved = isSaved(tender.id);
+  const saved = mounted ? isSaved(tender.id) : false;
 
   const toggleSave = () => {
     if (saved) {

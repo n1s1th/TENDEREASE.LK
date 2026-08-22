@@ -127,10 +127,17 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function SaveTenderButton({ tender }: { tender: any }) {
   const { savedTenders, saveTender, removeTender, isSaved } = useSavedTendersStore();
+  const [mounted, setMounted] = useState(false);
+  
+  import("react").then(React => {
+    React.useEffect(() => {
+      setMounted(true);
+    }, []);
+  });
   
   if (!tender?.id) return null;
   
-  const saved = isSaved(tender.id);
+  const saved = mounted ? isSaved(tender.id) : false;
 
   const toggleSave = () => {
     if (saved) {

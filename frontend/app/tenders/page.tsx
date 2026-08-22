@@ -208,7 +208,14 @@ function SavedTendersView() {
   const { savedTenders } = useSavedTendersStore();
   const { user } = useAuthStore();
   
-  const mySavedTenders = savedTenders.filter(t => t.userId === user?.id);
+  // Deduplicate and filter by logged-in user to prevent key collision errors
+  const mySavedTenders = user?.id 
+    ? Array.from(new Map(
+        savedTenders
+          .filter(t => t.userId === user.id)
+          .map(t => [t.id, t])
+      ).values())
+    : [];
 
   if (mySavedTenders.length === 0) {
     return (
