@@ -1,4 +1,4 @@
--- V19: Add version column to tender_amendment table if it doesn't exist
+-- V20: Add version column to tender_amendment table if it doesn't exist
 DO $$
 BEGIN
     IF NOT EXISTS (

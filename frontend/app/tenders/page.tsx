@@ -206,8 +206,11 @@ export default function TendersPage() {
 
 function SavedTendersView() {
   const { savedTenders } = useSavedTendersStore();
+  const { user } = useAuthStore();
+  
+  const mySavedTenders = savedTenders.filter(t => t.userId === user?.id);
 
-  if (savedTenders.length === 0) {
+  if (mySavedTenders.length === 0) {
     return (
       <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
         <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
@@ -223,7 +226,7 @@ function SavedTendersView() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
-      <TenderTable data={savedTenders} />
+      <TenderTable data={mySavedTenders} />
     </div>
   );
 }

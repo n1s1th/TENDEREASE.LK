@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store";
+import { login } from "@/lib/keycloak";
 import StatusBadge from "./StatusBadge";
 
 interface Props {
@@ -8,7 +10,9 @@ interface Props {
 }
 
 function ClosingDate({ value, closing }: { value?: string; closing?: string }) {
+// ... remaining is unchanged until TenderTable function
   if (!value && !closing) return <span className="text-gray-3 font-medium">TBA</span>;
+
 
   if (value) {
     const date = new Date(value);
@@ -46,6 +50,15 @@ function ClosingDate({ value, closing }: { value?: string; closing?: string }) {
 
 export default function TenderTable({ data }: Props) {
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const handleRowClick = (tender: any) => {
+    if (!isAuthenticated) {
+      login();
+    } else {
+      router.push(`/tenders/${tender.id || tender.tenderId || tender.tenderNumber}`);
+    }
+  };
 
   return (
     <div className="bg-white rounded-[2rem] shadow-premium border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-700 delay-150">
@@ -77,7 +90,7 @@ export default function TenderTable({ data }: Props) {
               data.map((tender) => (
                 <tr
                   key={tender.id}
-                  onClick={() => router.push(`/tenders/${tender.id || tender.tenderId || tender.tenderNumber}`)}
+                  onClick={() => handleRowClick(tender)}
                   className="group cursor-pointer transition-all duration-300 hover:bg-primary/[0.02]"
                 >
                   {/* Tender ID — primary identifier, bold + brand color */}

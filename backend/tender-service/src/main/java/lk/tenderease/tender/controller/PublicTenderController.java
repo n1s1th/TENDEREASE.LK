@@ -57,6 +57,7 @@ public class PublicTenderController {
     public Page<TenderSummaryDTO> getAllTenders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "createdAt,desc") String sort,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenderStatus status,
@@ -64,7 +65,14 @@ public class PublicTenderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false) String dateType) {
-        Pageable pageable = PageRequest.of(page, size);
+        
+        String[] sortParams = sort.split(",");
+        org.springframework.data.domain.Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc") 
+                ? org.springframework.data.domain.Sort.Direction.ASC 
+                : org.springframework.data.domain.Sort.Direction.DESC;
+        String sortProperty = sortParams[0];
+        
+        Pageable pageable = PageRequest.of(page, size, org.springframework.data.domain.Sort.by(direction, sortProperty));
         String query = search != null ? search : keyword;
         return tenderService.getAllPublishedTenders(query, status, procurementType, fromDate, toDate, dateType, pageable);
     }

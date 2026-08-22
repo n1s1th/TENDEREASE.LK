@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useAuthStore } from "./auth/auth.store";
 
 interface SavedTender {
   id: string;
@@ -9,6 +10,7 @@ interface SavedTender {
   closingDate: string;
   status: string;
   estimatedBudget?: number;
+  userId?: string;
 }
 
 interface SavedTendersState {
@@ -24,14 +26,22 @@ export const useSavedTendersStore = create<SavedTendersState>()(
       savedTenders: [],
       saveTender: (tender) =>
         set((state) => {
-          if (state.savedTenders.find((t) => t.id === tender.id)) return state;
-          return { savedTenders: [...state.savedTenders, tender] };
+          const userId = useAuthStore.getState().user?.id;
+          if (!userId) return state; // Only save if user is logged in
+          if (state.savedTenders.find((t) => t.id === tender.id && t.userId === userId)) return state;
+          return { savedTenders: [...state.savedTenders, { ...tender, userId }] };
         }),
       removeTender: (id) =>
-        set((state) => ({
-          savedTenders: state.savedTenders.filter((t) => t.id !== id),
-        })),
-      isSaved: (id) => get().savedTenders.some((t) => t.id === id),
+        set((state) => {
+          const userId = useAuthStore.getState().user?.id;
+          return {
+            savedTenders: state.savedTenders.filter((t) => !(t.id === id && t.userId === userId)),
+          }
+        }),
+      isSaved: (id) => {
+        const userId = useAuthStore.getState().user?.id;
+        return get().savedTenders.some((t) => t.id === id && t.userId === userId);
+      },
     }),
     {
       name: "tenderease-saved-tenders",

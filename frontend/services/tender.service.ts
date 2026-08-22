@@ -108,6 +108,8 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
     if (filters.fromDate) params.append("fromDate", filters.fromDate);
     if (filters.toDate) params.append("toDate", filters.toDate);
 
+    params.append("sort", "createdAt,desc");
+
     return await apiFetch(`${BASE_URL}?${params.toString()}`);
   } catch (error) {
     console.error("Error fetching tenders:", error);
