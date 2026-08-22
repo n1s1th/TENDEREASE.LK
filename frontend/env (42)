@@ -1,0 +1,25 @@
+# ──────────────────────────────────────────────────────────────
+# TenderEase — Frontend Environment Variables
+# ──────────────────────────────────────────────────────────────
+
+# --- Keycloak (Oracle VM) ---
+NEXT_PUBLIC_KEYCLOAK_URL=http://158.178.227.145:8080
+NEXT_PUBLIC_KEYCLOAK_REALM=tenderease
+NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=tenderease-frontend
+
+# --- Backend Service URLs ---
+# Set these to your production backend URLs in Vercel's Environment Variables settings
+NEXT_PUBLIC_API_URL=http://localhost:8082/api/v1
+NEXT_PUBLIC_TENDER_SERVICE_URL=http://localhost:8082/api/v1/tenders
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8082
+NEXT_PUBLIC_USER_API_URL=http://localhost:8081/api
+NEXT_PUBLIC_OFFICER_SERVICE_URL=http://localhost:8081/api/officers
+NEXT_PUBLIC_VENDOR_SERVICE_URL=http://localhost:8000/api/v1/vendors
+NEXT_PUBLIC_QA_SERVICE_URL=http://localhost:8000/api/qa
+NEXT_PUBLIC_BID_SERVICE_URL=http://localhost:8083
+NEXT_PUBLIC_EVALUATION_API_URL=http://localhost:8084/api/v1
+NEXT_PUBLIC_REPORT_API_URL=http://localhost:8092/api
+NEXT_PUBLIC_OPENING_SERVICE_URL=http://localhost:8095
+
+# Server-side only (not exposed to browser)
+QA_SERVICE_URL=http://localhost:8194

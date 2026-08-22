@@ -65,6 +65,7 @@ async function handleResponse(response: Response) {
 //  Common fetch wrapper
 async function apiFetch(url: string, options: RequestInit = {}) {
   try {
+    console.log("🔥 FETCHING URL:", url);
     const res = await fetch(url, {
       cache: "no-store",
       ...options,
