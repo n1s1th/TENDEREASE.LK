@@ -34,6 +34,34 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     }
   }, [tenderId, fetchBidders]);
 
+  const tender = tenderId ? tenders.find(t => t.id === tenderId) : undefined;
+  const winner = bidders.find(b => b.status === 'WINNER');
+  const losers = bidders.filter(b => b.status === 'LOST');
+  const tenderSentStatus = tenderId ? (sentStatus[tenderId] || { winner: false, lost: false }) : { winner: false, lost: false };
+
+  // Auto-heal: If all necessary emails are marked as sent in localStorage but it's not fullyAwarded
+  useEffect(() => {
+    if (!tenderId || !tender || loadingBidders) return;
+    const needsWinnerEmail = !!winner;
+    const needsLoserEmail = losers.length > 0;
+    
+    const winnerDone = !needsWinnerEmail || tenderSentStatus.winner;
+    const loserDone = !needsLoserEmail || tenderSentStatus.lost;
+    
+    if (winnerDone && loserDone && !(tenderSentStatus as any).fullyAwarded && (needsWinnerEmail || needsLoserEmail)) {
+      const updatedStatus = { ...tenderSentStatus, fullyAwarded: true };
+      const updated = { ...sentStatus, [tenderId]: updatedStatus };
+      
+      setSentStatus(updated);
+      localStorage.setItem('awardEmailsSent', JSON.stringify(updated));
+      window.dispatchEvent(new Event('awardEmailsUpdated'));
+      
+      if (tender.status !== 'AWARDED') {
+        fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED`, { method: 'PUT' }).catch(console.error);
+      }
+    }
+  }, [tenderId, tender, loadingBidders, winner, losers, tenderSentStatus, sentStatus]);
+
   if (!tenderId) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 h-[600px] flex flex-col items-center justify-center p-8 text-center">
@@ -47,8 +75,6 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       </div>
     );
   }
-
-  const tender = tenders.find(t => t.id === tenderId);
   
   if (loadingBidders) {
     return (
@@ -57,11 +83,6 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       </div>
     );
   }
-
-  const winner = bidders.find(b => b.status === 'WINNER');
-  const losers = bidders.filter(b => b.status === 'LOST');
-
-  const tenderSentStatus = sentStatus[tenderId] || { winner: false, lost: false };
 
   const handleOpenModal = (type: 'WINNER' | 'LOST') => {
     setEmailType(type);
@@ -115,19 +136,46 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     await generateEmails(tenderId, emailType);
     
     const now = new Date().toISOString();
+    
+    // Check if we even need these emails
+    const needsWinnerEmail = !!winner;
+    const needsLoserEmail = losers.length > 0;
+    
+    const updatedStatus = {
+      ...sentStatus[tenderId],
+      winner: emailType === 'WINNER' ? true : sentStatus[tenderId]?.winner,
+      lost: emailType === 'LOST' ? true : sentStatus[tenderId]?.lost,
+      winnerSentAt: emailType === 'WINNER' ? now : sentStatus[tenderId]?.winnerSentAt,
+      lostSentAt: emailType === 'LOST' ? now : sentStatus[tenderId]?.lostSentAt,
+    };
+    
+    // Check if fully awarded (all required emails sent)
+    const winnerDone = !needsWinnerEmail || updatedStatus.winner;
+    const loserDone = !needsLoserEmail || updatedStatus.lost;
+    
+    if (winnerDone && loserDone) {
+      (updatedStatus as any).fullyAwarded = true;
+    }
+
     const updated = {
       ...sentStatus,
-      [tenderId]: {
-        ...sentStatus[tenderId],
-        winner: emailType === 'WINNER' ? true : sentStatus[tenderId]?.winner,
-        lost: emailType === 'LOST' ? true : sentStatus[tenderId]?.lost,
-        winnerSentAt: emailType === 'WINNER' ? now : sentStatus[tenderId]?.winnerSentAt,
-        lostSentAt: emailType === 'LOST' ? now : sentStatus[tenderId]?.lostSentAt,
-      }
+      [tenderId]: updatedStatus
     };
+    
     setSentStatus(updated);
     localStorage.setItem('awardEmailsSent', JSON.stringify(updated));
     window.dispatchEvent(new Event('awardEmailsUpdated'));
+
+    // Check if both emails are now sent, update the database
+    if ((updatedStatus as any).fullyAwarded) {
+      try {
+        await fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED`, {
+          method: 'PUT'
+        });
+      } catch (err) {
+        console.error("Failed to update tender status to AWARDED in database", err);
+      }
+    }
     
     showToast('success', "Email sent successfully.");
     setEmailModalOpen(false);
@@ -156,7 +204,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               <h3 className="text-sm font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg uppercase tracking-widest flex items-center gap-2">
                 Winning Bidder
               </h3>
-              {tender?.status === 'APPROVED' && winner && (
+              {tender && winner && (
                 <button 
                   onClick={() => handleOpenModal('WINNER')}
                   disabled={generatingEmails || tenderSentStatus.winner}
@@ -203,7 +251,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               <h3 className="text-sm font-black text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg uppercase tracking-widest flex items-center gap-2">
                 Unsuccessful Bidders
               </h3>
-              {tender?.status === 'APPROVED' && losers.length > 0 && (
+              {tender && losers.length > 0 && (
                 <button 
                   onClick={() => handleOpenModal('LOST')}
                   disabled={generatingEmails || tenderSentStatus.lost}

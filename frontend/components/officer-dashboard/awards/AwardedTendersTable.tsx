@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAwardProcessingStore, AwardTender, AwardBidder } from "@/store/award-processing.store";
 import { ChevronDown, ChevronUp, Trophy, Clock } from "lucide-react";
 
@@ -27,17 +27,19 @@ export default function AwardedTendersTable() {
     const loadAwarded = () => {
       const raw = localStorage.getItem("awardEmailsSent");
       if (!raw) return;
-
+      
       try {
-        const sentMap: Record<string, SentEntry> = JSON.parse(raw);
+        const sentMap: Record<string, SentEntry> = raw ? JSON.parse(raw) : {};
         const rows: AwardedTenderRow[] = [];
 
         for (const tender of tenders) {
-          const entry = sentMap[tender.id];
-          if (!entry) continue;
+          const isAwarded = 
+            sentMap[tender.id]?.fullyAwarded || 
+            (sentMap[tender.id]?.winner && sentMap[tender.id]?.lost) ||
+            tender.status === 'AWARDED';
 
-          if (entry.winner) {
-            const timestamps = [entry.winnerSentAt, entry.lostSentAt].filter(Boolean) as string[];
+          if (isAwarded) {
+            const timestamps = [sentMap[tender.id]?.winnerSentAt, sentMap[tender.id]?.lostSentAt].filter(Boolean) as string[];
             const awardedAt = timestamps.length > 0
               ? timestamps.sort().reverse()[0] 
               : new Date().toISOString();
@@ -45,7 +47,7 @@ export default function AwardedTendersTable() {
             rows.push({ tender, awardedAt });
           }
         }
-
+        
         rows.sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
         setAwardedTenders(rows);
       } catch { }
@@ -128,10 +130,10 @@ export default function AwardedTendersTable() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {awardedTenders.map(({ tender, awardedAt }) => (
-              <> 
-                <tr key={tender.id} className="hover:bg-gray-50/50 transition-colors">
+              <React.Fragment key={tender.id}> 
+                <tr className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-5 py-4">
-                    <span className="font-bold text-[#953002] text-xs">{tender.tenderNo}</span>
+                    <span className="font-bold text-[#953002] text-xs">{tender.tenderNo || tender.id}</span>
                   </td>
                   <td className="px-5 py-4 font-medium text-gray-800 max-w-[200px] truncate">{tender.title}</td>
                   <td className="px-5 py-4 text-gray-600">{tender.department}</td>
@@ -218,7 +220,7 @@ export default function AwardedTendersTable() {
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
