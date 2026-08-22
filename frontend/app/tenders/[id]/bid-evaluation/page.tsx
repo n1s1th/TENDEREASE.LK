@@ -115,7 +115,7 @@ export default function BidEvaluationPage() {
   const [savingDraft, setSavingDraft] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [unlocking, setUnlocking] = useState<boolean>(false);
-  const [unlockPin, setUnlockPin] = useState<string>( "");
+  const [unlockPin, setUnlockPin] = useState<string>("");
   const [showUnlockPin, setShowUnlockPin] = useState<boolean>(false);
   const [unlockPinError, setUnlockPinError] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"technical" | "financial">("technical");
@@ -147,7 +147,7 @@ export default function BidEvaluationPage() {
         });
     }
   }, [user]);
-  
+
   useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined") {
@@ -235,7 +235,7 @@ export default function BidEvaluationPage() {
             if (bid.bidData.ganttChartFile) docs.push({ name: "Gantt Chart.pdf", url: getFileUrl(bid.bidData.ganttChartFile) });
             if (bid.bidData.methodologyFile) docs.push({ name: "Methodology.pdf", url: getFileUrl(bid.bidData.methodologyFile) });
             if (bid.bidData.pastExperienceFile) docs.push({ name: "Past Experience.pdf", url: getFileUrl(bid.bidData.pastExperienceFile) });
-            
+
             const bidSec = bid.bidData.bidSecurity;
             if (bidSec && (bidSec.fileUrl || bidSec.file)) {
               docs.push({ name: "Bid Security.pdf", url: getFileUrl(bidSec.fileUrl || bidSec.file) });
@@ -260,64 +260,64 @@ export default function BidEvaluationPage() {
 
           // Initial criteria
           const technicalCriteria = [
-            { 
-              id: "tech_1", 
-              name: "Technical Approach", 
-              description: "Methodology and solution alignment", 
-              weight: 30, 
-              score: existingBidder?.technicalCriteria?.[0]?.score ?? (bid.technicalScore ? Number(bid.technicalScore) : 0), 
-              comment: existingBidder?.technicalCriteria?.[0]?.comment ?? "" 
+            {
+              id: "tech_1",
+              name: "Technical Approach",
+              description: "Methodology and solution alignment",
+              weight: 30,
+              score: existingBidder?.technicalCriteria?.[0]?.score ?? (bid.technicalScore ? Number(bid.technicalScore) : 0),
+              comment: existingBidder?.technicalCriteria?.[0]?.comment ?? ""
             },
-            { 
-              id: "tech_2", 
-              name: "Team Qualifications", 
-              description: "CVs and relevant experience", 
-              weight: 25, 
-              score: existingBidder?.technicalCriteria?.[1]?.score ?? 0, 
-              comment: existingBidder?.technicalCriteria?.[1]?.comment ?? "" 
+            {
+              id: "tech_2",
+              name: "Team Qualifications",
+              description: "CVs and relevant experience",
+              weight: 25,
+              score: existingBidder?.technicalCriteria?.[1]?.score ?? 0,
+              comment: existingBidder?.technicalCriteria?.[1]?.comment ?? ""
             },
-            { 
-              id: "tech_3", 
-              name: "Implementation Plan", 
-              description: "Timeline, milestones, risk management", 
-              weight: 25, 
-              score: existingBidder?.technicalCriteria?.[2]?.score ?? 0, 
-              comment: existingBidder?.technicalCriteria?.[2]?.comment ?? "" 
+            {
+              id: "tech_3",
+              name: "Implementation Plan",
+              description: "Timeline, milestones, risk management",
+              weight: 25,
+              score: existingBidder?.technicalCriteria?.[2]?.score ?? 0,
+              comment: existingBidder?.technicalCriteria?.[2]?.comment ?? ""
             },
-            { 
-              id: "tech_4", 
-              name: "Past Performance", 
-              description: "References and case studies", 
-              weight: 20, 
-              score: existingBidder?.technicalCriteria?.[3]?.score ?? 0, 
-              comment: existingBidder?.technicalCriteria?.[3]?.comment ?? "" 
+            {
+              id: "tech_4",
+              name: "Past Performance",
+              description: "References and case studies",
+              weight: 20,
+              score: existingBidder?.technicalCriteria?.[3]?.score ?? 0,
+              comment: existingBidder?.technicalCriteria?.[3]?.comment ?? ""
             }
           ];
 
           const financialCriteria = [
-            { 
-              id: "fin_1", 
-              name: "Bid Price Competitiveness", 
-              description: "Relative to lowest compliant bid", 
-              weight: 50, 
-              score: existingBidder?.financialCriteria?.[0]?.score ?? (bid.financialScore ? Number(bid.financialScore) : 0), 
-              comment: existingBidder?.financialCriteria?.[0]?.comment ?? "" 
+            {
+              id: "fin_1",
+              name: "Bid Price Competitiveness",
+              description: "Relative to lowest compliant bid",
+              weight: 50,
+              score: existingBidder?.financialCriteria?.[0]?.score ?? (bid.financialScore ? Number(bid.financialScore) : 0),
+              comment: existingBidder?.financialCriteria?.[0]?.comment ?? ""
             },
-            { 
-              id: "fin_2", 
-              name: "Payment Terms", 
-              description: "Milestone structure and flexibility", 
-              weight: 30, 
-              score: existingBidder?.financialCriteria?.[1]?.score ?? 0, 
-              comment: existingBidder?.financialCriteria?.[1]?.comment ?? "" 
+            {
+              id: "fin_2",
+              name: "Payment Terms",
+              description: "Milestone structure and flexibility",
+              weight: 30,
+              score: existingBidder?.financialCriteria?.[1]?.score ?? 0,
+              comment: existingBidder?.financialCriteria?.[1]?.comment ?? ""
             },
-            { 
-              id: "fin_3", 
-              name: "Value-Added Services", 
-              description: "Training, support, warranty", 
-              weight: 20, 
-              score: existingBidder?.financialCriteria?.[2]?.score ?? 0, 
-              comment: existingBidder?.financialCriteria?.[2]?.comment ?? "" 
+            {
+              id: "fin_3",
+              name: "Value-Added Services",
+              description: "Training, support, warranty",
+              weight: 20,
+              score: existingBidder?.financialCriteria?.[2]?.score ?? 0,
+              comment: existingBidder?.financialCriteria?.[2]?.comment ?? ""
             }
           ];
 
@@ -360,8 +360,8 @@ export default function BidEvaluationPage() {
     // Automatically select the correct bidder
     if (baseData.bidders && baseData.bidders.length > 0) {
       const savedBidderId = typeof window !== 'undefined' ? localStorage.getItem(`lastSelectedBidder_${tenderNo}`) : null;
-      const matchedBidder = bidIdParam 
-        ? baseData.bidders.find((b: BidderState) => b.bidderId === bidIdParam) 
+      const matchedBidder = bidIdParam
+        ? baseData.bidders.find((b: BidderState) => b.bidderId === bidIdParam)
         : (savedBidderId ? baseData.bidders.find((b: BidderState) => b.bidderId === savedBidderId) : null);
       if (matchedBidder) {
         setSelectedBidderId(matchedBidder.bidderId);
@@ -378,7 +378,7 @@ export default function BidEvaluationPage() {
         }
       }
     }
-    
+
     if (!silent) setLoading(false);
   };
 
@@ -812,7 +812,7 @@ export default function BidEvaluationPage() {
           doc.setFontSize(16);
           doc.setTextColor(149, 48, 2); // #953002
           doc.text("TenderEase.lk", 14, 18);
-          
+
           doc.setFontSize(7);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(120, 120, 120);
@@ -1085,7 +1085,7 @@ export default function BidEvaluationPage() {
           ]);
         });
         wsData.push(["Total Technical Score", "", "", techSubtotal.toFixed(2), ""]);
-        
+
         wsData.push([]);
         wsData.push(["FINANCIAL CRITERIA EVALUATION"]);
         wsData.push(["Criterion Name", "Weight", "Score (0-100)", "Weighted Score", "Evaluator Comments"]);
@@ -1202,14 +1202,14 @@ export default function BidEvaluationPage() {
           <div className="mb-8">
             {/* Breadcrumb navigation */}
             <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-              <button 
+              <button
                 onClick={() => {
                   if (isDirty) {
                     showToast("You have unsaved changes. Please save your draft before leaving.", "warning");
                   } else {
                     router.push("/officer-dashboard");
                   }
-                }} 
+                }}
                 className="hover:text-[#953002] transition-colors flex items-center gap-1"
               >
                 OFFICER DASHBOARD
@@ -1352,290 +1352,288 @@ export default function BidEvaluationPage() {
                 <div className="flex flex-col gap-4">
                   <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm overflow-hidden">
 
-                  {/* Tabs Header */}
-                  <div className="grid grid-cols-2 border-b border-gray-100 -mx-6 -mt-6 mb-6">
-                    <button
-                      onClick={() => setActiveTab("technical")}
-                      className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "technical"
-                        ? "border-[#953002] text-[#953002] bg-gray-50"
-                        : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                        }`}
-                    >
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "technical" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
-                        }`}>1</span>
-                      <span>Technical Evaluation</span>
-                      <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${
-                        activeTab === "technical"
-                          ? "bg-orange-50 text-[#953002] border-[#953002]/15"
-                          : "bg-gray-50 text-gray-400 border-transparent"
-                      }`}>
-                        70%
-                      </span>
-                    </button>
+                    {/* Tabs Header */}
+                    <div className="grid grid-cols-2 border-b border-gray-100 -mx-6 -mt-6 mb-6">
+                      <button
+                        onClick={() => setActiveTab("technical")}
+                        className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "technical"
+                          ? "border-[#953002] text-[#953002] bg-gray-50"
+                          : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                          }`}
+                      >
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "technical" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
+                          }`}>1</span>
+                        <span>Technical Evaluation</span>
+                        <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${activeTab === "technical"
+                            ? "bg-orange-50 text-[#953002] border-[#953002]/15"
+                            : "bg-gray-50 text-gray-400 border-transparent"
+                          }`}>
+                          70%
+                        </span>
+                      </button>
 
+                      <button
+                        onClick={() => setActiveTab("financial")}
+                        className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "financial"
+                          ? "border-[#953002] text-[#953002] bg-gray-50"
+                          : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                          }`}
+                      >
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "financial" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
+                          }`}>2</span>
+                        <span>Financial Evaluation</span>
+                        <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${activeTab === "financial"
+                            ? "bg-orange-50 text-[#953002] border-[#953002]/15"
+                            : "bg-gray-50 text-gray-400 border-transparent"
+                          }`}>
+                          30%
+                        </span>
+                        {!isTechPassed && (
+                          <Lock size={12} className="text-[#953002] shrink-0" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Technical Evaluation Tab Content */}
+                    {activeTab === "technical" && (
+                      <div className="animate-in fade-in duration-300">
+                        {/* Technical Score Progress Bar / PASS Badge */}
+                        <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="w-full sm:w-2/3">
+                            <div className="flex justify-between text-[13px] font-bold text-gray-500 mb-2">
+                              <span>Technical Score</span>
+                              <span>{techSubtotal} / 100</span>
+                            </div>
+                            {/* Progress Track */}
+                            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden relative">
+                              {/* Threshold Tick */}
+                              <div className="absolute top-0 w-[2px] h-full bg-black z-10" style={{ left: `${data?.threshold || 75}%` }} title={`Threshold: ${data?.threshold || 75}`}></div>
+                              <div
+                                className="h-full rounded-full transition-all duration-500 bg-[#953002]"
+                                style={{ width: `${techSubtotal}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
+                              {isTechPassed ? "PASS" : "FAIL"}
+                            </span>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                              Threshold: {data?.threshold || 75}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <colgroup>
+                              <col style={{ width: "33%" }} />
+                              <col style={{ width: "9%" }} />
+                              <col style={{ width: "13%" }} />
+                              <col style={{ width: "34%" }} />
+                              <col style={{ width: "11%" }} />
+                            </colgroup>
+                            <thead>
+                              <tr className="border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider">
+                                <th className="pb-3 font-semibold">Criterion</th>
+                                <th className="pb-3 text-left font-semibold">Weight</th>
+                                <th className="pb-3 text-center font-semibold whitespace-nowrap">Score (0-100)</th>
+                                <th className="pb-3 pl-8 font-semibold">Evaluator Comment</th>
+                                <th className="pb-3 text-right font-semibold">Score</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 text-gray-700">
+                              {activeBidder.technicalCriteria.map((c) => {
+                                const weightedScore = Math.round(c.score * (c.weight / 100) * 100) / 100;
+                                return (
+                                  <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-4 pr-3 font-medium">
+                                      <span className="block text-gray-800 font-bold">{c.name}</span>
+                                      <span className="text-xs text-gray-400 font-normal">{c.description}</span>
+                                    </td>
+                                    <td className="py-4 text-left">
+                                      <span className="bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-md">
+                                        {c.weight}%
+                                      </span>
+                                    </td>
+                                    <td className="py-4 text-center px-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={c.score || ""}
+                                        onChange={(e) => handleScoreChange("technical", c.id, e.target.value)}
+                                        disabled={activeBidder.status === "COMPLETED"}
+                                        className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                      />
+                                    </td>
+                                    <td className="py-4 pl-8 pr-3">
+                                      <input
+                                        type="text"
+                                        placeholder="Enter comment..."
+                                        value={c.comment || ""}
+                                        onChange={(e) => handleCommentChange("technical", c.id, e.target.value)}
+                                        disabled={activeBidder.status === "COMPLETED"}
+                                        className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                                      />
+                                    </td>
+                                    <td className="py-4 text-right font-extrabold text-gray-800">
+                                      {weightedScore}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                              {/* Subtotal */}
+                              <tr className="bg-gray-50/50 font-bold">
+                                <td colSpan={4} className="py-3.5 pl-3 font-bold text-gray-800 text-sm">Technical Subtotal</td>
+                                <td className="py-3.5 text-right font-black text-[#953002] pr-2 text-sm whitespace-nowrap">
+                                  {techSubtotal} / 100
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Financial Evaluation Tab Content */}
+                    {activeTab === "financial" && (
+                      <div className="relative min-h-[350px] animate-in fade-in duration-300">
+
+                        {/* Locked overlay cover - scoped to content only */}
+                        {!isTechPassed && (
+                          <div className="absolute inset-0 bg-white/95 backdrop-blur-[1.5px] z-20 flex flex-col items-center justify-center p-8 text-center transition-all duration-300 rounded-2xl">
+                            <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center shadow-md mb-4 text-[#953002] border border-[#FFF7ED]">
+                              <Lock className="w-6 h-6 animate-pulse" />
+                            </div>
+                            <h4 className="text-sm font-bold text-gray-800 mb-1">Financial Panel Locked</h4>
+                            <p className="text-xs text-gray-400 max-w-md mb-3">
+                              This bidder failed to meet the required technical threshold of <strong>{data.threshold} / 100</strong>.
+                            </p>
+                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-100 border border-gray-200 px-3 py-1 rounded-lg">
+                              Current Technical Score: {techSubtotal}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Financial Score Progress Bar */}
+                        <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="w-full sm:w-2/3">
+                            <div className="flex justify-between text-[13px] font-bold text-gray-500 mb-2">
+                              <span>Financial Score</span>
+                              <span>{finSubtotal} / 100</span>
+                            </div>
+                            {/* Progress Track */}
+                            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden relative">
+                              {/* Threshold Tick */}
+                              <div className="absolute top-0 w-[2px] h-full bg-black z-10" style={{ left: `${data?.threshold || 75}%` }} title={`Threshold: ${data?.threshold || 75}`}></div>
+                              <div
+                                className="h-full rounded-full transition-all duration-500 bg-[#953002]"
+                                style={{ width: `${finSubtotal}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
+                              {isFinPassed ? "PASS" : "FAIL"}
+                            </span>
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                              Threshold: {data?.threshold || 75}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <colgroup>
+                              <col style={{ width: "33%" }} />
+                              <col style={{ width: "9%" }} />
+                              <col style={{ width: "13%" }} />
+                              <col style={{ width: "34%" }} />
+                              <col style={{ width: "11%" }} />
+                            </colgroup>
+                            <thead>
+                              <tr className="border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider">
+                                <th className="pb-3 font-semibold">Criterion</th>
+                                <th className="pb-3 text-left font-semibold">Weight</th>
+                                <th className="pb-3 text-center font-semibold whitespace-nowrap">Score (0-100)</th>
+                                <th className="pb-3 pl-8 font-semibold">Evaluator Comment</th>
+                                <th className="pb-3 text-right font-semibold">Score</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50 text-gray-700">
+                              {activeBidder.financialCriteria.map((c) => {
+                                const weightedScore = Math.round(c.score * (c.weight / 100) * 100) / 100;
+                                return (
+                                  <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-4 pr-3 font-medium">
+                                      <span className="block text-gray-800 font-bold">{c.name}</span>
+                                      <span className="text-xs text-gray-400 font-normal">{c.description}</span>
+                                    </td>
+                                    <td className="py-4 text-left">
+                                      <span className="bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-md">
+                                        {c.weight}%
+                                      </span>
+                                    </td>
+                                    <td className="py-4 text-center px-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={c.score || ""}
+                                        onChange={(e) => handleScoreChange("financial", c.id, e.target.value)}
+                                        disabled={activeBidder.status === "COMPLETED"}
+                                        className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                      />
+                                    </td>
+                                    <td className="py-4 pl-8 pr-3">
+                                      <input
+                                        type="text"
+                                        placeholder="Enter comment..."
+                                        value={c.comment || ""}
+                                        onChange={(e) => handleCommentChange("financial", c.id, e.target.value)}
+                                        disabled={activeBidder.status === "COMPLETED"}
+                                        className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                                      />
+                                    </td>
+                                    <td className="py-4 text-right font-extrabold text-gray-800">
+                                      {weightedScore}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                              {/* Subtotal */}
+                              <tr className="bg-gray-50/50 font-bold">
+                                <td colSpan={4} className="py-3.5 pl-3 font-bold text-gray-800 text-sm">Financial Subtotal</td>
+                                <td className="py-3.5 text-right font-black text-[#953002] pr-2 text-sm whitespace-nowrap">
+                                  {finSubtotal} / 100
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-start">
                     <button
-                      onClick={() => setActiveTab("financial")}
-                      className={`py-4 text-sm font-bold flex items-center justify-center gap-2 border-b-2 transition-all relative cursor-pointer ${activeTab === "financial"
-                        ? "border-[#953002] text-[#953002] bg-gray-50"
-                        : "border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                        }`}
+                      onClick={() => {
+                        setNotesText(activeBidder.evaluationNotes || "");
+                        setActiveModal("notes");
+                      }}
+                      disabled={activeBidder.status === "COMPLETED"}
+                      className="inline-flex items-center gap-1.5 border border-gray-200 hover:border-[#953002] bg-white px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-600 hover:text-[#953002] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black ${activeTab === "financial" ? "bg-white text-[#953002]" : "bg-gray-100 text-gray-500"
-                        }`}>2</span>
-                      <span>Financial Evaluation</span>
-                      <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border transition-all ${
-                        activeTab === "financial"
-                          ? "bg-orange-50 text-[#953002] border-[#953002]/15"
-                          : "bg-gray-50 text-gray-400 border-transparent"
-                      }`}>
-                        30%
-                      </span>
-                      {!isTechPassed && (
-                        <Lock size={12} className="text-[#953002] shrink-0" />
-                      )}
+                      <FileText size={13} />
+                      <span>{activeBidder.evaluationNotes ? "Edit Evaluation Notes" : "Add Evaluation Notes"}</span>
                     </button>
                   </div>
-
-                  {/* Technical Evaluation Tab Content */}
-                  {activeTab === "technical" && (
-                    <div className="animate-in fade-in duration-300">
-                      {/* Technical Score Progress Bar / PASS Badge */}
-                      <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="w-full sm:w-2/3">
-                          <div className="flex justify-between text-[13px] font-bold text-gray-500 mb-2">
-                            <span>Technical Score</span>
-                            <span>{techSubtotal} / 100</span>
-                          </div>
-                          {/* Progress Track */}
-                          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                            {/* Threshold Tick */}
-                            <div className="absolute top-0 w-[2px] h-full bg-black z-10" style={{ left: `${data?.threshold || 75}%` }} title={`Threshold: ${data?.threshold || 75}`}></div>
-                            <div
-                              className="h-full rounded-full transition-all duration-500 bg-[#953002]"
-                              style={{ width: `${techSubtotal}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
-                            {isTechPassed ? "PASS" : "FAIL"}
-                          </span>
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            Threshold: {data?.threshold || 75}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <colgroup>
-                            <col style={{ width: "33%" }} />
-                            <col style={{ width: "9%" }} />
-                            <col style={{ width: "13%" }} />
-                            <col style={{ width: "34%" }} />
-                            <col style={{ width: "11%" }} />
-                          </colgroup>
-                          <thead>
-                            <tr className="border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider">
-                              <th className="pb-3 font-semibold">Criterion</th>
-                              <th className="pb-3 text-left font-semibold">Weight</th>
-                              <th className="pb-3 text-center font-semibold whitespace-nowrap">Score (0-100)</th>
-                              <th className="pb-3 pl-8 font-semibold">Evaluator Comment</th>
-                              <th className="pb-3 text-right font-semibold">Score</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50 text-gray-700">
-                            {activeBidder.technicalCriteria.map((c) => {
-                              const weightedScore = Math.round(c.score * (c.weight / 100) * 100) / 100;
-                              return (
-                                <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="py-4 pr-3 font-medium">
-                                    <span className="block text-gray-800 font-bold">{c.name}</span>
-                                    <span className="text-xs text-gray-400 font-normal">{c.description}</span>
-                                  </td>
-                                  <td className="py-4 text-left">
-                                    <span className="bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-md">
-                                      {c.weight}%
-                                    </span>
-                                  </td>
-                                  <td className="py-4 text-center px-1">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      value={c.score || ""}
-                                      onChange={(e) => handleScoreChange("technical", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "COMPLETED"}
-                                      className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                  </td>
-                                  <td className="py-4 pl-8 pr-3">
-                                    <input
-                                      type="text"
-                                      placeholder="Enter comment..."
-                                      value={c.comment || ""}
-                                      onChange={(e) => handleCommentChange("technical", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "COMPLETED"}
-                                      className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                  </td>
-                                  <td className="py-4 text-right font-extrabold text-gray-800">
-                                    {weightedScore}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                            {/* Subtotal */}
-                            <tr className="bg-gray-50/50 font-bold">
-                              <td colSpan={4} className="py-3.5 pl-3 font-bold text-gray-800 text-sm">Technical Subtotal</td>
-                              <td className="py-3.5 text-right font-black text-[#953002] pr-2 text-sm whitespace-nowrap">
-                                {techSubtotal} / 100
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Financial Evaluation Tab Content */}
-                  {activeTab === "financial" && (
-                    <div className="relative min-h-[350px] animate-in fade-in duration-300">
-
-                      {/* Locked overlay cover - scoped to content only */}
-                      {!isTechPassed && (
-                        <div className="absolute inset-0 bg-white/95 backdrop-blur-[1.5px] z-20 flex flex-col items-center justify-center p-8 text-center transition-all duration-300 rounded-2xl">
-                          <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center shadow-md mb-4 text-[#953002] border border-[#FFF7ED]">
-                            <Lock className="w-6 h-6 animate-pulse" />
-                          </div>
-                          <h4 className="text-sm font-bold text-gray-800 mb-1">Financial Panel Locked</h4>
-                          <p className="text-xs text-gray-400 max-w-md mb-3">
-                            This bidder failed to meet the required technical threshold of <strong>{data.threshold} / 100</strong>.
-                          </p>
-                          <span className="text-xs font-black text-gray-500 uppercase tracking-widest bg-gray-100 border border-gray-200 px-3 py-1 rounded-lg">
-                            Current Technical Score: {techSubtotal}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Financial Score Progress Bar */}
-                      <div className="bg-[#F8FAFC] border border-gray-100 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="w-full sm:w-2/3">
-                          <div className="flex justify-between text-[13px] font-bold text-gray-500 mb-2">
-                            <span>Financial Score</span>
-                            <span>{finSubtotal} / 100</span>
-                          </div>
-                          {/* Progress Track */}
-                          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden relative">
-                            {/* Threshold Tick */}
-                            <div className="absolute top-0 w-[2px] h-full bg-black z-10" style={{ left: `${data?.threshold || 75}%` }} title={`Threshold: ${data?.threshold || 75}`}></div>
-                            <div
-                              className="h-full rounded-full transition-all duration-500 bg-[#953002]"
-                              style={{ width: `${finSubtotal}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl bg-[#FFF7ED] text-[#953002] border border-[#953002]/20`}>
-                            {isFinPassed ? "PASS" : "FAIL"}
-                          </span>
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            Threshold: {data?.threshold || 75}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Table */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
-                          <colgroup>
-                            <col style={{ width: "33%" }} />
-                            <col style={{ width: "9%" }} />
-                            <col style={{ width: "13%" }} />
-                            <col style={{ width: "34%" }} />
-                            <col style={{ width: "11%" }} />
-                          </colgroup>
-                          <thead>
-                            <tr className="border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider">
-                              <th className="pb-3 font-semibold">Criterion</th>
-                              <th className="pb-3 text-left font-semibold">Weight</th>
-                              <th className="pb-3 text-center font-semibold whitespace-nowrap">Score (0-100)</th>
-                              <th className="pb-3 pl-8 font-semibold">Evaluator Comment</th>
-                              <th className="pb-3 text-right font-semibold">Score</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50 text-gray-700">
-                            {activeBidder.financialCriteria.map((c) => {
-                              const weightedScore = Math.round(c.score * (c.weight / 100) * 100) / 100;
-                              return (
-                                <tr key={c.id} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="py-4 pr-3 font-medium">
-                                    <span className="block text-gray-800 font-bold">{c.name}</span>
-                                    <span className="text-xs text-gray-400 font-normal">{c.description}</span>
-                                  </td>
-                                  <td className="py-4 text-left">
-                                    <span className="bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-md">
-                                      {c.weight}%
-                                    </span>
-                                  </td>
-                                  <td className="py-4 text-center px-1">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      value={c.score || ""}
-                                      onChange={(e) => handleScoreChange("financial", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "COMPLETED"}
-                                      className="w-16 bg-[#F8FAFC] border border-gray-200 rounded-xl px-2.5 py-1.5 font-bold text-center outline-none focus:border-[#953002] focus:bg-white text-gray-800 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                  </td>
-                                  <td className="py-4 pl-8 pr-3">
-                                    <input
-                                      type="text"
-                                      placeholder="Enter comment..."
-                                      value={c.comment || ""}
-                                      onChange={(e) => handleCommentChange("financial", c.id, e.target.value)}
-                                      disabled={activeBidder.status === "COMPLETED"}
-                                      className="w-full bg-transparent border-b border-transparent hover:border-gray-200 focus:border-[#953002] py-1 px-1 outline-none text-gray-700 placeholder-gray-300 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
-                                  </td>
-                                  <td className="py-4 text-right font-extrabold text-gray-800">
-                                    {weightedScore}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                            {/* Subtotal */}
-                            <tr className="bg-gray-50/50 font-bold">
-                              <td colSpan={4} className="py-3.5 pl-3 font-bold text-gray-800 text-sm">Financial Subtotal</td>
-                              <td className="py-3.5 text-right font-black text-[#953002] pr-2 text-sm whitespace-nowrap">
-                                {finSubtotal} / 100
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-start">
-                  <button
-                    onClick={() => {
-                      setNotesText(activeBidder.evaluationNotes || "");
-                      setActiveModal("notes");
-                    }}
-                    disabled={activeBidder.status === "COMPLETED"}
-                    className="inline-flex items-center gap-1.5 border border-gray-200 hover:border-[#953002] bg-white px-4 py-2.5 rounded-2xl text-xs font-bold text-gray-600 hover:text-[#953002] transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <FileText size={13} />
-                    <span>{activeBidder.evaluationNotes ? "Edit Evaluation Notes" : "Add Evaluation Notes"}</span>
-                  </button>
                 </div>
               </div>
-            </div>
             )}
 
 
@@ -1723,8 +1721,8 @@ export default function BidEvaluationPage() {
                     <div className="flex justify-between font-semibold">
                       <span className="text-gray-400">Evaluator</span>
                       <span className="font-extrabold text-gray-900">
-                        {activeBidder.lastSaved !== "Never" 
-                          ? activeBidder.evaluatorName 
+                        {activeBidder.lastSaved !== "Never"
+                          ? activeBidder.evaluatorName
                           : (user?.name || activeBidder.evaluatorName)}
                       </span>
                     </div>
@@ -1732,9 +1730,9 @@ export default function BidEvaluationPage() {
                       <span className="text-gray-400">Evaluator Role</span>
                       <span className="font-extrabold text-gray-900">
                         {activeBidder.lastSaved !== "Never"
-                          ? (activeBidder.evaluatorRole && activeBidder.evaluatorRole !== "Senior Designer" 
-                              ? activeBidder.evaluatorRole 
-                              : dbOfficerRole)
+                          ? (activeBidder.evaluatorRole && activeBidder.evaluatorRole !== "Senior Designer"
+                            ? activeBidder.evaluatorRole
+                            : dbOfficerRole)
                           : (dbOfficerRole || activeBidder.evaluatorRole || "Procurement Officer")}
                       </span>
                     </div>
@@ -1802,11 +1800,10 @@ export default function BidEvaluationPage() {
                       }
                     }}
                     disabled={!activeBidder || activeBidder.status !== "COMPLETED"}
-                    className={`w-full flex items-center justify-center border py-3 rounded-2xl text-xs font-bold transition-all ${
-                      activeBidder?.status === "COMPLETED"
+                    className={`w-full flex items-center justify-center border py-3 rounded-2xl text-xs font-bold transition-all ${activeBidder?.status === "COMPLETED"
                         ? "border-[#953002]/20 hover:border-[#953002] bg-[#FFF7ED] hover:bg-[#ffecd6] text-[#953002] cursor-pointer"
                         : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                    }`}
+                      }`}
                   >
                     Download Score Sheet
                   </button>
@@ -1890,7 +1887,7 @@ export default function BidEvaluationPage() {
                     </div>
                     <h3 className="text-lg font-black text-gray-900 tracking-tight">Unlock Received Bids</h3>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setActiveModal(null)}
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
                   >
@@ -1909,7 +1906,7 @@ export default function BidEvaluationPage() {
                       Chair / Deputy Chair PIN
                     </label>
                     <div className="relative">
-                      <input 
+                      <input
                         type={showUnlockPin ? "text" : "password"}
                         value={unlockPin}
                         onChange={(e) => {
@@ -1917,12 +1914,11 @@ export default function BidEvaluationPage() {
                           if (unlockPinError) setUnlockPinError(false);
                         }}
                         placeholder="••••••••"
-                        className={`w-full bg-[#F9FAFB] border rounded-[16px] px-[16px] py-[14px] text-[15px] font-bold text-gray-900 placeholder:text-gray-300 outline-none transition-all pr-12 focus:ring-2 ${
-                          unlockPinError ? 'border-[#EB5757] focus:ring-[#EB5757]/20' : 'border-gray-200 focus:ring-[#953002]/20 focus:border-[#953002]'
-                        }`}
+                        className={`w-full bg-[#F9FAFB] border rounded-[16px] px-[16px] py-[14px] text-[15px] font-bold text-gray-900 placeholder:text-gray-300 outline-none transition-all pr-12 focus:ring-2 ${unlockPinError ? 'border-[#EB5757] focus:ring-[#EB5757]/20' : 'border-gray-200 focus:ring-[#953002]/20 focus:border-[#953002]'
+                          }`}
                         style={unlockPinError ? { borderColor: '#EB5757', boxShadow: '0 0 0 1px #EB5757' } : {}}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowUnlockPin(!showUnlockPin)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -1938,13 +1934,13 @@ export default function BidEvaluationPage() {
 
                 {/* Modal Footer */}
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-                  <button 
+                  <button
                     onClick={() => setActiveModal(null)}
                     className="flex-1 px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase border border-gray-200 text-gray-500 hover:bg-white hover:text-gray-900 transition-all"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     onClick={handleConfirmUnlock}
                     disabled={unlockPin.length < 4 || unlocking}
                     className="flex-[1.5] px-3 py-2.5 rounded-[12px] font-black text-[11px] tracking-widest uppercase transition-all flex items-center justify-center gap-2 border border-[#953002]/10 bg-[#953002]/5 text-[#953002] hover:bg-[#953002]/10 disabled:opacity-50"
@@ -2096,7 +2092,7 @@ export default function BidEvaluationPage() {
                   >
                     Cancel
                   </button>
-                   <button
+                  <button
                     onClick={handleSaveNotes}
                     className="flex-1 bg-[#953002] hover:bg-[#7a2702] py-3 rounded-2xl text-xs font-bold text-white transition-all shadow-md shadow-[#953002]/15"
                   >
@@ -2153,13 +2149,12 @@ export default function BidEvaluationPage() {
                           </button>
                           <button
                             onClick={() => handleDownloadDoc(docName)}
-                            className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
-                              downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`)
+                            className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`)
                                 ? "bg-gray-100 text-gray-400 cursor-wait"
                                 : downloadedDocs.includes(`${activeBidder.bidderId}::${docName}`)
                                   ? "bg-green-50 text-green-600 border border-green-200/50"
                                   : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] hover:scale-105"
-                            }`}
+                              }`}
                             disabled={downloadingDocs.includes(`${activeBidder.bidderId}::${docName}`)}
                             title={`Download ${docName}`}
                           >
@@ -2244,13 +2239,12 @@ export default function BidEvaluationPage() {
                           </button>
                           <button
                             onClick={() => handleDownloadTenderDoc(docName, docUrl)}
-                            className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${
-                              downloadingDocs.includes(`tender::${docName}`)
+                            className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all ${downloadingDocs.includes(`tender::${docName}`)
                                 ? "bg-gray-100 text-gray-400 cursor-wait"
                                 : downloadedDocs.includes(`tender::${docName}`)
                                   ? "bg-green-50 text-green-600 border border-green-200/50"
                                   : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] hover:scale-105"
-                            }`}
+                              }`}
                             disabled={downloadingDocs.includes(`tender::${docName}`)}
                             title={`Download ${docName}`}
                           >
@@ -2412,13 +2406,12 @@ export default function BidEvaluationPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => handleDownloadDoc(previewBidDoc.name)}
-                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
-                            downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                               ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
                               : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                                 ? "bg-green-50 text-green-700 border border-green-200 font-bold"
                                 : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
-                          }`}
+                            }`}
                           disabled={downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)}
                           title="Download Bid Document"
                         >
@@ -2470,13 +2463,12 @@ export default function BidEvaluationPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => handleDownloadTenderDoc(previewTenderDoc.name, previewTenderDoc.url)}
-                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
-                            downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
                               ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
                               : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
                                 ? "bg-green-50 text-green-700 border border-green-200 font-bold"
                                 : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
-                          }`}
+                            }`}
                           disabled={downloadingDocs.includes(`tender::${previewTenderDoc.name}`)}
                           title="Download Tender Document"
                         >
@@ -2572,13 +2564,12 @@ export default function BidEvaluationPage() {
                     )}
                     <button
                       onClick={() => handleDownloadDoc(previewBidDoc.name)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
-                        downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                           ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
                           : downloadedDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)
                             ? "bg-green-50 text-green-700 border border-green-200 font-bold"
                             : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
-                      }`}
+                        }`}
                       disabled={downloadingDocs.includes(`${activeBidder?.bidderId}::${previewBidDoc.name}`)}
                       title="Download Document"
                     >
@@ -2678,13 +2669,12 @@ export default function BidEvaluationPage() {
                     )}
                     <button
                       onClick={() => handleDownloadTenderDoc(previewTenderDoc.name, previewTenderDoc.url)}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${
-                        downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${downloadingDocs.includes(`tender::${previewTenderDoc.name}`)
                           ? "bg-gray-100 text-gray-400 border border-gray-200 cursor-wait"
                           : downloadedDocs.includes(`tender::${previewTenderDoc.name}`)
                             ? "bg-green-50 text-green-700 border border-green-200 font-bold"
                             : "bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 hover:scale-105 active:scale-95"
-                      }`}
+                        }`}
                       disabled={downloadingDocs.includes(`tender::${previewTenderDoc.name}`)}
                       title="Download Document"
                     >
@@ -2733,12 +2723,11 @@ export default function BidEvaluationPage() {
               {toasts.map((t) => (
                 <div
                   key={t.id}
-                  className={`w-max max-w-[90vw] whitespace-nowrap pointer-events-auto flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
-                    t.type === "success" ? "bg-[#E8F8F0] border-[#27AE60]/20 text-[#27AE60]" :
+                  className={`w-max max-w-[90vw] whitespace-nowrap pointer-events-auto flex items-center justify-between gap-3 px-5 py-3.5 rounded-xl shadow-md border transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${t.type === "success" ? "bg-[#E8F8F0] border-[#27AE60]/20 text-[#27AE60]" :
                       t.type === "error" ? "bg-red-50 border-red-200 text-red-750" :
                         t.type === "warning" ? "bg-[#FFF7ED] border-[#953002]/20 text-[#953002]" :
                           "bg-[#EBF5FF] border-[#3B82F6]/20 text-[#1E3A8A]"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     {t.type === "success" && <Check className="w-5 h-5 text-[#27AE60]" />}
@@ -2747,14 +2736,13 @@ export default function BidEvaluationPage() {
                     {t.type === "info" && <HelpCircle className="w-5 h-5 text-[#3B82F6]" />}
                     <span className="text-[13px] font-bold tracking-tight">{t.message}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setToasts(prev => prev.filter(item => item.id !== t.id))}
-                    className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${
-                      t.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
+                    className={`ml-4 p-0.5 rounded-lg hover:bg-black/5 transition-colors ${t.type === "success" ? "text-[#27AE60]/60 hover:text-[#27AE60]" :
                         t.type === "error" ? "text-red-750/60 hover:text-red-750" :
                           t.type === "warning" ? "text-[#953002]/60 hover:text-[#953002]" :
                             "text-[#1E3A8A]/60 hover:text-[#1E3A8A]"
-                    }`}
+                      }`}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>

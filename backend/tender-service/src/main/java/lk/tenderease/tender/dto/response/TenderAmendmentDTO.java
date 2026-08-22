@@ -14,9 +14,12 @@ public class TenderAmendmentDTO {
     private Integer amendmentNumber;
     private String title;
     private String description;
-    private Integer currentVersionNumber;
-    private AddendumVersionResponse currentVersion;
-    private Integer totalVersions;
+    private String changeNote;
     private LocalDateTime newClosingDate;
     private LocalDateTime createdAt;
+
+    // Document versioning fields
+    private String documentName;
+    private Integer version;
+    private String downloadUrl;
 }

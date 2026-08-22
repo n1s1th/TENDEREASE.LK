@@ -38,9 +38,10 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
          LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
         AND t.status = :status
         AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
+        ORDER BY t.createdAt DESC
     """)
     Page<Tender> searchWithStatus(
             @Param("keyword") String keyword,
@@ -49,15 +50,16 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
             Pageable pageable
     );
 
-    // 🔍 Advanced search WITHOUT status
+    // 🔍 Advanced search WITHOUT status (Returns Active Tenders Only)
     @Query("""
         SELECT t FROM Tender t WHERE
         (:keyword = '' OR
          LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
          LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT', 'CLOSED', 'CANCELLED')
         AND (:procurementType IS NULL OR t.procurementType = :procurementType)
-        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+        ORDER BY t.createdAt DESC
     """)
     Page<Tender> searchWithoutStatus(
             @Param("keyword") String keyword,

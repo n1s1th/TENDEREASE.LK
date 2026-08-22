@@ -1,6 +1,6 @@
 import { OpeningSession, OpeningAttendance, OpeningAttendanceRequest, ApiResponse } from "@/lib/types/opening.types";
 
-const BASE = process.env.NEXT_PUBLIC_OPENING_SERVICE_URL || "http://localhost:8084";
+const BASE = "http://localhost:8095";
 
 function authHeaders(token?: string): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};

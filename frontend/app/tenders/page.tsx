@@ -1,60 +1,57 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import TenderLayout from "@/components/tender/TenderLayout";
 import TenderTable from "@/components/tender/TenderTable";
 import TenderSearchBar from "@/components/tender/TenderSearchBar";
 import TenderPagination from "@/components/tender/TenderPagination";
 import { getTenders } from "@/services/tender.service";
-import { useSearchParams } from "next/navigation";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Bookmark, Search } from "lucide-react";
+import { useSavedTendersStore } from "@/store/saved-tenders.store";
+import { useAuthStore } from "@/store";
 
 const INITIAL_FILTERS = {
   keyword: "",
-  category: "All Categories",
   status: "All Statuses",
   dateType: "None Selected",
   fromDate: "",
   toDate: "",
 };
 
-function TendersPageContent() {
-  const searchParams = useSearchParams();
+export default function TendersPage() {
   const [tenders, setTenders] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  
-  const [filters, setFilters] = useState(() => {
-    const search = searchParams.get("search") || "";
-    const cat = searchParams.get("category") || "All Categories";
-    return {
-      ...INITIAL_FILTERS,
-      keyword: search,
-      category: cat,
-    };
-  });
-  
-  const [triggerFetch, setTriggerFetch] = useState(0);
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [debouncedFilters, setDebouncedFilters] = useState(INITIAL_FILTERS);
+  const [activeTab, setActiveTab] = useState("open");
+  const { isAuthenticated } = useAuthStore();
 
-  // Synchronize filter state when URL search parameters change
   useEffect(() => {
-    const search = searchParams.get("search") || "";
-    const cat = searchParams.get("category") || "All Categories";
-    setFilters((prev) => ({
-      ...prev,
-      keyword: search,
-      category: cat,
-    }));
-    setCurrentPage(1);
-    setTriggerFetch((prev) => prev + 1);
-  }, [searchParams]);
+    const timer = setTimeout(() => {
+      setDebouncedFilters(filters);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   useEffect(() => {
     async function fetchTenders() {
+      if (activeTab === "saved") return;
+
       setLoading(true);
       try {
+        const currentFilters = { ...debouncedFilters };
+        if (activeTab === "open") {
+          currentFilters.status = "All Statuses";
+        } else if (activeTab === "closed") {
+          currentFilters.status = "CLOSED";
+        }
+
         // Backend pagination is 0-indexed
-        const data = await getTenders(currentPage - 1, 10, filters);
+        const data = await getTenders(currentPage - 1, 10, currentFilters);
 
         // Handle both Array response and Page object response
         if (Array.isArray(data)) {
@@ -76,17 +73,11 @@ function TendersPageContent() {
       }
     }
     fetchTenders();
-  }, [currentPage, triggerFetch]);
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    setTriggerFetch(prev => prev + 1);
-  };
+  }, [currentPage, debouncedFilters, activeTab]);
 
   const handleReset = () => {
     setFilters(INITIAL_FILTERS);
     setCurrentPage(1);
-    setTriggerFetch(prev => prev + 1);
   };
 
   return (
@@ -106,57 +97,133 @@ function TendersPageContent() {
         <TenderSearchBar
           filters={filters}
           onFilterChange={setFilters}
-          onSearch={handleSearch}
           onReset={handleReset}
         />
 
         {/* Results Section */}
         <div className="space-y-8 animate-in fade-in duration-700">
-          <div className="flex justify-between items-end px-2">
-            <div className="space-y-1">
-              <h2 className="text-xl font-bold text-black-1 uppercase tracking-tight">Search Results</h2>
-              <div className="h-1 w-12 bg-secondary rounded-full"></div>
+          <Tabs defaultValue="open" value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end px-2 gap-4">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-black text-black-1 uppercase tracking-tight">Search Results</h2>
+                  <div className="h-1 w-12 bg-secondary rounded-full"></div>
+                </div>
+
+                <TabsList className="bg-gray-5/50 border border-gray-100 p-1 rounded-xl">
+                  <TabsTrigger value="open" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Open Tenders
+                  </TabsTrigger>
+                  <TabsTrigger value="closed" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    Closed Tenders
+                  </TabsTrigger>
+                  {isAuthenticated && (
+                    <TabsTrigger value="saved" className="rounded-lg font-bold text-xs uppercase tracking-widest px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      <Bookmark size={14} className="mr-2 inline" /> Saved Tenders
+                    </TabsTrigger>
+                  )}
+                </TabsList>
+              </div>
+
+              <span className="text-xs font-black text-gray-3 uppercase tracking-widest mb-2 sm:mb-0">
+                {loading ? "Synchronizing..." : activeTab === "saved" ? "" : `${totalCount} Tenders Available`}
+              </span>
             </div>
-            <span className="text-xs font-semibold text-gray-3 uppercase tracking-widest">
-              {loading ? "Synchronizing..." : (
-                <><strong className="text-black-1 font-bold text-sm normal-case tracking-normal">{totalCount}</strong> Tenders Available</>
+
+            <TabsContent value="open" className="m-0 focus-visible:outline-none">
+              {loading ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                  <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
+                </div>
+              ) : tenders.length === 0 ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
+                    <Search size={24} className="text-gray-3" />
+                  </div>
+                  <p className="text-sm font-black text-black-2 uppercase tracking-widest">No Results</p>
+                  <p className="text-gray-2 text-sm font-medium text-center max-w-sm">
+                    No tenders found matching your criteria.
+                  </p>
+                  <button onClick={handleReset} className="mt-4 text-primary font-semibold text-xs uppercase tracking-widest hover:underline">Clear Filters</button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <TenderTable data={tenders} />
+
+                  <TenderPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / 10) || 1}
+                    totalItems={totalCount}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
               )}
-            </span>
-          </div>
+            </TabsContent>
 
-          {loading ? (
-            <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
-              <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="text-sm font-semibold text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <TenderTable data={tenders} />
+            <TabsContent value="closed" className="m-0 focus-visible:outline-none">
+              {loading ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                  <p className="text-sm font-black text-gray-3 uppercase tracking-[0.2em] animate-pulse">Fetching Real-Time Data</p>
+                </div>
+              ) : tenders.length === 0 ? (
+                <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
+                    <Search size={24} className="text-gray-3" />
+                  </div>
+                  <p className="text-sm font-black text-black-2 uppercase tracking-widest">No Results</p>
+                  <p className="text-gray-2 text-sm font-medium text-center max-w-sm">
+                    No closed tenders found matching your criteria.
+                  </p>
+                  <button onClick={handleReset} className="mt-4 text-primary font-semibold text-xs uppercase tracking-widest hover:underline">Clear Filters</button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <TenderTable data={tenders} />
 
-              <TenderPagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(totalCount / 10) || 1}
-                totalItems={totalCount}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+                  <TenderPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / 10) || 1}
+                    totalItems={totalCount}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+            </TabsContent>
+
+            {isAuthenticated && (
+              <TabsContent value="saved" className="m-0 focus-visible:outline-none">
+                <SavedTendersView />
+              </TabsContent>
+            )}
+          </Tabs>
         </div>
       </div>
     </TenderLayout>
   );
 }
 
-export default function TendersPage() {
-  return (
-    <Suspense fallback={
-      <TenderLayout>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-10 py-10 text-center text-gray-2">
-          Loading Tender Portal...
+function SavedTendersView() {
+  const { savedTenders } = useSavedTendersStore();
+
+  if (savedTenders.length === 0) {
+    return (
+      <div className="py-32 flex flex-col items-center justify-center space-y-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+        <div className="w-16 h-16 bg-gray-5 rounded-2xl flex items-center justify-center mb-2">
+          <Bookmark size={24} className="text-gray-3" />
         </div>
-      </TenderLayout>
-    }>
-      <TendersPageContent />
-    </Suspense>
+        <p className="text-sm font-black text-black-2 uppercase tracking-widest">No Saved Tenders</p>
+        <p className="text-gray-2 text-sm font-medium text-center max-w-sm">
+          You haven't saved any tenders yet. Click the bookmark icon on any tender details page to save it for later.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
+      <TenderTable data={savedTenders} />
+    </div>
   );
 }

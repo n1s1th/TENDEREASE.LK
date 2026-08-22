@@ -25,7 +25,6 @@ export default function OfficerDashboardLayout({
   return (
     <ProtectedRoute allowedRoles={["PROCUREMENT_OFFICER"]}>
       <div className="dash-page">
-        <SubNav />
         <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
         <Footer />
 

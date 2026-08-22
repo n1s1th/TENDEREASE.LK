@@ -10,10 +10,10 @@ import lk.tenderease.tender.dto.response.TenderDetailsDTO;
 import lk.tenderease.tender.dto.response.TenderDocumentDTO;
 import lk.tenderease.tender.dto.response.TenderSummaryDTO;
 import lk.tenderease.tender.dto.response.TimelineDTO;
-import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
 import lk.tenderease.tender.service.TenderService;
+import lk.tenderease.tender.enums.ProcurementType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @RestController
 @RequestMapping("/api/tenders")
@@ -49,6 +51,7 @@ public class PublicTenderController {
 
     private final TenderService tenderService;
     private final CurrentBidderEmailResolver currentBidderEmailResolver;
+    private final lk.tenderease.tender.service.S3Service s3Service;
 
     @GetMapping
     public Page<TenderSummaryDTO> getAllTenders(
@@ -57,20 +60,18 @@ public class PublicTenderController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenderStatus status,
-            @RequestParam(required = false) ProcurementType procurementType) {
+            @RequestParam(required = false) ProcurementType procurementType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String dateType) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, fromDate, toDate, dateType, pageable);
     }
 
     @GetMapping("/{id}")
-    public TenderDetailsDTO getTenderById(@PathVariable String id) {
-        try {
-            UUID uuid = UUID.fromString(id);
-            return tenderService.getPublicTenderById(uuid);
-        } catch (IllegalArgumentException e) {
-            return tenderService.getPublicTenderByNumber(id);
-        }
+    public TenderDetailsDTO getTenderById(@PathVariable UUID id) {
+        return tenderService.getPublicTenderById(id);
     }
 
     @GetMapping("/{id}/documents")
@@ -149,17 +150,14 @@ public class PublicTenderController {
     }
 
     @GetMapping("/files/{filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable String filename) {
         try {
-            Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", filename);
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (!resource.exists()) {
-                throw new RuntimeException("File not found: " + filename);
-            }
+            java.io.InputStream is = s3Service.downloadFile(filename);
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.InputStreamResource(is);
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
                     .body(resource);
         } catch (Exception e) {
             throw new RuntimeException("Download failed", e);
@@ -177,25 +175,35 @@ public class PublicTenderController {
                     if (doc.getDownloadUrl() == null) {
                         continue;
                     }
-
-                    String fileName = doc.getDownloadUrl().substring(doc.getDownloadUrl().lastIndexOf("/") + 1);
-                    Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", fileName);
-
-                    if (!Files.exists(filePath)) {
-                        continue;
+                    
+                    String[] parts = doc.getDownloadUrl().split("/");
+                    String filename = parts[parts.length - 1];
+                    
+                    try {
+                        java.io.InputStream is = s3Service.downloadFile(filename);
+                        ZipEntry entry = new ZipEntry(doc.getDocumentName() + "_" + filename);
+                        zos.putNextEntry(entry);
+                        
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = is.read(buffer)) > 0) {
+                            zos.write(buffer, 0, len);
+                        }
+                        zos.closeEntry();
+                        is.close();
+                    } catch (Exception e) {
+                        // Skip file if download fails
+                        System.err.println("Failed to download file " + filename + " for zip: " + e.getMessage());
                     }
-
-                    zos.putNextEntry(new ZipEntry(doc.getDocumentName() + ".pdf"));
-                    Files.copy(filePath, zos);
-                    zos.closeEntry();
                 }
             }
 
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents.zip\"")
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents_" + id + ".zip\"")
+                    .contentType(org.springframework.http.MediaType.parseMediaType("application/zip"))
                     .body(baos.toByteArray());
         } catch (Exception e) {
-            throw new RuntimeException("ZIP download failed", e);
+            throw new RuntimeException("Download all failed", e);
         }
     }
 }
