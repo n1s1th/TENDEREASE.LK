@@ -42,6 +42,35 @@ export default function ReportsPage() {
   const [period, setPeriod] = useState("all_time");
 
   useEffect(() => {
+    // 1. One-time migration: push localStorage 'AWARDED' tenders to the database
+    const syncDb = async () => {
+      const raw = localStorage.getItem("awardEmailsSent");
+      if (raw) {
+        try {
+          const sentMap = JSON.parse(raw);
+          let syncedAny = false;
+          for (const [tId, entry] of Object.entries(sentMap)) {
+            if ((entry as any).fullyAwarded || ((entry as any).winner && (entry as any).lost)) {
+              await fetch(`http://localhost:8082/api/v1/tenders/${tId}/status?status=AWARDED`, { method: 'PUT' });
+              syncedAny = true;
+            }
+          }
+          if (syncedAny) {
+            // Trigger a refetch so the report picks up the database changes
+            fetchKpiReport({
+              department: department || undefined,
+              category: category || undefined,
+              period: period || undefined,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to sync local storage to DB", e);
+        }
+      }
+    };
+    syncDb();
+
+    // 2. Standard fetch
     fetchKpiReport({
       department: department || undefined,
       category: category || undefined,
@@ -80,11 +109,11 @@ export default function ReportsPage() {
 
   const smeDataAvailable = kpiReport && kpiReport.smeParticipationPercent !== -1;
   const smeData = {
-    labels: ["SME", "Non-SME"],
+    labels: ["SME (Sole Proprietorship / Partnership)", "Other Entities"],
     datasets: [
       {
         data: smeDataAvailable ? [kpiReport.smeParticipationPercent, 100 - kpiReport.smeParticipationPercent] : [0, 100],
-        backgroundColor: ["#f0b323", "#E5E7EB"],
+        backgroundColor: ["#f0b323", "#e5e7eb"],
         borderWidth: 0,
       },
     ],
