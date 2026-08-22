@@ -32,36 +32,47 @@ export default function SubNav() {
     <div className="sticky top-0 z-20" id="dashboard-subnav">
       <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between h-14 border-b border-slate-200/80">
         <div className="flex items-center gap-8 h-full">
-          <Link
-            href="/cao-dashboard/tenders/pending"
-            className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
-              isTenders 
-                ? "border-[#953002] text-[#953002]" 
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Tenders
-          </Link>
-          <Link
-            href="/cao-dashboard/recommendations/pending"
-            className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
-              isRecommendations 
-                ? "border-[#953002] text-[#953002]" 
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Recommendation Notes
-          </Link>
-          <Link
-            href="/cao-dashboard/registration"
-            className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
-              isRegistration 
-                ? "border-[#953002] text-[#953002]" 
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Registration
-          </Link>
+          {pathname.startsWith("/cao-dashboard/reports") ? (
+            <Link
+              href="/cao-dashboard/tenders/pending"
+              className="flex items-center gap-2 h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 border-transparent text-slate-500 hover:text-slate-800"
+            >
+              <span>← Go back</span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/cao-dashboard/tenders/pending"
+                className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
+                  isTenders 
+                    ? "border-[#953002] text-[#953002]" 
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Tenders
+              </Link>
+              <Link
+                href="/cao-dashboard/recommendations/pending"
+                className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
+                  isRecommendations 
+                    ? "border-[#953002] text-[#953002]" 
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Recommendation Notes
+              </Link>
+              <Link
+                href="/cao-dashboard/registration"
+                className={`flex items-center h-full text-sm font-semibold tracking-wide transition-all border-b-2 px-2 ${
+                  isRegistration 
+                    ? "border-[#953002] text-[#953002]" 
+                    : "border-transparent text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Registration
+              </Link>
+            </>
+          )}
         </div>
 
         <Link

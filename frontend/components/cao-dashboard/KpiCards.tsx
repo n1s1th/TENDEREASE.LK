@@ -18,6 +18,7 @@ export default function KpiCards({ data }: KpiCardsProps) {
       change: data?.activeTendersChange ?? 0,
       suffix: "",
       icon: <FileText size={20} />,
+      color: "#953002",
     },
     {
       title: "Awarded Tenders",
@@ -25,6 +26,7 @@ export default function KpiCards({ data }: KpiCardsProps) {
       change: data?.awardedTendersChange ?? 0,
       suffix: "",
       icon: <Award size={20} />,
+      color: "#f0b323",
     },
     {
       title: "Average Cycle Time",
@@ -32,6 +34,7 @@ export default function KpiCards({ data }: KpiCardsProps) {
       change: data?.avgCycleTimeChange ?? 0,
       suffix: " days",
       icon: <Clock size={20} />,
+      color: "#2563eb",
     },
     {
       title: "SME Participation",
@@ -39,6 +42,7 @@ export default function KpiCards({ data }: KpiCardsProps) {
       change: data?.smeParticipationChange ?? 0,
       suffix: "%",
       icon: <Users size={20} />,
+      color: "#16a34a",
     },
   ];
 
@@ -51,9 +55,10 @@ export default function KpiCards({ data }: KpiCardsProps) {
             key={card.title}
             className="dash-kpi-card hover:scale-105 hover:shadow-lg transition-all duration-300 cursor-pointer"
             onClick={() => router.push("/cao-dashboard/reports")}
+            style={{ borderLeft: `4px solid ${card.color}` }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.25rem" }}>
-              <div className="dash-kpi-title">{card.title}</div>
+              <div style={{ fontSize: "0.85rem", fontWeight: 700, color: card.color }}>{card.title}</div>
               {card.change !== 0 && (
                 <span style={{
                   fontSize: "0.72rem",

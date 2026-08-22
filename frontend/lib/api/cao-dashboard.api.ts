@@ -16,16 +16,16 @@ import type {
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_TENDER_API_URL || 'http://localhost:8082/api/v1',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 5000, // 5s timeout
+  timeout: 15000, // 15s timeout
 });
 
 // Separate axios instance for user-service (port 8081)
 const userApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 5000,
+  timeout: 15000,
 });
 
 // Separate axios instance for reporting-service (port 8092)
@@ -52,6 +52,7 @@ export async function fetchDashboardTenders(
   let status = tab.toUpperCase();
   if (tab === 'pending') status = 'PENDING_APPROVAL';
   if (tab === 'approved') status = 'PUBLISHED';
+  if (tab === 'recent-awards') status = 'AWARDED';
   
   const res = await api.get('/cao/tenders', {
     params: { status, page, size: pageSize, _t: Date.now() },
@@ -161,23 +162,178 @@ export async function updateRecommendationStatus(id: number, status: Recommendat
 
 // ── KPIs ─────────────────────────────────────────────────────
 export async function fetchKpiSummary(): Promise<KpiSummary> {
-  const res = await api.get('/cao/tenders/kpi'); // goes to tender-service port 8082
-  const data = res.data || {};
+  let activeCount = 0;
+  let awardedCount = 0;
+  let cycleTimeDays = 0;
+  let smePercent = 0;
+  let totalCycleDays = 0;
+  
+  try {
+    const [tendersRes, vendorsRes] = await Promise.all([
+      api.get('/cao/tenders', { params: { size: 1000 } }),
+      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch(() => null)
+    ]);
+
+    const tenders = tendersRes.data?.content || [];
+    
+    activeCount = tenders.filter((t: any) => 
+      ['PUBLISHED', 'APPROVED', 'EVALUATION', 'PENDING_OPENING', 'OPEN'].includes(t.status)
+    ).length;
+    
+    tenders.forEach((t: any) => {
+      // Exclusively use the real backend status
+      if (t.status === 'AWARDED') {
+        awardedCount++;
+        // Use published/opening dates if available, otherwise fallback
+        const start = new Date(t.publishedAt || t.openingDate || t.createdAt || Date.now());
+        const end = new Date(t.awardedAt || t.updatedAt || t.closingDate || Date.now());
+        const diffDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
+        totalCycleDays += diffDays;
+      }
+    });
+
+    if (awardedCount > 0) {
+      cycleTimeDays = Math.round(totalCycleDays / awardedCount);
+    }
+
+    // Real SME calculation from Vendors
+    if (vendorsRes?.data?.content) {
+      const vendors = vendorsRes.data.content;
+      const smeCount = vendors.filter((v: any) => v.organizationType === 'SOLE_PROPRIETORSHIP' || v.organizationType === 'PARTNERSHIP').length;
+      if (vendors.length > 0) {
+        smePercent = Math.round((smeCount / vendors.length) * 100);
+      }
+    }
+  } catch (e) {
+    console.warn("Could not fetch real KPI summary from tenders");
+  }
+
   return {
-    activeTenders: data.activeTenders || 0,
+    activeTenders: activeCount,
     activeTendersChange: 0,
-    awardedTenders: data.awardedTenders || 0,
+    awardedTenders: awardedCount,
     awardedTendersChange: 0,
-    avgCycleTime: 0,       // Will be calculated once tender lifecycle tracking is complete
+    avgCycleTime: cycleTimeDays,       
     avgCycleTimeChange: 0,
-    smeParticipation: 0,   // Will be calculated once bidding module is developed
+    smeParticipation: smePercent,   
     smeParticipationChange: 0,
   };
 }
 
 export async function fetchKpiReport(params: KpiReportParams): Promise<KpiReportData> {
-  const res = await reportApi.get('/cao/kpi/report', { params });
-  return res.data;
+  let activeCount = 0;
+  let awardedCount = 0;
+  let cycleTimeDays = 0;
+  let smePercent = 0;
+  let totalAwardValue = 0;
+  
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const cycleTimeMap = new Map<number, {total: number, count: number}>();
+  const activeMap = new Map<number, number>();
+  const awardValueMap = new Map<number, number>();
+
+  for(let i = 0; i < 12; i++) {
+    cycleTimeMap.set(i, {total: 0, count: 0});
+    activeMap.set(i, 0);
+    awardValueMap.set(i, 0);
+  }
+
+  try {
+    const [tendersRes, vendorsRes] = await Promise.all([
+      api.get('/cao/tenders', { params: { size: 1000 } }),
+      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch(() => null)
+    ]);
+
+    let tenders = tendersRes.data?.content || [];
+    
+    // Apply exact filters
+    if (params.department) {
+      tenders = tenders.filter((t: any) => t.department === params.department);
+    }
+    if (params.category) {
+      tenders = tenders.filter((t: any) => t.category === params.category);
+    }
+
+    let totalCycleDays = 0;
+    
+    tenders.forEach((t: any) => {
+      const tDate = new Date(t.publishedAt || t.createdAt || t.closingDate || Date.now());
+      const monthIndex = tDate.getMonth(); // 0 to 11
+
+      // Active
+      if (t.status === 'PUBLISHED' || t.status === 'APPROVED' || t.status === 'EVALUATION') {
+        activeCount++;
+        activeMap.set(monthIndex, (activeMap.get(monthIndex) || 0) + 1);
+      }
+
+      // Awarded & Cycle Time (exclusively rely on DB status)
+      if (t.status === 'AWARDED') {
+        awardedCount++;
+        const start = new Date(t.publishedAt || t.openingDate || t.createdAt || Date.now());
+        const end = new Date(t.awardedAt || t.updatedAt || t.closingDate || Date.now());
+        const diffDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
+        
+        totalCycleDays += diffDays;
+        const currCycle = cycleTimeMap.get(monthIndex)!;
+        currCycle.total += diffDays;
+        currCycle.count += 1;
+
+        // Sum Award Value (using estimated budget)
+        const budget = t.estimatedBudget || 0;
+        totalAwardValue += budget;
+        awardValueMap.set(monthIndex, (awardValueMap.get(monthIndex) || 0) + budget);
+      }
+    });
+
+    if (awardedCount > 0) {
+      cycleTimeDays = Math.round(totalCycleDays / awardedCount);
+    }
+
+    if (vendorsRes?.data?.content) {
+      const vendors = vendorsRes.data.content;
+      const smeCount = vendors.filter((v: any) => v.organizationType === 'SOLE_PROPRIETORSHIP' || v.organizationType === 'PARTNERSHIP').length;
+      if (vendors.length > 0) {
+        smePercent = Math.round((smeCount / vendors.length) * 100);
+      }
+    }
+  } catch (e) {
+    console.error("Could not fetch real KPI report data", e);
+  }
+
+  // Generate trend arrays strictly from the real maps, up to the current month to avoid future dummy data
+  const currentMonthIndex = new Date().getMonth();
+  const trendLimit = Math.min(11, currentMonthIndex);
+  
+  const cycleTimeTrend = [];
+  const activeTendersTrend = [];
+  const awardValueTrend = [];
+
+  for(let i = 0; i <= trendLimit; i++) {
+    const monthLabel = months[i];
+    
+    const cycle = cycleTimeMap.get(i)!;
+    const avgC = cycle.count > 0 ? Math.round(cycle.total / cycle.count) : 0;
+    cycleTimeTrend.push({ label: monthLabel, value: avgC });
+
+    activeTendersTrend.push({ label: monthLabel, value: activeMap.get(i) || 0 });
+
+    const valMn = (awardValueMap.get(i) || 0) / 1000000;
+    awardValueTrend.push({ label: monthLabel, value: parseFloat(valMn.toFixed(2)) });
+  }
+  
+  return {
+    cycleTimeTrend,
+    smeParticipationPercent: smePercent,
+    awardValueTrend,
+    activeTendersTrend,
+    summary: {
+      avgCycleTime: `${cycleTimeDays} days`,
+      smeParticipation: `${smePercent}%`,
+      totalAwardValue: `Rs. ${(totalAwardValue / 1000000).toFixed(2)} Mn`,
+      totalAwards: awardedCount,
+      activeTenders: activeCount
+    }
+  };
 }
 
 // ── Notifications (Dynamic) ────────────────────────
