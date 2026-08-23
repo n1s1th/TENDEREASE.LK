@@ -160,7 +160,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
 <div style="background-color: #f9fafb; color: #1f2937; font-family: 'Inter', Helvetica, Arial, sans-serif; padding: 40px 20px; text-align: center;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; border: 1px solid #e5e7eb;">
     <div style="background-color: #953002; padding: 24px; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 0.5px;">TenderEase Notifications</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 0.5px;">TenderEase</h1>
     </div>
     <div style="padding: 32px 24px; font-size: 15px; line-height: 1.6; color: #374151;">
       ${emailBody}
@@ -237,7 +237,9 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     // Check if both emails are now sent, update the database
     if ((updatedStatus as any).fullyAwarded) {
       try {
-        await fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED`, {
+        const currentUser = useAuthStore.getState().user;
+        const currentOfficerEmail = currentUser?.email || currentUser?.username || "officer@procurement.gov.lk";
+        await fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, {
           method: 'PUT'
         });
         useAwardProcessingStore.getState().fetchTenders();
