@@ -58,8 +58,10 @@ public class TenderSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
             "http://localhost:3000",
-            "http://localhost:3001"
+            "http://localhost:3001",
+            "https://tenderease.vercel.app" // standard Vercel format
         ));
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email"));
         configuration.setExposedHeaders(List.of("Authorization"));
