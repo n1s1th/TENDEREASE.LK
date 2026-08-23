@@ -16,7 +16,7 @@ import type {
 } from '@/lib/types/cao-dashboard.types';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_TENDER_API_URL || 'http://localhost:8082/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || process.env.NEXT_PUBLIC_TENDER_API_URL || 'http://localhost:8082/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000, // 15s timeout
 });
