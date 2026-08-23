@@ -1,10 +1,12 @@
 package lk.tenderease.gateway.config;
 
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -38,6 +40,17 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsWebFilter(source);
+    }
+
+    @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE)
+    public GlobalFilter stripDownstreamOriginFilter() {
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest().mutate()
+                    .headers(httpHeaders -> httpHeaders.remove("Origin"))
+                    .build();
+            return chain.filter(exchange.mutate().request(request).build());
+        };
     }
 
     @Bean
