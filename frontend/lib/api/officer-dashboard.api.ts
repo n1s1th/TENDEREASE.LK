@@ -15,13 +15,15 @@ import type {
   ClarificationItem,
 } from '@/lib/types/officer-dashboard.types';
 
+// User/Officer API — NEXT_PUBLIC_USER_API_URL = https://api.tenderease.me/api
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
+  baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Tender API — NEXT_PUBLIC_TENDER_SERVICE_URL = https://api.tenderease.me/api/tenders
 const tenderApi = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082') + '/api',
+  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api/tenders',
   headers: { 'Content-Type': 'application/json' },
 });
 

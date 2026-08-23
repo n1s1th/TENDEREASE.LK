@@ -15,29 +15,30 @@ import type {
   RecommendationStatus,
 } from '@/lib/types/cao-dashboard.types';
 
+// Main tender API — NEXT_PUBLIC_TENDER_SERVICE_URL = https://api.tenderease.me/api/tenders
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || process.env.NEXT_PUBLIC_TENDER_API_URL || 'http://localhost:8082/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api/tenders',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000, // 15s timeout
+  timeout: 15000,
 });
 
-// Separate axios instance for user-service (port 8081)
+// User/Officer API — NEXT_PUBLIC_USER_API_URL = https://api.tenderease.me/api
 const userApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
 
-// Separate axios instance for reporting-service (port 8092)
+// Reporting/KPI API — NEXT_PUBLIC_REPORT_API_URL = https://api.tenderease.me/api/cao/kpi
 const reportApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_REPORT_API_URL || 'http://localhost:8092/api',
+  baseURL: process.env.NEXT_PUBLIC_REPORT_API_URL || 'http://localhost:8092/api/cao/kpi',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000, // 10s for reports
+  timeout: 10000,
 });
 
-// Separate axios instance for evaluation-service (port 8084)
+// Evaluation API — NEXT_PUBLIC_EVALUATION_API_URL = https://api.tenderease.me
 const evaluationApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
@@ -82,7 +83,7 @@ export async function viewTenderDocument(docId: string): Promise<string> {
 export async function downloadTenderDocument(docId: string): Promise<Blob> {
   if (!docId) throw new Error("Document ID is required");
   
-  const fullUrl = 'http://localhost:8082/api/v1/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
+  const fullUrl = (process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api/tenders') + '/cao/tenders/documents/' + docId + '/base64?t=' + Date.now();
   
   const res = await axios.get(fullUrl, {
     withCredentials: false
