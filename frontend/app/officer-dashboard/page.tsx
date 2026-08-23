@@ -6,11 +6,15 @@ import QuickActions from "@/components/officer-dashboard/QuickActions";
 import EvaluationStatusPanel from "@/components/officer-dashboard/EvaluationStatusPanel";
 import AssignedTenderTable from "@/components/officer-dashboard/AssignedTenderTable";
 import { useEvaluationStore } from "@/store/evaluation/evaluation.store";
+import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
 import { useAuthStore } from "@/store";
-import { Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Bell, Loader2 } from "lucide-react";
 
 export default function OfficerDashboardPage() {
   const { activeTendersCount, fetchDashboardMetrics } = useEvaluationStore();
+  const notificationSummary = useOfficerDashboardStore((s) => s.notificationSummary);
+  const fetchNotificationSummary = useOfficerDashboardStore((s) => s.fetchNotificationSummary);
   const { user } = useAuthStore();
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -22,7 +26,10 @@ export default function OfficerDashboardPage() {
 
   useEffect(() => {
     fetchDashboardMetrics().finally(() => setLoading(false));
-  }, [fetchDashboardMetrics]);
+    fetchNotificationSummary();
+  }, [fetchDashboardMetrics, fetchNotificationSummary]);
+
+  const unreadCount = notificationSummary?.unread ?? 0;
 
   if (loading) {
     return (
@@ -36,42 +43,45 @@ export default function OfficerDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div style={{ padding: "2.25rem 0 1.25rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem" }} className="w-full flex-col sm:flex-row sm:items-center">
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
-            <div style={{ width: 4, height: 60, background: "#953002", borderRadius: 4, marginTop: "0.2rem" }} className="shrink-0"></div>
+    <div className="space-y-7">
+      <div className="pt-8 pb-7">
+        <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="mt-1 h-[75px] w-1 shrink-0 rounded bg-[#953002]"></div>
             <div>
-              <h1 style={{
-                fontSize: "1.85rem",
-                fontWeight: 800,
-                color: "#1e293b",
-                letterSpacing: "0.01em",
-                margin: 0,
-                lineHeight: 1.2
-              }}>
+              <h1 className="m-0 text-[40px] font-extrabold leading-tight tracking-normal text-[#12233f] max-sm:text-[32px]">
                 Officer Dashboard
               </h1>
-              <p style={{ fontSize: "0.9rem", color: "#94a3b8", fontWeight: 500, margin: "0.6rem 0 0" }}>
+              <p className="mt-3 text-[18px] font-medium text-[#94a3b8]">
                 Centralized hub for secure bid openings and multi-criteria evaluation management.
               </p>
             </div>
           </div>
-
-
+          <Link
+            href="/officer-dashboard/notifications"
+            aria-label="Notification Center"
+            className="relative inline-flex h-12 w-12 items-center justify-center self-start rounded-full border border-[#dfe5ee] bg-white text-[#63718a] shadow-sm transition hover:border-[#953002]/30 hover:text-[#953002]"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ef4444] px-1 text-[11px] font-bold leading-none text-white">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm py-3.5 px-5 mb-6 border border-gray-100">
-        <h2 className="text-[17px] font-black text-gray-900">Welcome Back, {user?.name || "Officer"}.</h2>
-        <p className="text-[14px] text-gray-500 mt-0.5">
+      <div className="rounded-xl border border-gray-100 bg-white px-7 py-5 shadow-sm">
+        <h2 className="text-[22px] font-black text-gray-950">Welcome Back, {user?.name || "Officer"}.</h2>
+        <p className="mt-1 text-[17px] text-[#64748b]">
           You have {activeTendersCount} active tender{activeTendersCount !== 1 ? 's' : ''} requiring your attention today.
         </p>
       </div>
 
       <EvaluationKpiCards />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-8">
+      <div className="grid grid-cols-1 gap-7 lg:grid-cols-2 lg:items-stretch">
         <QuickActions />
         <EvaluationStatusPanel />
       </div>

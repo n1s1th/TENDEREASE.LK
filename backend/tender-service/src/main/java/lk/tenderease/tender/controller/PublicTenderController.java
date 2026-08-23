@@ -13,16 +13,24 @@ import lk.tenderease.tender.dto.response.TimelineDTO;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
+import lk.tenderease.tender.service.CurrentUserResolver;
+import lk.tenderease.tender.service.S3Service;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,22 +40,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/api/tenders")
 @RequiredArgsConstructor
 public class PublicTenderController {
 
+    /** Only objects under this prefix may be served by the public file endpoint. */
+    private static final String TENDER_PREFIX = "tenders";
+
     private final TenderService tenderService;
+    private final S3Service s3Service;
     private final CurrentBidderEmailResolver currentBidderEmailResolver;
+    private final CurrentUserResolver currentUserResolver;
 
     @GetMapping
     public Page<TenderSummaryDTO> getAllTenders(
@@ -56,14 +63,22 @@ public class PublicTenderController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenderStatus status,
-            @RequestParam(required = false) ProcurementType procurementType) {
+            @RequestParam(required = false) ProcurementType procurementType,
+            @RequestParam(required = false) String tab) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, tab, pageable);
     }
 
     @GetMapping("/{id}")
-    public TenderDetailsDTO getTenderById(@PathVariable String id) {
+    public TenderDetailsDTO getTenderById(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        // Tender details (documents, contacts, clarifications) are for signed-in users
+        // only. The tender list at GET /api/tenders stays public.
+        requireSignedIn(authorizationHeader, userEmailHeader);
+
         try {
             UUID uuid = UUID.fromString(id);
             return tenderService.getPublicTenderById(uuid);
@@ -147,54 +162,115 @@ public class PublicTenderController {
         return tenderService.getContacts(id);
     }
 
-    @GetMapping("/files/{filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+    @GetMapping("/files/{*key}")
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable("key") String key,
+            @RequestParam(name = "download", defaultValue = "false") boolean download) {
+        String s3Key = normalizeKey(key);
+
+        ResponseInputStream<GetObjectResponse> stream;
         try {
-            Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", filename);
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (!resource.exists()) {
-                throw new RuntimeException("File not found: " + filename);
-            }
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                    .body(resource);
-        } catch (Exception e) {
-            throw new RuntimeException("Download failed", e);
+            stream = s3Service.openStream(s3Key);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + s3Key);
         }
+
+        GetObjectResponse metadata = stream.response();
+        String filename = s3Key.substring(s3Key.lastIndexOf('/') + 1);
+        MediaType contentType = metadata.contentType() != null
+                ? MediaType.parseMediaType(metadata.contentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        (download ? "attachment" : "inline") + "; filename=\"" + filename + "\"")
+                .contentType(contentType);
+
+        if (metadata.contentLength() != null) {
+            response.contentLength(metadata.contentLength());
+        }
+
+        return response.body(new InputStreamResource(stream));
     }
 
     @GetMapping("/{id}/documents/download-all")
     public ResponseEntity<byte[]> downloadAll(@PathVariable UUID id) {
-        try {
-            List<TenderDocumentDTO> documents = tenderService.getDocuments(id);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] archive = tenderService.getDocumentsArchive(id);
 
-            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                for (TenderDocumentDTO doc : documents) {
-                    if (doc.getDownloadUrl() == null) {
-                        continue;
-                    }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents.zip\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(archive.length)
+                .body(archive);
+    }
 
-                    String fileName = doc.getDownloadUrl().substring(doc.getDownloadUrl().lastIndexOf("/") + 1);
-                    Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", fileName);
+    // ══════════════════════════════════════════════════════════════════════════
+    // SAVED TENDERS (BOOKMARKS)
+    // ══════════════════════════════════════════════════════════════════════════
 
-                    if (!Files.exists(filePath)) {
-                        continue;
-                    }
+    @GetMapping("/saved")
+    public Page<TenderSummaryDTO> getSavedTenders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        return tenderService.getSavedTenders(userId, PageRequest.of(page, size));
+    }
 
-                    zos.putNextEntry(new ZipEntry(doc.getDocumentName() + ".pdf"));
-                    Files.copy(filePath, zos);
-                    zos.closeEntry();
-                }
-            }
+    @GetMapping("/saved/ids")
+    public List<UUID> getSavedTenderIds(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        return tenderService.getSavedTenderIds(userId);
+    }
 
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents.zip\"")
-                    .body(baos.toByteArray());
-        } catch (Exception e) {
-            throw new RuntimeException("ZIP download failed", e);
+    @PostMapping("/{id}/save")
+    public ResponseEntity<Void> saveTender(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        tenderService.saveTender(userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/save")
+    public ResponseEntity<Void> unsaveTender(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        tenderService.unsaveTender(userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Returns the caller's identifier, or fails with 401 when the request carries no
+     * usable identity. Used by endpoints that must not serve anonymous visitors.
+     */
+    private String requireSignedIn(String authorizationHeader, String userEmailHeader) {
+        return currentUserResolver.resolve(authorizationHeader, userEmailHeader)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Sign in to view tender details"));
+    }
+
+    /**
+     * Turns the wildcard path segment into an S3 key and refuses anything outside the
+     * tender namespace, so this public endpoint cannot be used to read vendor or bid files.
+     */
+    private String normalizeKey(String rawKey) {
+        String key = rawKey == null ? "" : rawKey;
+        while (key.startsWith("/")) {
+            key = key.substring(1);
         }
+        if (key.isBlank() || key.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file key");
+        }
+        if (!key.startsWith(TENDER_PREFIX + "/")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Key is outside the tender document namespace");
+        }
+        return key;
     }
 }

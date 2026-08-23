@@ -111,7 +111,7 @@ export default function MemberDashboard() {
             setBidsList(bids);
 
             // Fetch Tender details for each unique tenderId to resolve their Titles
-            const tenderServiceUrl = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082/api/tenders";
+            const tenderServiceUrl = `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082"}/api/tenders`;
             const uniqueTenderIds = Array.from(new Set(bids.map((b: any) => b.tenderId))) as string[];
             
             const tenderPromises = uniqueTenderIds.map(async (tid) => {

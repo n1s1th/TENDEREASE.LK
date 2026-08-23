@@ -12,8 +12,10 @@ import java.util.UUID;
 public class TenderDocumentDTO {
 
     private UUID id;
+    private UUID tenderId;
     private String documentName;
     private DocumentType documentType;
-    private String downloadUrl; // from document-service
+    /** URL served by this service, streaming the object out of S3. */
+    private String downloadUrl;
     private Integer version;
 }

@@ -5,6 +5,7 @@ import lk.tenderease.user.client.DrcApiClient;
 import lk.tenderease.user.dto.request.VendorRegisterRequest;
 import lk.tenderease.user.dto.request.VendorSubmitRequest;
 import lk.tenderease.user.dto.request.VerifyRegistrationRequest;
+import lk.tenderease.user.dto.response.VendorDocumentDownload;
 import lk.tenderease.user.dto.response.VendorDocumentResponse;
 import lk.tenderease.user.dto.response.VendorProfileResponse;
 import lk.tenderease.user.dto.response.VendorRegistrationResponse;
@@ -32,10 +33,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.InputStreamResource;
 
 @Slf4j
 @Service
@@ -336,22 +334,21 @@ public class VendorRegistrationServiceImpl implements VendorRegistrationService 
 
     @Override
     @Transactional(readOnly = true)
-    public Resource getDocumentFile(UUID vendorId, UUID docId) {
-        VendorProfile profile = findVendorOrThrow(vendorId);
+    public VendorDocumentDownload getDocumentFile(UUID vendorId, UUID docId) {
+        findVendorOrThrow(vendorId);
         VendorDocument doc = vendorDocumentRepository.findById(docId)
                 .filter(d -> d.getVendorProfile().getId().equals(vendorId))
                 .orElseThrow(() -> new RuntimeException("Document not found: " + docId));
 
-        try {
-            Path path = Paths.get(doc.getFilePath());
-            Resource resource = new UrlResource(path.toUri());
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new RuntimeException("Could not read file: " + doc.getFilePath());
-            }
-        } catch (java.net.MalformedURLException e) {
-            throw new RuntimeException("Error reading file: " + doc.getFilePath(), e);
-        }
+        String fileName = doc.getOriginalFileName() != null && !doc.getOriginalFileName().isBlank()
+                ? doc.getOriginalFileName()
+                : "document";
+
+        return VendorDocumentDownload.builder()
+                .resource(new InputStreamResource(fileStorageService.load(doc.getFilePath())))
+                .fileName(fileName)
+                .contentType(doc.getMimeType() != null ? doc.getMimeType() : "application/octet-stream")
+                .contentLength(doc.getFileSizeBytes())
+                .build();
     }
 }

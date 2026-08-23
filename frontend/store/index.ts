@@ -13,6 +13,7 @@ export { useVideoStore } from "./video/video.store";
 export { useHeroStore } from "./hero/hero.store";
 export { useOfficerDashboardStore } from "./officer-dashboard/officer-dashboard.store";
 export { useTenderCreationStore } from "./tender-creation/tender-creation.store";
+export { useSavedTendersStore } from "./saved-tenders/saved-tenders.store";
 
 // ── Auth selectors ───────────────────────────────────────────
 export {
@@ -30,6 +31,13 @@ export {
   selectVendorLoading,
   selectKycStatus,
 } from "./vendor/vendor.store";
+
+// ── Saved tender selectors ───────────────────────────────────
+export {
+  selectSavedTenders,
+  selectSavedIds,
+  selectSavedLoading,
+} from "./saved-tenders/saved-tenders.store";
 
 // ── Tender selectors ─────────────────────────────────────────
 export {
