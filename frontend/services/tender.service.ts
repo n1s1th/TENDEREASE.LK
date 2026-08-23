@@ -1,7 +1,19 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
-  || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
+function resolveTenderBaseUrl(): string {
+  const tenderUrl = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL;
+  if (tenderUrl) {
+    return tenderUrl.replace(/\/+$/, "");
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.tenderease.me";
+  const cleanApi = apiUrl.replace(/\/+$/, "");
+  if (cleanApi.endsWith("/api")) {
+    return `${cleanApi}/tenders`;
+  }
+  return `${cleanApi}/api/tenders`;
+}
+
+const BASE_URL = resolveTenderBaseUrl();
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
