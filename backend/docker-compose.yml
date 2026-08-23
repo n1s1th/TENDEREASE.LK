@@ -138,3 +138,93 @@ services:
     depends_on:
       - eureka-server
     restart: always
+
+  # 10. Evaluation Service
+  evaluation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: evaluation-service/target/*.jar
+    container_name: evaluation-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 11. Contract Service
+  contract-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: contract-service/target/*.jar
+    container_name: contract-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 12. Payment Service
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: payment-service/target/*.jar
+    container_name: payment-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 13. Clarification Service
+  clarification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: clarification-service/target/*.jar
+    container_name: clarification-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 14. QA Service
+  qa-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: qa-service/target/*.jar
+    container_name: qa-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 15. Appeal Service
+  appeal-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: appeal-service/target/*.jar
+    container_name: appeal-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
