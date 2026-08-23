@@ -387,7 +387,8 @@ export const useCAODashboardStore = create<CAODashboardState>(
         } else {
           get().fetchRecommendations();
         }
-      } catch {
+      } catch (err) {
+        console.error("Update Recommendation Error:", err);
         get().showToast('error', `Failed to ${status.toLowerCase()} recommendation.`);
       }
     },

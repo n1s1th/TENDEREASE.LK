@@ -1,25 +1,115 @@
 package lk.tenderease.evaluation.service;
 
 import lk.tenderease.evaluation.entity.RecommendationNote;
+import lk.tenderease.evaluation.entity.EvaluationResult;
 import lk.tenderease.evaluation.repository.RecommendationNoteRepository;
+import lk.tenderease.evaluation.repository.EvaluationResultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
 
     private final RecommendationNoteRepository repository;
+    private final EvaluationResultRepository resultRepository;
 
     public List<RecommendationNote> getAllRecommendations(RecommendationNote.RecommendationStatus status) {
+        syncMissingRecommendationNotes();
+
         if (status != null) {
             return repository.findByStatus(status);
         }
         return repository.findAllByOrderByCreatedAtDesc();
+    }
+
+    private void syncMissingRecommendationNotes() {
+        List<RecommendationNote> existingNotes = repository.findAll();
+        
+        // Clean up any previously generated dummy notes
+        for (RecommendationNote note : existingNotes) {
+            if ("Infrastructure Upgrade Project".equals(note.getTenderName()) || "ERP System Upgrade".equals(note.getTenderName())) {
+                repository.delete(note);
+            }
+        }
+
+        List<EvaluationResult> results = resultRepository.findAll();
+        for (EvaluationResult result : results) {
+            if (result.getWinningBidId() == null) continue;
+
+            boolean exists = existingNotes.stream()
+                    .anyMatch(n -> n.getTenderId() != null && n.getTenderId().equals(result.getTenderId().toString()));
+
+            if (!exists) {
+                createRecommendationNote(result);
+            }
+        }
+    }
+
+    private boolean createRecommendationNote(EvaluationResult result) {
+        String tenderId = result.getTenderId().toString();
+        String tenderName = null;
+        String department = null;
+        java.math.BigDecimal estimatedBudget = null;
+        
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String tenderUrl = "http://localhost:8082/api/v1/tenders/" + tenderId;
+            Map<String, Object> tenderRes = restTemplate.getForObject(tenderUrl, Map.class);
+            if (tenderRes != null) {
+                if (tenderRes.get("title") != null) tenderName = (String) tenderRes.get("title");
+                if (tenderRes.get("department") != null) department = (String) tenderRes.get("department");
+                if (tenderRes.get("estimatedCost") != null) estimatedBudget = new java.math.BigDecimal(tenderRes.get("estimatedCost").toString());
+                if (tenderRes.get("estimatedBudget") != null) estimatedBudget = new java.math.BigDecimal(tenderRes.get("estimatedBudget").toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch tender details for sync (tender likely doesn't exist): " + e.getMessage());
+            return false; // Skip creating recommendation if tender doesn't exist in tender-service
+        }
+
+        if (tenderName == null) return false;
+
+        String bidderName = "Unknown Bidder";
+        java.math.BigDecimal recommendedValue = java.math.BigDecimal.ZERO;
+
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String bidUrl = "http://localhost:8083/api/bids/tender/" + tenderId;
+            Map<String, Object> bidsRes = restTemplate.getForObject(bidUrl, Map.class);
+            if (bidsRes != null && bidsRes.get("data") != null) {
+                List<Map<String, Object>> bidsList = (List<Map<String, Object>>) bidsRes.get("data");
+                for (Map<String, Object> bid : bidsList) {
+                    if (bid.get("id") != null && bid.get("id").toString().equalsIgnoreCase(result.getWinningBidId().toString())) {
+                        bidderName = (String) bid.get("companyName");
+                        if (bidderName == null) bidderName = (String) bid.get("bidderName");
+                        if (bid.get("bidAmount") != null) recommendedValue = new java.math.BigDecimal(bid.get("bidAmount").toString());
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch bid details for sync: " + e.getMessage());
+        }
+
+        RecommendationNote recNote = RecommendationNote.builder()
+                .tenderId(tenderId)
+                .tenderName(tenderName)
+                .department(department != null ? department : "N/A")
+                .estimatedBudget(estimatedBudget != null ? estimatedBudget : java.math.BigDecimal.ZERO)
+                .bidderName(bidderName)
+                .recommendedValue(recommendedValue)
+                .finalScore(result.getFinalScore().doubleValue())
+                .justification("Recommended based on the highest technical and financial evaluation score of " + result.getFinalScore() + "%.")
+                .status(RecommendationNote.RecommendationStatus.PENDING)
+                .build();
+        repository.save(recNote);
+        return true;
     }
 
     public RecommendationNote getRecommendationById(Long id) {
@@ -40,7 +130,7 @@ public class RecommendationService {
 
         if (status == RecommendationNote.RecommendationStatus.APPROVED) {
             try {
-                org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+                RestTemplate restTemplate = new RestTemplate();
                 String url = "http://localhost:8082/api/v1/tenders/" + note.getTenderId() + "/status?status=AWARDED";
                 restTemplate.put(url, null);
                 System.out.println("Tender status synchronized to AWARDED for tender: " + note.getTenderId());

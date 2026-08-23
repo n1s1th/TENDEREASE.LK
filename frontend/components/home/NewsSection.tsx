@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useNewsStore } from "@/store";
 import { useShallow } from "zustand/shallow";
 
@@ -93,8 +94,9 @@ export default function NewsSection() {
         {/* Cards grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.25rem" }}>
           {filtered.map((item) => (
-            <div
+            <Link
               key={item.id}
+              href={`/news/${item.id}`}
               style={{
                 borderRadius: 14,
                 overflow: "hidden",
@@ -103,14 +105,15 @@ export default function NewsSection() {
                 flexDirection: "column",
                 transition: "transform 0.2s, box-shadow 0.2s",
                 cursor: "pointer",
+                textDecoration: "none",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-                (e.currentTarget as HTMLDivElement).style.boxShadow = "0 16px 40px rgba(0,0,0,0.4)";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-4px)";
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 16px 40px rgba(0,0,0,0.4)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
               }}
             >
               {/* Image */}
@@ -148,32 +151,31 @@ export default function NewsSection() {
                 <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#f1f5f9", lineHeight: 1.5, margin: 0, flex: 1 }}>
                   {item.title}
                 </h3>
-                <a
-                  href={`/news/${item.id}`}
+                <div
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "0.35rem",
                     padding: "0.45rem 1rem", border: "1px solid rgba(255,255,255,0.15)",
                     borderRadius: 6, color: "rgba(255,255,255,0.7)", fontSize: "0.8rem",
-                    fontWeight: 500, textDecoration: "none", width: "fit-content",
+                    fontWeight: 500, width: "fit-content",
                     transition: "background 0.15s, border-color 0.15s, color 0.15s",
                   }}
                   onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
+                    const el = e.currentTarget as HTMLDivElement;
                     el.style.background = "rgba(149,48,2,0.3)";
                     el.style.borderColor = "#bd4005";
                     el.style.color = "#fff";
                   }}
                   onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLAnchorElement;
+                    const el = e.currentTarget as HTMLDivElement;
                     el.style.background = "transparent";
                     el.style.borderColor = "rgba(255,255,255,0.15)";
                     el.style.color = "rgba(255,255,255,0.7)";
                   }}
                 >
                   View Now →
-                </a>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
