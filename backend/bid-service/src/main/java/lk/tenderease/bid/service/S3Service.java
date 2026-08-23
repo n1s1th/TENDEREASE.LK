@@ -1,4 +1,4 @@
-package lk.tenderease.tender.service;
+package lk.tenderease.bid.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Single entry point for every file operation in the Tender Service.
+ * Single entry point for every file operation in the Bid Service.
  *
  * <p>All objects live in one bucket under a predictable prefix layout, so keys stay
  * readable and each service owns its own namespace:

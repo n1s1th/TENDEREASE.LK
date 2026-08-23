@@ -21,9 +21,9 @@ export default function QuestionList({
 }: QuestionListProps) {
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-white rounded-[2rem] border border-gray-100 shadow-sm">
+      <div className="py-24 flex flex-col items-center justify-center gap-4 bg-white rounded-[2rem] border border-gray-200 shadow-sm">
         <Loader2 size={36} className="animate-spin text-primary" />
-        <p className="text-xs font-black text-gray-3 uppercase tracking-[0.2em]">Loading Questions</p>
+        <p className="text-sm font-medium text-gray-500 uppercase tracking-[0.2em]">Loading Questions</p>
       </div>
     );
   }
@@ -32,16 +32,16 @@ export default function QuestionList({
     return (
       <div className="py-16 flex flex-col items-center justify-center gap-3 bg-white rounded-[2rem] border border-error/20 text-center">
         <AlertCircle size={34} className="text-error" />
-        <p className="text-sm font-black text-error">{error}</p>
+        <p className="text-sm font-semibold text-error">{error}</p>
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center gap-3 bg-white rounded-[2rem] border border-gray-100 text-center shadow-sm">
-        <p className="text-lg font-black text-black-1">No public questions yet</p>
-        <p className="text-sm font-bold text-gray-3">Ask the first general platform question above.</p>
+      <div className="py-20 flex flex-col items-center justify-center gap-3 bg-white rounded-[2rem] border border-gray-200 text-center shadow-sm">
+        <p className="text-lg font-bold text-gray-900">No public questions yet</p>
+        <p className="text-sm font-normal text-gray-500">Ask the first general platform question above.</p>
       </div>
     );
   }

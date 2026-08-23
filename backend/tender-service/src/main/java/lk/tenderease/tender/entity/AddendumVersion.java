@@ -31,14 +31,9 @@ public class AddendumVersion {
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;
 
-    @Column(name = "cloudinary_public_id", nullable = false, length = 500)
-    private String cloudinaryPublicId;
-
-    @Column(name = "cloudinary_url", nullable = false, length = 1000)
-    private String cloudinaryUrl;
-
-    @Column(name = "secure_url", nullable = false, length = 1000)
-    private String secureUrl;
+    /** S3 object key, e.g. tenders/{tenderId}/addenda/{addendumId}/v{n}/{uuid}_{filename}. */
+    @Column(name = "s3_key", nullable = false, length = 500)
+    private String s3Key;
 
     @Column(name = "original_filename", nullable = false, length = 255)
     private String originalFilename;

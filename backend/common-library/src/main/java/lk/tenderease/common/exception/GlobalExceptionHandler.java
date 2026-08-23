@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,6 +57,23 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(RuntimeException ex, WebRequest request) {
         ErrorResponse errorResponse = buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getDescription(false));
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Honours the status a controller deliberately signalled (401, 403, 404, ...).
+     * Without this, ResponseStatusException falls through to the generic handlers
+     * below and the intended status is replaced by 400/500.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(ResponseStatusException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+        ErrorResponse errorResponse = buildErrorResponse(status, message, request.getDescription(false));
+        return new ResponseEntity<>(errorResponse, status);
     }
 
     @ExceptionHandler(RuntimeException.class)

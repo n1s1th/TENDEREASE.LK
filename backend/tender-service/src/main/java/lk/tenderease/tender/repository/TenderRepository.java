@@ -65,6 +65,44 @@ public interface TenderRepository extends JpaRepository<Tender, UUID>, JpaSpecif
             Pageable pageable
     );
 
+    // 🔍 Lifecycle-aware search: tenders still accepting bids.
+    // Mirrors the "effective status" rule used when building summaries — a tender
+    // whose closing date has passed reads as CLOSED even if its stored status says otherwise.
+    @Query("""
+        SELECT t FROM Tender t WHERE
+        (:keyword = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
+        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT', 'CLOSED', 'CANCELLED')
+        AND (t.closingDate IS NULL OR t.closingDate >= :now)
+    """)
+    Page<Tender> searchOpen(
+            @Param("keyword") String keyword,
+            @Param("procurementType") ProcurementType procurementType,
+            @Param("now") java.time.LocalDateTime now,
+            Pageable pageable
+    );
+
+    // 🔍 Lifecycle-aware search: tenders no longer accepting bids.
+    @Query("""
+        SELECT t FROM Tender t WHERE
+        (:keyword = '' OR
+         LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.tenderNumber) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+         LOWER(t.department.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        AND (:procurementType IS NULL OR t.procurementType = :procurementType)
+        AND t.status NOT IN ('PENDING_APPROVAL', 'DRAFT')
+        AND (t.status IN ('CLOSED', 'CANCELLED') OR (t.closingDate IS NOT NULL AND t.closingDate < :now))
+    """)
+    Page<Tender> searchClosed(
+            @Param("keyword") String keyword,
+            @Param("procurementType") ProcurementType procurementType,
+            @Param("now") java.time.LocalDateTime now,
+            Pageable pageable
+    );
+
     // Officer Dashboard queries
     long countByStatus(TenderStatus status);
 

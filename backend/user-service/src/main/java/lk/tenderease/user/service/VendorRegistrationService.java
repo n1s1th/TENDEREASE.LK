@@ -4,6 +4,7 @@ import lk.tenderease.common.dto.PageResponse;
 import lk.tenderease.user.dto.request.VendorRegisterRequest;
 import lk.tenderease.user.dto.request.VendorSubmitRequest;
 import lk.tenderease.user.dto.request.VerifyRegistrationRequest;
+import lk.tenderease.user.dto.response.VendorDocumentDownload;
 import lk.tenderease.user.dto.response.VendorDocumentResponse;
 import lk.tenderease.user.dto.response.VendorProfileResponse;
 import lk.tenderease.user.dto.response.VendorRegistrationResponse;
@@ -26,5 +27,5 @@ public interface VendorRegistrationService {
     VendorProfileResponse approveVendor(UUID id);
     VendorProfileResponse rejectVendor(UUID id, String reason);
     VendorProfileResponse getVendorByEmail(String email);
-    org.springframework.core.io.Resource getDocumentFile(UUID id, UUID docId);
+    VendorDocumentDownload getDocumentFile(UUID id, UUID docId);
 }

@@ -1,4 +1,3 @@
-import SubNav from "@/components/officer-dashboard/SubNav";
 import Toast from "@/components/officer-dashboard/Toast";
 import RecommendationReviewModal from "@/components/officer-dashboard/modals/RecommendationReviewModal";
 import TenderSummaryModal from "@/components/officer-dashboard/modals/TenderSummaryModal";
@@ -26,8 +25,7 @@ export default function OfficerDashboardLayout({
   return (
     <ProtectedRoute allowedRoles={["PROCUREMENT_OFFICER"]}>
       <div className="dash-page">
-        <SubNav />
-        <main style={{ maxWidth: 1200, margin: "0 auto", padding: "0.5rem 1.5rem 2rem" }}>{children}</main>
+        <main style={{ maxWidth: 1440, margin: "0 auto", padding: "2rem 1.5rem 2.5rem" }}>{children}</main>
         <Footer />
 
         {/* Global modals */}
