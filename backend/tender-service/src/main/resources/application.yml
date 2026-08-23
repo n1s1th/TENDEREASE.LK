@@ -141,3 +141,10 @@ cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:madn9ltp}
   api-key: ${CLOUDINARY_API_KEY:129558664824389}
   api-secret: ${CLOUDINARY_API_SECRET:7OhoKeqHgOyugmWEVakTX6Bi_XM}
+
+aws:
+  access-key: ${AWS_ACCESS_KEY_ID:}
+  secret-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket: ${AWS_S3_BUCKET_NAME:tenderease}

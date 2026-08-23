@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth/auth.store";
 import { TenderCreationFormData } from "@/lib/types/tender-creation.types";
 
 export interface DynamicTenderCreationState {
@@ -231,6 +232,7 @@ export const useDynamicTenderCreationStore = create<DynamicTenderCreationState>(
             estimatedBudget,
             templateId: templateId,
             dynamicData: dynamicData,
+            officerEmail: useAuthStore.getState().user?.email || useAuthStore.getState().user?.username || "officer@procurement.gov.lk"
           };
 
           const result = await api.createTender(payload);

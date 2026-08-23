@@ -8,6 +8,7 @@ import type {
   StepIndex,
 } from "@/lib/types/tender-creation.types";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/store/auth/auth.store";
 
 const INITIAL_FORM_DATA: TenderCreationFormData = {
   // Step 0
@@ -223,7 +224,8 @@ export const useTenderCreationStore = create<TenderCreationState>()(
             ministryId: Number(rawPayload.ministryId),
             departmentId: Number(rawPayload.departmentAgencyId),
             fundingSourceId: rawPayload.fundingSource ? Number(rawPayload.fundingSource) : null,
-            estimatedBudget: Number(rawPayload.estimatedBudget)
+            estimatedBudget: Number(rawPayload.estimatedBudget),
+            officerEmail: useAuthStore.getState().user?.email || useAuthStore.getState().user?.username || "officer@procurement.gov.lk"
           };
 
           const result = await api.createTender(payload);
