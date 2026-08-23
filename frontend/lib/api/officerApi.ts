@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { OfficerRegistrationFormData } from '../validations/officerSchema';
 
-const API_BASE_URL = 'http://localhost:8081/api/officers';
+const API_BASE_URL = '\/officers';
 
 export interface OfficerSuccessResponse {
   success: boolean;
