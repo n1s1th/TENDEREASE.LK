@@ -48,6 +48,7 @@ import lk.tenderease.tender.repository.TenderRepository;
 import lk.tenderease.tender.repository.TenderScheduleRepository;
 import lk.tenderease.tender.repository.TenderTimelineRepository;
 import lk.tenderease.tender.service.TenderService;
+import lk.tenderease.tender.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -93,6 +94,7 @@ public class TenderServiceImpl implements TenderService {
     private final TenderContactRepository contactRepository;
     private final TenderScheduleRepository scheduleRepository;
     private final NotificationProducer notificationProducer;
+    private final S3Service s3Service;
 
     @Value("${app.upload-dir:../uploads}")
     private String uploadDir;
@@ -397,17 +399,13 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
-        // Save file to local storage
-        String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
-        Path targetPath = Paths.get(uploadDir).resolve(fileName).toAbsolutePath();
-        log.info("Saving uploaded file to: {}", targetPath);
+        // Generate S3 key
+        String s3Key = "tenders/" + tenderId + "/documents/" + java.util.UUID.randomUUID().toString() + "_" + docName;
         
         try {
-            Files.createDirectories(targetPath.getParent());
-            Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("File successfully saved to disk.");
-        } catch (IOException e) {
-            log.error("CRITICAL: Failed to store file at {}. Error: {}", targetPath, e.getMessage());
+            s3Service.uploadFile(s3Key, request.getFile());
+        } catch (Exception e) {
+            log.error("CRITICAL: Failed to store file to S3 at {}. Error: {}", s3Key, e.getMessage());
             throw new RuntimeException("Could not store file", e);
         }
 
@@ -416,7 +414,7 @@ public class TenderServiceImpl implements TenderService {
                 .tender(tender)
                 .documentName(docName)
                 .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
-                .s3Key(fileName) // We use s3Key to store the local filename
+                .s3Key(s3Key) // Now it's actually an S3 key
                 .fileSizeBytes(request.getFile().getSize())
                 .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
                 .uploadedAt(java.time.LocalDateTime.now())
@@ -442,12 +440,11 @@ public class TenderServiceImpl implements TenderService {
         TenderDocument doc = documentRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
         
-        Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
-        log.info("Attempting to read file from path: {}", filePath.toAbsolutePath());
+        log.info("Attempting to read file from S3 with key: {}", doc.getS3Key());
         try {
-            return Files.readAllBytes(filePath);
-        } catch (IOException e) {
-            log.error("Failed to read file: {}", e.getMessage());
+            return s3Service.downloadFile(doc.getS3Key());
+        } catch (Exception e) {
+            log.error("Failed to read file from S3: {}", e.getMessage());
             throw new RuntimeException("Could not read file", e);
         }
     }
@@ -461,10 +458,10 @@ public class TenderServiceImpl implements TenderService {
         }
         
         try {
-            Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            log.error("Failed to delete file from disk: {}", e.getMessage());
+            // we could implement s3 delete here, but for now just delete the entity
+            // s3Service.deleteFile(doc.getS3Key());
+        } catch (Exception e) {
+            log.error("Failed to delete file from S3: {}", e.getMessage());
         }
         
         documentRepository.delete(doc);

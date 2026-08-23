@@ -63,6 +63,9 @@ public class CreateTenderRequest {
     @Schema(description = "Detailed description of the tender")
     private String description;
 
+    @Schema(description = "Email address of the responsible officer")
+    private String officerEmail;
+
     @NotNull(message = "Estimated budget is required")
     @Positive(message = "Estimated budget must be greater than 0")
     @Schema(description = "Estimated budget amount in LKR", example = "50000000.00")

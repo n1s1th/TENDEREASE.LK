@@ -9,6 +9,8 @@ export default function Step3Documents() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const inputCls = "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-75";
+
   const [documentType, setDocumentType] = useState('INCORPORATION_CERTIFICATE');
   const [documentTitle, setDocumentTitle] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -81,7 +83,7 @@ export default function Step3Documents() {
             <select 
               value={documentType} 
               onChange={(e) => setDocumentType(e.target.value)}
-              className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+              className={inputCls}
             >
               <option value="INCORPORATION_CERTIFICATE">Business Registration</option>
               <option value="TAX_CLEARANCE">Tax Document</option>
@@ -98,7 +100,7 @@ export default function Step3Documents() {
               value={documentTitle}
               onChange={(e) => setDocumentTitle(e.target.value)}
               placeholder="e.g. Audit Report 2023"
-              className="flex border rounded-md px-3 py-2 text-sm w-full outline-none focus:ring-2 focus:ring-amber-500" 
+              className={inputCls} 
             />
           </div>
 
@@ -108,7 +110,7 @@ export default function Step3Documents() {
               type="file" 
               accept=".pdf,.doc,.docx"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 border border-gray-300 rounded-md bg-white" 
+              className="flex h-10 w-full rounded-md border border-gray-300 bg-white text-sm text-gray-500 file:mr-4 file:h-full file:px-4 file:border-0 file:bg-amber-50 file:text-amber-700 file:text-sm file:font-semibold hover:file:bg-amber-100 outline-none transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20" 
             />
           </div>
         </div>
@@ -116,7 +118,7 @@ export default function Step3Documents() {
         <button 
           onClick={handleUpload}
           disabled={uploading || !selectedFile}
-          className="px-4 py-2 bg-[#953002] text-white rounded-md text-sm font-medium shadow hover:bg-amber-800 disabled:opacity-50"
+          className="h-10 px-4 bg-[#953002] text-white rounded-md text-sm font-semibold shadow hover:bg-amber-800 disabled:opacity-50 transition-colors"
         >
           {uploading ? 'Uploading...' : 'Upload Document'}
         </button>

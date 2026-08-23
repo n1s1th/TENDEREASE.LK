@@ -18,6 +18,9 @@ import {
   Filler,
 } from "chart.js";
 import { Line, Doughnut, Bar } from "react-chartjs-2";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 ChartJS.register(
   CategoryScale,
@@ -41,7 +44,41 @@ export default function ReportsPage() {
   const [category, setCategory] = useState("");
   const [period, setPeriod] = useState("all_time");
 
+  const cycleTimeRef = useRef<any>(null);
+  const activeTendersRef = useRef<any>(null);
+  const awardValueRef = useRef<any>(null);
+  const smeRef = useRef<any>(null);
+
   useEffect(() => {
+    // 1. One-time migration: push localStorage 'AWARDED' tenders to the database
+    const syncDb = async () => {
+      const raw = localStorage.getItem("awardEmailsSent");
+      if (raw) {
+        try {
+          const sentMap = JSON.parse(raw);
+          let syncedAny = false;
+          for (const [tId, entry] of Object.entries(sentMap)) {
+            if ((entry as any).fullyAwarded || ((entry as any).winner && (entry as any).lost)) {
+              await fetch(`http://localhost:8082/api/v1/tenders/${tId}/status?status=AWARDED`, { method: 'PUT' });
+              syncedAny = true;
+            }
+          }
+          if (syncedAny) {
+            // Trigger a refetch so the report picks up the database changes
+            fetchKpiReport({
+              department: department || undefined,
+              category: category || undefined,
+              period: period || undefined,
+            });
+          }
+        } catch (e) {
+          console.error("Failed to sync local storage to DB", e);
+        }
+      }
+    };
+    syncDb();
+
+    // 2. Standard fetch
     fetchKpiReport({
       department: department || undefined,
       category: category || undefined,
@@ -80,11 +117,11 @@ export default function ReportsPage() {
 
   const smeDataAvailable = kpiReport && kpiReport.smeParticipationPercent !== -1;
   const smeData = {
-    labels: ["SME", "Non-SME"],
+    labels: ["SME (Sole Proprietorship / Partnership)", "Other Entities"],
     datasets: [
       {
         data: smeDataAvailable ? [kpiReport.smeParticipationPercent, 100 - kpiReport.smeParticipationPercent] : [0, 100],
-        backgroundColor: ["#f0b323", "#E5E7EB"],
+        backgroundColor: ["#f0b323", "#e5e7eb"],
         borderWidth: 0,
       },
     ],
@@ -132,6 +169,167 @@ export default function ReportsPage() {
     cutout: "65%",
   };
 
+  const getPeriodLabel = (p: string) => {
+    switch (p) {
+      case "today": return "Today";
+      case "this_week": return "This Week";
+      case "this_month": return "This Month";
+      case "this_year": return "This Year";
+      default: return "All Time";
+    }
+  };
+
+  const exportCSV = () => {
+    if (!kpiReport) return;
+    const wb = XLSX.utils.book_new();
+
+    const summaryData = [
+      ["KPI REPORT"],
+      ["Generated On", new Date().toLocaleString()],
+      ["Time Filter", getPeriodLabel(period)],
+      ["Department Filter", department || "All"],
+      ["Category Filter", category || "All"],
+      [],
+      ["Metric", "Value"],
+      ["Average Cycle Time", kpiReport.summary.avgCycleTime],
+      ["SME Participation", kpiReport.summary.smeParticipation],
+      ["Total Award Value", kpiReport.summary.totalAwardValue],
+      ["Active Tenders", kpiReport.summary.activeTenders],
+      ["Total Awards", kpiReport.summary.totalAwards],
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    const trendHeaders = ["Month", "Cycle Time (Days)", "Active Tenders", "Award Value (Rs. Mn)"];
+    const trendRows = kpiReport.cycleTimeTrend.map((ct, idx) => [
+      ct.label,
+      ct.value,
+      kpiReport.activeTendersTrend[idx]?.value || 0,
+      kpiReport.awardValueTrend[idx]?.value || 0
+    ]);
+    
+    const wsTrends = XLSX.utils.aoa_to_sheet([trendHeaders, ...trendRows]);
+    XLSX.utils.book_append_sheet(wb, wsTrends, "Trends");
+
+    XLSX.writeFile(wb, "KPI_Report.xlsx");
+  };
+
+  const getBase64ImageFromUrl = async (url: string): Promise<string> => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+    });
+  };
+
+  const exportPDF = async () => {
+    if (!kpiReport) return;
+    
+    const doc = new jsPDF("p", "pt", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Watermark - match the screenshot size
+    doc.setTextColor(245, 245, 245);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    
+    // Create a grid of watermarks
+    for(let x = 50; x < pageWidth + 200; x += 300) {
+      for(let y = 50; y < pageHeight + 200; y += 200) {
+        doc.text("TENDEREASE.LK", x, y, { angle: -25, align: "center" });
+      }
+    }
+
+    // Header Logo
+    try {
+      const logoBase64 = await getBase64ImageFromUrl("/logo.png");
+      doc.addImage(logoBase64, 'PNG', 40, 40, 160, 45);
+    } catch(e) {
+      // Fallback
+      doc.setFillColor(149, 48, 2);
+      doc.rect(40, 40, 30, 40, "F");
+      doc.setTextColor(149, 48, 2);
+      doc.setFontSize(16);
+      doc.text("TenderEase.lk", 80, 55);
+    }
+
+    // Header Meta
+    doc.setFontSize(10);
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Time: ${getPeriodLabel(period)}`, pageWidth - 40, 55, { align: "right" });
+    doc.text(`Department: ${department || 'All'}`, pageWidth - 40, 68, { align: "right" });
+    doc.text(`Category: ${category || 'All'}`, pageWidth - 40, 81, { align: "right" });
+    doc.text(`Generated On: ${new Date().toLocaleString()}`, pageWidth - 40, 94, { align: "right" });
+
+    // Divider
+    doc.setDrawColor(200, 200, 200);
+    doc.line(40, 110, pageWidth - 40, 110);
+
+    // Title
+    doc.setFontSize(16);
+    doc.setTextColor(20, 30, 60); // Dark navy/grey
+    doc.text("KPI REPORT", pageWidth / 2, 140, { align: "center" });
+
+    // Summary Table
+    autoTable(doc, {
+      startY: 170,
+      head: [["Metric", "Value"]],
+      body: [
+        ["Average Cycle Time", kpiReport.summary.avgCycleTime],
+        ["SME Participation", kpiReport.summary.smeParticipation],
+        ["Total Award Value", kpiReport.summary.totalAwardValue],
+        ["Active Tenders", kpiReport.summary.activeTenders],
+        ["Total Awards", kpiReport.summary.totalAwards],
+      ],
+      headStyles: { fillColor: [149, 48, 2], textColor: 255, fontStyle: "bold", halign: "left" },
+      bodyStyles: { textColor: 50 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      theme: "grid",
+    });
+
+    let currentY = (doc as any).lastAutoTable.finalY + 30;
+    
+    // Add Charts
+    const addChartToDoc = (ref: any, title: string, x: number, y: number, w: number, h: number) => {
+        if (ref?.current) {
+            const imgBase64 = ref.current.toBase64Image();
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50);
+            doc.text(title, x + (w / 2), y - 10, { align: 'center' });
+            doc.addImage(imgBase64, 'PNG', x, y, w, h);
+        }
+    };
+
+    // Cycle time and SME side by side
+    addChartToDoc(cycleTimeRef, "Cycle Time Trend", 40, currentY, 240, 140);
+    addChartToDoc(smeRef, "SME Participation", 300, currentY, 240, 140);
+    currentY += 180;
+
+    // Award Value and Active side by side
+    addChartToDoc(awardValueRef, "Award Value Trends", 40, currentY, 240, 140);
+    addChartToDoc(activeTendersRef, "Active Tenders Growth", 300, currentY, 240, 140);
+    currentY += 160;
+
+    // Footer
+    const finalY = currentY + 30;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(40, finalY, 200, finalY);
+    doc.line(pageWidth - 200, finalY, pageWidth - 40, finalY);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Generated By Signature", 40, finalY + 15);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 40, finalY + 30);
+
+    doc.text("Authorized Verification", pageWidth - 200, finalY + 15);
+    doc.text("TenderEase Security Seal Verified", pageWidth - 200, finalY + 30);
+
+    doc.save("KPI_Report.pdf");
+  };
+
   return (
     <div className="dash-section">
       <div className="dash-report" id="kpi-report">
@@ -146,10 +344,10 @@ export default function ReportsPage() {
             </p>
           </div>
           <div className="dash-report-export">
-            <button className="dash-btn dash-btn--outline dash-btn--sm">
+            <button className="dash-btn dash-btn--outline dash-btn--sm" onClick={exportPDF}>
               <Download size={14} /> Export PDF
             </button>
-            <button className="dash-btn dash-btn--outline dash-btn--sm">
+            <button className="dash-btn dash-btn--outline dash-btn--sm" onClick={exportCSV}>
               <Download size={14} /> Export CSV
             </button>
           </div>
@@ -206,7 +404,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="dash-report-chart">
                   {kpiReport?.cycleTimeTrend && kpiReport.cycleTimeTrend.length > 0 ? (
-                    <Line data={cycleTimeData} options={chartOptions} />
+                    <Line ref={cycleTimeRef} data={cycleTimeData} options={chartOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
                       No data received yet.
@@ -226,7 +424,27 @@ export default function ReportsPage() {
                 </div>
                 <div className="dash-report-chart">
                   {smeDataAvailable ? (
-                    <Doughnut data={smeData} options={doughnutOptions} />
+                    <Doughnut ref={smeRef} data={smeData} options={doughnutOptions} plugins={[{
+                      id: 'textCenter',
+                      beforeDraw: function(chart: any) {
+                        var width = chart.width,
+                            height = chart.height,
+                            ctx = chart.ctx;
+                  
+                        ctx.restore();
+                        var fontSize = (height / 114).toFixed(2);
+                        ctx.font = "bold " + fontSize + "em sans-serif";
+                        ctx.textBaseline = "middle";
+                  
+                        var text = kpiReport.smeParticipationPercent + "%",
+                            textX = Math.round((width - ctx.measureText(text).width) / 2),
+                            textY = height / 2 - 20; // adjust for legend
+                  
+                        ctx.fillStyle = "#333";
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                      }
+                    }]} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
                       No data received yet.
@@ -249,7 +467,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="dash-report-chart" style={{ height: 280 }}>
                   {kpiReport?.awardValueTrend && kpiReport.awardValueTrend.length > 0 ? (
-                    <Bar data={awardValueData} options={chartOptions} />
+                    <Bar ref={awardValueRef} data={awardValueData} options={chartOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
                       No data received yet.
@@ -269,7 +487,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="dash-report-chart" style={{ height: 280 }}>
                   {kpiReport?.activeTendersTrend && kpiReport.activeTendersTrend.length > 0 ? (
-                    <Bar data={activeTendersData} options={chartOptions} />
+                    <Bar ref={activeTendersRef} data={activeTendersData} options={chartOptions} />
                   ) : (
                     <span style={{ color: "var(--te-gray-4)", fontSize: "0.875rem" }}>
                       No data received yet.

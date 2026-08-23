@@ -1,20 +1,38 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useHeroStore } from "@/store";
 
 export default function HeroSection() {
   // ── Consume store — no local dummy data ───────────────────
   const slides = useHeroStore((s) => s.slides);
+  const categories = useHeroStore((s) => s.categories);
   const currentSlideIndex = useHeroStore((s) => s.currentSlide);
+  const searchQuery = useHeroStore((s) => s.searchQuery);
+  const selectedCategory = useHeroStore((s) => s.selectedCategory);
   const nextSlide = useHeroStore((s) => s.nextSlide);
   const prevSlide = useHeroStore((s) => s.prevSlide);
   const setSlide = useHeroStore((s) => s.setSlide);
+  const setSearchQuery = useHeroStore((s) => s.setSearchQuery);
+  const setSelectedCategory = useHeroStore((s) => s.setSelectedCategory);
+
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [nextSlide, isPaused]);
 
   const slide = slides[currentSlideIndex];
 
   return (
     <section
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       style={{
         position: "relative",
         width: "100%",
@@ -26,25 +44,30 @@ export default function HeroSection() {
         justifyContent: "center",
       }}
     >
-      {/* Background image with overlay */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "url('/hero01.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center 40%",
-          zIndex: 0,
-        }}
-      >
+      {/* Background images with crossfade */}
+      {slides.map((s, idx) => (
         <div
+          key={idx}
           style={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.65) 100%)",
+            backgroundImage: `url('${s.image}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 40%",
+            zIndex: 0,
+            opacity: idx === currentSlideIndex ? 1 : 0,
+            transition: "opacity 0.8s ease-in-out",
           }}
-        />
-      </div>
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.7) 100%)",
+            }}
+          />
+        </div>
+      ))}
 
       {/* Left arrow */}
       <button
@@ -84,6 +107,7 @@ export default function HeroSection() {
           gap: "2.5rem", marginTop: "-1.5rem",
         }}
       >
+
         {/* Bottom-left text block */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
           <span
