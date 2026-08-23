@@ -1,10 +1,23 @@
 import { useAuthStore } from "@/store";
 
-// NEXT_PUBLIC_TENDER_SERVICE_URL is the service origin (e.g. http://localhost:8082),
-// matching how officer.api.ts and evaluation-analytics.api.ts read it.
-// The public tender API is served under /api/tenders.
-const TENDER_SERVICE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
-const BASE_URL = `${TENDER_SERVICE_URL}/api/tenders`;
+function resolveTenderBaseUrl(): string {
+  const tenderUrl = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL;
+  if (tenderUrl) {
+    const clean = tenderUrl.replace(/\/+$/, "");
+    if (clean.endsWith("/api/tenders") || clean.endsWith("/tenders")) {
+      return clean;
+    }
+    return `${clean}/api/tenders`;
+  }
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.tenderease.me";
+  const cleanApi = apiUrl.replace(/\/+$/, "");
+  if (cleanApi.endsWith("/api")) {
+    return `${cleanApi}/tenders`;
+  }
+  return `${cleanApi}/api/tenders`;
+}
+
+const BASE_URL = resolveTenderBaseUrl();
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
