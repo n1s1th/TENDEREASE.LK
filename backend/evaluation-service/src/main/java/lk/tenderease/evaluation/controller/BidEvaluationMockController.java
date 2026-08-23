@@ -136,7 +136,7 @@ public class BidEvaluationMockController {
         UUID tenderUuid = null;
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderNo;
+            String tenderServiceUrl = "http://tender-service:8082/api/tenders/" + tenderNo;
             Map<?, ?> tenderDetail = restTemplate.getForObject(tenderServiceUrl, Map.class);
             if (tenderDetail != null && tenderDetail.get("id") != null) {
                 tenderUuid = UUID.fromString(tenderDetail.get("id").toString());
@@ -230,7 +230,7 @@ public class BidEvaluationMockController {
         Map<String, String> bidIdToCompanyName = new HashMap<>();
         try {
             RestTemplate bidRestTemplate = new RestTemplate();
-            String bidsUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid.toString();
+            String bidsUrl = "http://bid-service:8083/api/bids/tender/" + tenderUuid.toString();
             Object bidsResponse = bidRestTemplate.getForObject(bidsUrl, Object.class);
             List<?> bidList = null;
             if (bidsResponse instanceof Map) {
@@ -379,7 +379,7 @@ public class BidEvaluationMockController {
                 String bidderName = "Bidder " + request.bidderId.substring(0, 8);
                 try {
                     RestTemplate restTemplate = new RestTemplate();
-                    String bidUrl = "http://localhost:8083/api/bids/" + request.bidderId;
+                    String bidUrl = "http://bid-service:8083/api/bids/" + request.bidderId;
                     Map<?, ?> bidResponse = restTemplate.getForObject(bidUrl, Map.class);
                     if (bidResponse != null && bidResponse.get("data") != null) {
                         Map<?, ?> bidData = (Map<?, ?>) bidResponse.get("data");
@@ -487,7 +487,7 @@ public class BidEvaluationMockController {
                 String bidderName = "Bidder " + request.bidderId.substring(0, 8);
                 try {
                     RestTemplate restTemplate = new RestTemplate();
-                    String bidUrl = "http://localhost:8083/api/bids/" + request.bidderId;
+                    String bidUrl = "http://bid-service:8083/api/bids/" + request.bidderId;
                     Map<?, ?> bidResponse = restTemplate.getForObject(bidUrl, Map.class);
                     if (bidResponse != null && bidResponse.get("data") != null) {
                         Map<?, ?> bidData = (Map<?, ?>) bidResponse.get("data");
@@ -543,7 +543,7 @@ public class BidEvaluationMockController {
         
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String tenderServiceUrl = "http://localhost:8082/api/tenders/" + tenderNo;
+            String tenderServiceUrl = "http://tender-service:8082/api/tenders/" + tenderNo;
             Map<?, ?> tenderDetail = restTemplate.getForObject(tenderServiceUrl, Map.class);
             if (tenderDetail != null) {
                 if (tenderDetail.get("title") != null) {
@@ -573,7 +573,7 @@ public class BidEvaluationMockController {
         List<?> bidsList = null;
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String bidServiceUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid;
+            String bidServiceUrl = "http://bid-service:8083/api/bids/tender/" + tenderUuid;
             Map<?, ?> bidsResponse = restTemplate.getForObject(bidServiceUrl, Map.class);
             if (bidsResponse != null && bidsResponse.get("data") != null) {
                 bidsList = (List<?>) bidsResponse.get("data");
@@ -727,7 +727,7 @@ public class BidEvaluationMockController {
         if (allEvaluated && winningBidId != null) {
             try {
                 RestTemplate restTemplate = new RestTemplate();
-                String bidUrl = "http://localhost:8083/api/bids/tender/" + tenderUuid;
+                String bidUrl = "http://bid-service:8083/api/bids/tender/" + tenderUuid;
                 Map<?, ?> bidsResponse = restTemplate.getForObject(bidUrl, Map.class);
                 if (bidsResponse != null && bidsResponse.get("data") != null) {
                     List<?> winnerBidsList = (List<?>) bidsResponse.get("data");
@@ -790,7 +790,7 @@ public class BidEvaluationMockController {
         try {
             RestTemplate restTemplate = new RestTemplate();
             String statusToSet = allEvaluated ? "CLOSED" : "EVALUATION";
-            String updateUrl = "http://localhost:8082/api/v1/tenders/" + tenderUuid + "/status?status=" + statusToSet;
+            String updateUrl = "http://tender-service:8082/api/v1/tenders/" + tenderUuid + "/status?status=" + statusToSet;
             restTemplate.put(updateUrl, null);
         } catch (Exception tenderUpdateEx) {
             System.err.println("Failed to update tender status: " + tenderUpdateEx.getMessage());
@@ -954,7 +954,7 @@ public class BidEvaluationMockController {
             Object dynamicData = null;
             try {
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
-                String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + note.getTenderId();
+                String tenderServiceUrl = "http://tender-service:8082/api/v1/tenders/" + note.getTenderId();
                 Map<?, ?> tenderDetail = restTemplate.getForObject(tenderServiceUrl, Map.class);
                 if (tenderDetail != null) {
                     if (tenderDetail.get("status") != null) {
@@ -1022,7 +1022,7 @@ public class BidEvaluationMockController {
             Map<String, Map<String, Object>> realBids = new HashMap<>();
             try {
                 RestTemplate restTemplate = new RestTemplate();
-                String bidUrl = "http://localhost:8083/api/bids/tender/" + tId.toString();
+                String bidUrl = "http://bid-service:8083/api/bids/tender/" + tId.toString();
                 Map<?, ?> bidsResponse = restTemplate.getForObject(bidUrl, Map.class);
                 if (bidsResponse != null && bidsResponse.get("data") != null) {
                     List<?> bidsList = (List<?>) bidsResponse.get("data");
