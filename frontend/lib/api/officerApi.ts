@@ -55,7 +55,7 @@ export function extractErrors(responseData: unknown): string[] {
     return [data.message];
   }
 
-  return ['Registration failed. Please try again.'];
+  return ['Registration failed: ' + (data ? JSON.stringify(data).substring(0, 300) : 'Unknown')];
 }
 
 /**
