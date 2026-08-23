@@ -157,14 +157,14 @@ public class PublicTenderController {
         return tenderService.getContacts(id);
     }
 
-    @GetMapping("/files/{filename}")
-    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable String filename) {
+    @GetMapping("/files/{docId}")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable UUID docId) {
         try {
-            java.io.InputStream is = s3Service.downloadFile(filename);
-            org.springframework.core.io.Resource resource = new org.springframework.core.io.InputStreamResource(is);
+            byte[] data = tenderService.viewDocument(docId);
+            org.springframework.core.io.Resource resource = new org.springframework.core.io.ByteArrayResource(data);
 
             return ResponseEntity.ok()
-                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"document_" + docId + "\"")
                     .contentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
                     .body(resource);
         } catch (Exception e) {
@@ -176,34 +176,30 @@ public class PublicTenderController {
     public ResponseEntity<byte[]> downloadAll(@PathVariable UUID id) {
         try {
             List<TenderDocumentDTO> documents = tenderService.getDocuments(id);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            
+            try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(baos)) {
                 for (TenderDocumentDTO doc : documents) {
                     if (doc.getDownloadUrl() == null) {
                         continue;
                     }
                     
                     String[] parts = doc.getDownloadUrl().split("/");
-                    String filename = parts[parts.length - 1];
+                    String docIdStr = parts[parts.length - 1];
                     
                     try {
-                        java.io.InputStream is = s3Service.downloadFile(filename);
-                        ZipEntry entry = new ZipEntry(doc.getDocumentName() + "_" + filename);
+                        byte[] data = tenderService.viewDocument(UUID.fromString(docIdStr));
+                        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(doc.getDocumentName());
                         zos.putNextEntry(entry);
-                        
-                        byte[] buffer = new byte[1024];
-                        int len;
-                        while ((len = is.read(buffer)) > 0) {
-                            zos.write(buffer, 0, len);
-                        }
+                        zos.write(data);
                         zos.closeEntry();
-                        is.close();
                     } catch (Exception e) {
                         // Skip file if download fails
-                        System.err.println("Failed to download file " + filename + " for zip: " + e.getMessage());
+                        System.err.println("Failed to download file " + docIdStr + " for zip: " + e.getMessage());
                     }
                 }
+                zos.finish();
             }
 
             return ResponseEntity.ok()

@@ -447,7 +447,7 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
-        String fileName = java.util.UUID.randomUUID().toString() + "_" + docName;
+        String fileName = String.format("tenderease/tenders/%s/documents/%s_%s", tender.getId(), java.util.UUID.randomUUID().toString(), docName);
         log.info("Saving uploaded file to S3 with key: {}", fileName);
 
         try {
@@ -463,7 +463,7 @@ public class TenderServiceImpl implements TenderService {
                 .tender(tender)
                 .documentName(docName)
                 .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
-                .s3Key(fileName) // We use s3Key to store the local filename
+                .s3Key(fileName) // We use s3Key to store the structured path
                 .fileSizeBytes(request.getFile().getSize())
                 .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType()
                         : "application/octet-stream")
@@ -490,12 +490,10 @@ public class TenderServiceImpl implements TenderService {
         TenderDocument doc = documentRepository.findById(docId)
                 .orElseThrow(() -> new RuntimeException("Document not found"));
 
-        Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
-        log.info("Attempting to read file from path: {}", filePath.toAbsolutePath());
-        try {
-            return Files.readAllBytes(filePath);
+        try (java.io.InputStream is = s3Service.downloadFile(doc.getS3Key())) {
+            return is.readAllBytes();
         } catch (IOException e) {
-            log.error("Failed to read file: {}", e.getMessage());
+            log.error("Failed to read file from S3: {}", e.getMessage());
             throw new RuntimeException("Could not read file", e);
         }
     }
@@ -509,10 +507,9 @@ public class TenderServiceImpl implements TenderService {
         }
 
         try {
-            Path filePath = Paths.get(uploadDir).resolve(doc.getS3Key());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            log.error("Failed to delete file from disk: {}", e.getMessage());
+            s3Service.deleteFile(doc.getS3Key());
+        } catch (Exception e) {
+            log.error("Failed to delete file from S3: {}", e.getMessage());
         }
 
         documentRepository.delete(doc);
@@ -1497,7 +1494,7 @@ public class TenderServiceImpl implements TenderService {
                 .fileSizeBytes(document.getFileSizeBytes())
                 .version(document.getVersion())
                 .uploadedAt(document.getUploadedAt())
-                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
+                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getId())
                 .build();
     }
 
@@ -1517,7 +1514,7 @@ public class TenderServiceImpl implements TenderService {
             documentRepository.findById(amendment.getDocumentId()).ifPresent(doc -> {
                 builder.documentName(doc.getDocumentName());
                 builder.version(doc.getVersion());
-                builder.downloadUrl("http://localhost:8082/api/tenders/files/" + doc.getS3Key());
+                builder.downloadUrl("http://localhost:8082/api/tenders/files/" + doc.getId());
             });
         }
 
@@ -1809,17 +1806,15 @@ public class TenderServiceImpl implements TenderService {
         // Determine next version number
         int nextVersion = (oldDoc.getVersion() != null ? oldDoc.getVersion() : 1) + 1;
 
-        // Save new file to local storage with a distinct name
+        // Save new file to S3 with a distinct structured name
         String originalName = newFile.getOriginalFilename() != null ? newFile.getOriginalFilename()
                 : oldDoc.getDocumentName();
-        String newFileName = java.util.UUID.randomUUID().toString() + "_v" + nextVersion + "_" + originalName;
-        Path targetPath = Paths.get(uploadDir).resolve(newFileName).toAbsolutePath();
+        String newFileName = String.format("tenderease/tenders/%s/documents/v%d_%s_%s", tender.getId(), nextVersion, java.util.UUID.randomUUID().toString(), originalName);
 
         try {
-            Files.createDirectories(targetPath.getParent());
-            Files.copy(newFile.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            s3Service.uploadFile(newFileName, newFile);
         } catch (IOException e) {
-            throw new RuntimeException("Could not store replacement file", e);
+            throw new RuntimeException("Could not store replacement file to S3", e);
         }
 
         // Create new TenderDocument record for the new version

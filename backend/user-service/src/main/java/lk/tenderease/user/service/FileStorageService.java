@@ -27,7 +27,7 @@ public class FileStorageService {
         validateFile(file);
 
         String safeFileName = UUID.randomUUID() + "_" + sanitizeFilename(file.getOriginalFilename());
-        String key = "vendors/" + vendorId.toString() + "/" + documentType.toLowerCase() + "/" + safeFileName;
+        String key = "tenderease/vendors/" + vendorId.toString() + "/" + documentType.toLowerCase() + "/" + safeFileName;
 
         try {
             s3Service.uploadFile(key, file);

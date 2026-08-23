@@ -71,4 +71,17 @@ public class S3Service {
 
         return s3Client.getObject(getObjectRequest);
     }
+
+    public void deleteFile(String key) {
+        if (s3Client == null) {
+            throw new IllegalStateException("S3 client is not initialized. Please configure AWS credentials.");
+        }
+        software.amazon.awssdk.services.s3.model.DeleteObjectRequest deleteObjectRequest = 
+                software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        s3Client.deleteObject(deleteObjectRequest);
+    }
 }

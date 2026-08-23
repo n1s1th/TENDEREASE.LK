@@ -142,7 +142,7 @@ public class BidController {
                 extension = originalName.substring(originalName.lastIndexOf("."));
             }
             String filename = UUID.randomUUID().toString() + extension;
-            String key = "bids/" + filename;
+            String key = "tenderease/bids/" + filename;
 
             s3Service.uploadFile(key, file);
 
@@ -161,7 +161,7 @@ public class BidController {
     @Operation(summary = "Download a bid document", description = "Serves uploaded bid documents")
     public ResponseEntity<Resource> getFile(@PathVariable String filename) {
         try {
-            String key = "bids/" + filename;
+            String key = "tenderease/bids/" + filename;
             java.io.InputStream inputStream = s3Service.downloadFile(key);
             Resource resource = new org.springframework.core.io.InputStreamResource(inputStream);
 
