@@ -44,7 +44,6 @@ import java.util.zip.ZipOutputStream;
 @RestController
 @RequestMapping("/api/tenders")
 @RequiredArgsConstructor
-@CrossOrigin
 public class PublicTenderController {
 
     private final TenderService tenderService;
