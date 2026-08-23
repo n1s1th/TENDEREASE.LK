@@ -22,9 +22,16 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
+        String effectiveRegion = (region != null && !region.isBlank()) ? region : "ap-south-1";
+        if (accessKey == null || accessKey.isBlank() || secretKey == null || secretKey.isBlank()) {
+            return S3Client.builder()
+                    .region(Region.of(effectiveRegion))
+                    .credentialsProvider(software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider.create())
+                    .build();
+        }
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
         return S3Client.builder()
-                .region(Region.of(region))
+                .region(Region.of(effectiveRegion))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .build();
     }
