@@ -8,6 +8,20 @@ export const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     ...(options.headers as any),
   };
 
+  if (typeof window !== 'undefined') {
+    try {
+      const authStorage = localStorage.getItem('tenderease-auth');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed?.state?.token) {
+          headers['Authorization'] = `Bearer ${parsed.state.token}`;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   if (headers['Content-Type'] === 'remove_this') {
       delete headers['Content-Type'];
   }

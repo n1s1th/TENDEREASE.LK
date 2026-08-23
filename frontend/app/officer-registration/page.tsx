@@ -14,10 +14,7 @@ import { useAuthStore } from '@/store';
 //  Constants
 // ────────────────────────────────────────────────────────
 
-const COUNTRIES = [
-  'Sri Lanka', 'India', 'United Kingdom', 'United States', 'Australia',
-  'Canada', 'Singapore', 'Japan', 'Germany', 'Other'
-];
+const COUNTRIES = ['Sri Lanka'];
 
 const TITLE_OPTIONS = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Rev'];
 

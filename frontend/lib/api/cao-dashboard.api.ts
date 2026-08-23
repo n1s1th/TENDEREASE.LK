@@ -248,10 +248,52 @@ export async function fetchKpiReport(params: KpiReportParams): Promise<KpiReport
     
     // Apply exact filters
     if (params.department) {
-      tenders = tenders.filter((t: any) => t.department === params.department);
+      tenders = tenders.filter((t: any) => t.department === params.department || t.departmentName === params.department || t.ministryName === params.department);
     }
     if (params.category) {
-      tenders = tenders.filter((t: any) => t.category === params.category);
+      tenders = tenders.filter((t: any) => 
+        (t.category && t.category.toLowerCase() === params.category.toLowerCase()) || 
+        (t.procurementType && t.procurementType.toLowerCase() === params.category.toLowerCase())
+      );
+    }
+    if (params.period && params.period !== 'all_time') {
+      const now = new Date();
+      tenders = tenders.filter((t: any) => {
+        const tDate = new Date(t.publishedAt || t.createdAt || t.closingDate || Date.now());
+        if (params.period === 'today') return tDate.toDateString() === now.toDateString();
+        if (params.period === 'this_week') {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          return tDate >= startOfWeek;
+        }
+        if (params.period === 'this_month') {
+          return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+        }
+        if (params.period === 'this_year') {
+          return tDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
+    }
+
+    if (vendorsRes?.data?.content && params.period && params.period !== 'all_time') {
+      const now = new Date();
+      vendorsRes.data.content = vendorsRes.data.content.filter((v: any) => {
+        const vDate = new Date(v.createdAt || Date.now());
+        if (params.period === 'today') return vDate.toDateString() === now.toDateString();
+        if (params.period === 'this_week') {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          return vDate >= startOfWeek;
+        }
+        if (params.period === 'this_month') {
+          return vDate.getMonth() === now.getMonth() && vDate.getFullYear() === now.getFullYear();
+        }
+        if (params.period === 'this_year') {
+          return vDate.getFullYear() === now.getFullYear();
+        }
+        return true;
+      });
     }
 
     let totalCycleDays = 0;
