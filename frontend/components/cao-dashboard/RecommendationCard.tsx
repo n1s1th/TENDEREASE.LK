@@ -134,7 +134,7 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
 
           <div style={{ fontSize: "0.95rem", color: "var(--te-gray-2)", lineHeight: "1.6" }}>
             <span style={{ fontWeight: 700, color: "var(--te-gray-3)", marginRight: "0.5rem" }}>Justification:</span> 
-            <span style={{ color: "var(--te-gray-1)" }}>{recommendation.justification}</span>
+            <span style={{ color: "var(--te-gray-1)" }}>{recommendation.justification || "Recommended based on scoring criteria."}</span>
           </div>
         </div>
       </div>

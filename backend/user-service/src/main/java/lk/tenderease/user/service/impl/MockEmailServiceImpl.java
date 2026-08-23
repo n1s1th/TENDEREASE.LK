@@ -20,7 +20,7 @@ public class MockEmailServiceImpl implements EmailService {
 
     private final TemplateEngine templateEngine;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String NOTIFICATION_SERVICE_URL = "http://localhost:8089/api/v1/notifications/email";
+    private final String NOTIFICATION_SERVICE_URL = "http://notification-service:8089/api/v1/notifications/email";
 
     private void sendRealEmail(String to, String subject, String htmlBody) {
         try {
