@@ -12,7 +12,6 @@ interface Props {
     toDate: string;
   };
   onFilterChange: (filters: any) => void;
-  onSearch: () => void;
   onReset: () => void;
 }
 
@@ -34,7 +33,7 @@ const inputClass =
 
 const labelClass = "text-[10px] font-semibold text-gray-3 uppercase tracking-[0.2em] px-1";
 
-export default function TenderSearchBar({ filters, onFilterChange, onSearch, onReset }: Props) {
+export default function TenderSearchBar({ filters, onFilterChange, onReset }: Props) {
 
   const handleInputChange = (field: string, value: string) => {
     onFilterChange({ ...filters, [field]: value });
@@ -45,10 +44,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
 
       {/* Top Search Row */}
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSearch();
-        }}
+        onSubmit={(e) => e.preventDefault()}
         className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center"
       >
         <div className="relative flex-1 group">
@@ -58,7 +54,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
           />
           <input
             type="text"
-            placeholder="Search by Ref No, Title, Entity..."
+            placeholder="Search by Ref No, Title, Entity…"
             value={filters.keyword}
             onChange={(e) => handleInputChange("keyword", e.target.value)}
             className="
@@ -79,24 +75,6 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
             "
           />
         </div>
-
-        <button
-          type="submit"
-          className="
-            bg-primary
-            text-white
-            px-10 py-4
-            rounded-2xl
-            text-sm font-semibold font-sans uppercase tracking-wider
-            cursor-pointer
-            transition-all duration-300
-            hover:bg-primary/90
-            hover:shadow-primary
-            active:scale-95
-          "
-        >
-          Search Tenders
-        </button>
       </form>
 
       {/* Filter Grid */}

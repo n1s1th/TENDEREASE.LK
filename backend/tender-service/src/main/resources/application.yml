@@ -133,15 +133,14 @@ logging:
 app:
   name: Tender Service
   version: 1.0.0
-  upload-dir: "C:\\Users\\Peduru\\Desktop\\TENDEREASE.LK\\backend\\uploads"
+  # Base URL handed back to clients for downloading tender documents and addenda
+  public-base-url: ${TENDER_SERVICE_PUBLIC_URL:http://localhost:8082}
   mail:
     from: ${MAIL_FROM:no-reply@tenderease.lk}
 
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:madn9ltp}
-  api-key: ${CLOUDINARY_API_KEY:129558664824389}
-  api-secret: ${CLOUDINARY_API_SECRET:7OhoKeqHgOyugmWEVakTX6Bi_XM}
-
+# ──── AWS S3 File Storage ────
+# Tender documents:  tenders/{tenderId}/documents/
+# Addendum versions: tenders/{tenderId}/addenda/{addendumId}/v{n}/
 aws:
   access-key: ${AWS_ACCESS_KEY_ID:}
   secret-key: ${AWS_SECRET_ACCESS_KEY:}

@@ -162,7 +162,7 @@ export default function BidSubmissionPage() {
 
     setError("");
     try {
-      const res = await uploadBidDocument(file);
+      const res = await uploadBidDocument(file, id);
       if (res.success && res.filePath) {
         setter(res.filePath);
       } else {
@@ -187,7 +187,7 @@ export default function BidSubmissionPage() {
       const uploadedPaths: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const res = await uploadBidDocument(file);
+        const res = await uploadBidDocument(file, id);
         if (res.success && res.filePath) {
           uploadedPaths.push(res.filePath);
         } else {

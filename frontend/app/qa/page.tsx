@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import QaLayout from "@/components/qa/QaLayout";
 import QuestionForm from "@/components/qa/QuestionForm";
 import QuestionList from "@/components/qa/QuestionList";
-import QaAssistantPanel from "@/components/qa/QaAssistantPanel";
+import QaFaqPanel from "@/components/qa/QaFaqPanel";
 import {
   createQaQuestion,
   getQaQuestions,
@@ -104,12 +103,12 @@ export default function QaPage() {
   }
 
   return (
-    <QaLayout>
+    <>
       <div className="relative">
         <div className="absolute -left-4 top-0 w-1 h-12 bg-primary rounded-full" />
         <div className="space-y-2 pl-6">
-          <h1 className="text-4xl font-black text-black-1 tracking-tight">Questions and Answers</h1>
-          <p className="text-gray-2 font-medium">Get answers about using TenderEase.lk.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Questions and Answers</h1>
+          <p className="text-base font-normal text-gray-600">Get answers about using TenderEase.lk.</p>
         </div>
       </div>
 
@@ -128,7 +127,7 @@ export default function QaPage() {
           <section className="space-y-5">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 px-1">
               <div className="space-y-1">
-                <h2 className="text-xl font-black text-black-1 uppercase tracking-tight">Public Questions</h2>
+                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Public Questions</h2>
                 <div className="h-1 w-12 bg-secondary rounded-full" />
               </div>
 
@@ -139,7 +138,7 @@ export default function QaPage() {
                     setFilterCategory(event.target.value as QaCategory | "ALL");
                     setCurrentPage(1);
                   }}
-                  className="rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-2 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 >
                   {categoryOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -154,7 +153,7 @@ export default function QaPage() {
                     setSort(event.target.value);
                     setCurrentPage(1);
                   }}
-                  className="rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs font-black uppercase tracking-widest text-gray-2 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs font-medium uppercase tracking-wider text-gray-500 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -173,10 +172,10 @@ export default function QaPage() {
               onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
             />
 
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 rounded-[1.5rem] border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-3">
-                Showing <span className="text-black-1">{questions.length}</span> of{" "}
-                <span className="text-black-1">{totalElements}</span> Questions
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 rounded-[1.5rem] border border-gray-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                Showing <span className="text-gray-900">{questions.length}</span> of{" "}
+                <span className="text-gray-900">{totalElements}</span> Questions
               </p>
 
               <div className="flex items-center gap-2">
@@ -184,7 +183,7 @@ export default function QaPage() {
                   type="button"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  className="h-10 px-4 rounded-xl border border-gray-100 text-xs font-black text-gray-3 transition-all hover:bg-gray-5 hover:text-black-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="h-10 px-4 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
@@ -194,10 +193,10 @@ export default function QaPage() {
                     key={page}
                     type="button"
                     onClick={() => setCurrentPage(page)}
-                    className={`h-10 w-10 rounded-xl border text-xs font-black transition-all ${
+                    className={`h-10 w-10 rounded-xl border text-sm font-medium transition-all ${
                       currentPage === page
                         ? "bg-primary text-white border-primary shadow-primary"
-                        : "bg-white text-gray-3 border-gray-100 hover:bg-gray-5 hover:text-black-1"
+                        : "bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                   >
                     {page}
@@ -208,7 +207,7 @@ export default function QaPage() {
                   type="button"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  className="h-10 px-4 rounded-xl border border-gray-100 text-xs font-black text-gray-3 transition-all hover:bg-gray-5 hover:text-black-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="h-10 px-4 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 transition-all hover:bg-gray-100 hover:text-gray-900 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -217,8 +216,8 @@ export default function QaPage() {
           </section>
         </div>
 
-        <QaAssistantPanel />
+        <QaFaqPanel />
       </div>
-    </QaLayout>
+    </>
   );
 }
