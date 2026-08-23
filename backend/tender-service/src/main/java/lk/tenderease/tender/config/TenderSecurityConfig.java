@@ -11,44 +11,29 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.context.annotation.Import;
-import lk.tenderease.common.security.KeycloakJwtConverter;
 
-import org.springframework.context.annotation.Import;
-import lk.tenderease.common.security.KeycloakJwtConverter;
-
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * Security configuration for the Tender Service.
- * Configures CORS for the frontend and enforces JWT authentication.
+ * Allows all cross-origin requests forwarded from API Gateway.
  */
 @Configuration
 @EnableWebSecurity
-@Import(KeycloakJwtConverter.class)
 public class TenderSecurityConfig {
 
     @Bean
     @Primary
-    public SecurityFilterChain tenderFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
+    public SecurityFilterChain tenderFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/tenders/**").permitAll() // Allow PublicTenderController
-                .requestMatchers("/api/v1/tenders/**").permitAll() // Allow TenderController
-                .requestMatchers("/api/cao/**").permitAll() // Allow CAO Dashboard
+                .requestMatchers("/api/tenders/**", "/api/v1/tenders/**", "/api/cao/**").permitAll()
                 .anyRequest().permitAll()
             );
-            // .oauth2ResourceServer(oauth2 -> oauth2
-            //     .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakJwtConverter))
-            // );
 
         return http.build();
     }
@@ -56,13 +41,10 @@ public class TenderSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:3000",
-            "http://localhost:3001"
-        ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -71,4 +53,3 @@ public class TenderSecurityConfig {
         return source;
     }
 }
-
