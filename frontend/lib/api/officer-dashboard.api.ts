@@ -33,23 +33,25 @@ export async function fetchDashboardTenders(
   page = 1,
   pageSize = 10,
 ): Promise<{ data: DashboardTender[]; pagination: PaginationState }> {
-  const res = await api.get('/officer/tenders', {
-    params: { tab, department, page, pageSize },
+  // Map tab to status if needed, but the backend accepts keyword, status, page, size
+  const res = await tenderApi.get('/officer/dashboard/tenders', {
+    params: { status: tab === 'all' ? '' : tab, department, page: page - 1, size: pageSize },
   });
+  // Note: Backend might return page 0-indexed, so we subtract 1 from page
   return res.data;
 }
 
 export async function fetchTenderDetails(id: string): Promise<DashboardTender> {
-  const res = await api.get(`/officer/tenders/${id}`);
+  const res = await tenderApi.get(`/v1/tenders/${id}`);
   return res.data;
 }
 
 export async function approveTender(id: string): Promise<void> {
-  await api.post(`/officer/tenders/${id}/approve`);
+  await tenderApi.post(`/v1/tenders/${id}/approve`);
 }
 
 export async function rejectTender(id: string, reason: string): Promise<void> {
-  await api.post(`/officer/tenders/${id}/reject`, { reason });
+  await tenderApi.post(`/v1/tenders/${id}/reject`, { reason });
 }
 
 // ── Officers ─────────────────────────────────────────────────
@@ -57,7 +59,7 @@ export async function fetchOfficers(
   department?: string,
   search?: string,
 ): Promise<Officer[]> {
-  const res = await api.get('/officer/officers', {
+  const res = await api.get('/officers', {
     params: { department, search },
   });
   return res.data;
@@ -67,7 +69,7 @@ export async function assignOfficers(
   tenderId: string,
   assignments: { officerId: string; role: string }[],
 ): Promise<void> {
-  await api.post(`/officer/tenders/${tenderId}/assign`, { assignments });
+  await tenderApi.post(`/v1/tenders/${tenderId}/assign`, { assignments });
 }
 
 // ── Audit Logs ───────────────────────────────────────────────
@@ -76,7 +78,7 @@ export async function fetchAuditLogs(
   page = 1,
   pageSize = 10,
 ): Promise<{ data: AuditLogEntry[]; pagination: PaginationState }> {
-  const res = await api.get('/officer/audit-logs', {
+  const res = await api.get('/audit-logs', {
     params: { tenderId, page, pageSize },
   });
   return res.data;
@@ -88,7 +90,7 @@ export async function fetchRecentAwards(
   page = 1,
   pageSize = 10,
 ): Promise<{ data: Award[]; pagination: PaginationState }> {
-  const res = await api.get('/officer/awards', {
+  const res = await api.get('/awards', {
     params: { department, page, pageSize },
   });
   return res.data;

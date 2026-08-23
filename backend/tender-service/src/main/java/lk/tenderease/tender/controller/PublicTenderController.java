@@ -47,7 +47,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 @RestController
 @RequestMapping("/api/tenders")
 @RequiredArgsConstructor
-@CrossOrigin
 public class PublicTenderController {
 
     private final TenderService tenderService;

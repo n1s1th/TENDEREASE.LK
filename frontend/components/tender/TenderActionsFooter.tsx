@@ -17,7 +17,18 @@ export default function TenderActionsFooter({ tender }: { tender: any }) {
   useEffect(() => {
     setMounted(true);
   }, []);
-  
+
+  useEffect(() => {
+    if (isAuthenticated && tender?.id) {
+      checkUserHasBid(tender.id)
+        .then(res => setHasBid(res))
+        .catch(() => {/* bid-service may not be running */})
+        .finally(() => setChecking(false));
+    } else {
+      setChecking(false);
+    }
+  }, [isAuthenticated, tender?.id]);
+
   if (!tender?.id) return null;
   
   const saved = mounted ? isSaved(tender.id) : false;
@@ -37,17 +48,6 @@ export default function TenderActionsFooter({ tender }: { tender: any }) {
       });
     }
   };
-
-  useEffect(() => {
-    if (isAuthenticated && tender?.id) {
-      checkUserHasBid(tender.id)
-        .then(res => setHasBid(res))
-        .catch(err => console.error(err))
-        .finally(() => setChecking(false));
-    } else {
-      setChecking(false);
-    }
-  }, [isAuthenticated, tender?.id]);
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 flex justify-between items-center shadow-sm">

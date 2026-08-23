@@ -61,8 +61,8 @@ public class TenderSecurityConfig {
             "http://localhost:3001"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "X-User-Email", "X-User-Id"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-User-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

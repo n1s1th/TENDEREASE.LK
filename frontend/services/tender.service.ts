@@ -222,13 +222,24 @@ export async function getAddendumVersions(id: string, addendumId: number) {
 
 // 🔥 SAVED TENDERS (BACKEND)
 export async function saveTender(id: string) {
-  return apiFetch(`${BASE_URL}/${id}/save`, { method: "POST" });
+  const userId = useAuthStore.getState().user?.id;
+  return apiFetch(`${BASE_URL}/${id}/save`, { 
+    method: "POST",
+    headers: { "X-User-Id": userId || "" }
+  });
 }
 
 export async function unsaveTender(id: string) {
-  return apiFetch(`${BASE_URL}/${id}/save`, { method: "DELETE" });
+  const userId = useAuthStore.getState().user?.id;
+  return apiFetch(`${BASE_URL}/${id}/save`, { 
+    method: "DELETE",
+    headers: { "X-User-Id": userId || "" }
+  });
 }
 
 export async function getSavedTenders() {
-  return apiFetch(`${BASE_URL}/saved?size=1000`); // fetch all for now
+  const userId = useAuthStore.getState().user?.id;
+  return apiFetch(`${BASE_URL}/saved?size=1000`, {
+    headers: { "X-User-Id": userId || "" },
+  });
 }
