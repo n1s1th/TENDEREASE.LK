@@ -669,7 +669,7 @@ public class BidEvaluationMockController {
         evaluation.setIsFlagged(false);
         evaluation.setComplianceStatus(techSubtotal >= 75 ? ComplianceStatus.COMPLIANT : ComplianceStatus.NON_COMPLIANT);
         evaluation.setTotalScore(BigDecimal.valueOf(compositeScore));
-        evaluation.setRemarks(request.notes != null ? request.notes : "");
+        evaluation.setRemarks((request.notes != null && !request.notes.trim().isEmpty()) ? request.notes : "");
         evaluation.setEvaluatedAt(LocalDateTime.now());
         
         evaluation.setEvaluatorName(bidder.evaluatorName);
