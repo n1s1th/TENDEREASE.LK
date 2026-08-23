@@ -8,7 +8,10 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -18,24 +21,34 @@ public class SecurityConfig {
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
             .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .cors(Customizer.withDefaults())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeExchange(exchanges -> exchanges
                 // Allow CORS preflight requests
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
-                // Allow public endpoints
-                .pathMatchers("/api/public/**", "/actuator/**", "/eureka/**").permitAll()
-                // Allow vendor registration endpoints
-                .pathMatchers(
-                    "/api/v1/vendors/register", 
-                    "/api/v1/vendors/verify-registration",
-                    "/api/v1/vendors/*/documents",
-                    "/api/v1/vendors/*/documents/**",
-                    "/api/v1/vendors/*/submit"
-                ).permitAll()
-                // For now, keep dev branch openness but keep the above for clarity
+                // Allow all exchanges
                 .anyExchange().permitAll()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of(
+            "http://localhost:*",
+            "https://tenderease.me",
+            "https://www.tenderease.me",
+            "https://*.tenderease.me",
+            "https://*.vercel.app"
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }

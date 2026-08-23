@@ -107,36 +107,11 @@ spring:
           predicates:
             - Path=/api/clarifications/**
 
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins:
-              - "http://localhost:3000"
-              - "http://localhost:3001"
-              - "https://tenderease.me"
-              - "https://www.tenderease.me"
-              - "https://tenderease-lk.vercel.app"
-            allowed-origin-patterns:
-              - "https://*.tenderease.me"
-              - "https://*.vercel.app"
-              - "https://tenderease-lk*.vercel.app"
-            allowed-methods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
-            allowed-headers:
-              - "*"
-            allow-credentials: true
-            max-age: 3600
-
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:https://auth.tenderease.me/realms/tenderease}
 
 server:
   port: 8000
