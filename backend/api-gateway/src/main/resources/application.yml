@@ -27,6 +27,13 @@ spring:
           predicates:
             - Path=/api/cao/officers, /api/cao/officers/**, /api/cao/registrations, /api/cao/registrations/**
 
+        - id: tender-service-tenders-duplicate-fix
+          uri: lb://tender-service
+          predicates:
+            - Path=/api/tenders/api/tenders, /api/tenders/api/tenders/**
+          filters:
+            - RewritePath=/api/tenders/api/tenders(?<segment>.*), /api/tenders${segment}
+
         - id: tender-service-tenders
           uri: lb://tender-service
           predicates:
