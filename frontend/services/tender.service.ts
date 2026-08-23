@@ -119,6 +119,7 @@ export async function getTenders(page = 0, size = 10, filters: any = {}) {
       size: size.toString(),
     });
 
+    if (filters.tab) params.append("tab", filters.tab);
     if (filters.keyword) params.append("keyword", filters.keyword);
     if (filters.status && filters.status !== "All Statuses")
       params.append("status", filters.status);
@@ -241,3 +242,23 @@ export async function getAddendumVersions(id: string, addendumId: number) {
   return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`);
 }
 
+
+// ─── SAVED TENDERS (BOOKMARKS) ───────────────────────────────
+// These all require a signed-in user; apiFetch attaches the auth headers.
+
+export async function getSavedTenders(page = 0, size = 50) {
+  const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+  return apiFetch(`${BASE_URL}/saved?${params.toString()}`);
+}
+
+export async function getSavedTenderIds(): Promise<string[]> {
+  return apiFetch(`${BASE_URL}/saved/ids`);
+}
+
+export async function saveTender(id: string) {
+  return apiFetch(`${BASE_URL}/${id}/save`, { method: "POST" });
+}
+
+export async function unsaveTender(id: string) {
+  return apiFetch(`${BASE_URL}/${id}/save`, { method: "DELETE" });
+}

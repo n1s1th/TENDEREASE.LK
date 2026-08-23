@@ -37,7 +37,7 @@ public class TenderSecurityConfig {
     public SecurityFilterChain tenderFilterChain(HttpSecurity http, Converter<Jwt, AbstractAuthenticationToken> keycloakJwtConverter) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable)
+            .cors(org.springframework.security.config.Customizer.withDefaults())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

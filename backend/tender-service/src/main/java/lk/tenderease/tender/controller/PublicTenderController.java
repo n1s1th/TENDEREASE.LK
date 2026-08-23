@@ -13,6 +13,7 @@ import lk.tenderease.tender.dto.response.TimelineDTO;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
+import lk.tenderease.tender.service.CurrentUserResolver;
 import lk.tenderease.tender.service.S3Service;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,6 +54,7 @@ public class PublicTenderController {
     private final TenderService tenderService;
     private final S3Service s3Service;
     private final CurrentBidderEmailResolver currentBidderEmailResolver;
+    private final CurrentUserResolver currentUserResolver;
 
     @GetMapping
     public Page<TenderSummaryDTO> getAllTenders(
@@ -60,14 +63,22 @@ public class PublicTenderController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) TenderStatus status,
-            @RequestParam(required = false) ProcurementType procurementType) {
+            @RequestParam(required = false) ProcurementType procurementType,
+            @RequestParam(required = false) String tab) {
         Pageable pageable = PageRequest.of(page, size);
         String query = search != null ? search : keyword;
-        return tenderService.getAllPublishedTenders(query, status, procurementType, pageable);
+        return tenderService.getAllPublishedTenders(query, status, procurementType, tab, pageable);
     }
 
     @GetMapping("/{id}")
-    public TenderDetailsDTO getTenderById(@PathVariable String id) {
+    public TenderDetailsDTO getTenderById(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        // Tender details (documents, contacts, clarifications) are for signed-in users
+        // only. The tender list at GET /api/tenders stays public.
+        requireSignedIn(authorizationHeader, userEmailHeader);
+
         try {
             UUID uuid = UUID.fromString(id);
             return tenderService.getPublicTenderById(uuid);
@@ -191,6 +202,58 @@ public class PublicTenderController {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(archive.length)
                 .body(archive);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SAVED TENDERS (BOOKMARKS)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/saved")
+    public Page<TenderSummaryDTO> getSavedTenders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        return tenderService.getSavedTenders(userId, PageRequest.of(page, size));
+    }
+
+    @GetMapping("/saved/ids")
+    public List<UUID> getSavedTenderIds(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        return tenderService.getSavedTenderIds(userId);
+    }
+
+    @PostMapping("/{id}/save")
+    public ResponseEntity<Void> saveTender(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        tenderService.saveTender(userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/save")
+    public ResponseEntity<Void> unsaveTender(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestHeader(value = "X-User-Email", required = false) String userEmailHeader) {
+        String userId = requireSignedIn(authorizationHeader, userEmailHeader);
+        tenderService.unsaveTender(userId, id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Returns the caller's identifier, or fails with 401 when the request carries no
+     * usable identity. Used by endpoints that must not serve anonymous visitors.
+     */
+    private String requireSignedIn(String authorizationHeader, String userEmailHeader) {
+        return currentUserResolver.resolve(authorizationHeader, userEmailHeader)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Sign in to view tender details"));
     }
 
     /**
