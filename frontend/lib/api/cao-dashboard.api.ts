@@ -15,9 +15,9 @@ import type {
   RecommendationStatus,
 } from '@/lib/types/cao-dashboard.types';
 
-// Main API — NEXT_PUBLIC_API_URL = https://api.tenderease.me (root gateway)
+// Main API — points to https://api.tenderease.me/api/v1 (matches controller @RequestMapping("/api/v1/cao/..."))
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082',
+  baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082') + '/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });

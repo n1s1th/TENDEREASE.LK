@@ -16,14 +16,15 @@ import type {
 } from '@/lib/types/officer-dashboard.types';
 
 // User/Officer API — NEXT_PUBLIC_USER_API_URL = https://api.tenderease.me/api
+// Controller is mapped to /api/officer/dashboard
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api',
+  baseURL: (process.env.NEXT_PUBLIC_USER_API_URL || 'http://localhost:8081/api') + '/officer/dashboard',
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Tender/Officer API — NEXT_PUBLIC_API_URL = https://api.tenderease.me (root gateway)
+// Tender API — NEXT_PUBLIC_TENDER_SERVICE_URL = https://api.tenderease.me/api/tenders
 const tenderApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082',
+  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api/tenders',
   headers: { 'Content-Type': 'application/json' },
 });
 

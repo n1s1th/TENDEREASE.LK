@@ -16,7 +16,8 @@ function AwardDetailsModal({ tender, onClose }: { tender: DashboardTender; onClo
   useEffect(() => {
     async function fetchWinner() {
       try {
-        const res = await fetch(`http://localhost:8084/api/v1/evaluations/mock/awards/tenders/${tender.id}/bidders`.replace('/v1/evaluations', '/evaluations'));
+        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084';
+        const res = await fetch(`${evalUrl}/api/evaluations/mock/awards/tenders/${tender.id}/bidders`);
         if (res.ok) {
           const bidders = await res.json();
           const win = bidders.find((b: any) => b.status === 'WINNER');
@@ -142,7 +143,8 @@ function WinnerCell({ tenderId }: { tenderId: string }) {
   useEffect(() => {
     async function fetchName() {
       try {
-        const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
+        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084';
+        const res = await fetch(`${evalUrl}/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
         if (res.ok) {
           const bidders = await res.json();
           const win = bidders.find((b: any) => b.status === 'WINNER');
