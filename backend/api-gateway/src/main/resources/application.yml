@@ -10,133 +10,115 @@ spring:
         - id: user-service-users
           uri: lb://user-service
           predicates:
-            - Path=/api/users/**
+            - Path=/api/users, /api/users/**
 
         - id: user-service-vendors
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/vendors/**
+            - Path=/api/v1/vendors, /api/v1/vendors/**
 
         - id: user-service-officers
           uri: lb://user-service
           predicates:
-            - Path=/api/officers/**
+            - Path=/api/officers, /api/officers/**
 
         - id: user-service-cao
           uri: lb://user-service
           predicates:
-            - Path=/api/cao/officers/**, /api/cao/registrations/**
+            - Path=/api/cao/officers, /api/cao/officers/**, /api/cao/registrations, /api/cao/registrations/**
+
+        - id: tender-service-tenders-duplicate-fix
+          uri: lb://tender-service
+          predicates:
+            - Path=/api/tenders/api/tenders, /api/tenders/api/tenders/**
+          filters:
+            - RewritePath=/api/tenders/api/tenders(?<segment>.*), /api/tenders${segment}
 
         - id: tender-service-tenders
           uri: lb://tender-service
           predicates:
-            - Path=/api/tenders/**
+            - Path=/api/tenders, /api/tenders/**
 
         - id: tender-service-v1
           uri: lb://tender-service
           predicates:
-            - Path=/api/v1/tenders/**
+            - Path=/api/v1/tenders, /api/v1/tenders/**
 
         - id: tender-service-templates
           uri: lb://tender-service
           predicates:
-            - Path=/api/v1/tender-templates/**
+            - Path=/api/v1/tender-templates, /api/v1/tender-templates/**
 
         - id: tender-service-officer-dash
           uri: lb://tender-service
           predicates:
-            - Path=/api/officer/dashboard/**
+            - Path=/api/officer/dashboard, /api/officer/dashboard/**
 
         - id: tender-service-cao
           uri: lb://tender-service
           predicates:
-            - Path=/api/cao/tenders/**, /api/v1/cao/tenders/**
+            - Path=/api/cao/tenders, /api/cao/tenders/**, /api/v1/cao/tenders, /api/v1/cao/tenders/**
 
         - id: bid-service-bids
           uri: lb://bid-service
           predicates:
-            - Path=/api/bids/**, /api/v1/bids/**
+            - Path=/api/bids, /api/bids/**, /api/v1/bids, /api/v1/bids/**
 
         - id: evaluation-service-eval
           uri: lb://evaluation-service
           predicates:
-            - Path=/api/evaluations/**, /api/v1/opening/**, /api/v1/recommendations/**
+            - Path=/api/evaluations, /api/evaluations/**, /api/v1/opening, /api/v1/opening/**, /api/v1/recommendations, /api/v1/recommendations/**
 
         - id: workflow-service-wf
           uri: lb://workflow-service
           predicates:
-            - Path=/api/workflows/**, /api/cao/audit-logs/**
+            - Path=/api/workflows, /api/workflows/**, /api/cao/audit-logs, /api/cao/audit-logs/**
 
         - id: notification-service-notif
           uri: lb://notification-service
           predicates:
-            - Path=/api/notifications/**, /api/cao/notifications/**
+            - Path=/api/notifications, /api/notifications/**, /api/cao/notifications, /api/cao/notifications/**
 
         - id: reporting-service-rep
           uri: lb://reporting-service
           predicates:
-            - Path=/api/reporting/**, /api/cao/kpi/**
+            - Path=/api/reporting, /api/reporting/**, /api/cao/kpi, /api/cao/kpi/**
 
         - id: qa-service-qa
           uri: lb://qa-service
           predicates:
-            - Path=/api/qa/**
+            - Path=/api/qa, /api/qa/**
 
         - id: document-service-doc
           uri: lb://document-service
           predicates:
-            - Path=/api/documents/**
+            - Path=/api/documents, /api/documents/**
 
         - id: contract-service-contract
           uri: lb://contract-service
           predicates:
-            - Path=/api/contracts/**
+            - Path=/api/contracts, /api/contracts/**
 
         - id: payment-service-pay
           uri: lb://payment-service
           predicates:
-            - Path=/api/payments/**
+            - Path=/api/payments, /api/payments/**
 
         - id: appeal-service-appeal
           uri: lb://appeal-service
           predicates:
-            - Path=/api/appeals/**
+            - Path=/api/appeals, /api/appeals/**
 
         - id: clarification-service-clar
           uri: lb://clarification-service
           predicates:
-            - Path=/api/clarifications/**
-
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins:
-              - "http://localhost:3000"
-              - "http://localhost:3001"
-              - "https://tenderease.me"
-              - "https://www.tenderease.me"
-              - "https://tenderease-lk.vercel.app"
-            allowed-origin-patterns:
-              - "https://*.tenderease.me"
-              - "https://*.vercel.app"
-              - "https://tenderease-lk*.vercel.app"
-            allowed-methods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
-            allowed-headers:
-              - "*"
-            allow-credentials: true
-            max-age: 3600
+            - Path=/api/clarifications, /api/clarifications/**
 
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://158.178.227.145:8080/realms/tenderease}
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:https://auth.tenderease.me/realms/tenderease}
 
 server:
   port: 8000

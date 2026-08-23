@@ -1,5 +1,6 @@
 package lk.tenderease.tender.dto.response;
-
+ 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lk.tenderease.tender.enums.BiddingMethod;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TenderResponse {
     private UUID id;
     private String tenderNumber;
@@ -36,4 +38,9 @@ public class TenderResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String createdBy;
+    private LocalDateTime closingDate;
+    private Long timeRemaining;
+    private String rejectionReason;
+    private String sbdTemplate;
+    private String templateVersion;
 }

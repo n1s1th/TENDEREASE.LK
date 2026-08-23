@@ -54,7 +54,7 @@ public class EmailService {
             mailSender.send(message);
             log.info("HTML email sent successfully to {}", to);
 
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             log.error("Failed to send HTML email to {}. [MOCK LOG] Subject: {} | Content: {}", to, subject, htmlBody);
             log.error("Error Detail: {}. Ensure mail server is running.", e.getMessage());
             // We catch and log but don't re-throw to avoid RabbitMQ retry loops in local dev
