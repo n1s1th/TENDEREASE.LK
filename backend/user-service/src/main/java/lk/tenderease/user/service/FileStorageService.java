@@ -1,17 +1,24 @@
 package lk.tenderease.user.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
-import java.io.IOException;
-import java.nio.file.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Validates vendor documents and stores them in S3.
+ *
+ * <p>Keys follow {@code vendors/{vendorId}/{documentType}/{uuid}_{filename}} so every
+ * vendor's documents stay grouped by type inside the shared bucket.
+ */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FileStorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 20L * 1024 * 1024; // 20 MB
@@ -20,39 +27,38 @@ public class FileStorageService {
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
+    private static final String VENDOR_PREFIX = "vendors";
 
-    @Value("${app.upload.base-dir:./uploads}")
-    private String baseUploadDir;
+    private final S3Service s3Service;
 
+    /**
+     * Uploads the file to S3 and returns the key that should be persisted on the document.
+     */
     public String store(MultipartFile file, UUID vendorId, String documentType) {
         validateFile(file);
 
-        String safeFileName = UUID.randomUUID() + "_" + sanitizeFilename(file.getOriginalFilename());
-        Path targetDir = Paths.get(baseUploadDir, "vendors", vendorId.toString(), documentType.toLowerCase());
+        String key = S3Service.buildKey(
+                VENDOR_PREFIX,
+                vendorId.toString(),
+                documentType,
+                file.getOriginalFilename());
 
-        try {
-            Files.createDirectories(targetDir);
-            Path targetPath = targetDir.resolve(safeFileName);
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Stored file at: {}", targetPath);
-            return targetPath.toString();
-        } catch (IOException e) {
-            log.error("Failed to store file: {}", e.getMessage());
-            throw new RuntimeException("Could not store the file. Please try again.", e);
-        }
+        s3Service.uploadFile(key, file);
+        log.info("Stored vendor document at S3 key: {}", key);
+        return key;
     }
 
-    public void delete(String filePath) {
+    /** Opens a stream for a previously stored document. */
+    public ResponseInputStream<GetObjectResponse> load(String s3Key) {
+        return s3Service.openStream(s3Key);
+    }
+
+    /** Removes a stored document. Never throws for an already-missing object. */
+    public void delete(String s3Key) {
         try {
-            Path path = Paths.get(filePath);
-            boolean deleted = Files.deleteIfExists(path);
-            if (deleted) {
-                log.info("Deleted file: {}", filePath);
-            } else {
-                log.warn("File not found for deletion: {}", filePath);
-            }
-        } catch (IOException e) {
-            log.error("Failed to delete file {}: {}", filePath, e.getMessage());
+            s3Service.deleteFile(s3Key);
+        } catch (RuntimeException e) {
+            log.error("Failed to delete S3 object {}: {}", s3Key, e.getMessage());
         }
     }
 
@@ -68,10 +74,5 @@ public class FileStorageService {
             throw new IllegalArgumentException(
                     "Invalid file type. Only PDF, DOC, and DOCX files are allowed. Got: " + mimeType);
         }
-    }
-
-    private String sanitizeFilename(String filename) {
-        if (filename == null) return "document";
-        return filename.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }

@@ -13,15 +13,21 @@ import lk.tenderease.tender.dto.response.TimelineDTO;
 import lk.tenderease.tender.enums.ProcurementType;
 import lk.tenderease.tender.enums.TenderStatus;
 import lk.tenderease.tender.service.CurrentBidderEmailResolver;
+import lk.tenderease.tender.service.S3Service;
 import lk.tenderease.tender.service.TenderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,21 +38,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @RestController
 @RequestMapping("/api/tenders")
 @RequiredArgsConstructor
 public class PublicTenderController {
 
+    /** Only objects under this prefix may be served by the public file endpoint. */
+    private static final String TENDER_PREFIX = "tenders";
+
     private final TenderService tenderService;
+    private final S3Service s3Service;
     private final CurrentBidderEmailResolver currentBidderEmailResolver;
 
     @GetMapping
@@ -147,54 +151,63 @@ public class PublicTenderController {
         return tenderService.getContacts(id);
     }
 
-    @GetMapping("/files/{filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+    @GetMapping("/files/{*key}")
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable("key") String key,
+            @RequestParam(name = "download", defaultValue = "false") boolean download) {
+        String s3Key = normalizeKey(key);
+
+        ResponseInputStream<GetObjectResponse> stream;
         try {
-            Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", filename);
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (!resource.exists()) {
-                throw new RuntimeException("File not found: " + filename);
-            }
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                    .body(resource);
-        } catch (Exception e) {
-            throw new RuntimeException("Download failed", e);
+            stream = s3Service.openStream(s3Key);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found: " + s3Key);
         }
+
+        GetObjectResponse metadata = stream.response();
+        String filename = s3Key.substring(s3Key.lastIndexOf('/') + 1);
+        MediaType contentType = metadata.contentType() != null
+                ? MediaType.parseMediaType(metadata.contentType())
+                : MediaType.APPLICATION_OCTET_STREAM;
+
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        (download ? "attachment" : "inline") + "; filename=\"" + filename + "\"")
+                .contentType(contentType);
+
+        if (metadata.contentLength() != null) {
+            response.contentLength(metadata.contentLength());
+        }
+
+        return response.body(new InputStreamResource(stream));
     }
 
     @GetMapping("/{id}/documents/download-all")
     public ResponseEntity<byte[]> downloadAll(@PathVariable UUID id) {
-        try {
-            List<TenderDocumentDTO> documents = tenderService.getDocuments(id);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] archive = tenderService.getDocumentsArchive(id);
 
-            try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-                for (TenderDocumentDTO doc : documents) {
-                    if (doc.getDownloadUrl() == null) {
-                        continue;
-                    }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents.zip\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(archive.length)
+                .body(archive);
+    }
 
-                    String fileName = doc.getDownloadUrl().substring(doc.getDownloadUrl().lastIndexOf("/") + 1);
-                    Path filePath = Paths.get(System.getProperty("user.dir"), "uploads", fileName);
-
-                    if (!Files.exists(filePath)) {
-                        continue;
-                    }
-
-                    zos.putNextEntry(new ZipEntry(doc.getDocumentName() + ".pdf"));
-                    Files.copy(filePath, zos);
-                    zos.closeEntry();
-                }
-            }
-
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"documents.zip\"")
-                    .body(baos.toByteArray());
-        } catch (Exception e) {
-            throw new RuntimeException("ZIP download failed", e);
+    /**
+     * Turns the wildcard path segment into an S3 key and refuses anything outside the
+     * tender namespace, so this public endpoint cannot be used to read vendor or bid files.
+     */
+    private String normalizeKey(String rawKey) {
+        String key = rawKey == null ? "" : rawKey;
+        while (key.startsWith("/")) {
+            key = key.substring(1);
         }
+        if (key.isBlank() || key.contains("..")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file key");
+        }
+        if (!key.startsWith(TENDER_PREFIX + "/")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Key is outside the tender document namespace");
+        }
+        return key;
     }
 }

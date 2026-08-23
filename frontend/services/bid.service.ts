@@ -61,11 +61,14 @@ export async function submitBid(bidData: any) {
   return handleResponse(res);
 }
 
-// Upload a document
-export async function uploadBidDocument(file: File) {
+// Upload a document. The tenderId groups the file under bids/{tenderId}/ in S3.
+export async function uploadBidDocument(file: File, tenderId?: string) {
   const headers = getAuthHeaders();
   const formData = new FormData();
   formData.append("file", file);
+  if (tenderId) {
+    formData.append("tenderId", tenderId);
+  }
 
   const res = await fetch(`${BASE_URL}/upload`, {
     method: "POST",

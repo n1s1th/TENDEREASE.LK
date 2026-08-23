@@ -53,6 +53,11 @@ spring:
     redis:
       time-to-live: 600000  # 10 minutes in milliseconds
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
+
   security:
     oauth2:
       resourceserver:
@@ -128,3 +133,12 @@ rabbitmq:
     officer-registered: officer.registered
     officer-approved: officer.approved
     officer-rejected: officer.rejected
+
+# ──── AWS S3 File Storage ────
+# All vendor documents are stored in S3 under vendors/{vendorId}/{documentType}/
+aws:
+  access-key: ${AWS_ACCESS_KEY_ID:}
+  secret-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket: ${AWS_S3_BUCKET_NAME:tenderease}

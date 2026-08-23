@@ -39,7 +39,6 @@ import lk.tenderease.tender.exception.AddendumVersionConflictException;
 import lk.tenderease.tender.exception.AddendumVersionNotFoundException;
 import lk.tenderease.tender.exception.TenderNotFoundException;
 import lk.tenderease.tender.repository.AddendumVersionRepository;
-import lk.tenderease.tender.service.CloudinaryService;
 import lk.tenderease.tender.repository.TenderAmendmentRepository;
 import lk.tenderease.tender.repository.TenderClarificationRepository;
 import lk.tenderease.tender.repository.TenderContactRepository;
@@ -65,11 +64,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.springframework.web.multipart.MultipartFile;
 import lk.tenderease.common.exception.BusinessException;
 import lk.tenderease.tender.enums.DocumentType;
@@ -79,6 +77,9 @@ import lk.tenderease.tender.enums.DocumentType;
 @RequiredArgsConstructor
 public class TenderServiceImpl implements TenderService {
 
+    /** Root prefix for every tender-owned object in the shared S3 bucket. */
+    private static final String TENDER_PREFIX = "tenders";
+
     private final MinistryRepository ministryRepository;
     private final DepartmentRepository departmentRepository;
     private final FundingSourceRepository fundingSourceRepository;
@@ -87,7 +88,6 @@ public class TenderServiceImpl implements TenderService {
     private final TenderDocumentRepository documentRepository;
     private final TenderAmendmentRepository amendmentRepository;
     private final AddendumVersionRepository addendumVersionRepository;
-    private final CloudinaryService cloudinaryService;
     private final TenderClarificationRepository clarificationRepository;
     private final ClarificationResponseRepository responseRepository;
     private final TenderTimelineRepository timelineRepository;
@@ -96,8 +96,9 @@ public class TenderServiceImpl implements TenderService {
     private final NotificationProducer notificationProducer;
     private final S3Service s3Service;
 
-    @Value("${app.upload-dir:../uploads}")
-    private String uploadDir;
+    /** Base URL clients use to download tender files served by this service. */
+    @Value("${app.public-base-url:http://localhost:8082}")
+    private String publicBaseUrl;
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -399,9 +400,9 @@ public class TenderServiceImpl implements TenderService {
             docName = "Document_" + java.util.UUID.randomUUID().toString();
         }
 
-        // Generate S3 key
-        String s3Key = "tenders/" + tenderId + "/documents/" + java.util.UUID.randomUUID().toString() + "_" + docName;
-        
+        // tenders/{tenderId}/documents/{uuid}_{filename}
+        String s3Key = S3Service.buildKey(TENDER_PREFIX, tenderId.toString(), "documents", docName);
+
         try {
             s3Service.uploadFile(s3Key, request.getFile());
         } catch (Exception e) {
@@ -414,7 +415,7 @@ public class TenderServiceImpl implements TenderService {
                 .tender(tender)
                 .documentName(docName)
                 .documentType(request.getDocumentType() != null ? request.getDocumentType() : DocumentType.OTHER)
-                .s3Key(s3Key) // Now it's actually an S3 key
+                .s3Key(s3Key)
                 .fileSizeBytes(request.getFile().getSize())
                 .mimeType(request.getFile().getContentType() != null ? request.getFile().getContentType() : "application/octet-stream")
                 .uploadedAt(java.time.LocalDateTime.now())
@@ -458,12 +459,12 @@ public class TenderServiceImpl implements TenderService {
         }
         
         try {
-            // we could implement s3 delete here, but for now just delete the entity
-            // s3Service.deleteFile(doc.getS3Key());
+            s3Service.deleteFile(doc.getS3Key());
         } catch (Exception e) {
-            log.error("Failed to delete file from S3: {}", e.getMessage());
+            // The metadata row is still removed so the tender no longer lists a dead document.
+            log.error("Failed to delete S3 object {}: {}", doc.getS3Key(), e.getMessage());
         }
-        
+
         documentRepository.delete(doc);
     }
 
@@ -770,20 +771,26 @@ public class TenderServiceImpl implements TenderService {
         Integer maxVersion = addendumVersionRepository.findMaxVersionNumber(addendum.getId());
         int nextVersion = (maxVersion != null ? maxVersion : 0) + 1;
 
-        String folder = String.format("tenderease/tenders/%s/addenda/%d/v%d", tender.getId(), addendum.getId(), nextVersion);
-        Map<String, Object> uploadResult = cloudinaryService.uploadFile(file, folder);
-
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || originalFilename.isBlank()) {
             originalFilename = "addendum_v" + nextVersion + ".pdf";
         }
 
+        // tenders/{tenderId}/addenda/{addendumId}/v{n}/{uuid}_{filename}
+        String s3Key = S3Service.buildKey(
+                TENDER_PREFIX,
+                tender.getId().toString(),
+                "addenda",
+                String.valueOf(addendum.getId()),
+                "v" + nextVersion,
+                originalFilename);
+
+        s3Service.uploadFile(s3Key, file);
+
         AddendumVersion version = AddendumVersion.builder()
                 .addendum(addendum)
                 .versionNumber(nextVersion)
-                .cloudinaryPublicId((String) uploadResult.get("public_id"))
-                .cloudinaryUrl((String) uploadResult.get("url"))
-                .secureUrl((String) uploadResult.get("secure_url"))
+                .s3Key(s3Key)
                 .originalFilename(originalFilename)
                 .contentType(file.getContentType() != null ? file.getContentType() : "application/pdf")
                 .fileSize(file.getSize())
@@ -1322,10 +1329,11 @@ public class TenderServiceImpl implements TenderService {
     private TenderDocumentDTO mapDocument(TenderDocument document) {
         return TenderDocumentDTO.builder()
                 .id(document.getId())
+                .tenderId(document.getTender() != null ? document.getTender().getId() : null)
                 .documentName(document.getDocumentName())
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
-                .downloadUrl("http://localhost:8082/api/tenders/files/" + document.getS3Key())
+                .downloadUrl(buildFileUrl(document.getS3Key()))
                 .build();
     }
 
@@ -1353,7 +1361,7 @@ public class TenderServiceImpl implements TenderService {
         return AddendumVersionResponse.builder()
                 .id(version.getId())
                 .versionNumber(version.getVersionNumber())
-                .secureUrl(version.getSecureUrl())
+                .secureUrl(buildFileUrl(version.getS3Key()))
                 .originalFilename(version.getOriginalFilename())
                 .contentType(version.getContentType())
                 .fileSize(version.getFileSize())
@@ -1361,6 +1369,68 @@ public class TenderServiceImpl implements TenderService {
                 .uploadedBy(version.getUploadedBy())
                 .createdAt(version.getCreatedAt())
                 .build();
+    }
+
+    /** Builds the public download URL this service serves for a given S3 key. */
+    private String buildFileUrl(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            return null;
+        }
+        return publicBaseUrl + "/api/tenders/files/" + s3Key;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getDocumentsArchive(UUID tenderId) {
+        List<TenderDocument> documents = documentRepository.findByTenderId(tenderId);
+        if (documents.isEmpty()) {
+            throw new BusinessException("No documents available for tender " + tenderId);
+        }
+
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(buffer)) {
+            int index = 0;
+            for (TenderDocument document : documents) {
+                if (document.getS3Key() == null || document.getS3Key().isBlank()) {
+                    continue;
+                }
+                byte[] content;
+                try {
+                    content = s3Service.downloadFile(document.getS3Key());
+                } catch (RuntimeException e) {
+                    log.warn("Skipping document {} in archive: {}", document.getId(), e.getMessage());
+                    continue;
+                }
+
+                zip.putNextEntry(new ZipEntry(uniqueEntryName(document, index++)));
+                zip.write(content);
+                zip.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Could not build the document archive", e);
+        }
+
+        return buffer.toByteArray();
+    }
+
+    /** Keeps zip entries distinct even when two documents share a display name. */
+    private String uniqueEntryName(TenderDocument document, int index) {
+        String key = document.getS3Key();
+        String extension = "";
+        int dot = key.lastIndexOf('.');
+        if (dot > key.lastIndexOf('/')) {
+            extension = key.substring(dot);
+        }
+
+        String name = document.getDocumentName() != null && !document.getDocumentName().isBlank()
+                ? document.getDocumentName()
+                : "document";
+        name = S3Service.sanitizeFilename(name);
+        if (!extension.isEmpty() && name.toLowerCase().endsWith(extension.toLowerCase())) {
+            extension = "";
+        }
+
+        return (index + 1) + "_" + name + extension;
     }
 
     private long calculateTimeRemaining(LocalDateTime closingDate) {

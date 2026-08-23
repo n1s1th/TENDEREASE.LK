@@ -22,7 +22,7 @@ public class AddendumVersionResponse {
     @Schema(description = "Sequential version number (1, 2, 3, ...)")
     private Integer versionNumber;
 
-    @Schema(description = "Secure URL for downloading the file from Cloudinary")
+    @Schema(description = "URL for downloading this version from the tender service (backed by S3)")
     private String secureUrl;
 
     @Schema(description = "Original filename as uploaded")

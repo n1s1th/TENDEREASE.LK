@@ -63,6 +63,14 @@ public interface TenderService {
     TenderDetailResponse getTenderById(UUID id);
     TenderDetailResponse getTenderByNumber(String tenderNumber);
     byte[] viewDocument(UUID docId);
+
+    /**
+     * Builds a ZIP archive of every document attached to a tender, read from S3.
+     *
+     * @param tenderId the tender whose documents should be bundled
+     * @return the ZIP payload
+     */
+    byte[] getDocumentsArchive(UUID tenderId);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
     TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId);

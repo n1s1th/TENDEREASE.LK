@@ -37,6 +37,11 @@ spring:
     port: ${REDIS_PORT:6379}
     timeout: 2000ms
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
+
   security:
     oauth2:
       resourceserver:
@@ -82,3 +87,14 @@ logging:
 app:
   name: Bid Service
   version: 1.0.0
+  # Base URL handed back to clients for downloading uploaded bid documents
+  public-base-url: ${BID_SERVICE_PUBLIC_URL:http://localhost:8083}
+
+# ──── AWS S3 File Storage ────
+# All bid documents are stored in S3 under bids/{tenderId}/
+aws:
+  access-key: ${AWS_ACCESS_KEY_ID:}
+  secret-key: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:ap-south-1}
+  s3:
+    bucket: ${AWS_S3_BUCKET_NAME:tenderease}

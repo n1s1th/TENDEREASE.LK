@@ -68,7 +68,7 @@ export default function DocumentsTab({ documents }: any) {
             </div>
 
             <a
-              href={d.downloadUrl || d.fileUrl || "#"}
+              href={d.downloadUrl ? `${d.downloadUrl}?download=true` : d.fileUrl || "#"}
               className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gray-5 text-gray-3 group-hover:bg-primary/10 group-hover:text-primary font-black text-xs uppercase tracking-widest transition-all hover:shadow-sm active:scale-95"
             >
               <Download size={16} />
