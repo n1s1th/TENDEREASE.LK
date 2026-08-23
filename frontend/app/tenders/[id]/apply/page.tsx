@@ -8,6 +8,25 @@ import TenderLayout from "@/components/tender/TenderLayout";
 import { getTenderById } from "@/services/tender.service";
 import { submitBid, uploadBidDocument } from "@/services/bid.service";
 import { useAuthStore } from "@/store";
+import { getVendorByEmail } from "@/lib/api/vendorApi";
+
+const SRI_LANKAN_BANKS = [
+  "Bank of Ceylon",
+  "People's Bank",
+  "Commercial Bank of Ceylon",
+  "Hatton National Bank",
+  "Sampath Bank",
+  "DFCC Bank",
+  "Seylan Bank",
+  "Nations Trust Bank",
+  "Pan Asia Banking Corporation",
+  "Union Bank of Colombo",
+  "Amana Bank",
+  "National Savings Bank",
+  "Regional Development Bank"
+];
+
+const BOQ_UNITS = ["Sum", "m3", "m2", "m", "kg", "t", "Nos", "hr", "Unit"];
 
 interface BoqItem {
   id: string;
@@ -42,10 +61,12 @@ export default function BidSubmissionPage() {
 
   // Form inputs state
   const [companyName, setCompanyName] = useState("");
+  const [isCompanyLocked, setIsCompanyLocked] = useState(false);
   const [notes, setNotes] = useState("");
   
   // Bid Security
   const [bidSecurityIssuer, setBidSecurityIssuer] = useState("");
+  const [selectedBankOption, setSelectedBankOption] = useState("");
   const [bidSecurityExpiry, setBidSecurityExpiry] = useState("");
   const [bidSecurityValue, setBidSecurityValue] = useState("");
   const [bidSecurityFile, setBidSecurityFile] = useState("");
@@ -78,9 +99,9 @@ export default function BidSubmissionPage() {
   ]);
 
   // Supporting files
-  const [cvsFile, setCvsFile] = useState("");
+  const [cvsFiles, setCvsFiles] = useState<string[]>([]);
   const [methodologyFile, setMethodologyFile] = useState("");
-  const [pastExperienceFile, setPastExperienceFile] = useState("");
+  const [pastExperienceFiles, setPastExperienceFiles] = useState<string[]>([]);
   const [ganttChartFile, setGanttChartFile] = useState("");
 
   useEffect(() => {
@@ -88,6 +109,19 @@ export default function BidSubmissionPage() {
       setError("Please log in to submit a bid.");
       setLoading(false);
       return;
+    }
+
+    if (user?.email) {
+      getVendorByEmail(user.email)
+        .then((vendor) => {
+          if (vendor && vendor.businessName) {
+            setCompanyName(vendor.businessName);
+            setIsCompanyLocked(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch vendor profile:", err);
+        });
     }
 
     getTenderById(id)
@@ -111,7 +145,15 @@ export default function BidSubmissionPage() {
         setError("Failed to retrieve tender requirements.");
         setLoading(false);
       });
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (selectedBankOption === "Other") {
+      setBidSecurityIssuer("");
+    } else {
+      setBidSecurityIssuer(selectedBankOption);
+    }
+  }, [selectedBankOption]);
 
   // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (url: string) => void) => {
@@ -125,6 +167,35 @@ export default function BidSubmissionPage() {
         setter(res.filePath);
       } else {
         setError("File upload failed.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "File upload encountered an error.");
+    }
+  };
+
+  // Multiple files upload handler
+  const handleMultipleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setError("");
+    try {
+      const uploadedPaths: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await uploadBidDocument(file);
+        if (res.success && res.filePath) {
+          uploadedPaths.push(res.filePath);
+        } else {
+          setError(`File upload failed for ${file.name}`);
+        }
+      }
+      if (uploadedPaths.length > 0) {
+        setter((prev) => [...prev, ...uploadedPaths]);
       }
     } catch (err: any) {
       console.error(err);
@@ -148,7 +219,10 @@ export default function BidSubmissionPage() {
     setBoqItems(boqItems.map(item => {
       if (item.id === boqId) {
         const updated = { ...item, [field]: value };
-        if (field === "quantity" || field === "rate") {
+        if (field === "unit" && value === "Sum") {
+          updated.quantity = 1;
+        }
+        if (field === "quantity" || field === "rate" || (field === "unit" && value === "Sum")) {
           updated.total = (updated.quantity || 0) * (updated.rate || 0);
         }
         return updated;
@@ -186,8 +260,7 @@ export default function BidSubmissionPage() {
     }
     if (step === 3) {
       // PCA 3 requirement
-      const budget = tender?.estimatedBudget || 0;
-      if (budget >= 5000000 && !pca3File) {
+      if (boqTotalSum >= 5000000 && !pca3File) {
         setError("Under the Public Contracts Act, a PCA 3 Certificate upload is mandatory for projects valued at LKR 5,000,000 or above.");
         return false;
       }
@@ -238,9 +311,11 @@ export default function BidSubmissionPage() {
         value: bidSecurityValue,
         fileUrl: bidSecurityFile
       },
-      cvsFile,
+      cvsFile: cvsFiles.join(","),
+      cvsFiles,
       methodologyFile,
-      pastExperienceFile,
+      pastExperienceFile: pastExperienceFiles.join(","),
+      pastExperienceFiles,
       ganttChartFile
     };
 
@@ -303,24 +378,14 @@ export default function BidSubmissionPage() {
 
   return (
     <TenderLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header summary */}
-        <div className="bg-white border border-gray-100 rounded-[2rem] p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div>
-            <span className="text-[10px] font-black text-primary uppercase tracking-wider bg-primary/10 px-3 py-1 rounded-md">
-              TENDER SUBMISSION WIZARD
-            </span>
-            <h1 className="text-2xl font-black text-black-1 mt-2">{tender?.title}</h1>
-            <p className="text-xs text-gray-3 font-semibold mt-1">ID: {tender?.tenderNumber || "TBA"} | Budget: LKR {Number(tender?.estimatedBudget || 0).toLocaleString()}</p>
-          </div>
-          <div className="text-right">
-            <span className="text-[10px] font-black text-gray-3 uppercase tracking-wider block">QUOTED PRICE</span>
-            <span className="text-3xl font-black text-[#a03d11]">LKR {boqTotalSum.toLocaleString()}</span>
-          </div>
+      <div className="max-w-5xl mx-auto space-y-4 -mt-8">
+        {/* Tender Header Summary */}
+        <div className="pb-1">
+          <h1 className="font-black text-black-1 text-2xl">{tender?.title}</h1>
         </div>
 
         {/* Stepper bar */}
-        <div className="flex justify-between items-center bg-white border border-gray-100 rounded-2xl p-6 shadow-sm overflow-x-auto no-scrollbar">
+        <div className="flex justify-between items-center bg-white border border-gray-100 rounded-2xl p-4 px-6 shadow-sm overflow-x-auto no-scrollbar">
           {steps.map((s, idx) => (
             <div key={idx} className="flex items-center gap-3 whitespace-nowrap">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
@@ -356,7 +421,7 @@ export default function BidSubmissionPage() {
                     type="text"
                     disabled
                     value={user?.name || ""}
-                    className="w-full bg-gray-5 border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-gray-2 cursor-not-allowed"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-gray-400 cursor-not-allowed"
                   />
                 </div>
                 <div className="space-y-2">
@@ -365,26 +430,22 @@ export default function BidSubmissionPage() {
                     type="text"
                     disabled
                     value={user?.email || ""}
-                    className="w-full bg-gray-5 border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-gray-2 cursor-not-allowed"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-gray-400 cursor-not-allowed"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-black text-gray-3 uppercase tracking-wider">Company / Organization Name *</label>
                   <input
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
+                    disabled={isCompanyLocked}
                     placeholder="Enter official registered business name"
-                    className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-black-2 focus:border-primary focus:outline-none transition-colors"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-3 uppercase tracking-wider">Quoted Amount (LKR)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={`LKR ${boqTotalSum.toLocaleString()}`}
-                    className="w-full bg-gray-5 border border-gray-200 rounded-xl py-3 px-4 text-sm font-black text-[#a03d11] cursor-not-allowed"
+                    className={`w-full border rounded-xl py-3 px-4 text-sm font-semibold focus:outline-none transition-colors ${
+                      isCompanyLocked 
+                        ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed" 
+                        : "border-gray-200 text-black-2 focus:border-primary"
+                    }`}
                   />
                 </div>
               </div>
@@ -394,13 +455,32 @@ export default function BidSubmissionPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-gray-3 uppercase tracking-wider">Guarantee Issuing Bank *</label>
-                    <input
-                      type="text"
-                      value={bidSecurityIssuer}
-                      onChange={(e) => setBidSecurityIssuer(e.target.value)}
-                      placeholder="e.g. Bank of Ceylon"
-                      className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-black-2 focus:border-primary focus:outline-none transition-colors"
-                    />
+                    <select
+                      value={SRI_LANKAN_BANKS.includes(selectedBankOption) ? selectedBankOption : selectedBankOption === "" ? "" : "Other"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedBankOption(val);
+                        if (val !== "Other") {
+                          setBidSecurityIssuer(val);
+                        }
+                      }}
+                      className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-black-2 focus:border-primary focus:outline-none transition-colors animate-in fade-in"
+                    >
+                      <option value="">Select a Bank</option>
+                      {SRI_LANKAN_BANKS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+                    {(selectedBankOption === "Other" || (!SRI_LANKAN_BANKS.includes(selectedBankOption) && selectedBankOption !== "")) && (
+                      <input
+                        type="text"
+                        value={bidSecurityIssuer}
+                        onChange={(e) => setBidSecurityIssuer(e.target.value)}
+                        placeholder="Please enter bank name"
+                        className="w-full border border-gray-200 rounded-xl py-3 px-4 text-sm font-semibold text-black-2 focus:border-primary focus:outline-none transition-colors mt-2"
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-gray-3 uppercase tracking-wider">Expiry Date *</label>
@@ -484,19 +564,56 @@ export default function BidSubmissionPage() {
                           />
                         </td>
                         <td className="p-4">
-                          <input
-                            type="text"
-                            value={item.unit}
-                            onChange={(e) => updateBoqItem(item.id, "unit", e.target.value)}
-                            className="w-full bg-transparent border-0 border-b border-transparent focus:border-primary p-1 text-sm font-bold text-black-2 focus:outline-none transition-colors text-center"
-                          />
+                          {BOQ_UNITS.includes(item.unit) || item.unit === "" ? (
+                            <select
+                              value={item.unit}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "Other") {
+                                  updateBoqItem(item.id, "unit", "Other");
+                                } else {
+                                  updateBoqItem(item.id, "unit", val);
+                                }
+                              }}
+                              className="w-full bg-transparent border-0 border-b border-gray-200 focus:border-primary p-1 text-sm font-bold text-black-2 focus:outline-none transition-colors"
+                            >
+                              <option value="">Select Unit</option>
+                              {BOQ_UNITS.map((u) => (
+                                <option key={u} value={u}>{u}</option>
+                              ))}
+                              <option value="Other">Other...</option>
+                            </select>
+                          ) : (
+                            <div className="flex items-center gap-1.5 min-w-[5rem]">
+                              <input
+                                type="text"
+                                value={item.unit === "Other" ? "" : item.unit}
+                                onChange={(e) => updateBoqItem(item.id, "unit", e.target.value)}
+                                placeholder="Unit"
+                                className="w-full bg-transparent border-0 border-b border-gray-200 focus:border-primary p-1 text-sm font-bold text-black-2 focus:outline-none transition-colors"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => updateBoqItem(item.id, "unit", "")}
+                                className="text-gray-400 hover:text-error text-xs font-black p-0.5"
+                                title="Reset to dropdown"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
                         </td>
                         <td className="p-4">
                           <input
                             type="number"
                             value={item.quantity}
+                            disabled={item.unit === "Sum"}
                             onChange={(e) => updateBoqItem(item.id, "quantity", Number(e.target.value))}
-                            className="w-full bg-transparent border-0 border-b border-transparent focus:border-primary p-1 text-sm font-bold text-black-2 focus:outline-none transition-colors text-right"
+                            className={`w-full border-0 border-b border-transparent focus:border-primary p-1 text-sm font-bold focus:outline-none transition-colors text-right ${
+                              item.unit === "Sum" 
+                                ? "bg-gray-100 text-gray-400 cursor-not-allowed border-b-0 px-2 py-1.5 rounded-lg" 
+                                : "bg-transparent text-black-2"
+                            }`}
                           />
                         </td>
                         <td className="p-4">
@@ -674,13 +791,13 @@ export default function BidSubmissionPage() {
               )}
 
               {/* Public Contracts Act (LKR >= 5,000,000) check */}
-              {Number(tender?.estimatedBudget || 0) >= 5000000 && (
+              {boqTotalSum >= 5000000 && (
                 <div className="space-y-4 pt-6 border-t border-gray-100">
                   <div className="p-4 bg-warning/5 border border-warning/20 rounded-2xl flex items-center gap-3">
                     <AlertCircle size={20} className="text-warning shrink-0" />
                     <div>
                       <span className="text-xs font-black text-warning uppercase tracking-wider block">PUBLIC CONTRACTS ACT COMPLIANCE</span>
-                      <span className="text-xs text-gray-2 font-medium">As this project's estimated budget is LKR 5,000,000 or above, the bidder is legally required to upload a PCA 3 Registration Certificate.</span>
+                      <span className="text-xs text-gray-2 font-medium">As your quoted bid amount is LKR 5,000,000 or above, the bidder is legally required to upload a PCA 3 Registration Certificate.</span>
                     </div>
                   </div>
 
@@ -708,47 +825,127 @@ export default function BidSubmissionPage() {
             <div className="space-y-8 animate-in fade-in duration-300">
               <h2 className="text-xl font-black text-black-1 pb-4 border-b border-gray-100">4. Supporting Vetting Documentation</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* CVs of Key Technical Staff - Multiple PDF */}
                 <div className="space-y-3 p-6 border border-gray-100 rounded-2xl">
-                  <label className="text-xs font-black text-black-1 uppercase tracking-wider block">CVs of Key Technical Staff</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3">
-                      <Upload size={14} /> Upload PDF
-                      <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setCvsFile)} className="hidden" />
+                  <label className="text-xs font-black text-black-1 uppercase tracking-wider block">CVs of Key Technical Staff *</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3 w-fit">
+                      <Upload size={14} /> Upload PDF(s)
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        multiple
+                        onChange={(e) => handleMultipleFileUpload(e, setCvsFiles)}
+                        className="hidden"
+                      />
                     </label>
-                    {cvsFile ? <span className="text-xs text-success font-bold">Uploaded</span> : <span className="text-xs text-gray-2">Not uploaded</span>}
+                    {cvsFiles.length > 0 && (
+                      <div className="space-y-1.5 mt-2">
+                        {cvsFiles.map((fileUrl, index) => {
+                          const name = fileUrl.split("/").pop() || `CV_${index + 1}.pdf`;
+                          return (
+                            <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-xs font-bold text-gray-2 animate-in slide-in-from-top-1">
+                              <span className="truncate max-w-[200px]" title={name}>{name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setCvsFiles(prev => prev.filter((_, i) => i !== index))}
+                                className="text-error/70 hover:text-error transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {cvsFiles.length === 0 && <span className="text-xs text-gray-2">No files uploaded</span>}
                   </div>
                 </div>
 
+                {/* Detailed Execution Methodology */}
                 <div className="space-y-3 p-6 border border-gray-100 rounded-2xl">
                   <label className="text-xs font-black text-black-1 uppercase tracking-wider block">Detailed Execution Methodology</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3">
-                      <Upload size={14} /> Upload PDF
-                      <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setMethodologyFile)} className="hidden" />
-                    </label>
-                    {methodologyFile ? <span className="text-xs text-success font-bold">Uploaded</span> : <span className="text-xs text-gray-2">Not uploaded</span>}
+                  <div className="flex flex-col gap-3">
+                    {!methodologyFile ? (
+                      <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3 w-fit">
+                        <Upload size={14} /> Upload PDF
+                        <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setMethodologyFile)} className="hidden" />
+                      </label>
+                    ) : (
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-xs font-bold text-gray-2">
+                        <span className="truncate max-w-[200px]" title={methodologyFile.split("/").pop()}>{methodologyFile.split("/").pop()}</span>
+                        <button
+                          type="button"
+                          onClick={() => setMethodologyFile("")}
+                          className="text-error/70 hover:text-error transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {!methodologyFile && <span className="text-xs text-gray-2">No file uploaded</span>}
                   </div>
                 </div>
 
+                {/* Past Projects & Completion Certificates - Multiple PDF */}
                 <div className="space-y-3 p-6 border border-gray-100 rounded-2xl">
-                  <label className="text-xs font-black text-black-1 uppercase tracking-wider block">Past Projects & Completion Certificates</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3">
-                      <Upload size={14} /> Upload PDF
-                      <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setPastExperienceFile)} className="hidden" />
+                  <label className="text-xs font-black text-black-1 uppercase tracking-wider block">Past Projects & Completion Certificates *</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3 w-fit">
+                      <Upload size={14} /> Upload PDF(s)
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        multiple
+                        onChange={(e) => handleMultipleFileUpload(e, setPastExperienceFiles)}
+                        className="hidden"
+                      />
                     </label>
-                    {pastExperienceFile ? <span className="text-xs text-success font-bold">Uploaded</span> : <span className="text-xs text-gray-2">Not uploaded</span>}
+                    {pastExperienceFiles.length > 0 && (
+                      <div className="space-y-1.5 mt-2">
+                        {pastExperienceFiles.map((fileUrl, index) => {
+                          const name = fileUrl.split("/").pop() || `Project_${index + 1}.pdf`;
+                          return (
+                            <div key={index} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-xs font-bold text-gray-2 animate-in slide-in-from-top-1">
+                              <span className="truncate max-w-[200px]" title={name}>{name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setPastExperienceFiles(prev => prev.filter((_, i) => i !== index))}
+                                className="text-error/70 hover:text-error transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {pastExperienceFiles.length === 0 && <span className="text-xs text-gray-2">No files uploaded</span>}
                   </div>
                 </div>
 
+                {/* Project Gantt Chart / Implementation Schedule */}
                 <div className="space-y-3 p-6 border border-gray-100 rounded-2xl">
                   <label className="text-xs font-black text-black-1 uppercase tracking-wider block">Project Gantt Chart / Implementation Schedule</label>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3">
-                      <Upload size={14} /> Upload PDF
-                      <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setGanttChartFile)} className="hidden" />
-                    </label>
-                    {ganttChartFile ? <span className="text-xs text-success font-bold">Uploaded</span> : <span className="text-xs text-gray-2">Not uploaded</span>}
+                  <div className="flex flex-col gap-3">
+                    {!ganttChartFile ? (
+                      <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-5 hover:bg-gray-100 border border-dashed border-gray-300 rounded-xl cursor-pointer text-xs font-bold text-gray-3 w-fit">
+                        <Upload size={14} /> Upload PDF
+                        <input type="file" accept=".pdf" onChange={(e) => handleFileUpload(e, setGanttChartFile)} className="hidden" />
+                      </label>
+                    ) : (
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl p-2.5 text-xs font-bold text-gray-2">
+                        <span className="truncate max-w-[200px]" title={ganttChartFile.split("/").pop()}>{ganttChartFile.split("/").pop()}</span>
+                        <button
+                          type="button"
+                          onClick={() => setGanttChartFile("")}
+                          className="text-error/70 hover:text-error transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {!ganttChartFile && <span className="text-xs text-gray-2">No file uploaded</span>}
                   </div>
                 </div>
               </div>
@@ -798,7 +995,7 @@ export default function BidSubmissionPage() {
                   <h3 className="text-xs font-black text-gray-3 uppercase tracking-wider">Uploaded Documents Checklist</h3>
                   <div className="p-6 border border-gray-100 rounded-2xl space-y-3">
                     <DocRow label="Bid Security Certificate" uploaded={!!bidSecurityFile} />
-                    {Number(tender?.estimatedBudget || 0) >= 5000000 && (
+                    {boqTotalSum >= 5000000 && (
                       <DocRow label="PCA 3 Registration Certificate" uploaded={!!pca3File} />
                     )}
                     {tender?.procurementType === "WORKS" && (
@@ -810,8 +1007,9 @@ export default function BidSubmissionPage() {
                     {(tender?.procurementType === "GOODS" || tender?.procurementType === "SERVICES") && tender?.dynamicData?.mafRequired && (
                       <DocRow label="Manufacturer Authorization Form" uploaded={!!mafFile} />
                     )}
-                    <DocRow label="Technical Staff CVs" uploaded={!!cvsFile} />
+                    <DocRow label="Technical Staff CVs" uploaded={cvsFiles.length > 0} />
                     <DocRow label="Execution Methodology" uploaded={!!methodologyFile} />
+                    <DocRow label="Past Projects & Certificates" uploaded={pastExperienceFiles.length > 0} />
                     <DocRow label="Gantt Chart Schedule" uploaded={!!ganttChartFile} />
                   </div>
                 </div>
