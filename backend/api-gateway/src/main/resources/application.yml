@@ -6,6 +6,8 @@ spring:
   
   cloud:
     gateway:
+      default-filters:
+        - DeduplicateResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Headers Access-Control-Allow-Methods, RETAIN_FIRST
       routes:
         - id: user-service-users
           uri: lb://user-service
