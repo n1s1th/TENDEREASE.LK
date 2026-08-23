@@ -127,14 +127,8 @@ public class BidService {
             throw new RuntimeException("Bid data (forms, schedules, and uploads) is required.");
         }
 
-        // A. PCA 3 registration check (for estimated budget >= LKR 5,000,000)
-        Object budgetObj = tenderDetail.get("estimatedBudget");
-        BigDecimal estimatedBudget = BigDecimal.ZERO;
-        if (budgetObj != null) {
-            estimatedBudget = new BigDecimal(budgetObj.toString());
-        }
-
-        if (estimatedBudget.compareTo(new BigDecimal("5000000")) >= 0) {
+        // A. PCA 3 registration check (for bid amount >= LKR 5,000,000)
+        if (request.getBidAmount() != null && request.getBidAmount().compareTo(new BigDecimal("5000000")) >= 0) {
             String pca3File = (String) bidData.get("pca3File");
             if (pca3File == null || pca3File.trim().isEmpty()) {
                 throw new RuntimeException("Under the Sri Lanka Public Contracts Act, a PCA 3 Registration Certificate is mandatory for projects valued at LKR 5,000,000 or above.");
