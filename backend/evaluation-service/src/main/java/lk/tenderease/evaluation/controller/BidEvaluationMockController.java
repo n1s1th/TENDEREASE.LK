@@ -951,6 +951,7 @@ public class BidEvaluationMockController {
             
             String realStatus = "APPROVED";
             String realTenderNo = note.getTenderId();
+            Object dynamicData = null;
             try {
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
                 String tenderServiceUrl = "http://localhost:8082/api/v1/tenders/" + note.getTenderId();
@@ -961,6 +962,9 @@ public class BidEvaluationMockController {
                     }
                     if (tenderDetail.get("tenderNumber") != null) {
                         realTenderNo = tenderDetail.get("tenderNumber").toString();
+                    }
+                    if (tenderDetail.get("dynamicData") != null) {
+                        dynamicData = tenderDetail.get("dynamicData");
                     }
                 }
             } catch (Exception e) {
@@ -974,6 +978,9 @@ public class BidEvaluationMockController {
             t.put("tenderNo", realTenderNo);
             t.put("title", note.getTenderName() != null ? note.getTenderName() : "Tender " + note.getTenderId());
             t.put("department", note.getDepartment() != null ? note.getDepartment() : "N/A");
+            if (dynamicData != null) {
+                t.put("dynamicData", dynamicData);
+            }
             
             String finalStatus = "PENDING_CAO";
             if (note.getStatus() == RecommendationNote.RecommendationStatus.APPROVED) {

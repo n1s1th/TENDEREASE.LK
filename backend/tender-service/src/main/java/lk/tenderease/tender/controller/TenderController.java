@@ -466,9 +466,10 @@ public class TenderController {
     @Operation(summary = "Update tender status", description = "Updates status of a tender. Public/internal use.")
     public ResponseEntity<TenderResponse> updateStatus(
             @PathVariable UUID id,
-            @RequestParam TenderStatus status) {
+            @RequestParam TenderStatus status,
+            @RequestParam(required = false) String awardedBy) {
         log.info("REST request to update tender {} status to {}", id, status);
-        TenderResponse response = tenderService.updateTenderStatus(id, status, null, "system-user");
+        TenderResponse response = tenderService.updateTenderStatus(id, status, null, awardedBy != null ? awardedBy : "system-user");
         return ResponseEntity.ok(response);
     }
 }

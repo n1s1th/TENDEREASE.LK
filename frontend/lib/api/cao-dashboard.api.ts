@@ -303,7 +303,7 @@ export async function fetchKpiReport(params: KpiReportParams): Promise<KpiReport
       const monthIndex = tDate.getMonth(); // 0 to 11
 
       // Active
-      if (t.status === 'PUBLISHED' || t.status === 'APPROVED' || t.status === 'EVALUATION') {
+      if (['PUBLISHED', 'APPROVED', 'EVALUATION', 'PENDING_OPENING', 'OPEN'].includes(t.status)) {
         activeCount++;
         activeMap.set(monthIndex, (activeMap.get(monthIndex) || 0) + 1);
       }
