@@ -129,14 +129,10 @@ public class RecommendationService {
         }
 
         if (status == RecommendationNote.RecommendationStatus.APPROVED) {
-            try {
-                RestTemplate restTemplate = new RestTemplate();
-                String url = "http://localhost:8082/api/v1/tenders/" + note.getTenderId() + "/status?status=AWARDED";
-                restTemplate.put(url, null);
-                System.out.println("Tender status synchronized to AWARDED for tender: " + note.getTenderId());
-            } catch (Exception e) {
-                System.err.println("Failed to update tender status to AWARDED: " + e.getMessage());
-            }
+            // Wait for the officer to send the award emails before setting the status to AWARDED.
+            // The frontend AwardProcessingDetail component will update the status to AWARDED
+            // once the winner and loser emails are generated.
+            System.out.println("CAO approved recommendation for tender: " + note.getTenderId() + ". Waiting for officer to send emails.");
         }
         
         return repository.save(note);
