@@ -9,6 +9,7 @@ import TenderTabs from "@/components/tender/TenderTabs";
 import SpecialRequirements from "@/components/tender/SpecialRequirements";
 import TenderActionsFooter from "@/components/tender/TenderActionsFooter";
 import RequireAuth from "@/components/auth/RequireAuth";
+import BackLink from "@/components/ui/back-link";
 
 import { getTenderById } from "@/services/tender.service";
 
@@ -81,6 +82,9 @@ export default function Page() {
 
   return (
     <TenderLayout>
+      {/* Outside the auth gate so guests can get back to the list too. */}
+      <BackLink href="/tenders" label="Back to Tenders" />
+
       <RequireAuth message="Log in or register to view this tender's details, documents and contacts.">
         <TenderDetails id={id} />
       </RequireAuth>

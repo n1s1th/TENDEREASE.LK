@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import TenderLayout from "@/components/tender/TenderLayout";
 import TenderTable from "@/components/tender/TenderTable";
 import RequireAuth from "@/components/auth/RequireAuth";
+import BackLink from "@/components/ui/back-link";
 import { useSavedTendersStore } from "@/store";
 
 function SavedTendersList() {
@@ -22,6 +23,8 @@ function SavedTendersList() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-10 py-10 space-y-12">
+      <BackLink href="/tenders" label="Back to Tenders" />
+
       {/* Header */}
       <div className="relative">
         <div className="absolute -left-4 top-0 w-1 h-12 bg-primary rounded-full"></div>
