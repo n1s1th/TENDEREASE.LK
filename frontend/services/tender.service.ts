@@ -1,7 +1,10 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
-  || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
+// NEXT_PUBLIC_TENDER_SERVICE_URL is the service origin (e.g. http://localhost:8082),
+// matching how officer.api.ts and evaluation-analytics.api.ts read it.
+// The public tender API is served under /api/tenders.
+const TENDER_SERVICE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
+const BASE_URL = `${TENDER_SERVICE_URL}/api/tenders`;
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
