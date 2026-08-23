@@ -1,14 +1,19 @@
 import { useEffect, useState, useRef } from "react";
 import { useAwardProcessingStore } from "@/store/award-processing.store";
 import { useOfficerDashboardStore } from "@/store/officer-dashboard/officer-dashboard.store";
+import { useAuthStore } from "@/store/auth/auth.store";
 import { AlertCircle, Loader2, X, MousePointerClick } from "lucide-react";
 
 export default function AwardProcessingDetail({ tenderId }: { tenderId: string | null }) {
+  const user = useAuthStore(state => state.user);
+  const officerEmail = user?.email || user?.username || "officer@procurement.gov.lk";
+
   const { tenders, bidders, loadingBidders, fetchBidders, generateEmails, generatingEmails } = useAwardProcessingStore();
   const showToast = useOfficerDashboardStore(state => state.showToast);
   
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailType, setEmailType] = useState<'WINNER' | 'LOST' | null>(null);
+  const [isGeneratingEmails, setIsGeneratingEmails] = useState(false);
 
   // Persist email sent status in localStorage
   const getSentStatus = (): Record<string, { winner: boolean; lost: boolean; winnerSentAt?: string; lostSentAt?: string }> => {
@@ -37,7 +42,12 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
   const tender = tenderId ? tenders.find(t => t.id === tenderId) : undefined;
   const winner = bidders.find(b => b.status === 'WINNER');
   const losers = bidders.filter(b => b.status === 'LOST');
-  const tenderSentStatus = tenderId ? (sentStatus[tenderId] || { winner: false, lost: false }) : { winner: false, lost: false };
+  
+  // If tender is not yet fully awarded (e.g. reverted to APPROVED/CLOSED), allow re-sending
+  const isAlreadyAwarded = tender?.status === 'AWARDED';
+  const tenderSentStatus = (tenderId && isAlreadyAwarded) 
+    ? (sentStatus[tenderId] || { winner: false, lost: false }) 
+    : { winner: false, lost: false };
 
   // Auto-heal: If all necessary emails are marked as sent in localStorage but it's not fullyAwarded
   useEffect(() => {
@@ -47,7 +57,6 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     
     const winnerDone = !needsWinnerEmail || tenderSentStatus.winner;
     const loserDone = !needsLoserEmail || tenderSentStatus.lost;
-    
     if (winnerDone && loserDone && !(tenderSentStatus as any).fullyAwarded && (needsWinnerEmail || needsLoserEmail)) {
       const updatedStatus = { ...tenderSentStatus, fullyAwarded: true };
       const updated = { ...sentStatus, [tenderId]: updatedStatus };
@@ -57,7 +66,9 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       window.dispatchEvent(new Event('awardEmailsUpdated'));
       
       if (tender.status !== 'AWARDED') {
-        fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED`, { method: 'PUT' }).catch(console.error);
+        const currentUser = useAuthStore.getState().user;
+        const currentOfficerEmail = currentUser?.email || currentUser?.username || "officer@procurement.gov.lk";
+        fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, { method: 'PUT' }).catch(console.error);
       }
     }
   }, [tenderId, tender, loadingBidders, winner, losers, tenderSentStatus, sentStatus]);
@@ -86,16 +97,16 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
 
   const handleOpenModal = (type: 'WINNER' | 'LOST') => {
     setEmailType(type);
-    setEmailClosing("");
+    setEmailClosing("Best Regards,\nProcurement Officer");
     setFormErrors({});
     
     let defaultBody = "";
     if (type === 'WINNER') {
       setEmailSubject(`Tender Award Notification - ${tender?.tenderNo}`);
-      defaultBody = `Dear <b>${winner?.bidderName}</b>,<br/><br/>We are pleased to inform you that your bid for tender <b>${tender?.tenderNo}</b> (${tender?.title}) has been successful.<br/><br/>Your winning bid amount is <b>LKR ${winner?.bidAmount.toLocaleString()}</b>.<br/><br/>Our team will contact you shortly to finalize the contract details.<br/><br/>Congratulations,<br/>`;
+      defaultBody = `Dear <b>${winner?.bidderName}</b>,<br/><br/>Congratulations! We are pleased to inform you that your bid for tender <b>${tender?.tenderNo}</b> (${tender?.title}) has been successful.<br/><br/>Your winning bid amount is <b>LKR ${winner?.bidAmount.toLocaleString()}</b>.<br/><br/>Our team will contact you shortly to finalize the contract details.`;
     } else {
       setEmailSubject(`Tender Evaluation Outcome - ${tender?.tenderNo}`);
-      defaultBody = `Dear Bidder,<br/><br/>Thank you for participating in tender <b>${tender?.tenderNo}</b> (${tender?.title}).<br/><br/>After careful evaluation, we regret to inform you that your bid was not successful on this occasion.<br/><br/>We appreciate your effort and encourage you to participate in future opportunities.<br/><br/>Sincerely,<br/>`;
+      defaultBody = `Dear Bidder,<br/><br/>Thank you for participating in tender <b>${tender?.tenderNo}</b> (${tender?.title}).<br/><br/>After careful evaluation, we regret to inform you that your bid was not successful on this occasion.<br/><br/>We appreciate your effort and encourage you to participate in future opportunities.`;
     }
     
     setEmailBody(defaultBody);
@@ -119,11 +130,6 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     
     if (!emailClosing.trim()) {
       errors.closing = "This field is required.";
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(emailClosing.trim())) {
-        errors.closing = "Please enter a valid email address.";
-      }
     }
     
     if (Object.keys(errors).length > 0) {
@@ -133,7 +139,69 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
     
     setFormErrors({});
 
-    await generateEmails(tenderId, emailType);
+    try {
+      setIsGeneratingEmails(true);
+      
+      const recipients: string[] = [];
+      if (emailType === 'WINNER') {
+        if (winner?.bidderEmail) recipients.push(winner.bidderEmail);
+      } else {
+        losers.forEach(loser => {
+          if (loser.bidderEmail) recipients.push(loser.bidderEmail);
+        });
+      }
+      
+      if (recipients.length === 0) {
+        throw new Error("No valid email addresses found for the selected bidders.");
+      }
+      
+      const formattedClosing = emailClosing.replace(/\n/g, '<br/>');
+      const fullHtmlBody = `
+<div style="background-color: #f9fafb; color: #1f2937; font-family: 'Inter', Helvetica, Arial, sans-serif; padding: 40px 20px; text-align: center;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; border: 1px solid #e5e7eb;">
+    <div style="background-color: #953002; padding: 24px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 0.5px;">TenderEase Notifications</h1>
+    </div>
+    <div style="padding: 32px 24px; font-size: 15px; line-height: 1.6; color: #374151;">
+      ${emailBody}
+      <br/><br/>
+      <div style="color: #6b7280; font-weight: 500;">
+        ${formattedClosing}
+      </div>
+    </div>
+    <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="margin: 0; font-size: 12px; color: #9ca3af;">Please log in to the procurement dashboard to review details if necessary.</p>
+    </div>
+  </div>
+</div>`;
+
+      // Send to all recipients individually
+      await Promise.all(recipients.map(async (recipientEmail) => {
+        const res = await fetch('http://localhost:8089/api/v1/notifications/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: recipientEmail,
+            subject: emailSubject,
+            body: fullHtmlBody,
+            isHtml: true
+          })
+        });
+        
+        if (!res.ok) {
+          console.error(`Failed to send to ${recipientEmail}`);
+          throw new Error("Failed to send email");
+        }
+      }));
+      
+    } catch (err: any) {
+      console.error(err);
+      setFormErrors({ subject: err.message || "Failed to send email. Please check backend configuration." });
+      setIsGeneratingEmails(false);
+      return;
+    } finally {
+      setIsGeneratingEmails(false);
+    }
     
     const now = new Date().toISOString();
     
@@ -172,6 +240,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
         await fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED`, {
           method: 'PUT'
         });
+        useAwardProcessingStore.getState().fetchTenders();
       } catch (err) {
         console.error("Failed to update tender status to AWARDED in database", err);
       }
@@ -220,15 +289,15 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               <div className="border border-gray-200 rounded-xl p-5">
                 <h4 className="font-bold text-gray-900 text-lg mb-4">{winner.bidderName}</h4>
                 <div className="flex">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Bidder ID</p>
                     <p className="font-bold text-gray-700 text-sm mt-1 truncate" title={winner.bidderId}>{winner.bidderId.substring(0, 8)}...</p>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Email</p>
                     <p className="font-bold text-gray-700 text-sm mt-1 truncate" title={winner.bidderEmail || 'N/A'}>{winner.bidderEmail || 'N/A'}</p>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 whitespace-nowrap">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Final Score</p>
                     <p className="font-black text-emerald-700 text-lg mt-0.5">{winner.score}%</p>
                   </div>
@@ -378,11 +447,14 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               </button>
               <button 
                 onClick={handleSendEmails}
-                disabled={generatingEmails}
-                className="px-6 py-2 bg-[#953002] hover:bg-[#7a2701] text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                disabled={isGeneratingEmails}
+                className="px-5 py-2 text-sm font-bold text-white bg-[#953002] hover:bg-[#7a2701] rounded-lg transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {generatingEmails && <Loader2 className="w-4 h-4 animate-spin" />}
-                {emailType === 'WINNER' ? 'Send Email' : 'Send Emails'}
+                {isGeneratingEmails ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                ) : (
+                  <>Send Email</>
+                )}
               </button>
             </div>
           </div>
