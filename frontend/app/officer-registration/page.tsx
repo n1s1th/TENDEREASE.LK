@@ -87,7 +87,13 @@ export default function OfficerRegistrationPage() {
 
     // Restore draft if present
     if (formDraft && formDraft !== EMPTY_DRAFT) {
-      initialValues = { ...formDraft };
+      // If the draft belongs to someone else (different email), clear it
+      if (formDraft.liaisonEmail && formDraft.liaisonEmail !== defaultEmail) {
+        clearDraft();
+        initialValues = { ...EMPTY_DRAFT };
+      } else {
+        initialValues = { ...formDraft };
+      }
     }
 
     // Force current authenticated user's email (read-only)
@@ -152,6 +158,11 @@ export default function OfficerRegistrationPage() {
           errors: ['An unexpected error occurred. Please try again later.'],
           supportId: undefined,
         });
+      }
+      console.error("OFFICER REGISTRATION ERROR DETAILS:", error);
+      if (axios.isAxiosError(error)) {
+          console.error("AXIOS RESPONSE:", error.response?.data);
+          console.error("AXIOS MESSAGE:", error.message);
       }
       router.push('/officer-registration/failure');
     } finally {
