@@ -39,11 +39,8 @@ export default function AwardProcessingList({
   }
 
   const filteredTenders = tenders.filter(t => {
-    // If it's fully awarded in localStorage or DB, hide it from the evaluated list
-    const isFullyAwarded = 
-      sentStatus[t.id]?.fullyAwarded || 
-      (sentStatus[t.id]?.winner && sentStatus[t.id]?.lost) ||
-      t.status === 'AWARDED';
+    // If it's fully awarded in the DB, hide it from the evaluated list
+    const isFullyAwarded = t.status === 'AWARDED';
       
     if (isFullyAwarded) return false;
 

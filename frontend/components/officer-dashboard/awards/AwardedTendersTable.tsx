@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useAwardProcessingStore, AwardTender, AwardBidder } from "@/store/award-processing.store";
-import { ChevronDown, ChevronUp, Trophy, Clock } from "lucide-react";
+import { ChevronDown, ChevronUp, Trophy, Clock, Search } from "lucide-react";
 
 interface SentEntry {
   winner: boolean;
@@ -22,6 +22,7 @@ export default function AwardedTendersTable() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedBidders, setExpandedBidders] = useState<AwardBidder[]>([]);
   const [loadingBidders, setLoadingBidders] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadAwarded = () => {
@@ -33,10 +34,9 @@ export default function AwardedTendersTable() {
         const rows: AwardedTenderRow[] = [];
 
         for (const tender of tenders) {
-          const isAwarded = 
-            sentMap[tender.id]?.fullyAwarded || 
-            (sentMap[tender.id]?.winner && sentMap[tender.id]?.lost) ||
-            tender.status === 'AWARDED';
+          // Only trust the backend status for inclusion in this table
+          // This ensures perfect sync with CAO dashboard and KPI counts
+          const isAwarded = tender.status === 'AWARDED';
 
           if (isAwarded) {
             const timestamps = [sentMap[tender.id]?.winnerSentAt, sentMap[tender.id]?.lostSentAt].filter(Boolean) as string[];
@@ -98,13 +98,23 @@ export default function AwardedTendersTable() {
     });
   };
 
+  const filteredTenders = awardedTenders.filter(row => {
+    const term = searchTerm.toLowerCase();
+    return (
+      row.tender.tenderNo?.toLowerCase().includes(term) ||
+      row.tender.id.toLowerCase().includes(term) ||
+      row.tender.title?.toLowerCase().includes(term) ||
+      row.tender.department?.toLowerCase().includes(term)
+    );
+  });
+
   if (awardedTenders.length === 0) {
     return null; // Don't render section if no awarded tenders
   }
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-      <div className="p-5 border-b border-gray-100 bg-[#FAF9F6] rounded-t-xl">
+      <div className="p-5 border-b border-gray-100 bg-[#FAF9F6] rounded-t-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#953002]/10 rounded-lg flex items-center justify-center">
             <Trophy className="w-4 h-4 text-[#953002]" />
@@ -113,6 +123,19 @@ export default function AwardedTendersTable() {
             <h3 className="font-bold text-gray-800 text-[15px]">Awarded Tenders</h3>
             <p className="text-xs text-gray-500 mt-0.5">Tenders with all notification emails sent to bidders</p>
           </div>
+        </div>
+        
+        <div className="relative max-w-md w-full sm:w-[320px]">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#953002] focus:border-[#953002] transition-colors"
+            placeholder="Search by ID, Title, or Department..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
@@ -125,11 +148,18 @@ export default function AwardedTendersTable() {
               <th className="px-5 py-3">Department</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3">Awarded At</th>
+              <th className="px-5 py-3">Awarded By</th>
               <th className="px-5 py-3 text-center">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {awardedTenders.map(({ tender, awardedAt }) => (
+            {filteredTenders.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-5 py-8 text-center text-gray-500 text-sm">
+                  No awarded tenders match your search.
+                </td>
+              </tr>
+            ) : filteredTenders.map(({ tender, awardedAt }) => (
               <React.Fragment key={tender.id}> 
                 <tr className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-5 py-4">
@@ -145,6 +175,11 @@ export default function AwardedTendersTable() {
                   <td className="px-5 py-4">
                     <span className="inline-flex items-center text-xs text-gray-600">
                       {formatDate(awardedAt)}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <span className="text-xs text-gray-500 font-medium">
+                      {(tender as any).dynamicData?.awardedByEmail || 'N/A'}
                     </span>
                   </td>
                   <td className="px-5 py-4 text-center">

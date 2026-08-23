@@ -89,4 +89,7 @@ public class TenderResponse {
 
     @Schema(description = "SBD Template version")
     private String templateVersion;
+
+    @Schema(description = "Dynamic data JSON")
+    private java.util.Map<String, Object> dynamicData;
 }

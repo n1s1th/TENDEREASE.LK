@@ -200,7 +200,8 @@ public class TenderServiceImpl implements TenderService {
                 .timeRemaining(calculateTimeRemaining(effectiveClosingDate))
                 .rejectionReason(tender.getRejectionReason())
                 .sbdTemplate(tender.getSbdTemplate())
-                .templateVersion(tender.getTemplateVersion());
+                .templateVersion(tender.getTemplateVersion())
+                .dynamicData(tender.getDynamicData());
 
         // Defensive mapping for relationships
         if (tender.getMinistry() != null) {
@@ -256,6 +257,7 @@ public class TenderServiceImpl implements TenderService {
         response.setClosingDate(base.getClosingDate());
         response.setTimeRemaining(base.getTimeRemaining());
         response.setRejectionReason(base.getRejectionReason());
+        response.setDynamicData(base.getDynamicData());
 
         // Map specific details (documents, schedule, checklist)
         response.setDocuments(documentRepository.findByTenderId(id).stream().map(doc -> TenderDocumentResponse.builder()
@@ -1551,6 +1553,16 @@ public class TenderServiceImpl implements TenderService {
             tender.setRejectionReason(reason);
         }
         tender.setUpdatedAt(LocalDateTime.now());
+        
+        if (status == TenderStatus.AWARDED && callerUserId != null) {
+            java.util.Map<String, Object> data = tender.getDynamicData();
+            if (data == null) {
+                data = new java.util.HashMap<>();
+            }
+            data.put("awardedByEmail", callerUserId);
+            tender.setDynamicData(data);
+        }
+        
         Tender saved = tenderRepository.save(tender);
 
         // Log timeline status transitions
