@@ -21,9 +21,9 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Tender API — NEXT_PUBLIC_TENDER_SERVICE_URL = https://api.tenderease.me/api/tenders
+// Tender/Officer API — NEXT_PUBLIC_API_URL = https://api.tenderease.me (root gateway)
 const tenderApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || 'http://localhost:8082/api/tenders',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082',
   headers: { 'Content-Type': 'application/json' },
 });
 
