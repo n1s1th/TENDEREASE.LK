@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # 1. Service Discovery
+  eureka-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: eureka-server/target/*.jar
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    env_file: .env
+    restart: always
+
+  # 2. API Gateway (Entry point for frontend)
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: api-gateway/target/*.jar
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 3. User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: user-service/target/*.jar
+    container_name: user-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 4. Tender Service
+  tender-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: tender-service/target/*.jar
+    container_name: tender-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+      - USER_SERVICE_URL=http://user-service:8081
+      - WORKFLOW_SERVICE_URL=http://workflow-service:8083
+      - DOCUMENT_SERVICE_URL=http://document-service:8084
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 5. Workflow Service
+  workflow-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: workflow-service/target/*.jar
+    container_name: workflow-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 6. Document Service
+  document-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: document-service/target/*.jar
+    container_name: document-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 7. Bid Service
+  bid-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: bid-service/target/*.jar
+    container_name: bid-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 8. Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: notification-service/target/*.jar
+    container_name: notification-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always
+
+  # 9. Reporting Service
+  reporting-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        JAR_FILE: reporting-service/target/*.jar
+    container_name: reporting-service
+    env_file: .env
+    environment:
+      - EUREKA_SERVER=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: always

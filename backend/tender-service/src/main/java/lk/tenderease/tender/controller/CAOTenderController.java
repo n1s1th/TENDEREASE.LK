@@ -21,7 +21,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/cao/tenders")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000")
 @Tag(name = "CAO Tender Management", description = "Dashboard APIs for CAO to review and approve tenders")
 public class CAOTenderController {
 

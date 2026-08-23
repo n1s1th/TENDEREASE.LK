@@ -17,49 +17,109 @@ spring:
           predicates:
             - Path=/api/v1/vendors/**
 
-        - id: tender-service
-          uri: lb://tender-service
+        - id: user-service-officers
+          uri: lb://user-service
           predicates:
-            - Path=/api/tenders/**
-        - id: cao-tenders
-          uri: lb://tender-service
-          predicates:
-            - Path=/api/cao/tenders/**
-        
-        - id: cao-users
+            - Path=/api/officers/**
+
+        - id: user-service-cao
           uri: lb://user-service
           predicates:
             - Path=/api/cao/officers/**, /api/cao/registrations/**
 
-        - id: cao-kpi
-          uri: lb://reporting-service
+        - id: tender-service-tenders
+          uri: lb://tender-service
           predicates:
-            - Path=/api/cao/kpi/**
+            - Path=/api/tenders/**
 
-        - id: cao-notifications
-          uri: lb://notification-service
+        - id: tender-service-v1
+          uri: lb://tender-service
           predicates:
-            - Path=/api/cao/notifications/**
+            - Path=/api/v1/tenders/**
 
-        - id: cao-audit
+        - id: tender-service-templates
+          uri: lb://tender-service
+          predicates:
+            - Path=/api/v1/tender-templates/**
+
+        - id: tender-service-officer-dash
+          uri: lb://tender-service
+          predicates:
+            - Path=/api/officer/dashboard/**
+
+        - id: tender-service-cao
+          uri: lb://tender-service
+          predicates:
+            - Path=/api/cao/tenders/**, /api/v1/cao/tenders/**
+
+        - id: bid-service-bids
+          uri: lb://bid-service
+          predicates:
+            - Path=/api/bids/**, /api/v1/bids/**
+
+        - id: evaluation-service-eval
+          uri: lb://evaluation-service
+          predicates:
+            - Path=/api/evaluations/**, /api/v1/opening/**, /api/v1/recommendations/**
+
+        - id: workflow-service-wf
           uri: lb://workflow-service
           predicates:
-            - Path=/api/cao/audit-logs/**
-        
-        # Add more routes for other services
-      
+            - Path=/api/workflows/**, /api/cao/audit-logs/**
+
+        - id: notification-service-notif
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**, /api/cao/notifications/**
+
+        - id: reporting-service-rep
+          uri: lb://reporting-service
+          predicates:
+            - Path=/api/reporting/**, /api/cao/kpi/**
+
+        - id: qa-service-qa
+          uri: lb://qa-service
+          predicates:
+            - Path=/api/qa/**
+
+        - id: document-service-doc
+          uri: lb://document-service
+          predicates:
+            - Path=/api/documents/**
+
+        - id: contract-service-contract
+          uri: lb://contract-service
+          predicates:
+            - Path=/api/contracts/**
+
+        - id: payment-service-pay
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+
+        - id: appeal-service-appeal
+          uri: lb://appeal-service
+          predicates:
+            - Path=/api/appeals/**
+
+        - id: clarification-service-clar
+          uri: lb://clarification-service
+          predicates:
+            - Path=/api/clarifications/**
+
       globalcors:
         cors-configurations:
           '[/**]':
             allowed-origins:
               - "http://localhost:3000"
               - "http://localhost:3001"
+              - "https://tenderease.me"
+              - "https://www.tenderease.me"
               - "https://tenderease-lk.vercel.app"
             allowed-origin-patterns:
+              - "https://*.tenderease.me"
               - "https://*.vercel.app"
               - "https://tenderease-lk*.vercel.app"
-
-            
             allowed-methods:
               - GET
               - POST
