@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store";
+import { login } from "@/lib/keycloak";
 import { getTenders } from "@/services/tender.service";
 
 // ── Status presentation helpers ─────────────────────────────
@@ -56,6 +59,16 @@ const actionLabel: Record<DisplayStatus, string> = {
 export default function LatestTenders() {
   const [tenders, setTenders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const handleRowClick = (tenderId: string) => {
+    if (!isAuthenticated) {
+      login();
+    } else {
+      router.push(`/tenders/${tenderId}`);
+    }
+  };
 
   useEffect(() => {
     async function fetchLatest() {
@@ -146,6 +159,7 @@ export default function LatestTenders() {
               return (
                 <div
                   key={tender.id}
+                  onClick={() => handleRowClick(tender.id)}
                   style={{
                     display: "grid",
                     gridTemplateColumns: "2.5fr 1.3fr 1.3fr 0.9fr 1.1fr 0.9fr 0.9fr",
@@ -154,6 +168,7 @@ export default function LatestTenders() {
                     background: index % 2 === 1 ? "#fffafa" : "#fff",
                     borderBottom: index < tenders.length - 1 ? "1px solid #f0f0f0" : "none",
                     transition: "background 0.15s",
+                    cursor: "pointer",
                   }}
                 >
                   <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "#111827", lineHeight: 1.45 }}>
@@ -173,12 +188,15 @@ export default function LatestTenders() {
                     </span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Link
-                      href={`/tenders/${tender.id}`}
-                      style={{ ...actionStyle[ds], padding: "0.4rem 1rem", borderRadius: 8, fontSize: "0.82rem", background: "#fff", lineHeight: 1.3, minWidth: 72, transition: "background 0.15s, color 0.15s", textDecoration: "none", textAlign: "center" }}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(tender.id);
+                      }}
+                      style={{ ...actionStyle[ds], padding: "0.4rem 1rem", borderRadius: 8, fontSize: "0.82rem", background: "#fff", lineHeight: 1.3, minWidth: 72, transition: "background 0.15s, color 0.15s", textDecoration: "none", textAlign: "center", border: actionStyle[ds].border }}
                     >
                       {actionLabel[ds]}
-                    </Link>
+                    </button>
                   </div>
                 </div>
               );

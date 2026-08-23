@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Lock, FileText, Download, Trophy } from "lucide-react";
+import { ArrowRight, Lock, FileText, Download, Trophy, MessageSquare, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QuickActionModal from "./QuickActionModal";
 
@@ -30,6 +30,16 @@ export default function QuickActions() {
       label: "Awards Processing", 
       icon: Trophy,
       path: "#"
+    },
+    { 
+      label: "Tender Clarifications", 
+      icon: MessageSquare,
+      path: "/officer-dashboard/clarifications"
+    },
+    { 
+      label: "Global Q&A", 
+      icon: Globe,
+      path: "/officer-dashboard/qa"
     },
   ];
 

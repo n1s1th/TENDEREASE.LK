@@ -60,7 +60,7 @@ export default function QuestionCard({ question, expanded, onToggle }: QuestionC
                 }`}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                {answered ? "Answered" : "Pending"}
+                {answered ? `Answered by ${question.answer?.answeredBy || 'Officer'}` : "Pending"}
               </span>
             </div>
           </div>

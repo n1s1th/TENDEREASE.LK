@@ -67,6 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (authenticated) {
           applyAuth(keycloak.token!);
+          import('@/store/saved-tenders.store').then(({ useSavedTendersStore }) => {
+            useSavedTendersStore.getState().fetchTenders();
+          });
 
           keycloak.onTokenExpired = () => {
             keycloak.updateToken(70).then((refreshed) => {

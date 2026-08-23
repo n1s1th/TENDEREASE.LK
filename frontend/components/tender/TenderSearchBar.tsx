@@ -5,14 +5,12 @@ import { Search } from "lucide-react";
 interface Props {
   filters: {
     keyword: string;
-    category: string;
     status: string;
     dateType: string;
     fromDate: string;
     toDate: string;
   };
   onFilterChange: (filters: any) => void;
-  onSearch: () => void;
   onReset: () => void;
 }
 
@@ -34,7 +32,7 @@ const inputClass =
 
 const labelClass = "text-[10px] font-semibold text-gray-3 uppercase tracking-[0.2em] px-1";
 
-export default function TenderSearchBar({ filters, onFilterChange, onSearch, onReset }: Props) {
+export default function TenderSearchBar({ filters, onFilterChange, onReset }: Props) {
 
   const handleInputChange = (field: string, value: string) => {
     onFilterChange({ ...filters, [field]: value });
@@ -44,13 +42,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
     <div className="bg-white rounded-[2rem] shadow-premium border border-gray-100 p-8 sm:p-10 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
 
       {/* Top Search Row */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSearch();
-        }}
-        className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center"
-      >
+      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
         <div className="relative flex-1 group">
           <Search
             size={20}
@@ -79,58 +71,11 @@ export default function TenderSearchBar({ filters, onFilterChange, onSearch, onR
             "
           />
         </div>
-
-        <button
-          type="submit"
-          className="
-            bg-primary
-            text-white
-            px-10 py-4
-            rounded-2xl
-            text-sm font-semibold font-sans uppercase tracking-wider
-            cursor-pointer
-            transition-all duration-300
-            hover:bg-primary/90
-            hover:shadow-primary
-            active:scale-95
-          "
-        >
-          Search Tenders
-        </button>
-      </form>
+      </div>
 
       {/* Filter Grid */}
       <div className="pt-8 border-t border-gray-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 items-end">
-
-          {/* CATEGORY */}
-          <div className="space-y-3">
-            <label className={labelClass}>Category</label>
-            <select
-              value={filters.category}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-              className={inputClass}
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* STATUS */}
-          <div className="space-y-3">
-            <label className={labelClass}>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleInputChange("status", e.target.value)}
-              className={inputClass}
-            >
-              <option>All Statuses</option>
-              <option>Open</option>
-              <option>Upcoming</option>
-              <option>Closed</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 items-end">
 
           {/* DATE TYPE */}
           <div className="space-y-3">

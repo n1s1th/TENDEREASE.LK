@@ -3,6 +3,7 @@ export interface HeroSlide {
   badge: string;
   heading: string;
   subtext: string;
+  image: string;
 }
 
 export interface HeroState {
