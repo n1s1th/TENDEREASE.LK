@@ -48,9 +48,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PublicTenderController {
 
-    /** Only objects under this prefix may be served by the public file endpoint. */
-    private static final String TENDER_PREFIX = "tenders";
-
     private final TenderService tenderService;
     private final S3Service s3Service;
     private final CurrentBidderEmailResolver currentBidderEmailResolver;
@@ -168,6 +165,12 @@ public class PublicTenderController {
             @RequestParam(name = "download", defaultValue = "false") boolean download) {
         String s3Key = normalizeKey(key);
 
+        // Serve only keys this service actually records, and reuse the stored
+        // document name so downloads land under a readable filename.
+        String filename = tenderService.resolveDownloadFilename(s3Key)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "File not found: " + s3Key));
+
         ResponseInputStream<GetObjectResponse> stream;
         try {
             stream = s3Service.openStream(s3Key);
@@ -176,7 +179,6 @@ public class PublicTenderController {
         }
 
         GetObjectResponse metadata = stream.response();
-        String filename = s3Key.substring(s3Key.lastIndexOf('/') + 1);
         MediaType contentType = metadata.contentType() != null
                 ? MediaType.parseMediaType(metadata.contentType())
                 : MediaType.APPLICATION_OCTET_STREAM;
@@ -257,8 +259,11 @@ public class PublicTenderController {
     }
 
     /**
-     * Turns the wildcard path segment into an S3 key and refuses anything outside the
-     * tender namespace, so this public endpoint cannot be used to read vendor or bid files.
+     * Turns the wildcard path segment into an S3 key.
+     *
+     * <p>Access is decided by looking the key up in this service's own records rather
+     * than by matching a path prefix. A prefix rule both allowed probing of any object
+     * under the tender folder and rejected documents stored under older key formats.
      */
     private String normalizeKey(String rawKey) {
         String key = rawKey == null ? "" : rawKey;
@@ -267,9 +272,6 @@ public class PublicTenderController {
         }
         if (key.isBlank() || key.contains("..")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file key");
-        }
-        if (!key.startsWith(TENDER_PREFIX + "/")) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Key is outside the tender document namespace");
         }
         return key;
     }

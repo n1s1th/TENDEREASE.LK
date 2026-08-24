@@ -2,6 +2,25 @@
 
 import { FileText, Download, ShieldCheck, Clock } from "lucide-react";
 
+// Same origin convention as the rest of the app: the env var is the service
+// origin and each caller appends its own path.
+const TENDER_SERVICE_URL =
+  process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
+
+/** Formats a byte count for display, falling back to a dash when unknown. */
+function formatFileSize(bytes?: number | null) {
+  if (bytes == null || Number.isNaN(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
 export default function DocumentsTab({ documents }: any) {
   if (!documents || documents.length === 0) {
     return (
@@ -29,7 +48,7 @@ export default function DocumentsTab({ documents }: any) {
         <button
           onClick={() => {
             window.open(
-              `http://localhost:8082/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
+              `${TENDER_SERVICE_URL}/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
               "_blank"
             );
           }}
@@ -57,7 +76,7 @@ export default function DocumentsTab({ documents }: any) {
                 <div className="flex items-center gap-3 text-[11px] font-bold text-gray-3 uppercase tracking-widest">
                   <span>{d.documentType || "PDF"}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-5"></span>
-                  <span>{d.fileSize || "1.2 MB"}</span>
+                  <span>{formatFileSize(d.fileSizeBytes)}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-5"></span>
                   <div className="flex items-center gap-1">
                     <Clock size={12} />

@@ -19,6 +19,8 @@ public interface AddendumVersionRepository extends JpaRepository<AddendumVersion
 
     Optional<AddendumVersion> findTopByAddendumIdOrderByVersionNumberDesc(Long addendumId);
 
+    Optional<AddendumVersion> findByS3Key(String s3Key);
+
     @Query("SELECT COALESCE(MAX(v.versionNumber), 0) FROM AddendumVersion v WHERE v.addendum.id = :addendumId")
     Integer findMaxVersionNumber(@Param("addendumId") Long addendumId);
 }
