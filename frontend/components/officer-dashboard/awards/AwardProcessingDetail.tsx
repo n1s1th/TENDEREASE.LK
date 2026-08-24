@@ -43,9 +43,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
   const winner = bidders.find(b => b.status === 'WINNER');
   const losers = bidders.filter(b => b.status === 'LOST');
   
-  // If tender is not yet fully awarded (e.g. reverted to APPROVED/CLOSED), allow re-sending
-  const isAlreadyAwarded = tender?.status === 'AWARDED';
-  const tenderSentStatus = (tenderId && isAlreadyAwarded) 
+  const tenderSentStatus = tenderId 
     ? (sentStatus[tenderId] || { winner: false, lost: false }) 
     : { winner: false, lost: false };
 
