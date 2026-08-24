@@ -35,14 +35,10 @@ function applyFilters(tenders: any[], params: any) {
   if (params.department) t = t.filter((x: any) => (x.departmentName || x.department || '') === params.department);
   if (params.category)   t = t.filter((x: any) => (x.procurementType || '').toUpperCase() === params.category.toUpperCase());
   if (params.period && params.period !== 'all_time') {
-    const now = new Date();
     t = t.filter((x: any) => {
       const d = new Date(x.createdAt || x.publishedAt || Date.now());
-      if (params.period === 'today')      return d.toDateString() === now.toDateString();
-      if (params.period === 'this_week')  { const s = new Date(now); s.setDate(now.getDate() - now.getDay()); return d >= s; }
-      if (params.period === 'this_month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      if (params.period === 'this_year')  return d.getFullYear() === now.getFullYear();
-      return true;
+      const monthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      return monthStr === params.period;
     });
   }
   return t;
@@ -213,16 +209,25 @@ export default function ReportsPage() {
     doc.text('Category: ' + (category || 'All Types'), pw - 40, 75, { align: 'right' });
     doc.text('Generated On: ' + new Date().toLocaleString(), pw - 40, 90, { align: 'right' });
     
+    // Separator line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(1);
+    doc.line(40, 110, pw - 40, 110);
+    
+    // Watermarks (multiple, scattered)
+    doc.setTextColor(245, 245, 245);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    for (let i = -1; i < 6; i++) {
+      for (let j = 0; j < 8; j++) {
+        doc.text('TENDEREASE.LK', 20 + j * 120, 100 + i * 150 + (j % 2) * 50, { angle: -30 });
+      }
+    }
+    
     // Title
     doc.setTextColor(17, 17, 17);
     doc.setFontSize(16);
-    doc.text('KPI REPORT', pw/2, 130, { align: 'center' });
-    
-    // Watermark
-    doc.setTextColor(240, 240, 240);
-    doc.setFontSize(60);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TENDEREASE.LK', pw/2, ph/2, { align: 'center', angle: -45 });
+    doc.text('KPI REPORT', pw/2, 160, { align: 'center' });
     
     // Summary Table
     const tableData = [
@@ -237,7 +242,7 @@ export default function ReportsPage() {
     ];
     
     autoTable(doc, {
-      startY: 160,
+      startY: 190,
       head: [['Metric', 'Value']],
       body: tableData,
       headStyles: { fillColor: [149, 48, 2], textColor: 255, fontStyle: 'bold' },
@@ -270,18 +275,18 @@ export default function ReportsPage() {
           </div>
           <div style={{display:"flex",gap:"0.75rem"}}>
             <button onClick={exportPDF} className="dash-btn dash-btn--outline dash-btn--sm" style={{display:"flex",alignItems:"center",gap:"0.4rem"}}><Download size={14}/> Export PDF</button>
-            <button onClick={exportCSV} className="dash-btn dash-btn--outline dash-btn--sm" style={{display:"flex",alignItems:"center",gap:"0.4rem"}}><Download size={14}/> Export Excel</button>
+            
           </div>
         </div>
 
         <div style={{display:"flex",gap:"0.75rem",flexWrap:"wrap",marginBottom:"1.75rem",padding:"1rem 1.25rem",background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
-          <select className="dash-select" style={{minWidth:150}} value={period} onChange={e=>setPeriod(e.target.value)}>
-            <option value="all_time">All Time</option>
-            <option value="this_year">This Year</option>
-            <option value="this_month">This Month</option>
-            <option value="this_week">This Week</option>
-            <option value="today">Today</option>
-          </select>
+          <input 
+            type="month" 
+            className="dash-select" 
+            style={{minWidth:150}} 
+            value={period === 'all_time' ? '' : period} 
+            onChange={e=>setPeriod(e.target.value || 'all_time')} 
+          />
           <select className="dash-select" style={{minWidth:180}} value={department} onChange={e=>setDepartment(e.target.value)}>
             <option value="">All Departments</option>
             {departments.map((d: any) => <option key={d} value={d}>{d}</option>)}
