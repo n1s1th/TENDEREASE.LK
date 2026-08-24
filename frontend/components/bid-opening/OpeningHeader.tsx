@@ -40,7 +40,7 @@ export default function OpeningHeader({ tenderId, title, category, division }: O
               Bid Opening & Attendance
             </h1>
             <div className="flex items-center gap-2 text-[12px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
-              <Link href="http://localhost:3000/officer-dashboard" className="hover:text-[#953002] transition-colors">OFFICER DASHBOARD</Link>
+              <Link href="https://www.tenderease.me/officer-dashboard" className="hover:text-[#953002] transition-colors">OFFICER DASHBOARD</Link>
               {(displayId || title) && (
                 <>
                   <ChevronRight className="w-3 h-3 text-gray-400" />

@@ -68,58 +68,39 @@ export interface EvalAnalyticsData {
 
 // ── Mock data (used as fallback) ───────────────────────────
 
-const MOCK_DATA: EvalAnalyticsData = {
+const EMPTY_DATA: EvalAnalyticsData = {
   kpi: {
-    avgTechnicalScore: 72.4,
-    avgTechnicalScoreDelta: 3.1,
-    overallPassRate: 64,
-    overallPassRateDelta: -2,
-    totalBidsEvaluated: 187,
-    totalBidsEvaluatedDelta: 24,
-    tendersWithHighBidders: 18,
-    totalTenders: 35,
+    avgTechnicalScore: 0,
+    avgTechnicalScoreDelta: 0,
+    overallPassRate: 0,
+    overallPassRateDelta: 0,
+    totalBidsEvaluated: 0,
+    totalBidsEvaluatedDelta: 0,
+    tendersWithHighBidders: 0,
+    totalTenders: 0,
   },
-  bidderCountTrend: [
-    { label: "Jun, 2025", value: 6 },
-    { label: "Jul, 2025", value: 9 },
-    { label: "Aug, 2025", value: 10 },
-    { label: "Sep, 2025", value: 11 },
-    { label: "Oct, 2025", value: 13 },
-    { label: "Nov, 2025", value: 12 },
-    { label: "Dec, 2025", value: 15 },
-    { label: "Jan, 2026", value: 16 },
-  ],
+  bidderCountTrend: [],
   scoreDistribution: [
-    { range: "0–20", count: 8 },
-    { range: "21–40", count: 14 },
-    { range: "41–60", count: 32 },
-    { range: "61–80", count: 55 },
-    { range: "81–100", count: 38 },
+    { range: "0–20", count: 0 },
+    { range: "21–40", count: 0 },
+    { range: "41–60", count: 0 },
+    { range: "61–80", count: 0 },
+    { range: "81–100", count: 0 },
   ],
-  passRatePassed: 120,
-  passRateFailed: 67,
-  avgTechnicalScoreGauge: 75,
-  scoreThreshold: 60,
+  passRatePassed: 0,
+  passRateFailed: 0,
+  avgTechnicalScoreGauge: 0,
+  scoreThreshold: 75,
   categoryScores: [
-    { category: "Goods", avgScore: 78.2 },
-    { category: "Works", avgScore: 74.5 },
-    { category: "Services", avgScore: 70.1 },
-    { category: "Consultancy", avgScore: 65.8 },
-    { category: "Consulting Services", avgScore: 62.3 },
-    { category: "Non Consulting Services", avgScore: 58.7 },
+    { category: "Goods", avgScore: 0 },
+    { category: "Works", avgScore: 0 },
+    { category: "Services", avgScore: 0 },
+    { category: "Consultancy", avgScore: 0 },
+    { category: "Consulting Services", avgScore: 0 },
+    { category: "Non Consulting Services", avgScore: 0 },
   ],
-  tenderSummary: [
-    { tenderId: "TND-0041", tenderTitle: "ERP System Upgrade", category: "IT & Software", department: "IT Division", bidCount: 9, avgScore: 78.3, passRate: 78, status: "Live" },
-    { tenderId: "TND-0035", tenderTitle: "Office Stationery Supply", category: "Supplies", department: "Admin", bidCount: 12, avgScore: 70.4, passRate: 67, status: "Awarded" },
-    { tenderId: "TND-0031", tenderTitle: "HR Recruitment Platform", category: "Consulting", department: "HR", bidCount: 4, avgScore: 68.2, passRate: 50, status: "Closed" },
-    { tenderId: "TND-0029", tenderTitle: "Bridge Inspection Works", category: "Infrastructure", department: "Works", bidCount: 11, avgScore: 62.5, passRate: 45, status: "Awarded" },
-    { tenderId: "TND-0024", tenderTitle: "Network Infrastructure Upgrade", category: "IT & Software", department: "IT Division", bidCount: 7, avgScore: 81.0, passRate: 86, status: "Awarded" },
-    { tenderId: "TND-0022", tenderTitle: "School Furniture Supply", category: "Supplies", department: "Education", bidCount: 15, avgScore: 69.8, passRate: 73, status: "Closed" },
-    { tenderId: "TND-0018", tenderTitle: "Road Marking Maintenance", category: "Infrastructure", department: "Roads", bidCount: 8, avgScore: 60.1, passRate: 38, status: "Live" },
-    { tenderId: "TND-0015", tenderTitle: "Financial Advisory Services", category: "Consulting", department: "Finance", bidCount: 5, avgScore: 73.6, passRate: 60, status: "Live" },
-    { tenderId: "TND-0011", tenderTitle: "Server Room Cooling System", category: "IT & Software", department: "IT Division", bidCount: 6, avgScore: 77.2, passRate: 67, status: "Closed" },
-  ],
-  totalTenderSummaryCount: 35,
+  tenderSummary: [],
+  totalTenderSummaryCount: 0,
 };
 
 // ── API Functions ──────────────────────────────────────────
@@ -250,10 +231,6 @@ export async function fetchEvalAnalytics(
       });
     }
 
-    // 3. Fallback to mock data if no tenders exist in database, so page isn't blank
-    if (tenderSummary.length === 0) {
-      return MOCK_DATA;
-    }
 
     // Recalculate KPI numbers based on filtered database values
     const totalTenders = filteredSummary.length;
@@ -512,6 +489,6 @@ export async function fetchEvalAnalytics(
     };
   } catch (error) {
     console.error("Failed to fetch real analytics from database, falling back to mock:", error);
-    return MOCK_DATA;
+    return EMPTY_DATA;
   }
 }

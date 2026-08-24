@@ -1207,7 +1207,7 @@ export default function BidEvaluationPage() {
                   if (isDirty) {
                     showToast("You have unsaved changes. Please save your draft before leaving.", "warning");
                   } else {
-                    router.push("/officer-dashboard");
+                    window.location.href = "https://www.tenderease.me/officer-dashboard";
                   }
                 }} 
                 className="hover:text-[#953002] transition-colors flex items-center gap-1"
