@@ -160,8 +160,9 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           pagination.pageSize,
         );
         set({ tenders: result.data, pagination: result.pagination });
-      } catch {
-        // API not connected yet — will silently fail
+      } catch (error) {
+        // Log the actual error to the console
+        console.error("fetchTenders Error:", error);
         set({ tenders: [] });
       } finally {
         set({ tendersLoading: false });
@@ -174,7 +175,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchOfficers(department, search);
         set({ officers: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ officers: [] });
       } finally {
         set({ officersLoading: false });
@@ -192,7 +193,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           pagination.pageSize,
         );
         set({ auditLogs: result.data, pagination: result.pagination });
-      } catch {
+      } catch (error) { console.error(error);
         set({ auditLogs: [] });
       } finally {
         set({ auditLogsLoading: false });
@@ -212,7 +213,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           pagination.pageSize,
         );
         set({ awards: result.data, pagination: result.pagination });
-      } catch {
+      } catch (error) { console.error(error);
         set({ awards: [] });
       } finally {
         set({ awardsLoading: false });
@@ -225,7 +226,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchDashboardNotifications(search, type, status);
         set({ notifications: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ notifications: [] });
       } finally {
         set({ notificationsLoading: false });
@@ -236,7 +237,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchNotificationSummary();
         set({ notificationSummary: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ notificationSummary: null });
       }
     },
@@ -249,7 +250,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
             n.id === id ? { ...n, isRead: true } : n,
           ),
         }));
-      } catch {
+      } catch (error) { console.error(error);
         // silent
       }
     },
@@ -260,7 +261,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
         set((state) => ({
           notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
         }));
-      } catch {
+      } catch (error) { console.error(error);
         // silent
       }
     },
@@ -271,7 +272,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchKpiSummary();
         set({ kpiSummary: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ kpiSummary: null });
       } finally {
         set({ kpiLoading: false });
@@ -283,7 +284,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchKpiReport(params);
         set({ kpiReport: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ kpiReport: null });
       } finally {
         set({ kpiLoading: false });
@@ -296,7 +297,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
       try {
         const data = await api.fetchRegistrations(department, search);
         set({ registrations: data });
-      } catch {
+      } catch (error) { console.error(error);
         set({ registrations: [] });
       } finally {
         set({ registrationsLoading: false });
@@ -310,7 +311,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           registrations: state.registrations.filter((r) => r.id !== id),
         }));
         get().showToast('success', 'Registration accepted successfully.');
-      } catch {
+      } catch (error) { console.error(error);
         get().showToast('error', 'Failed to accept registration.');
       }
     },
@@ -322,7 +323,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           registrations: state.registrations.filter((r) => r.id !== id),
         }));
         get().showToast('success', 'Registration deleted.');
-      } catch {
+      } catch (error) { console.error(error);
         get().showToast('error', 'Failed to delete registration.');
       }
     },
@@ -334,7 +335,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
         get().showToast('success', 'Tender Approved Successfully.');
         get().closeModal();
         get().fetchTenders();
-      } catch {
+      } catch (error) { console.error(error);
         get().showToast('error', 'Failed to approve tender.');
       }
     },
@@ -345,7 +346,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
         get().showToast('success', 'Tender Rejected Successfully.');
         get().closeModal();
         get().fetchTenders();
-      } catch {
+      } catch (error) { console.error(error);
         get().showToast('error', 'Failed to reject tender.');
       }
     },
@@ -358,7 +359,7 @@ export const useOfficerDashboardStore = create<OfficerDashboardState>(
           `Officer Assigned Successfully.\nTender ID ${tenderId}.`,
         );
         get().closeModal();
-      } catch {
+      } catch (error) { console.error(error);
         get().showToast('error', 'Failed to assign officers.');
       }
     },
