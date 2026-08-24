@@ -20,4 +20,6 @@ public class OpeningAttendanceRequest {
     private String organisation;
 
     private String role;
+
+    private java.time.LocalDateTime attendanceTime;
 }

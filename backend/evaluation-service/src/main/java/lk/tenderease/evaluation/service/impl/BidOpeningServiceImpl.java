@@ -183,6 +183,12 @@ public class BidOpeningServiceImpl implements BidOpeningService {
         attendance.setOrganisation(request.getOrganisation());
         attendance.setRole(request.getRole());
 
+        if (request.getAttendanceTime() != null) {
+            attendance.setAttendanceTime(request.getAttendanceTime());
+        } else {
+            attendance.setAttendanceTime(LocalDateTime.now());
+        }
+
         return mapper.toDto(attendanceRepository.save(attendance));
     }
 
