@@ -22,19 +22,35 @@ const SecureIframe = ({ src, className, style }: { src: string, className?: stri
   const [blobUrl, setBlobUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
+  const [showFallback, setShowFallback] = useState<boolean>(false);
 
   useEffect(() => {
     if (!src) return;
     let isMounted = true;
     let objectUrl = "";
+    
+    // Fallback timer: if document takes longer than 8 seconds, show the fallback button
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) setShowFallback(true);
+    }, 8000);
 
     const fetchBlob = async () => {
       try {
         setLoading(true);
-        const res = await fetch(src);
-        if (!res.ok) throw new Error("Failed to fetch document");
-        const blob = await res.blob();
+        setError(false);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s hard timeout
         
+        const res = await fetch(src, { signal: controller.signal }).catch(e => {
+          throw new Error("Network error or CORS blocked");
+        });
+        
+        clearTimeout(timeoutId);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        
+        const blob = await res.blob();
+        if (blob.size === 0) throw new Error("Empty file received");
+
         // Force MIME type so browser uses inline PDF viewer instead of downloading
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
         objectUrl = URL.createObjectURL(pdfBlob);
@@ -44,6 +60,7 @@ const SecureIframe = ({ src, className, style }: { src: string, className?: stri
           setLoading(false);
         }
       } catch (err) {
+        console.error("SecureIframe fetch error:", err);
         if (isMounted) {
           setError(true);
           setLoading(false);
@@ -54,20 +71,45 @@ const SecureIframe = ({ src, className, style }: { src: string, className?: stri
     if (src.startsWith('blob:') || src.startsWith('data:')) {
        setBlobUrl(src);
        setLoading(false);
+       clearTimeout(fallbackTimer);
     } else {
        fetchBlob();
     }
 
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [src]);
 
-  if (loading) return <div className={`flex flex-col items-center justify-center bg-gray-50 ${className}`} style={style}><Loader2 className="w-8 h-8 animate-spin text-gray-400 mb-2" /><span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Loading Document...</span></div>;
-  if (error) return <div className={`flex flex-col items-center justify-center bg-red-50 text-red-500 ${className}`} style={style}><Ban className="w-8 h-8 mb-2" /><span className="text-xs font-bold uppercase tracking-widest">Failed to load document</span></div>;
+  const FallbackAction = () => (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      <p className="text-[10px] text-gray-400 font-medium">Taking too long or viewer blocked?</p>
+      <a href={src} target="_blank" rel="noopener noreferrer" className="bg-[#FFF7ED] hover:bg-[#FFF7ED]/80 text-[#953002] border border-[#953002]/20 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+        <FileText className="w-4 h-4" />
+        <span>Open Document Directly</span>
+      </a>
+    </div>
+  );
+
+  if (loading) return (
+    <div className={`flex flex-col items-center justify-center bg-gray-50 ${className}`} style={style}>
+      <Loader2 className="w-8 h-8 animate-spin text-[#953002] mb-3" />
+      <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Loading Document...</span>
+      {showFallback && <FallbackAction />}
+    </div>
+  );
   
-  return <SecureIframe src={blobUrl} className={className} style={style} />;
+  if (error) return (
+    <div className={`flex flex-col items-center justify-center bg-red-50 text-red-500 ${className}`} style={style}>
+      <Ban className="w-8 h-8 mb-3" />
+      <span className="text-xs font-bold uppercase tracking-widest">Failed to load inline viewer</span>
+      <FallbackAction />
+    </div>
+  );
+  
+  return <iframe src={blobUrl} className={className} style={style} />;
 };
 
 interface Criterion {
