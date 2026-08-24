@@ -149,13 +149,13 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
                   <span style={{ color: "var(--te-gray-4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Technical</span>
                   <span style={{ background: "#f1f5f9", padding: "0.15rem 0.4rem", borderRadius: "4px", color: "var(--te-gray-1)", fontWeight: 800 }}>
-                    {recommendation.technicalScore ? Number(recommendation.technicalScore).toFixed(2) : "N/A"}
+                    {recommendation.technicalScore ? `${Number(recommendation.technicalScore).toFixed(2)} pts` : "N/A"}
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
                   <span style={{ color: "var(--te-gray-4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Financial</span>
                   <span style={{ background: "#f1f5f9", padding: "0.15rem 0.4rem", borderRadius: "4px", color: "var(--te-gray-1)", fontWeight: 800 }}>
-                    {recommendation.financialScore ? Number(recommendation.financialScore).toFixed(2) : "N/A"}
+                    {recommendation.financialScore ? `${Number(recommendation.financialScore).toFixed(2)} pts` : "N/A"}
                   </span>
                 </div>
               </div>
