@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration Rejected</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f5;
+            margin: 0;
+            padding: 0;
+            color: #3f3f46;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #b91c1c;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .reference-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #991b1b;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TenderEase - Registration Update</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong><span th:text="${officerName}">Officer</span></strong>,</p>
+            
+            <p>We regret to inform you that your officer registration has been <strong>REJECTED</strong> by the Chief Accounting Officer (CAO).</p>
+            
+            <div class="reference-box">
+                <strong>Registration Reference:</strong> <span th:text="${referenceId}">OFF-XXXXXX-XXXX</span><br><br>
+                <strong>Reason for Rejection:</strong><br>
+                <span th:text="${reason}" style="font-family: 'Segoe UI', sans-serif;">Does not meet requirements.</span>
+            </div>
+            
+            <p>If you believe this is an error or need further clarification, please contact the CAO office for assistance.</p>
+            
+            <p style="margin-top: 30px;">Best regards,<br>
+            The TenderEase Support Team</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2026 TenderEase. All rights reserved.</p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>

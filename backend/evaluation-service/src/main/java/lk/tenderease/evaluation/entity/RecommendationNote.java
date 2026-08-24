@@ -47,6 +47,15 @@ public class RecommendationNote {
     @Column(columnDefinition = "TEXT")
     private String justification;
 
+    @Column(name = "technical_score")
+    private Double technicalScore;
+
+    @Column(name = "financial_score")
+    private Double financialScore;
+
+    @Column(name = "bid_id")
+    private String bidId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RecommendationStatus status;

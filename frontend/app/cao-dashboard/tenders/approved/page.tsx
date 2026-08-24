@@ -32,7 +32,7 @@ const columns: Column<DashboardTender>[] = [
     key: "createdByEmail",
     label: "Officer Email",
     render: (row) => (
-      <span className="text-sm text-grey-3">
+      <span className="text-sm text-gray-500">
         {row.createdByEmail || (row.createdBy && row.createdBy !== 'anonymousUser' && row.createdBy !== 'dev-user-id' ? row.createdBy : "officer@procurement.gov.lk")}
       </span>
     ),

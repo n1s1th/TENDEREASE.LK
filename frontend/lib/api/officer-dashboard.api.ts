@@ -74,7 +74,7 @@ export async function fetchDashboardTenders(
   pageSize = 10,
 ): Promise<{ data: DashboardTender[]; pagination: PaginationState }> {
   const res = await officerDashApi.get('/tenders', {
-    params: { keyword: department, status: tab === 'all' ? '' : tab.toUpperCase(), page: page - 1, size: pageSize },
+    params: { keyword: department, status: (tab as string) === 'all' ? '' : tab.toUpperCase(), page: page - 1, size: pageSize },
   });
   return {
     data: res.data?.data?.content || [],

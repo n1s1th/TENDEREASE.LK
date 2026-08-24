@@ -5,7 +5,7 @@ export interface AwardTender {
   tenderNo: string;
   title: string;
   department: string;
-  status: 'PENDING_CAO' | 'APPROVED' | 'REJECTED';
+  status: 'PENDING_CAO' | 'APPROVED' | 'REJECTED' | 'AWARDED' | string;
 }
 
 export interface AwardBidder {

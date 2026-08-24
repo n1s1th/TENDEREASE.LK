@@ -260,14 +260,6 @@ export default function MemberDashboard() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">CIDA Grade</span>
-                      <p className="font-extrabold text-gray-800 flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-amber-500" />
-                        {vendorData.cidaGrade || "N/A (Non-construction)"}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1.5">
                       <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Official Email</span>
                       <p className="font-semibold text-gray-700">{vendorData.officialEmail}</p>
                     </div>
@@ -283,23 +275,6 @@ export default function MemberDashboard() {
                         </span>
                       </p>
                     </div>
-
-                    {vendorData.departments && vendorData.departments.length > 0 && (
-                      <div className="col-span-1 md:col-span-2 space-y-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Registered Departments</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {vendorData.departments.map((dept: any) => (
-                            <span
-                              key={dept.id || dept.name}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-150 text-xs font-bold text-gray-600"
-                            >
-                              <Tag className="w-3 h-3 text-gray-400" />
-                              {dept.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

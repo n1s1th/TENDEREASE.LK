@@ -15,10 +15,12 @@ export default function RecommendationsLayout({
   const setDepartment = useCAODashboardStore((s) => s.setDepartment);
   const kpiSummary = useCAODashboardStore((s) => s.kpiSummary);
   const fetchKpiSummary = useCAODashboardStore((s) => s.fetchKpiSummary);
+  const fetchTenders = useCAODashboardStore((s) => s.fetchTenders);
 
   useEffect(() => {
     fetchKpiSummary();
-  }, [fetchKpiSummary]);
+    fetchTenders();
+  }, [fetchKpiSummary, fetchTenders]);
 
   return (
     <div className="dash-section">

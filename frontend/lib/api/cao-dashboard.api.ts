@@ -172,7 +172,7 @@ export async function fetchKpiSummary(): Promise<KpiSummary> {
   try {
     const [tendersRes, vendorsRes] = await Promise.all([
       api.get('/cao/tenders', { params: { size: 1000 } }),
-      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch(() => null)
+      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch((): any => null)
     ]);
 
     const tenders = tendersRes.data?.content || [];
@@ -242,7 +242,7 @@ export async function fetchKpiReport(params: KpiReportParams): Promise<KpiReport
   try {
     const [tendersRes, vendorsRes] = await Promise.all([
       api.get('/cao/tenders', { params: { size: 1000 } }),
-      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch(() => null)
+      userApi.get('/v1/vendors', { params: { size: 1000 } }).catch((): any => null)
     ]);
 
     let tenders = tendersRes.data?.content || [];

@@ -26,7 +26,7 @@ export default function CAOTenderReviewPage() {
   const [loading, setLoading] = useState(true);
   const [tenderUuid, setTenderUuid] = useState<string | null>(null);
 
-  const isApproved = activeTab === "approved" || (tender && (String(tender.status).toUpperCase() === "APPROVED" || String(tender.status).toUpperCase() === "PUBLISHED"));
+  const isApproved = activeTab === "approved" || (tender && !["DRAFT", "PENDING_APPROVAL", "REJECTED"].includes(String(tender.status).toUpperCase()));
   const isRejected = activeTab === "rejected" || (tender && String(tender.status).toUpperCase() === "REJECTED");
 
   // Auto-fetch tenders list if it's empty (e.g. page refresh)
