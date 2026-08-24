@@ -64,7 +64,7 @@ export default function QuickActions() {
     <>
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-[12px] font-black uppercase tracking-[0.2em] text-gray-400">Quick Actions</h3>
+          <h3 className="text-[14px] font-black uppercase tracking-[0.2em] text-gray-400">Quick Actions</h3>
         </div>
         
         <div className="flex flex-col gap-2">
