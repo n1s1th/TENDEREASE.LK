@@ -28,10 +28,10 @@ public class BidService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
 
-    @org.springframework.beans.factory.annotation.Value("${user.service.url:http://localhost:8081}")
+    @org.springframework.beans.factory.annotation.Value("${USER_SERVICE_URL:http://localhost:8081}")
     private String userServiceUrl;
 
-    @org.springframework.beans.factory.annotation.Value("${tender.service.url:http://localhost:8082}")
+    @org.springframework.beans.factory.annotation.Value("${TENDER_SERVICE_URL:http://localhost:8082}")
     private String tenderServiceUrl;
 
     /**
