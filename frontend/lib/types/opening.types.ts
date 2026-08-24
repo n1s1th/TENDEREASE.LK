@@ -31,6 +31,7 @@ export interface OpeningAttendanceRequest {
     email: string;
     organisation?: string;
     role?: string;
+    attendanceTime?: string;
 }
 
 export interface ApiResponse<T> {

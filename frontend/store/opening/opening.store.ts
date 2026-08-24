@@ -35,7 +35,7 @@ export const useOpeningStore = create<OpeningState>()(
           let sessionData = res.data;
           console.log("fetchSession API success:", sessionData);
           try {
-            const { getTenderById } = await import("@/services/tender.service");
+            const { getTenderById, updateTenderStatus } = await import("@/services/tender.service");
             const tenderData = await getTenderById(tenderId);
             if (tenderData && (tenderData.status === "OPEN" || tenderData.status === "EVALUATION")) {
               if (sessionData.status === "SCHEDULED") {
@@ -43,6 +43,16 @@ export const useOpeningStore = create<OpeningState>()(
               }
             } else if (tenderData && (tenderData.status === "CLOSED" || tenderData.status === "COMPLETED")) {
               sessionData.status = "CLOSED";
+            }
+            
+            // Self-heal: If session is active but tender is stuck in PENDING_OPENING, update tender
+            if (sessionData.status === "OPEN" && tenderData && tenderData.status === "PENDING_OPENING") {
+              try {
+                await updateTenderStatus(tenderId, "OPEN");
+                console.log("Self-healed tender status to OPEN because session is active");
+              } catch (updateErr) {
+                console.warn("Self-healing tender status failed:", updateErr);
+              }
             }
           } catch (e) {
             console.warn("Failed to check tender status in fetchSession:", e);
@@ -97,6 +107,12 @@ export const useOpeningStore = create<OpeningState>()(
       markAttendance: async (sessionId: string, name: string, designation: string, email: string, organisation?: string, role?: string, officerIdFromForm?: string) => {
         set({ isLoading: true });
         const officerId = officerIdFromForm || email;
+        
+        // Get precise local time by offsetting UTC, then strip the 'Z' to pass as a raw LocalDateTime
+        const now = new Date();
+        const tzOffsetMs = now.getTimezoneOffset() * 60000;
+        const localIsoString = new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, -1);
+
         const newEntry: OpeningAttendance = {
           id: Math.random().toString(36).substr(2, 9),
           officerId,
@@ -105,11 +121,19 @@ export const useOpeningStore = create<OpeningState>()(
           email,
           organisation,
           role,
-          attendanceTime: new Date().toISOString()
+          attendanceTime: localIsoString
         };
         
         const token = useAuthStore.getState().token || undefined;
-        const res = await markAttendance(sessionId, { officerId, officerName: name, designation, email, organisation, role }, token);
+        const res = await markAttendance(sessionId, { 
+          officerId, 
+          officerName: name, 
+          designation, 
+          email, 
+          organisation, 
+          role,
+          attendanceTime: localIsoString 
+        }, token);
         if (res && res.success) {
           const fetchRes = await fetchAttendance(sessionId, token);
           if (fetchRes && fetchRes.success && fetchRes.data) {

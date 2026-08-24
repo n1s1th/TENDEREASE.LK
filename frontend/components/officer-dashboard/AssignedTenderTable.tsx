@@ -179,9 +179,9 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
         </div>
       </div>
 
-      {/* Table - Removed overflow-x-auto to prevent clipping of absolute menu */}
-      <div className="relative min-w-[1000px]">
-        <table className="w-full border-collapse">
+      {/* Table Wrapper */}
+      <div className="w-full overflow-x-auto px-6 pb-6">
+        <table className="w-full min-w-[1000px] border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
               <th className="py-4 px-6 rounded-tl-lg text-center w-[10%]">Tender ID</th>

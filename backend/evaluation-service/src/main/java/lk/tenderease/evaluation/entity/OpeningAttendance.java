@@ -44,7 +44,6 @@ public class OpeningAttendance {
     @Column(length = 50)
     private String role;
 
-    @CreationTimestamp
     @Column(name = "attendance_time", updatable = false)
     private LocalDateTime attendanceTime;
 }
