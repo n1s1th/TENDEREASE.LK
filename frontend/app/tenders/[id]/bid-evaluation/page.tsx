@@ -18,6 +18,58 @@ import { getOfficerByEmail } from "@/lib/api/officerApi";
 import * as XLSX from "xlsx";
 
 // Interface definitions mirroring backend
+const SecureIframe = ({ src, className, style }: { src: string, className?: string, style?: React.CSSProperties }) => {
+  const [blobUrl, setBlobUrl] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!src) return;
+    let isMounted = true;
+    let objectUrl = "";
+
+    const fetchBlob = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(src);
+        if (!res.ok) throw new Error("Failed to fetch document");
+        const blob = await res.blob();
+        
+        // Force MIME type so browser uses inline PDF viewer instead of downloading
+        const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+        objectUrl = URL.createObjectURL(pdfBlob);
+        
+        if (isMounted) {
+          setBlobUrl(objectUrl);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    };
+    
+    if (src.startsWith('blob:') || src.startsWith('data:')) {
+       setBlobUrl(src);
+       setLoading(false);
+    } else {
+       fetchBlob();
+    }
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
+
+  if (loading) return <div className={`flex flex-col items-center justify-center bg-gray-50 ${className}`} style={style}><Loader2 className="w-8 h-8 animate-spin text-gray-400 mb-2" /><span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Loading Document...</span></div>;
+  if (error) return <div className={`flex flex-col items-center justify-center bg-red-50 text-red-500 ${className}`} style={style}><Ban className="w-8 h-8 mb-2" /><span className="text-xs font-bold uppercase tracking-widest">Failed to load document</span></div>;
+  
+  return <SecureIframe src={blobUrl} className={className} style={style} />;
+};
+
 interface Criterion {
   id: string;
   name: string;
@@ -2470,7 +2522,7 @@ export default function BidEvaluationPage() {
                     </div>
                     <div className="flex-grow overflow-hidden bg-white relative flex flex-col h-full w-full">
                       {previewBidDoc.url ? (
-                        <iframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none" />
+                        <SecureIframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none" />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
                           <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
@@ -2528,7 +2580,7 @@ export default function BidEvaluationPage() {
                     </div>
                     <div className="flex-grow overflow-hidden bg-white relative flex flex-col h-full w-full">
                       {previewTenderDoc.url ? (
-                        <iframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none" />
+                        <SecureIframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none" />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
                           <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
@@ -2632,7 +2684,7 @@ export default function BidEvaluationPage() {
                 {/* Content Viewer Body */}
                 <div className="flex-grow overflow-hidden bg-white relative scrollbar-none flex flex-col h-full w-full">
                   {previewBidDoc.url ? (
-                    <iframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
+                    <SecureIframe src={previewBidDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
                       <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
@@ -2738,7 +2790,7 @@ export default function BidEvaluationPage() {
                 {/* Content Viewer Body */}
                 <div className="flex-grow overflow-hidden bg-white relative scrollbar-none flex flex-col h-full w-full">
                   {previewTenderDoc.url ? (
-                    <iframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
+                    <SecureIframe src={previewTenderDoc.url} className="w-full h-full border-0 scrollbar-none overflow-hidden" style={{ overflow: 'hidden' }} />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-gray-400">
                       <FileText className="w-12 h-12 mb-3 text-gray-300 animate-pulse" />
