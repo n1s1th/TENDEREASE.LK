@@ -11,6 +11,9 @@ interface RecommendationCardProps {
 
 export default function RecommendationCard({ recommendation }: RecommendationCardProps) {
   const openModal = useCAODashboardStore((s) => s.openModal);
+  const tenders = useCAODashboardStore((s) => s.tenders);
+  const matchedTender = tenders.find((t: any) => t.id === recommendation.tenderId);
+  const displayTenderId = matchedTender?.tenderNumber || matchedTender?.referenceNumber || recommendation.tenderId;
 
   const StatusTag = () => {
     switch (recommendation.status) {
@@ -48,21 +51,23 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 0.35rem 0", color: "var(--te-gray-1)", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 0.35rem 0", color: "var(--te-gray-1)", letterSpacing: "-0.01em" }}>
             {recommendation.tenderName}
-            <Link 
-              href={`/cao-dashboard/tenders/${recommendation.tenderId}/review`}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-full transition-colors border border-blue-200"
-              style={{ letterSpacing: "normal" }}
-            >
-              View Full Tender Details <ArrowRight size={14} />
-            </Link>
           </h3>
           <p style={{ fontSize: "0.85rem", color: "var(--te-gray-3)", fontWeight: 500, margin: 0 }}>
-            Tender ID: <span style={{ color: "var(--te-gray-1)", fontWeight: 600 }}>{recommendation.tenderId}</span> • {recommendation.department}
+            Tender ID: <span style={{ color: "var(--te-gray-1)", fontWeight: 600 }}>{displayTenderId}</span> • {recommendation.department}
           </p>
         </div>
-        <StatusTag />
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <Link 
+            href={`/cao-dashboard/tenders/${recommendation.tenderId}/review`}
+            className="inline-flex items-center px-4 py-1.5 bg-[#fdf6f2] hover:bg-[#faeadd] text-[#953002] text-[11px] font-bold rounded-md transition-colors border border-[#953002]/20 shadow-sm"
+            style={{ letterSpacing: "0.02em" }}
+          >
+            View Full Tender Details
+          </Link>
+          <StatusTag />
+        </div>
       </div>
 
       {recommendation.status !== "PENDING" && recommendation.actionedAt && (
@@ -139,17 +144,27 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
                 )}
               </div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px dashed var(--te-border-light)" }}>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-3)", fontWeight: 700, textTransform: "uppercase" }}>
-                  Technical: <span style={{ color: "var(--te-gray-1)" }}>{recommendation.technicalScore ? Number(recommendation.technicalScore).toFixed(2) : "N/A"}</span>
+            <div style={{ textAlign: "right", minWidth: "160px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "0.85rem", paddingBottom: "0.85rem", borderBottom: "1px dashed var(--te-border-light)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
+                  <span style={{ color: "var(--te-gray-4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Technical</span>
+                  <span style={{ background: "#f1f5f9", padding: "0.15rem 0.4rem", borderRadius: "4px", color: "var(--te-gray-1)", fontWeight: 800 }}>
+                    {recommendation.technicalScore ? Number(recommendation.technicalScore).toFixed(2) : "N/A"}
+                  </span>
                 </div>
-                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-3)", fontWeight: 700, textTransform: "uppercase" }}>
-                  Financial: <span style={{ color: "var(--te-gray-1)" }}>{recommendation.financialScore ? Number(recommendation.financialScore).toFixed(2) : "N/A"}</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
+                  <span style={{ color: "var(--te-gray-4)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Financial</span>
+                  <span style={{ background: "#f1f5f9", padding: "0.15rem 0.4rem", borderRadius: "4px", color: "var(--te-gray-1)", fontWeight: 800 }}>
+                    {recommendation.financialScore ? Number(recommendation.financialScore).toFixed(2) : "N/A"}
+                  </span>
                 </div>
               </div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--te-gray-1)", lineHeight: 1 }}>{Number(recommendation.finalScore).toFixed(2)}</div>
-              <div style={{ fontSize: "0.7rem", color: "var(--te-gray-4)", textTransform: "uppercase", fontWeight: 800, marginTop: "0.35rem", letterSpacing: "0.05em" }}>Final Score</div>
+              <div style={{ fontSize: "1.75rem", fontWeight: 900, color: "var(--te-gray-1)", lineHeight: 1, letterSpacing: "-0.02em" }}>
+                {Number(recommendation.finalScore).toFixed(2)}
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "var(--te-gray-4)", textTransform: "uppercase", fontWeight: 800, marginTop: "0.35rem", letterSpacing: "0.05em" }}>
+                Final Score
+              </div>
             </div>
           </div>
 
