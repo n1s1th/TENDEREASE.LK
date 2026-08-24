@@ -257,7 +257,7 @@ export default function AdminDashboard() {
                 </span>
               </div>
               <h1 className="text-3xl font-black tracking-tight mt-2 text-white">
-                Vendor Registry Audit Dashboard
+                Admin Panel
               </h1>
               <p className="text-orange-100/80 text-sm mt-1">
                 Monitor corporate profiles, verified registers, and uploaded credentials for TenderEase.lk.
@@ -286,7 +286,7 @@ export default function AdminDashboard() {
           )}
 
           {/* Stats Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between group">
               <div className="space-y-1">
                 <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
@@ -302,24 +302,6 @@ export default function AdminDashboard() {
               </div>
               <div className="w-14 h-14 bg-[#953002]/10 text-[#953002] rounded-2xl flex items-center justify-center border border-[#953002]/20 group-hover:scale-105 transition-transform duration-300">
                 <Building2 size={24} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-between group">
-              <div className="space-y-1">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                  DRC Verification Pass Rate
-                </span>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                  {loading ? "..." : `${metrics.drcRate}%`}
-                </h3>
-                <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
-                  <CheckCircle2 size={12} className="text-emerald-500" />
-                  <span>Real-time DRC integration</span>
-                </div>
-              </div>
-              <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:scale-105 transition-transform duration-300">
-                <FileCheck size={24} />
               </div>
             </div>
 
@@ -361,7 +343,7 @@ export default function AdminDashboard() {
             </div>
 
              {/* Filters Input Grid */}
-            <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Search Bar */}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -377,45 +359,6 @@ export default function AdminDashboard() {
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#953002]/20 focus:border-[#953002] transition-all"
                   />
                 </div>
-              </div>
-
-              {/* CIDA Grade Filter */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  CIDA Grade
-                </label>
-                <select
-                  value={selectedCida}
-                  onChange={(e) => setSelectedCida(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#953002]/20 focus:border-[#953002] transition-all"
-                >
-                  <option value="ALL">All Grades (Any / None)</option>
-                  <option value="C1">C1 Grade</option>
-                  <option value="C2">C2 Grade</option>
-                  <option value="C3">C3 Grade</option>
-                  <option value="C4">C4 Grade</option>
-                  <option value="C5">C5 Grade</option>
-                  <option value="C6">C6 Grade</option>
-                  <option value="C7">C7 Grade</option>
-                  <option value="C8">C8 Grade</option>
-                  <option value="C9">C9 Grade</option>
-                </select>
-              </div>
-
-              {/* DRC Integration status */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  DRC Verification Log
-                </label>
-                <select
-                  value={selectedDrc}
-                  onChange={(e) => setSelectedDrc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#953002]/20 focus:border-[#953002] transition-all"
-                >
-                  <option value="ALL">All Statuses</option>
-                  <option value="VERIFIED">DRC Verified Only</option>
-                  <option value="UNVERIFIED">Verification Failed / Unverified</option>
-                </select>
               </div>
 
               {/* Procurement Department Filter */}
@@ -445,8 +388,6 @@ export default function AdminDashboard() {
                   <tr className="bg-slate-50 border-b border-slate-100 text-xs font-extrabold uppercase tracking-wider text-slate-500">
                     <th className="py-4 px-6">Company Name</th>
                     <th className="py-4 px-6">Reg. Number (BRN)</th>
-                    <th className="py-4 px-6">CIDA Grade</th>
-                    <th className="py-4 px-6">DRC Verification</th>
                     <th className="py-4 px-6">Registered Date</th>
                     <th className="py-4 px-6 text-right">Audit</th>
                   </tr>
@@ -464,12 +405,6 @@ export default function AdminDashboard() {
                           <div className="h-4 bg-slate-200 rounded-md w-24"></div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="h-4 bg-slate-200 rounded-md w-10"></div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="h-6 bg-slate-200 rounded-full w-24"></div>
-                        </td>
-                        <td className="py-4 px-6">
                           <div className="h-4 bg-slate-200 rounded-md w-20"></div>
                         </td>
                         <td className="py-4 px-6 text-right">
@@ -480,7 +415,7 @@ export default function AdminDashboard() {
                   ) : filteredVendors.length === 0 ? (
                     // Empty State
                     <tr>
-                      <td colSpan={6} className="py-16 text-center">
+                      <td colSpan={4} className="py-16 text-center">
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-400 border border-slate-100 mb-4">
                           <Building2 size={24} />
                         </div>
@@ -509,34 +444,23 @@ export default function AdminDashboard() {
                         <td className="py-4.5 px-6 font-mono text-xs font-bold text-slate-600">
                           {vendor.registrationNumber}
                         </td>
-                        <td className="py-4.5 px-6">
-                          {vendor.cidaGrade ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/50">
-                              {vendor.cidaGrade}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 text-xs font-medium">None</span>
-                          )}
-                        </td>
-                        <td className="py-4.5 px-6">
-                          {vendor.drcVerified ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/40">
-                              <CheckCircle2 size={12} className="text-emerald-600" />
-                              DRC Verified
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/40">
-                              <HelpCircle size={12} className="text-slate-500" />
-                              Unverified
-                            </span>
-                          )}
-                        </td>
                         <td className="py-4.5 px-6 text-xs text-slate-500 font-medium">
-                          {vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString("en-US", {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          }) : "N/A"}
+                          {(() => {
+                            const dateVal = vendor.createdAt || vendor.termsAcceptedAt || vendor.updatedAt || vendor.drcIncorporationDate;
+                            if (!dateVal) return new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+                            if (Array.isArray(dateVal)) {
+                              const [year, month, day, hour, minute, second] = dateVal;
+                              return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              });
+                            }
+                            const d = new Date(dateVal);
+                            return isNaN(d.getTime())
+                              ? new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                              : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+                          })()}
                         </td>
                         <td className="py-4.5 px-6 text-right" onClick={(e) => e.stopPropagation()}>
                           <button
