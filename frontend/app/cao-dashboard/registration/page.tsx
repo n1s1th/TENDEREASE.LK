@@ -218,66 +218,83 @@ function RegistrationPageContent() {
                     </div>
                   </div>
 
-                  {/* Middle block - Contact points */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 flex-grow bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                      <Building2 size={16} className="text-slate-400 flex-shrink-0" />
-                      <span className="truncate font-medium">
+                  {/* Middle block - Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 flex-grow bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Head Designation</span>
+                      <span className="text-sm font-medium text-slate-800">
                         {reg.headDesignation ? `${reg.headDesignation}` : "Head of Institution"}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                      <Mail size={16} className="text-slate-400 flex-shrink-0" />
-                      <span className="truncate">{reg.officialEmail}</span>
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Official Email</span>
+                      <span className="text-sm font-medium text-slate-800 truncate block">
+                        {reg.officialEmail}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                      <Phone size={16} className="text-slate-400 flex-shrink-0" />
-                      <span>{reg.personalLandPhone}</span>
+                    <div>
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Land Phone</span>
+                      <span className="text-sm font-medium text-slate-800">
+                        {reg.personalLandPhone || "N/A"}
+                      </span>
                     </div>
+                    
                     {reg.address && (
-                      <div className="flex items-center gap-2.5 text-sm text-slate-600 sm:col-span-2">
-                        <MapPin size={16} className="text-slate-400 flex-shrink-0" />
-                        <span className="leading-relaxed">
-                          {reg.address.streetLine1}
-                          {reg.address.streetLine2 ? `, ${reg.address.streetLine2}` : ""}
-                          , {reg.address.city}, {reg.address.province}
-                          {reg.address.postalCode ? ` (${reg.address.postalCode})` : ""}
-                          {reg.address.country ? ` · ${reg.address.country}` : ""}
+                      <div className="sm:col-span-2">
+                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Address</span>
+                        <span className="text-sm font-medium text-slate-800 leading-relaxed block">
+                          {[
+                            reg.address.streetLine1,
+                            reg.address.streetLine2,
+                            reg.address.city,
+                            reg.address.province,
+                            reg.address.postalCode,
+                            reg.address.country
+                          ].filter(Boolean).join(", ")}
                         </span>
                       </div>
                     )}
+                    
                     {reg.businessRegistrationNumber && (
-                      <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                        <span className="font-bold text-2xs tracking-wide text-slate-400 uppercase flex-shrink-0 border border-slate-200 px-1.5 py-0.5 rounded-md bg-white">BRN</span>
-                        <span className="font-medium truncate">{reg.businessRegistrationNumber}</span>
+                      <div>
+                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Business Reg No (BRN)</span>
+                        <span className="text-sm font-medium text-slate-800 truncate block">
+                          {reg.businessRegistrationNumber}
+                        </span>
                       </div>
                     )}
+                    
                     {reg.vatRegistrationNumber && (
-                      <div className="flex items-center gap-2.5 text-sm text-slate-600">
-                        <span className="font-bold text-2xs tracking-wide text-slate-400 uppercase flex-shrink-0 border border-slate-200 px-1.5 py-0.5 rounded-md bg-white">VAT</span>
-                        <span className="font-medium truncate">{reg.vatRegistrationNumber}</span>
+                      <div>
+                        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">VAT Reg No</span>
+                        <span className="text-sm font-medium text-slate-800 truncate block">
+                          {reg.vatRegistrationNumber}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Right block - Expandable liaison details / actions */}
-                <div className="flex flex-col justify-between items-end min-w-[240px] h-full gap-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6">
+                <div className="flex flex-col justify-between items-end min-w-[280px] h-full gap-4 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-6">
                   {reg.liaisonOfficer && (
                     <div className="w-full">
                       <button
                         onClick={() => setExpandedCard(isExpanded ? null : reg.officerId)}
-                        className="text-sm font-bold text-[#953002] hover:text-[#752400] transition-all flex items-center gap-1"
+                        className="text-sm font-bold text-[#953002] hover:text-[#752400] transition-all flex items-center justify-between w-full bg-orange-50/50 hover:bg-orange-50 px-4 py-2.5 rounded-lg border border-orange-100/50"
                       >
-                        {isExpanded ? "Hide Liaison Officer" : "Show Liaison Officer"}
+                        <span>{isExpanded ? "Hide Liaison Officer" : "View Liaison Officer"}</span>
+                        <svg className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
                       {isExpanded && (
-                        <div className="mt-3 bg-white border border-slate-200 p-3.5 rounded-xl shadow-sm text-sm space-y-1.5 text-slate-700 animate-fadeIn">
-                          <div><strong>Name:</strong> {reg.liaisonOfficer.title} {reg.liaisonOfficer.name}</div>
-                          <div><strong>Designation:</strong> {reg.liaisonOfficer.designation}</div>
-                          <div><strong>NIC:</strong> {reg.liaisonOfficer.nic}</div>
-                          <div><strong>Mobile:</strong> {reg.liaisonOfficer.mobile}</div>
-                          <div><strong>Email:</strong> {reg.liaisonOfficer.email}</div>
+                        <div className="mt-3 bg-white border border-slate-200 p-4 rounded-xl shadow-sm text-sm space-y-2.5 text-slate-700 animate-fadeIn">
+                          <div className="flex flex-col"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Name</span><span className="font-medium">{reg.liaisonOfficer.title} {reg.liaisonOfficer.name}</span></div>
+                          <div className="flex flex-col"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Designation</span><span className="font-medium">{reg.liaisonOfficer.designation}</span></div>
+                          <div className="flex flex-col"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">NIC</span><span className="font-medium">{reg.liaisonOfficer.nic}</span></div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Mobile</span><span className="font-medium truncate">{reg.liaisonOfficer.mobile}</span></div>
+                            <div className="flex flex-col"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</span><span className="font-medium truncate" title={reg.liaisonOfficer.email}>{reg.liaisonOfficer.email}</span></div>
+                          </div>
                         </div>
                       )}
                     </div>

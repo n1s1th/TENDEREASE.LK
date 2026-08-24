@@ -2,7 +2,8 @@
 
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import { Recommendation } from "@/lib/types/cao-dashboard.types";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 interface RecommendationCardProps {
   recommendation: Recommendation;
@@ -47,8 +48,15 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 0.35rem 0", color: "var(--te-gray-1)", letterSpacing: "-0.01em" }}>
+          <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: "0 0 0.35rem 0", color: "var(--te-gray-1)", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: "0.75rem" }}>
             {recommendation.tenderName}
+            <Link 
+              href={`/cao-dashboard/tenders/${recommendation.tenderId}/review`}
+              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-full transition-colors border border-blue-200"
+              style={{ letterSpacing: "normal" }}
+            >
+              View Full Tender Details <ArrowRight size={14} />
+            </Link>
           </h3>
           <p style={{ fontSize: "0.85rem", color: "var(--te-gray-3)", fontWeight: 500, margin: 0 }}>
             Tender ID: <span style={{ color: "var(--te-gray-1)", fontWeight: 600 }}>{recommendation.tenderId}</span> • {recommendation.department}
@@ -114,21 +122,34 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
         </div>
         <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1.5px solid #111827", borderRadius: "12px", padding: "1.25rem", background: "#FFF" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "1.25rem" }}>
-              <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#111827", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1.2rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", border: "1.5px solid #111827", borderRadius: "12px", padding: "1.25rem", background: "#FFF" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "1.25rem" }}>
+              <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#111827", color: "#FFF", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1.2rem", flexShrink: 0 }}>
                 1
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--te-gray-1)" }}>{recommendation.bidderName}</div>
-                <div style={{ fontSize: "0.9rem", color: "var(--te-gray-3)", fontWeight: 600, marginTop: "0.15rem" }}>
+                <div style={{ fontSize: "0.9rem", color: "var(--te-gray-3)", fontWeight: 600, marginTop: "0.25rem", marginBottom: "0.75rem" }}>
                   Proposed Value: <span style={{ color: "var(--te-primary-dark)" }}>Rs. {recommendation.recommendedValue.toLocaleString()}</span>
                 </div>
+                {recommendation.bidId && (
+                  <div style={{ fontSize: "0.75rem", color: "var(--te-gray-4)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                    Bid Reference: <span style={{ color: "var(--te-gray-2)" }}>{recommendation.bidId}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px dashed var(--te-border-light)" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-3)", fontWeight: 700, textTransform: "uppercase" }}>
+                  Technical: <span style={{ color: "var(--te-gray-1)" }}>{recommendation.technicalScore ? Number(recommendation.technicalScore).toFixed(2) : "N/A"}</span>
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "var(--te-gray-3)", fontWeight: 700, textTransform: "uppercase" }}>
+                  Financial: <span style={{ color: "var(--te-gray-1)" }}>{recommendation.financialScore ? Number(recommendation.financialScore).toFixed(2) : "N/A"}</span>
+                </div>
+              </div>
               <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--te-gray-1)", lineHeight: 1 }}>{Number(recommendation.finalScore).toFixed(2)}</div>
-              <div style={{ fontSize: "0.7rem", color: "var(--te-gray-4)", textTransform: "uppercase", fontWeight: 700, marginTop: "0.35rem", letterSpacing: "0.05em" }}>Final Score</div>
+              <div style={{ fontSize: "0.7rem", color: "var(--te-gray-4)", textTransform: "uppercase", fontWeight: 800, marginTop: "0.35rem", letterSpacing: "0.05em" }}>Final Score</div>
             </div>
           </div>
 
