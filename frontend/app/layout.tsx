@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from "@/providers/AuthProvider";
 import Navbar from "@/components/home/Navbar";
+import Chatbot from "@/components/Chatbot";
 
 export default function RootLayout({
   children,
@@ -29,6 +30,7 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar />
           {children}
+          <Chatbot />
         </AuthProvider>
       </body>
 
