@@ -18,7 +18,7 @@ function AwardDetailsSidebar({ tender, onClose }: { tender: DashboardTender; onC
   useEffect(() => {
     async function fetchData() {
       try {
-        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.tenderease.me';
+        const _rawUrl1 = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.tenderease.me"; const evalUrl = _rawUrl1.includes("/api/v1") ? _rawUrl1.replace("/api/v1", "") : _rawUrl1;
         
         // Fetch basic winner data (name, email, bidAmount, final score)
         const res = await fetch(`${evalUrl}/api/evaluations/mock/awards/tenders/${tender.id}/bidders`);
@@ -240,7 +240,7 @@ function WinnerCell({ tenderId }: { tenderId: string }) {
   useEffect(() => {
     async function fetchName() {
       try {
-        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084';
+        const _rawUrl2 = process.env.NEXT_PUBLIC_EVALUATION_API_URL || "http://localhost:8084"; const evalUrl = _rawUrl2.includes("/api/v1") ? _rawUrl2.replace("/api/v1", "") : _rawUrl2;
         const res = await fetch(`${evalUrl}/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
         if (res.ok) {
           const bidders = await res.json();
