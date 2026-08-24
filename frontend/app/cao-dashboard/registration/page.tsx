@@ -9,6 +9,7 @@ import EmptyState from "@/components/cao-dashboard/EmptyState";
 import KpiCards from "@/components/cao-dashboard/KpiCards";
 import type { RegistrationStatus, RegistrationRequest } from "@/lib/types/cao-dashboard.types";
 import { useSearchParams } from "next/navigation";
+import Pagination from "@/components/cao-dashboard/Pagination";
 
 const statusColors: Record<string, { bg: string; text: string; label: string }> = {
   PENDING: { bg: "#fef3c7", text: "#92400e", label: "Pending" },
@@ -38,6 +39,8 @@ function RegistrationPageContent() {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   useEffect(() => {
     if (registrationSearch) {
@@ -103,6 +106,11 @@ function RegistrationPageContent() {
   };
 
   // Client-side search filter
+  
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, registrationStatusFilter]);
+
   const filtered = registrations.filter((reg) => {
     if (!searchInput) return true;
     const q = searchInput.toLowerCase().trim();
@@ -114,6 +122,17 @@ function RegistrationPageContent() {
       reg.liaisonOfficer?.email?.toLowerCase().includes(q)
     );
   });
+
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedFiltered = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   return (
     <div className="dash-section">
@@ -158,14 +177,14 @@ function RegistrationPageContent() {
       {/* Cards */}
       {registrationsLoading ? (
         <div style={{ padding: "3rem", textAlign: "center", color: "var(--te-gray-4)" }}>Loading…</div>
-      ) : filtered.length === 0 ? (
+      ) : paginatedFiltered.length === 0 ? (
         <EmptyState
           title="No registration requests"
           description={registrationStatusFilter === "ALL" ? "No registrations found." : `No ${registrationStatusFilter.toLowerCase()} registrations found.`}
         />
       ) : (
         <div className="flex flex-col gap-6 font-sans">
-          {filtered.map((reg) => {
+          {paginatedFiltered.map((reg) => {
             const st = statusColors[reg.status] || statusColors.PENDING;
             const isExpanded = expandedCard === reg.officerId;
 
@@ -330,6 +349,10 @@ function RegistrationPageContent() {
               </div>
             );
           })}
+          <Pagination 
+            pagination={{ currentPage, totalPages, totalItems, pageSize }} 
+            onPageChange={setCurrentPage} 
+          />
         </div>
       )}
 
