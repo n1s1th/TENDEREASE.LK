@@ -157,7 +157,7 @@ function apiBidToRow(
     envelopeStatus: "Opened",
     quotedValue: formatQuotedValue(bid.bidAmount, bid.currency),
     completeness: "N/A",
-    admissionStatus,
+    admissionStatus: admissionStatus as AdmissionStatus,
     // Prefer evaluation notes saved in bid-evaluation UI; fall back to bid.notes
     notes: evalNotesMap[bid.id] || bid.notes || "",
     isLate: false,
@@ -1115,7 +1115,7 @@ function ReportsAndAuditContent() {
               compliancePassed: bidder.complianceStatus === "PASS" || techSubtotal >= 75,
               compositeScore: Number(compositeScore.toFixed(2)),
               evaluator: bidder.evaluatorName || "Jane Doe",
-              status: bidder.complianceStatus === "FAIL" ? "Rejected" : "Reviewed",
+              status: (bidder.complianceStatus === "FAIL" ? "Rejected" : "Reviewed") as BidderStatus,
               notes: bidder.evaluationNotes || "No notes available."
             };
           });

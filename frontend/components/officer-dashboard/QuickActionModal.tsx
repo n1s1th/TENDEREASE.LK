@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Lock, FileText, Download, Trophy } from "lucide-react";
+import { X, Lock, Download, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { 
   getTendersForOpening, 
-  getOpeningLogs, 
   getTendersWithBids,
   getTendersPendingAward
 } from "@/lib/api/officer.api";
@@ -21,7 +20,6 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
   const [selectedTenderId, setSelectedTenderId] = useState<string>("");
   const [tendersList, setTendersList] = useState<any[]>([]);
-  const [openingLogsList, setOpeningLogsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const renderStatusBadge = (status: string) => {
@@ -81,14 +79,10 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
         } else if (type === "Reports & Audit") {
           const res = await getTendersWithBids();
           setTendersList(res.data || []);
-        } else if (type === "View Opening Records") {
-          const res = await getOpeningLogs();
-          setOpeningLogsList(res.data || []);
         }
       } catch (err) {
         console.error("Failed to load quick action data", err);
         setTendersList([]);
-        setOpeningLogsList([]);
       } finally {
         setIsLoading(false);
       }
@@ -144,46 +138,6 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
                       </button>
                     );
                   })
-                )}
-              </div>
-            </div>
-          )
-        };
-      case "View Opening Records":
-        return {
-          icon: <FileText className="w-5 h-5 text-[#953002]" />,
-          title: "Opening Logs",
-          desc: "Review the historical records of previously opened bid sessions.",
-          primaryAction: "View Full Logs",
-          extra: (
-            <div className="space-y-2">
-              <label className="text-[11px] font-black text-gray-900 ml-1 uppercase tracking-widest block mb-1.5">Recent Records</label>
-              <div className="max-h-[260px] overflow-y-auto pr-1 space-y-2 no-scrollbar">
-                {isLoading ? (
-                  <div className="text-center py-4">
-                    <div className="w-5 h-5 border-2 border-[#9A3B12] border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  </div>
-                ) : openingLogsList.length === 0 ? (
-                  <p className="text-xs italic text-gray-400 text-center py-4">No records found...</p>
-                ) : (
-                   openingLogsList.map((log) => (
-                    <div key={log.id} className="w-full text-left px-4 py-3 rounded-xl flex flex-col gap-1.5 border bg-gray-50/50 border-gray-100">
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <span className="font-mono text-[11.5px] font-black text-[#953002]">
-                          {log.tenderNo}
-                        </span>
-                        {renderStatusBadge(log.status)}
-                      </div>
-                      <div className="flex justify-between items-end gap-2 mt-0.5">
-                        <span className="text-[13px] font-bold text-gray-700 truncate max-w-[70%]">
-                          {log.title}
-                        </span>
-                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider shrink-0">
-                          {log.openingDate}
-                        </span>
-                      </div>
-                    </div>
-                  ))
                 )}
               </div>
             </div>
@@ -246,7 +200,7 @@ export default function QuickActionModal({ type, isOpen, onClose }: QuickActionM
   if (!content) return null;
 
   const isPrimaryDisabled = (type === "Open Bid Session" || type === "Reports & Audit") && !selectedTenderId;
-  const hasPrimaryButton = type !== "View Opening Records";
+  const hasPrimaryButton = true;
 
   const handlePrimaryAction = () => {
     if (type === "Open Bid Session") {

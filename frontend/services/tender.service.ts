@@ -2,6 +2,7 @@ import { useAuthStore } from "@/store";
 
 const BASE_URL = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL 
   || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/v1/tenders");
+const PUBLIC_BASE_URL = BASE_URL.replace("/v1/tenders", "/tenders");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -176,7 +177,7 @@ export async function answerClarification(
   response: string,
   respondedBy = 1
 ) {
-  return apiFetch(`${BASE_URL}/${tenderId}/clarifications/${clarificationId}/response`, {
+  return apiFetch(`${PUBLIC_BASE_URL}/${tenderId}/clarifications/${clarificationId}/response`, {
     method: "POST",
     body: JSON.stringify({ response, respondedBy }),
   });
@@ -184,7 +185,7 @@ export async function answerClarification(
 
 // 🔥 TIMELINE
 export async function getTimeline(id: string) {
-  return apiFetch(`${BASE_URL}/${id}/timeline`);
+  return apiFetch(`${PUBLIC_BASE_URL}/${id}/timeline`);
 }
 
 export async function addTimelineEvent(
@@ -194,7 +195,7 @@ export async function addTimelineEvent(
   createdBy?: string,
   creatorRole?: string
 ) {
-  return apiFetch(`${BASE_URL}/${id}/timeline`, {
+  return apiFetch(`${PUBLIC_BASE_URL}/${id}/timeline`, {
     method: "POST",
     body: JSON.stringify({ eventType, description, createdBy, creatorRole }),
   });

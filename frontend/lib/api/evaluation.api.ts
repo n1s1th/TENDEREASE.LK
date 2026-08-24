@@ -114,6 +114,7 @@ export async function fetchDashboardMetrics(token?: string): Promise<ApiResponse
 
 export interface EvaluationStatusCounts {
   technicalPassed: number;
+  technicalFailed: number;
   financialPassed: number;
   financialFailed: number;
   evaluationFailed: number;

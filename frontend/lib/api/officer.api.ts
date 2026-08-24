@@ -21,8 +21,8 @@ export async function getDashboardMetrics(): Promise<{
   try {
     // Fetch tender metrics and total bid count from bid-service in parallel
     const [metricsRes, bidsCountRes] = await Promise.all([
-      fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`).catch(() => null),
-      fetch(`${BID_SERVICE}/api/bids/count`).catch(() => null),
+      fetch(`${TENDER_SERVICE}/api/officer/dashboard/metrics`).catch((): null => null),
+      fetch(`${BID_SERVICE}/api/bids/count`).catch((): null => null),
     ]);
 
     let metrics = { active: 0, evaluating: 0, awarded: 0, noBids: 0, completed: 0 };
@@ -84,7 +84,7 @@ export async function getAssignedTenders(
     number: number;
   };
 }> {
-  const fallback = { data: { content: [], totalElements: 0, totalPages: 1, number: 0 } };
+  const fallback = { data: { content: [] as any[], totalElements: 0, totalPages: 1, number: 0 } };
   try {
     const url = new URL(`${TENDER_SERVICE}/api/officer/dashboard/tenders`);
     if (keyword) url.searchParams.append("keyword", keyword);
@@ -118,7 +118,7 @@ export async function getTendersForOpening(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const fallback = { success: false, data: [] };
+  const fallback = { success: false, data: [] as any[] };
   try {
     const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-for-opening`);
     if (!res.ok) return fallback;
@@ -143,7 +143,7 @@ export async function getOpeningLogs(): Promise<{
     category: string;
   }>;
 }> {
-  const fallback = { success: false, data: [] };
+  const fallback = { success: false, data: [] as any[] };
   try {
     const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/opening-logs`);
     if (!res.ok) return fallback;
@@ -168,7 +168,7 @@ export async function getTendersWithBids(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const fallback = { success: false, data: [] };
+  const fallback = { success: false, data: [] as any[] };
   try {
     const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-with-bids`);
     if (!res.ok) return fallback;
@@ -193,7 +193,7 @@ export async function getTendersPendingAward(): Promise<{
     closingDate: string;
   }>;
 }> {
-  const fallback = { success: false, data: [] };
+  const fallback = { success: false, data: [] as any[] };
   try {
     const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-pending-award`);
     if (!res.ok) return fallback;

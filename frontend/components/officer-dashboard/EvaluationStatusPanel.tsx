@@ -7,6 +7,7 @@ import type { EvaluationStatusCounts } from "@/lib/api/evaluation.api";
 export default function EvaluationStatusPanel() {
   const [counts, setCounts] = useState<EvaluationStatusCounts>({
     technicalPassed: 0,
+    technicalFailed: 0,
     financialPassed: 0,
     financialFailed: 0,
     evaluationFailed: 0,

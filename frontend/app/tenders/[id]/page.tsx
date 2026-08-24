@@ -9,7 +9,7 @@ import { getTenderById } from "@/services/tender.service";
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; // ✅ MUST await
 
-  const tender = await getTenderById(id).catch(() => null);
+  const tender = await getTenderById(id).catch((): null => null);
 
   if (!tender) {
     return (
