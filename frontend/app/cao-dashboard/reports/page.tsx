@@ -59,7 +59,7 @@ export default function ReportsPage() {
           let syncedAny = false;
           for (const [tId, entry] of Object.entries(sentMap)) {
             if ((entry as any).fullyAwarded || ((entry as any).winner && (entry as any).lost)) {
-              await fetch(`http://localhost:8082/api/v1/tenders/${tId}/status?status=AWARDED`, { method: 'PUT' });
+              await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082'}/api/v1/tenders/${tId}/status?status=AWARDED`, { method: 'PUT' });
               syncedAny = true;
             }
           }
