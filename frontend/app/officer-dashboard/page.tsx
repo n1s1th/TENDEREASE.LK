@@ -47,12 +47,12 @@ export default function OfficerDashboardPage() {
       <div className="pt-8 pb-7">
         <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="mt-1 h-[75px] w-1 shrink-0 rounded bg-[#953002]"></div>
+            <div className="mt-1 h-[60px] w-1 shrink-0 rounded bg-[#953002]"></div>
             <div>
-              <h1 className="m-0 text-[40px] font-extrabold leading-tight tracking-normal text-[#12233f] max-sm:text-[32px]">
+              <h1 className="m-0 text-[1.85rem] font-extrabold leading-[1.2] tracking-[0.01em] text-[#1e293b] max-sm:text-[24px]">
                 Officer Dashboard
               </h1>
-              <p className="mt-3 text-[18px] font-medium text-[#94a3b8]">
+              <p className="mt-1.5 text-[17px] font-medium text-[#94a3b8]">
                 Centralized hub for secure bid openings and multi-criteria evaluation management.
               </p>
             </div>
@@ -73,8 +73,8 @@ export default function OfficerDashboardPage() {
       </div>
 
       <div className="rounded-xl border border-gray-100 bg-white px-7 py-5 shadow-sm">
-        <h2 className="text-[22px] font-black text-gray-950">Welcome Back, {user?.name || "Officer"}.</h2>
-        <p className="mt-1 text-[17px] text-[#64748b]">
+        <h2 className="text-[18px] font-black text-gray-950">Welcome Back, {user?.name || "Officer"}.</h2>
+        <p className="mt-1 text-[14px] text-[#64748b]">
           You have {activeTendersCount} active tender{activeTendersCount !== 1 ? 's' : ''} requiring your attention today.
         </p>
       </div>
