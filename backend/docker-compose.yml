@@ -105,6 +105,8 @@ services:
     env_file: .env
     environment:
       - EUREKA_SERVER=http://eureka-server:8761/eureka/
+      - USER_SERVICE_URL=http://user-service:8081
+      - TENDER_SERVICE_URL=http://tender-service:8082
     depends_on:
       - eureka-server
     restart: always

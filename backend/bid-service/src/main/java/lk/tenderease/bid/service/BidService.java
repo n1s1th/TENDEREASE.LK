@@ -110,8 +110,17 @@ public class BidService {
         // 2. Fetch tender detail from tender-service
         String tenderUrl = tenderServiceUrl + "/api/tenders/" + request.getTenderId();
         Map<String, Object> tenderDetail = null;
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.set("X-User-Email", bidderEmail);
+        org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
         try {
-            tenderDetail = restTemplate.getForObject(tenderUrl, Map.class);
+            org.springframework.http.ResponseEntity<Map> response = restTemplate.exchange(
+                tenderUrl,
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                Map.class
+            );
+            tenderDetail = response.getBody();
         } catch (Exception e) {
             log.error("Failed to fetch tender details: {}", e.getMessage());
             throw new RuntimeException("Tender not found with ID: " + request.getTenderId() + ". (Error: " + e.getMessage() + " - URL: " + tenderUrl + ")");
