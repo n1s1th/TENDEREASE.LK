@@ -62,6 +62,7 @@ export default function AllRecommendationsPage() {
             />
           ))
         )}
+        <Pagination pagination={{ currentPage, totalPages, pageSize, totalItems }} onPageChange={setCurrentPage} />
       </div>
       
       {activeModal === "approve-recommendation" && <ApproveRecommendationModal />}
