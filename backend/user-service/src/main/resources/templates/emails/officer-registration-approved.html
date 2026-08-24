@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registration Approved</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f5;
+            margin: 0;
+            padding: 0;
+            color: #3f3f46;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #15803d;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .reference-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #166534;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #15803d;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TenderEase - Registration Approved</h1>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong><span th:text="${officerName}">Officer</span></strong>,</p>
+            
+            <p>Congratulations! Your officer registration has been <strong>APPROVED</strong> by the Chief Accounting Officer (CAO).</p>
+            
+            <p>You can now log in to the TenderEase platform and start creating and managing government tenders.</p>
+            
+            <div class="reference-box">
+                Registration Reference: <span th:text="${referenceId}">OFF-XXXXXX-XXXX</span>
+            </div>
+            
+            <center>
+                <a href="https://tenderease.me/auth/login" class="btn">Log In to TenderEase</a>
+            </center>
+            
+            <p style="margin-top: 30px;">Best regards,<br>
+            The TenderEase Support Team</p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2026 TenderEase. All rights reserved.</p>
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>

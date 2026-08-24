@@ -53,24 +53,27 @@ public class MockEmailServiceImpl implements EmailService {
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void sendRegistrationApprovalEmail(String toEmail, String officerName, String referenceId) {
-        String htmlContent = "<h2>Registration Approved - TenderEase</h2>" +
-                "<p>Dear Officer,</p>" +
-                "<p>Congratulations! Your officer registration has been <strong>APPROVED</strong> by the Chief Accounting Officer (CAO).</p>" +
-                "<p>Registration Reference: <strong>" + referenceId + "</strong></p>" +
-                "<p>You can now log in to TenderEase.lk and start creating and managing government tenders.</p>" +
-                "<p>Best regards,<br>TenderEase Team</p>";
+        log.info("Preparing Registration Approval Email for: {}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("officerName", officerName != null ? officerName : "Officer");
+        context.setVariable("referenceId", referenceId);
+
+        String htmlContent = templateEngine.process("emails/officer-registration-approved", context);
         sendRealEmail(toEmail, "Registration Approved - TenderEase", htmlContent);
     }
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void sendRegistrationRejectionEmail(String toEmail, String officerName, String referenceId, String reason) {
-        String htmlContent = "<h2>Registration Rejected - TenderEase</h2>" +
-                "<p>Dear Officer,</p>" +
-                "<p>We regret to inform you that your officer registration has been <strong>REJECTED</strong> by the Chief Accounting Officer (CAO).</p>" +
-                "<p>Registration Reference: <strong>" + referenceId + "</strong><br>Reason: " + reason + "</p>" +
-                "<p>If you believe this is an error, please contact the CAO office for further assistance.</p>" +
-                "<p>Best regards,<br>TenderEase Team</p>";
+        log.info("Preparing Registration Rejection Email for: {}", toEmail);
+
+        Context context = new Context();
+        context.setVariable("officerName", officerName != null ? officerName : "Officer");
+        context.setVariable("referenceId", referenceId);
+        context.setVariable("reason", reason != null ? reason : "Not specified");
+
+        String htmlContent = templateEngine.process("emails/officer-registration-rejected", context);
         sendRealEmail(toEmail, "Registration Rejected - TenderEase", htmlContent);
     }
 }
