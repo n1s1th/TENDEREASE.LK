@@ -22,7 +22,7 @@ function TenderDetails({ id }: { id: string }) {
   const [tender, setTender] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
     let cancelled = false;
 
     async function load() {
