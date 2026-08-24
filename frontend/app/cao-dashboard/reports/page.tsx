@@ -91,7 +91,7 @@ export default function ReportsPage() {
 
   const kpi = useMemo(() => {
     const awarded  = tenders.filter((t: any) => t.status === 'AWARDED');
-    const active   = tenders.filter((t: any) => ['PUBLISHED','PENDING_OPENING','PENDING_APPROVAL'].includes(t.status));
+    const active   = tenders.filter((t: any) => ['PUBLISHED', 'APPROVED', 'EVALUATION', 'PENDING_OPENING', 'OPEN'].includes(t.status));
     const rejected = tenders.filter((t: any) => t.status === 'REJECTED');
     let totalCycle = 0;
     awarded.forEach((t: any) => {
@@ -112,7 +112,7 @@ export default function ReportsPage() {
     for(let i=0;i<=cm;i++){cycleMap.set(i,{total:0,count:0});awardMap.set(i,0);}
     tenders.forEach((t: any) => {
       const m = new Date(t.createdAt||Date.now()).getMonth(); if(m>cm) return;
-      if(['PUBLISHED','PENDING_OPENING','PENDING_APPROVAL'].includes(t.status)) activeDeptMap.set(t.departmentName||t.department||"Other", (activeDeptMap.get(t.departmentName||t.department||"Other")||0)+1);
+      if(['PUBLISHED', 'APPROVED', 'EVALUATION', 'PENDING_OPENING', 'OPEN'].includes(t.status)) activeDeptMap.set(t.departmentName||t.department||"Other", (activeDeptMap.get(t.departmentName||t.department||"Other")||0)+1);
       if(t.status==='AWARDED'){
         const days = Math.max(1,Math.ceil((new Date(t.updatedAt||Date.now()).getTime()-new Date(t.createdAt||Date.now()).getTime())/86400000));
         const c = cycleMap.get(m)!; c.total+=days; c.count+=1;
@@ -147,14 +147,14 @@ export default function ReportsPage() {
   const statusColors = Object.keys(kpi.byStatus).map((s, i) => CHART_COLORS[i % CHART_COLORS.length]);
   const statusData   = {labels:Object.keys(kpi.byStatus).map(s=>s.replace(/_/g," ")),datasets:[{data:Object.values(kpi.byStatus),backgroundColor:statusColors,borderWidth:0}]};
   const typeData     = {labels:Object.keys(kpi.byType),datasets:[{data:Object.values(kpi.byType),backgroundColor:CHART_COLORS,borderWidth:0}]};
-  const methodData   = {labels:Object.keys(kpi.byMethod),datasets:[{label:'Tenders',data:Object.values(kpi.byMethod),backgroundColor:CHART_COLORS.slice(0,Object.keys(kpi.byMethod).length),borderRadius:6}]};
+  const methodData   = {labels:Object.keys(kpi.byMethod),datasets:[{label:'Tenders',data:Object.values(kpi.byMethod),backgroundColor:PRIMARY,borderRadius:6}]};
   const cycleData    = {labels:kpi.cycleTimeTrend.map(d=>d.label),datasets:[{label:'Avg Cycle (days)',data:kpi.cycleTimeTrend.map(d=>d.value),borderColor:PRIMARY,backgroundColor:'rgba(149,48,2,0.1)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:PRIMARY}]};
   const activeCD     = {labels:kpi.activeTrend.map(d=>d.label),datasets:[{label:'Active Tenders',data:kpi.activeTrend.map(d=>d.value),backgroundColor:AMBER,borderRadius:5}]};
   const awardCD      = {labels:kpi.awardTrend.map(d=>d.label),datasets:[{label:'Award Value (Rs. Mn)',data:kpi.awardTrend.map(d=>d.value),backgroundColor:PRIMARY,borderRadius:5}]};
 
 
   const smeData = {
-    labels: ['SME (Sole Prop / Partnership)', 'Other Entities'],
+    labels: ['SME (Small Medium Size Enterprise)', 'Other Entities'],
     datasets: [{ data: [kpi.smeCount, kpi.nonSmeCount], backgroundColor: [PRIMARY, '#e2e8f0'], borderWidth: 0 }],
   };
   const orgTypeData = {
@@ -265,9 +265,7 @@ export default function ReportsPage() {
       <div style={{maxWidth:1280,margin:"0 auto",padding:"1.5rem"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.75rem",flexWrap:"wrap",gap:"1rem"}}>
           <div>
-            <h1 style={{fontSize:"1.5rem",fontWeight:800,color:"#111",margin:0,display:"flex",alignItems:"center",gap:"0.6rem"}}>
-              <TrendingUp size={22} color={PRIMARY}/> KPI Report
-            </h1>
+            <h1 style={{fontSize:"2rem",fontWeight:800,color:"#111",margin:0,display:"flex",alignItems:"center",gap:"0.6rem"}}>KPI Report</h1>
             <p style={{fontSize:"0.875rem",color:"#64748b",margin:"0.3rem 0 0",fontWeight:500}}>Performance analytics from live TenderEase database</p>
           </div>
           <div style={{display:"flex",gap:"0.75rem"}}>
@@ -300,19 +298,17 @@ export default function ReportsPage() {
           <>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:"1rem",marginBottom:"1.75rem"}}>
               <StatCard label="Total Tenders"     value={kpi.total}              color={SLATE}   />
-              <StatCard label="Awarded"           value={kpi.awarded}            color={PRIMARY} />
-              <StatCard label="Active"            value={kpi.active}             color={AMBER}    />
-              <StatCard label="Avg Cycle Time"    value={kpi.avgCycle + "d"}     color={AMBER}   />
-              <StatCard label="Total Award Value" value={fmt(kpi.totalAwardVal)} color={PRIMARY} />
-              <StatCard label="Rejected"          value={kpi.rejected}           color={SLATE} />
+              <StatCard label="Awarded Tenders"           value={kpi.awarded}            color={SLATE} />
+              <StatCard label="Active Tenders"            value={kpi.active}             color={SLATE}    />
+              <StatCard label="Avg Cycle Time"    value={kpi.avgCycle + "d"}     color={SLATE}   />
+              <StatCard label="Total Award Value" value={fmt(kpi.totalAwardVal)} color={SLATE} />
+              <StatCard label="Rejected Tenders"          value={kpi.rejected}           color={SLATE} />
               <StatCard label="Total Vendors (Registered)" value={kpi.totalVendors} color={SLATE} />
-              <StatCard label="SME Vendors" value={kpi.smeCount + " (" + kpi.smePercent + "%)"} color={PRIMARY} />
+              <StatCard label="SME Vendors" value={kpi.smeCount + " (" + kpi.smePercent + "%)"} color={SLATE} />
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"1rem",marginBottom:"1rem"}}>
-              <ChartCard title="Tender Status Breakdown" subtitle="Distribution by current status">
-                <div style={{height:230}}> {Object.keys(kpi.byStatus).length>0?<Doughnut data={statusData} options={donutOpts}/>:none("No data for selected filters")} </div>
-              </ChartCard>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1rem"}}>
+              
               <ChartCard title="Procurement Type" subtitle="Tenders by procurement category">
                 <div style={{height:230}}> {Object.keys(kpi.byType).length>0?<Pie data={typeData} options={pieOpts}/>:none("No data")} </div>
               </ChartCard>
@@ -338,16 +334,14 @@ export default function ReportsPage() {
 
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1rem"}}>
-              <ChartCard title="SME Participation" subtitle={"SME vs Non-SME registered vendors — " + kpi.smePercent + "% SME (" + kpi.smeCount + " of " + kpi.totalVendors + " vendors)"}>
+              <ChartCard title="SME Participation" subtitle="SME vs Non-SME registered vendors">
                 <div style={{height:230}}>
                   {kpi.totalVendors > 0
                     ? <Doughnut data={smeData} options={{...donutOpts, plugins: {...donutOpts.plugins, tooltip: {backgroundColor:'#1e293b', padding:10, cornerRadius:8, callbacks: {label: (ctx: any) => ctx.label + ': ' + ctx.raw + ' vendors (' + (kpi.totalVendors > 0 ? Math.round(ctx.raw/kpi.totalVendors*100) : 0) + '%)'}}}}}/>
                     : none("No vendor data available")}
                 </div>
                 <div style={{textAlign:"center",marginTop:"0.75rem"}}>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:"0.4rem",background:"#d1fae5",color:"#065f46",padding:"0.25rem 0.75rem",borderRadius:999,fontSize:"0.78rem",fontWeight:700}}>
-                    &#9679; SME = Sole Proprietorship or Partnership
-                  </span>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:"0.4rem",color:"#6b7280",fontSize:"0.8rem",fontWeight:500}}>&#9679; SME=Small Medium Size Enterprise</span>
                 </div>
               </ChartCard>
               <ChartCard title="Vendor Organization Types" subtitle="Breakdown of all registered vendors by business type">
