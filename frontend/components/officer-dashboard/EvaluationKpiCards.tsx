@@ -41,7 +41,7 @@ export default function EvaluationKpiCards() {
           className="bg-[#9A3B12] text-white rounded-xl p-5 flex-1 min-w-[180px] shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl cursor-pointer"
         >
           <div className="text-[12px] font-bold uppercase tracking-wider whitespace-nowrap">{card.title}</div>
-          <div className="text-[10px] uppercase opacity-80 mt-1 mb-3">{card.subtitle}</div>
+          <div className="text-[12px] uppercase opacity-80 mt-1 mb-3">{card.subtitle}</div>
           <div className="text-4xl font-bold">
             <CountUp end={card.value} />
           </div>

@@ -1890,9 +1890,9 @@
   opacity: 0.3;
 }
 
-/* ── Step card ── */
 .hiw-card {
   width: 100%;
+  flex: 1;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   border: 1.5px solid rgba(149, 48, 2, 0.08);
