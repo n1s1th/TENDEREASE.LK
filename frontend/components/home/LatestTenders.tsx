@@ -110,7 +110,7 @@ export default function LatestTenders() {
               borderBottom: "1px solid #e5e7eb",
             }}
           >
-            {["Tender Title", "Category", "Ministry", "Est. Value", "Closing", "Status", "Action"].map((col, i) => (
+            {["Tender Title", "Category", "Department", "Est. Value", "Closing", "Status", "Action"].map((col, i) => (
               <span
                 key={col}
                 style={{
@@ -160,7 +160,7 @@ export default function LatestTenders() {
                     {tender.title}
                   </span>
                   <span style={{ fontSize: "0.85rem", color: "#374151", textTransform: "capitalize" }}>{category}</span>
-                  <span style={{ fontSize: "0.85rem", color: "#374151" }}>{tender.ministryName || "—"}</span>
+                  <span style={{ fontSize: "0.85rem", color: "#374151" }}>{tender.departmentName || "—"}</span>
                   <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#111827", textAlign: "center" }}>
                     {formatValue(tender.estimatedBudget)}
                   </span>
