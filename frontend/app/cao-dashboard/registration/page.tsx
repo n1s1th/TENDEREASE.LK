@@ -337,7 +337,7 @@ function RegistrationPageContent() {
 
       {/* Approve Confirmation Modal */}
       {approveModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-md flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn">
           <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl border-t-8 border-[#953002] transform transition-all animate-scaleIn relative">
             <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">
               Approve Officer Registration
@@ -372,7 +372,7 @@ function RegistrationPageContent() {
 
       {/* Reject Modal */}
       {rejectModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-md flex items-center justify-center z-[1000] p-6 font-sans animate-fadeIn">
           <div className="bg-white rounded-3xl p-8 w-full max-w-xl shadow-2xl border-t-8 border-[#953002] transform transition-all animate-scaleIn relative">
             <h3 className="text-2xl font-extrabold text-slate-900 mb-3 tracking-tight">
               Reject Officer Registration
