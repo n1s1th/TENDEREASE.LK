@@ -52,7 +52,7 @@ export default function DocumentsTab({ documents }: any) {
               "_blank"
             );
           }}
-          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95"
+          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity shadow-lg active:scale-95"
         >
           <Download size={16} />
           Download All
