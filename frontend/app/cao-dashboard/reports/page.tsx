@@ -326,7 +326,7 @@ export default function ReportsPage() {
               <ChartCard title="Avg. Procurement Cycle Time" subtitle="Monthly avg days from creation to award">
                 <div style={{height:240}}> {kpi.cycleTimeTrend.some((d: any)=>d.value>0)?<Line data={cycleData} options={sharedOpts("Days")}/>:none("No awarded tenders to compute cycle time")} </div>
               </ChartCard>
-              <ChartCard title="Active Tenders by Department" subtitle="Current live/pending tenders">
+              <ChartCard title="Active Tenders by Department" subtitle="Current live Tenders">
                 <div style={{height:240}}> {kpi.activeTrend.length > 0?<Bar data={activeCD} options={sharedOpts("Tenders")}/>:none("No active tenders found")} </div>
               </ChartCard>
             </div>
