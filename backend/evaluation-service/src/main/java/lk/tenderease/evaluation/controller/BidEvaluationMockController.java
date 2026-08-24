@@ -952,6 +952,7 @@ public class BidEvaluationMockController {
             String realStatus = "APPROVED";
             String realTenderNo = note.getTenderId();
             Object dynamicData = null;
+            Object updatedAt = null;
             try {
                 org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
                 String tenderServiceUrl = "http://tender-service:8082/api/v1/tenders/" + note.getTenderId();
@@ -965,6 +966,9 @@ public class BidEvaluationMockController {
                     }
                     if (tenderDetail.get("dynamicData") != null) {
                         dynamicData = tenderDetail.get("dynamicData");
+                    }
+                    if (tenderDetail.get("updatedAt") != null) {
+                        updatedAt = tenderDetail.get("updatedAt");
                     }
                 }
             } catch (Exception e) {
@@ -990,6 +994,9 @@ public class BidEvaluationMockController {
                 finalStatus = "AWARDED";
             }
             t.put("status", finalStatus);
+            if (updatedAt != null) {
+                t.put("updatedAt", updatedAt);
+            }
             tenders.add(t);
         }
         

@@ -41,7 +41,7 @@ export default function AwardedTendersTable() {
             const timestamps = [sentMap[tender.id]?.winnerSentAt, sentMap[tender.id]?.lostSentAt].filter(Boolean) as string[];
             const awardedAt = timestamps.length > 0
               ? timestamps.sort().reverse()[0] 
-              : new Date().toISOString();
+              : (tender as any).updatedAt || new Date().toISOString(); // Use backend timestamp
 
             rows.push({ tender, awardedAt });
           }
