@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X, Menu, MapPin, SlidersHorizontal, ArrowRight, Clock, TrendingUp, Shield, Building2, ChevronDown, User as UserIcon, LayoutDashboard } from "lucide-react";
+import { Menu, Shield, Building2, ChevronDown, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -18,39 +18,14 @@ const navLinks = [
   { label: "Help / FAQ", href: "/qa" },
 ];
 
-const trendingSearches = [
-  "Road Construction",
-  "IT Infrastructure",
-  "Medical Equipment",
-  "Building Renovation",
-  "Water Supply",
-];
-
-const categories = [
-  "All Categories",
-  "Construction",
-  "IT & Technology",
-  "Healthcare",
-  "Education",
-  "Transportation",
-  "Energy",
-  "Agriculture",
-  "Water & Sanitation",
-];
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [registerDropdownOpen, setRegisterDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const { isAuthenticated, user, officerRegistrationStatus } = useAuthStore();
   const { initialized, error } = useAuth();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchBarRef = useRef<HTMLDivElement>(null);
   const registerDropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -106,12 +81,9 @@ export default function Navbar() {
   };
   const dashboardPath = getDashboardPath();
 
-  // Close search dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (searchBarRef.current && !searchBarRef.current.contains(e.target as Node)) {
-        setSearchFocused(false);
-      }
       if (registerDropdownRef.current && !registerDropdownRef.current.contains(e.target as Node)) {
         setRegisterDropdownOpen(false);
       }
@@ -122,29 +94,6 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  const handleSearchToggle = () => {
-    setSearchOpen((prev) => {
-      if (!prev) {
-        setTimeout(() => searchInputRef.current?.focus(), 100);
-      }
-      return !prev;
-    });
-  };
-
-  const handleSearch = () => {
-    if (searchQuery.trim() || selectedCategory !== "All Categories") {
-      window.location.href = `/tenders?search=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(selectedCategory)}`;
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") handleSearch();
-    if (e.key === "Escape") {
-      setSearchOpen(false);
-      setSearchFocused(false);
-    }
-  };
 
   return (
     <header className="te-navbar">
@@ -182,15 +131,6 @@ export default function Navbar() {
 
         {/* Right side actions */}
         <div className="te-navbar__actions">
-          {/* Search toggle */}
-          <button
-            className="te-navbar__search-toggle"
-            aria-label="Toggle search"
-            onClick={handleSearchToggle}
-          >
-            {searchOpen ? <X size={18} /> : <Search size={18} />}
-          </button>
-
           {/* Authentication Buttons */}
           {!initialized ? (
             <div className="te-navbar__auth-loading">
@@ -287,95 +227,6 @@ export default function Navbar() {
           >
             <Menu size={22} />
           </button>
-        </div>
-      </div>
-
-      {/* ── Premium Expandable Search Bar ── */}
-      <div className={`te-search ${searchOpen ? "te-search--open" : ""}`}>
-        <div className="te-search__container" ref={searchBarRef}>
-          <div className={`te-search__bar ${searchFocused ? "te-search__bar--focused" : ""}`}>
-            {/* Search Icon & Input */}
-            <div className="te-search__input-group">
-              <Search size={20} className="te-search__icon" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search tenders by keyword, ID, or organization..."
-                className="te-search__input"
-              />
-              {searchQuery && (
-                <button
-                  className="te-search__clear"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="te-search__divider" />
-
-            {/* Location / Region */}
-            <div className="te-search__location-group">
-              <MapPin size={16} className="te-search__location-icon" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="te-search__category-select"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Divider */}
-            <div className="te-search__divider" />
-
-            {/* Advanced Filter Button */}
-            <button className="te-search__filter-btn" aria-label="Advanced filters">
-              <SlidersHorizontal size={16} />
-              <span>Filters</span>
-            </button>
-
-            {/* Search Button */}
-            <button className="te-search__submit" onClick={handleSearch}>
-              <Search size={18} />
-              <span>Search</span>
-            </button>
-          </div>
-
-          {/* ── Search Suggestions Dropdown ── */}
-          {searchFocused && !searchQuery && (
-            <div className="te-search__dropdown">
-              <div className="te-search__dropdown-section">
-                <div className="te-search__dropdown-header">
-                  <TrendingUp size={14} />
-                  <span>Trending Searches</span>
-                </div>
-                {trendingSearches.map((term) => (
-                  <button
-                    key={term}
-                    className="te-search__suggestion"
-                    onClick={() => {
-                      setSearchQuery(term);
-                      setSearchFocused(false);
-                    }}
-                  >
-                    <Clock size={14} className="te-search__suggestion-icon" />
-                    <span>{term}</span>
-                    <ArrowRight size={12} className="te-search__suggestion-arrow" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
