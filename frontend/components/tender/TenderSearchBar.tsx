@@ -79,7 +79,7 @@ export default function TenderSearchBar({ filters, onFilterChange, onReset }: Pr
 
       {/* Filter Grid */}
       <div className="pt-8 border-t border-gray-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-end">
 
           {/* CATEGORY */}
           <div className="space-y-3">
@@ -108,42 +108,6 @@ export default function TenderSearchBar({ filters, onFilterChange, onReset }: Pr
               <option>Upcoming</option>
               <option>Closed</option>
             </select>
-          </div>
-
-          {/* DATE TYPE */}
-          <div className="space-y-3">
-            <label className={labelClass}>Date Type</label>
-            <select
-              value={filters.dateType}
-              onChange={(e) => handleInputChange("dateType", e.target.value)}
-              className={inputClass}
-            >
-              <option>None Selected</option>
-              <option>Closing Date</option>
-              <option>Published Date</option>
-            </select>
-          </div>
-
-          {/* FROM */}
-          <div className="space-y-3">
-            <label className={labelClass}>Valid From</label>
-            <input
-              type="date"
-              value={filters.fromDate}
-              onChange={(e) => handleInputChange("fromDate", e.target.value)}
-              className={inputClass}
-            />
-          </div>
-
-          {/* TO */}
-          <div className="space-y-3">
-            <label className={labelClass}>Valid To</label>
-            <input
-              type="date"
-              value={filters.toDate}
-              onChange={(e) => handleInputChange("toDate", e.target.value)}
-              className={inputClass}
-            />
           </div>
 
           {/* RESET */}
