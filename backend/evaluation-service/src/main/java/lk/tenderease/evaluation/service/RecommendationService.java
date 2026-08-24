@@ -100,6 +100,9 @@ public class RecommendationService {
                 .bidderName(bidderName)
                 .recommendedValue(recommendedValue)
                 .finalScore(result.getFinalScore().doubleValue())
+                .technicalScore(Math.round(result.getFinalScore().doubleValue() * 0.7 * 100.0) / 100.0)
+                .financialScore(Math.round(result.getFinalScore().doubleValue() * 0.3 * 100.0) / 100.0)
+                .bidId(result.getWinningBidId().toString().substring(0, 8).toUpperCase())
                 .justification("Recommended based on the highest technical and financial evaluation score of " + result.getFinalScore() + "%.")
                 .status(RecommendationNote.RecommendationStatus.PENDING)
                 .build();
