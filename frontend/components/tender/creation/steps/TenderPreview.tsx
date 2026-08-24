@@ -83,22 +83,22 @@ export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {
   // Use externally provided data if available, otherwise fall back to store
   const formData = data ?? storeState.formData;
 
-  const handleSubmit = async () => {
-    // 1. Create tender and upload files (handled by store's submitTender)
+    const handleSubmit = async () => {
     const tenderId = await submitTender();
     
     if (tenderId) {
       try {
-        // 2. Submit for actual approval (this triggers the backend events)
         await api.submitForApproval(tenderId);
-        alert(`Tender submitted for approval successfully! Reference: ${formData.referenceNumber}`);
         reset();
+        router.push(`/tender-creation/success?ref=${encodeURIComponent(formData.referenceNumber)}`);
       } catch (err: any) {
-        alert(`Tender created (ID: ${tenderId}) but failed to submit for approval: ${err.message}`);
+        const errorMsg = `Tender created (ID: ${tenderId}) but failed to submit for approval: ${err.message}`;
+        router.push(`/tender-creation/failure?error=${encodeURIComponent(errorMsg)}`);
       }
     } else {
       const currentError = useTenderCreationStore.getState().error;
-      alert(`Failed to create tender: ${currentError || "Unknown error occurred"}`);
+      const errorMsg = currentError || "Unknown error occurred";
+      router.push(`/tender-creation/failure?error=${encodeURIComponent(errorMsg)}`);
     }
   };
 
