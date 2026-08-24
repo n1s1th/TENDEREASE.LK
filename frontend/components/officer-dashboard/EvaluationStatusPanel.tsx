@@ -37,7 +37,7 @@ export default function EvaluationStatusPanel() {
   return (
     <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">Evaluation Status</h3>
+        <h3 className="text-[14px] font-black text-gray-400 uppercase tracking-[0.2em]">Evaluation Status</h3>
       </div>
       
       <div className="flex flex-col gap-3 flex-1 justify-evenly">

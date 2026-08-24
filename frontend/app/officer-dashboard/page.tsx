@@ -52,7 +52,7 @@ export default function OfficerDashboardPage() {
               <h1 className="m-0 text-[1.85rem] font-extrabold leading-[1.2] tracking-[0.01em] text-[#1e293b] max-sm:text-[24px]">
                 Officer Dashboard
               </h1>
-              <p className="mt-1.5 text-[17px] font-medium text-[#94a3b8]">
+              <p className="mt-1.5 text-[16px] font-medium text-[#94a3b8]">
                 Centralized hub for secure bid openings and multi-criteria evaluation management.
               </p>
             </div>
