@@ -18,7 +18,7 @@ function AwardDetailsSidebar({ tender, onClose }: { tender: DashboardTender; onC
   useEffect(() => {
     async function fetchData() {
       try {
-        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084';
+        const evalUrl = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.tenderease.me';
         
         // Fetch basic winner data (name, email, bidAmount, final score)
         const res = await fetch(`${evalUrl}/api/evaluations/mock/awards/tenders/${tender.id}/bidders`);
