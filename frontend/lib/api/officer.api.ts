@@ -4,6 +4,8 @@
 // - Bid Service (port 8083) for bid counts
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const TENDER_SERVICE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8082";
+const BID_SERVICE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8083";
 
 /**
  * Fetches the dashboard KPI metrics from the tender-service.

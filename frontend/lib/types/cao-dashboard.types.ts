@@ -21,6 +21,7 @@ export interface DashboardTender {
   referenceNumber?: string;
   title: string;
   category: string;
+  procurementType?: string;
   type: string;
   closingDate: string;
   score: number | null;

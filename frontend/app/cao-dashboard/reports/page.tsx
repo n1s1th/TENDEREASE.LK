@@ -306,7 +306,7 @@ export default function ReportsPage() {
                     ['Avg. Cycle Time', kpi.avgCycle + ' days'],
                     ['Total Award Value (Est.)', 'Rs. ' + kpi.totalAwardVal.toLocaleString()],
                     ['SME Vendor Participation', kpi.smePercent + '% (' + kpi.smeCount + ' of ' + kpi.totalVendors + ' registered vendors)'],
-                    ['Filters Applied', (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')], (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')],
+                    ['Filters Applied', (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')],
                   ] as [string, any][]).map(([label, value], i) => (
                     <tr key={i} style={{borderBottom:"1px solid #f1f5f9",background:i%2===0?"#fff":"#fafafa"}}>
                       <td style={{padding:"0.875rem 1.5rem",color:"#64748b",fontWeight:600,fontSize:"0.875rem"}}>{label}</td>
