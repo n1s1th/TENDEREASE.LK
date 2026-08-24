@@ -265,7 +265,8 @@ export default function BidEvaluationPage() {
   }, [isDirty]);
 
   // BASE URL for evaluation service API
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
+  const RAW_BASE = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
+  const BASE_URL = RAW_BASE.includes("/api/v1") ? RAW_BASE.replace("/api/v1", "") : RAW_BASE;
 
   // Fetch initial evaluation data from backend
   const fetchData = async (silent = false) => {

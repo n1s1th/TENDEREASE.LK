@@ -228,7 +228,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                   </div>
                 </td>
                 <td className="px-6 py-6 text-center">
-                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <div className="flex flex-nowrap items-center justify-center gap-1.5">
                     {tender.status === "EVALUATION" || tender.status === "OPEN" ? (
                       <button 
                         onClick={() => router.push(`/tenders/${tender.id}/bid-evaluation`)}
