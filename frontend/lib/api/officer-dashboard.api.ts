@@ -43,7 +43,7 @@ userApi.interceptors.request.use(withAuth);
 
 // Officer Dashboard API -> matches OfficerDashboardController under /api/officer/dashboard
 const officerDashApi = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_USER_API_URL ? process.env.NEXT_PUBLIC_USER_API_URL.replace('/api', '') : 'http://localhost:8082') + '/api/officer/dashboard',
+  baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080') + '/api/officer/dashboard',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
