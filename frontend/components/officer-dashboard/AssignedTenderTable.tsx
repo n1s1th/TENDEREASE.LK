@@ -114,7 +114,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       {(title || subtitle) && (
         <div className="px-6 pt-6">
           {title && (
@@ -180,17 +180,17 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
       </div>
 
       {/* Table Wrapper */}
-      <div className="w-full overflow-x-auto px-6 pb-6">
-        <table className="w-full min-w-[1000px] border-collapse">
+      <div className="w-full">
+        <table className="w-full table-fixed border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg text-center w-[10%]">Tender ID</th>
-              <th className="py-4 px-6 text-center w-[30%]">Tender Title</th>
-              <th className="py-4 px-6 text-center w-[15%]">Category</th>
-              <th className="py-4 px-6 text-center w-[15%]">Department</th>
-              <th className="py-4 px-6 text-center w-[10%]">Status</th>
+              <th className="py-4 px-6 rounded-tl-lg text-center w-[13%]">Tender ID</th>
+              <th className="py-4 px-6 text-center w-[24%]">Tender Title</th>
+              <th className="py-4 px-6 text-center w-[13%]">Category</th>
+              <th className="py-4 px-6 text-center w-[13%]">Department</th>
+              <th className="py-4 px-6 text-center w-[13%]">Status</th>
               <th className="py-4 px-6 text-center w-[12%]">Opening Date</th>
-              <th className="py-4 px-6 rounded-tr-lg text-center w-[8%]">Actions</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center w-[12%]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -228,7 +228,7 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
                   </div>
                 </td>
                 <td className="px-6 py-6 text-center">
-                  <div className="flex items-center justify-center gap-1.5">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
                     {tender.status === "EVALUATION" || tender.status === "OPEN" ? (
                       <button 
                         onClick={() => router.push(`/tenders/${tender.id}/bid-evaluation`)}
