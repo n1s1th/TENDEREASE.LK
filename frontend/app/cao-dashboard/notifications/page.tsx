@@ -6,6 +6,7 @@ import EmptyState from "@/components/cao-dashboard/EmptyState";
 import { useCAODashboardStore } from "@/store/cao-dashboard/cao-dashboard.store";
 import type { DashboardNotification, DashboardNotificationType } from "@/lib/types/cao-dashboard.types";
 import { useRouter } from "next/navigation";
+import Pagination from "@/components/cao-dashboard/Pagination";
 
 const typeIcons: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
   tender_submitted: { icon: <FileText size={16} />, color: "#3b82f6", label: "Pending Tenders" },
@@ -47,6 +48,8 @@ export default function NotificationsPage() {
   const setSearchQuery = useCAODashboardStore((s) => s.setSearchQuery);
 
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
   const router = useRouter();
 
   useEffect(() => {
@@ -58,6 +61,15 @@ export default function NotificationsPage() {
   const filtered = typeFilter === "all"
     ? notifications
     : notifications.filter(n => n.type === typeFilter);
+
+
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const handleNotificationClick = (notif: DashboardNotification) => {
     markNotificationRead(notif.id);
@@ -104,7 +116,7 @@ export default function NotificationsPage() {
           className="dash-select"
           style={{ minWidth: 200 }}
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
+          onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
         >
           <option value="all">All Notification Types</option>
           <option value="tender_submitted">Pending Tenders</option>
@@ -136,7 +148,7 @@ export default function NotificationsPage() {
               description="Notifications will appear here when you approve, reject tenders or officer registrations."
             />
           ) : (
-            filtered.map((notif) => {
+            paginated.map((notif) => {
               const typeInfo = typeIcons[notif.type] || typeIcons.general;
               const badge = statusBadge[notif.status] || statusBadge.info;
               return (
@@ -184,6 +196,9 @@ export default function NotificationsPage() {
                 </div>
               );
             })
+          )}
+          {totalPages > 1 && (
+            <Pagination pagination={{ currentPage, totalPages, pageSize, totalItems }} onPageChange={setCurrentPage} />
           )}
         </div>
 
