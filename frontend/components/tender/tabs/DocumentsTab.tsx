@@ -52,7 +52,7 @@ export default function DocumentsTab({ documents }: any) {
               "_blank"
             );
           }}
-          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95"
+          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity shadow-lg active:scale-95"
         >
           <Download size={16} />
           Download All
@@ -95,6 +95,24 @@ export default function DocumentsTab({ documents }: any) {
             </a>
           </div>
         ))}
+      </div>
+
+      {/* Footer Info Box */}
+      <div className="bg-info/5 border border-info/10 rounded-3xl p-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+          <ShieldCheck size={80} className="text-info" />
+        </div>
+        <div className="relative z-10 flex gap-4 items-start">
+          <div className="p-2 bg-info/10 rounded-lg text-info mt-1">
+            <ShieldCheck size={20} />
+          </div>
+          <div className="space-y-2">
+            <h4 className="text-sm font-black text-info uppercase tracking-widest">Submission Integrity</h4>
+            <p className="text-sm font-bold text-info/70 leading-relaxed max-w-3xl">
+              Ensure you download all necessary documents for your submission. Review them carefully and ensure you have the latest versions before final upload.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
