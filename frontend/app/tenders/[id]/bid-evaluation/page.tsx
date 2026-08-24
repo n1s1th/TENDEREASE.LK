@@ -202,8 +202,20 @@ export default function BidEvaluationPage() {
         if (rawDocs && Array.isArray(rawDocs) && rawDocs.length > 0) {
           const parsed = rawDocs.map((d: any) => {
             const docName = typeof d === "string" ? d : (d.documentName || d.name || "Tender Specification.pdf");
-            const docUrl = typeof d === "string" ? "" : (d.fileUrl || d.downloadUrl || d.url || "");
+            let docUrl = typeof d === "string" ? "" : (d.fileUrl || d.downloadUrl || d.url || "");
             const docSize = typeof d === "string" ? "1.5 MB" : (d.fileSize || d.size || "1.5 MB");
+
+            // Rewrite localhost to production URL if needed
+            if (docUrl && docUrl.includes("localhost:") && process.env.NEXT_PUBLIC_API_URL) {
+              try {
+                const urlObj = new URL(docUrl);
+                const baseObj = new URL(process.env.NEXT_PUBLIC_API_URL);
+                urlObj.protocol = baseObj.protocol;
+                urlObj.hostname = baseObj.hostname;
+                urlObj.port = baseObj.port;
+                docUrl = urlObj.toString();
+              } catch(e) {}
+            }
             return { name: docName, url: docUrl, size: docSize };
           });
           setTenderDocs(parsed);
@@ -224,9 +236,21 @@ export default function BidEvaluationPage() {
           const getFileUrl = (fileKey: string) => {
             if (!fileKey) return "";
             if (fileKey.startsWith("http://") || fileKey.startsWith("https://")) {
+              if (fileKey.includes("localhost:") && process.env.NEXT_PUBLIC_API_URL) {
+                try {
+                  const urlObj = new URL(fileKey);
+                  const baseObj = new URL(process.env.NEXT_PUBLIC_API_URL);
+                  urlObj.protocol = baseObj.protocol;
+                  urlObj.hostname = baseObj.hostname;
+                  urlObj.port = baseObj.port;
+                  return urlObj.toString();
+                } catch(e) {}
+              }
               return fileKey;
             }
-            return `http://localhost:8083/api/bids/files/${fileKey}`;
+            const rawBidUrl = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
+            const bidApiBase = rawBidUrl.endsWith("/api/bids") ? rawBidUrl : `${rawBidUrl.replace(/\/+$/, "")}/api/bids`;
+            return `${bidApiBase}/files/${fileKey}`;
           };
 
           if (bid.bidData) {
