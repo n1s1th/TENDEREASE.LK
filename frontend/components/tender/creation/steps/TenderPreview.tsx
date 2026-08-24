@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { useTenderCreationStore } from "@/store/tender-creation/tender-creation.store";
 import { api } from "@/lib/api";
 import { viewTenderDocument, downloadTenderDocument } from "@/lib/api/cao-dashboard.api";
@@ -69,6 +70,7 @@ interface TenderPreviewProps {
 }
 
 export function TenderPreview({ readOnly = false, data }: TenderPreviewProps = {}) {
+  const router = useRouter();
   const storeState = useTenderCreationStore();
   const {
     isSubmitting,
