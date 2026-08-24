@@ -109,7 +109,7 @@ export default function DocumentsTab({ documents }: any) {
           <div className="space-y-2">
             <h4 className="text-sm font-black text-info uppercase tracking-widest">Submission Integrity</h4>
             <p className="text-sm font-bold text-info/70 leading-relaxed max-w-3xl">
-              All documents are cryptographically signed. Any modification to the downloaded files will invalidate your submission. Ensure you have the latest versions before final upload.
+              Ensure you download all necessary documents for your submission. Review them carefully and ensure you have the latest versions before final upload.
             </p>
           </div>
         </div>
