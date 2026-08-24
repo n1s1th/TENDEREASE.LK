@@ -182,15 +182,6 @@ export default function Navbar() {
 
         {/* Right side actions */}
         <div className="te-navbar__actions">
-          {/* Search toggle */}
-          <button
-            className="te-navbar__search-toggle"
-            aria-label="Toggle search"
-            onClick={handleSearchToggle}
-          >
-            {searchOpen ? <X size={18} /> : <Search size={18} />}
-          </button>
-
           {/* Authentication Buttons */}
           {!initialized ? (
             <div className="te-navbar__auth-loading">
@@ -290,94 +281,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Premium Expandable Search Bar ── */}
-      <div className={`te-search ${searchOpen ? "te-search--open" : ""}`}>
-        <div className="te-search__container" ref={searchBarRef}>
-          <div className={`te-search__bar ${searchFocused ? "te-search__bar--focused" : ""}`}>
-            {/* Search Icon & Input */}
-            <div className="te-search__input-group">
-              <Search size={20} className="te-search__icon" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search tenders by keyword, ID, or organization..."
-                className="te-search__input"
-              />
-              {searchQuery && (
-                <button
-                  className="te-search__clear"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Clear search"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="te-search__divider" />
-
-            {/* Location / Region */}
-            <div className="te-search__location-group">
-              <MapPin size={16} className="te-search__location-icon" />
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="te-search__category-select"
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Divider */}
-            <div className="te-search__divider" />
-
-            {/* Advanced Filter Button */}
-            <button className="te-search__filter-btn" aria-label="Advanced filters">
-              <SlidersHorizontal size={16} />
-              <span>Filters</span>
-            </button>
-
-            {/* Search Button */}
-            <button className="te-search__submit" onClick={handleSearch}>
-              <Search size={18} />
-              <span>Search</span>
-            </button>
-          </div>
-
-          {/* ── Search Suggestions Dropdown ── */}
-          {searchFocused && !searchQuery && (
-            <div className="te-search__dropdown">
-              <div className="te-search__dropdown-section">
-                <div className="te-search__dropdown-header">
-                  <TrendingUp size={14} />
-                  <span>Trending Searches</span>
-                </div>
-                {trendingSearches.map((term) => (
-                  <button
-                    key={term}
-                    className="te-search__suggestion"
-                    onClick={() => {
-                      setSearchQuery(term);
-                      setSearchFocused(false);
-                    }}
-                  >
-                    <Clock size={14} className="te-search__suggestion-icon" />
-                    <span>{term}</span>
-                    <ArrowRight size={12} className="te-search__suggestion-arrow" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
