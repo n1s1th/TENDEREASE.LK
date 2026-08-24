@@ -93,7 +93,7 @@ public class BidService {
             vendorProfile = restTemplate.getForObject(vendorUrl, Map.class);
         } catch (Exception e) {
             log.error("Failed to fetch vendor profile: {}", e.getMessage());
-            throw new RuntimeException("Bidder is not a registered vendor on the platform.");
+            throw new RuntimeException("Bidder is not a registered vendor on the platform. (Error: " + e.getMessage() + " - URL: " + vendorUrl + ")");
         }
 
         if (vendorProfile == null) {
@@ -114,7 +114,7 @@ public class BidService {
             tenderDetail = restTemplate.getForObject(tenderUrl, Map.class);
         } catch (Exception e) {
             log.error("Failed to fetch tender details: {}", e.getMessage());
-            throw new RuntimeException("Tender not found with ID: " + request.getTenderId());
+            throw new RuntimeException("Tender not found with ID: " + request.getTenderId() + ". (Error: " + e.getMessage() + " - URL: " + tenderUrl + ")");
         }
 
         if (tenderDetail == null) {
