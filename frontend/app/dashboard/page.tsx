@@ -103,7 +103,8 @@ export default function MemberDashboard() {
           const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
           // 2. Fetch Bids submitted by this vendor
-          const bidServiceUrl = process.env.NEXT_PUBLIC_BID_SERVICE_URL || "http://localhost:8083/api/bids";
+          const rawBidUrl = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
+          const bidServiceUrl = rawBidUrl.endsWith("/api/bids") ? rawBidUrl : `${rawBidUrl.replace(/\/+$/, "")}/api/bids`;
           const bidsRes = await axios.get(`${bidServiceUrl}?bidderEmail=${encodeURIComponent(user.email!)}`, config);
           
           if (bidsRes.data && bidsRes.data.success) {
@@ -111,7 +112,11 @@ export default function MemberDashboard() {
             setBidsList(bids);
 
             // Fetch Tender details for each unique tenderId to resolve their Titles
-            const tenderServiceUrl = `${process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082"}/api/tenders`;
+            const tenderUrl = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/tenders` : "http://localhost:8082/api/tenders");
+            const cleanTenderUrl = tenderUrl.replace(/\/+$/, "");
+            const tenderServiceUrl = (cleanTenderUrl.endsWith("/api/tenders") || cleanTenderUrl.endsWith("/tenders")) 
+              ? cleanTenderUrl 
+              : `${cleanTenderUrl}/api/tenders`;
             const uniqueTenderIds = Array.from(new Set(bids.map((b: any) => b.tenderId))) as string[];
             
             const tenderPromises = uniqueTenderIds.map(async (tid) => {
