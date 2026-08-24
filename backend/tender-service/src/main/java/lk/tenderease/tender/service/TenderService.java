@@ -71,6 +71,13 @@ public interface TenderService {
      * @return the ZIP payload
      */
     byte[] getDocumentsArchive(UUID tenderId);
+
+    /**
+     * Returns the display filename for a stored tender file, or empty when the key
+     * is not a known tender document or addendum version. Acts as the whitelist for
+     * the public file endpoint.
+     */
+    java.util.Optional<String> resolveDownloadFilename(String s3Key);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
     TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId);

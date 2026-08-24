@@ -1334,6 +1334,9 @@ public class TenderServiceImpl implements TenderService {
                 .documentType(document.getDocumentType())
                 .version(document.getVersion())
                 .downloadUrl(buildFileUrl(document.getS3Key()))
+                .fileSizeBytes(document.getFileSizeBytes())
+                .mimeType(document.getMimeType())
+                .uploadedAt(document.getUploadedAt())
                 .build();
     }
 
@@ -1377,6 +1380,26 @@ public class TenderServiceImpl implements TenderService {
             return null;
         }
         return publicBaseUrl + "/api/tenders/files/" + s3Key;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<String> resolveDownloadFilename(String s3Key) {
+        if (s3Key == null || s3Key.isBlank()) {
+            return java.util.Optional.empty();
+        }
+
+        // Only keys actually recorded against a tender may be served. This is the
+        // whitelist for the public file endpoint: it covers documents uploaded
+        // under any historic key format, while refusing keys this service does not own.
+        java.util.Optional<String> documentName = documentRepository.findByS3Key(s3Key)
+                .map(TenderDocument::getDocumentName);
+        if (documentName.isPresent()) {
+            return documentName;
+        }
+
+        return addendumVersionRepository.findByS3Key(s3Key)
+                .map(AddendumVersion::getOriginalFilename);
     }
 
     @Override
