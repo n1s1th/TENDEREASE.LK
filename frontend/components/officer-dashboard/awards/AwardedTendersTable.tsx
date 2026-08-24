@@ -27,7 +27,6 @@ export default function AwardedTendersTable() {
   useEffect(() => {
     const loadAwarded = () => {
       const raw = localStorage.getItem("awardEmailsSent");
-      if (!raw) return;
       
       try {
         const sentMap: Record<string, SentEntry> = raw ? JSON.parse(raw) : {};
@@ -36,13 +35,13 @@ export default function AwardedTendersTable() {
         for (const tender of tenders) {
           // Only trust the backend status for inclusion in this table
           // This ensures perfect sync with CAO dashboard and KPI counts
-          const isAwarded = tender.status === 'AWARDED';
+          const isAwarded = tender.status === 'AWARDED' as any; // Cast as any since AWARDED is missing from AwardTender type
 
           if (isAwarded) {
             const timestamps = [sentMap[tender.id]?.winnerSentAt, sentMap[tender.id]?.lostSentAt].filter(Boolean) as string[];
             const awardedAt = timestamps.length > 0
               ? timestamps.sort().reverse()[0] 
-              : new Date().toISOString();
+              : (tender as any).updatedAt || new Date().toISOString(); // Use backend timestamp
 
             rows.push({ tender, awardedAt });
           }
@@ -50,7 +49,9 @@ export default function AwardedTendersTable() {
         
         rows.sort((a, b) => new Date(b.awardedAt).getTime() - new Date(a.awardedAt).getTime());
         setAwardedTenders(rows);
-      } catch { }
+      } catch (err) {
+        console.error(err);
+      }
     };
 
     loadAwarded();
@@ -73,7 +74,8 @@ export default function AwardedTendersTable() {
     setExpandedId(tenderId);
     setLoadingBidders(true);
     try {
-      const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
+      const baseUrl = (process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084') + '/api/evaluations/mock';
+      const res = await fetch(`${baseUrl}/awards/tenders/${tenderId}/bidders`);
       if (res.ok) {
         const data = await res.json();
         setExpandedBidders(data);
@@ -108,9 +110,7 @@ export default function AwardedTendersTable() {
     );
   });
 
-  if (awardedTenders.length === 0) {
-    return null; // Don't render section if no awarded tenders
-  }
+  // Always render the section, even if empty, so the user can see the table structure
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">

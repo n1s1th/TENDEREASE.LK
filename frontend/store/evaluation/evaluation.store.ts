@@ -4,6 +4,7 @@ import { devtools } from "zustand/middleware";
 import type {
   EvaluationState,
   EvaluationScore,
+  EvaluationCriteria,
   AssignedTender
 } from "@/lib/types/evaluation.types";
 import {
@@ -25,12 +26,12 @@ export const useEvaluationStore = create<EvaluationState>()(
   devtools(
     (set, get) => ({
       // ── State ──────────────────────────────────
-      scores: [],
-      criteria: [],
-      committeeInputs: null,
+      scores: [] as EvaluationScore[],
+      criteria: [] as EvaluationCriteria[],
+      committeeInputs: null as EvaluationScore | null,
       isLoading: false,
       
-      assignedTenders: [],
+      assignedTenders: [] as AssignedTender[],
       totalPages: 1,
       totalElements: 0,
       currentPage: 0,

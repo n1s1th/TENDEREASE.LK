@@ -77,7 +77,7 @@ spring:
         - id: notification-service-notif
           uri: lb://notification-service
           predicates:
-            - Path=/api/notifications, /api/notifications/**, /api/cao/notifications, /api/cao/notifications/**
+            - Path=/api/notifications, /api/notifications/**, /api/cao/notifications, /api/cao/notifications/**, /api/v1/notifications, /api/v1/notifications/**
 
         - id: reporting-service-rep
           uri: lb://reporting-service

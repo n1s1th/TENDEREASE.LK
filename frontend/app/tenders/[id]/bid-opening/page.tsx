@@ -23,6 +23,7 @@ const DEMO_SESSION = {
   division: "PROCUREMENT",
   status: "SCHEDULED" as const,
   scheduledOpeningTime: new Date().toISOString(),
+  actualOpeningTime: undefined as string | undefined,
   bidsCount: 0
 };
 

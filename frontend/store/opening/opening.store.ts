@@ -21,10 +21,10 @@ interface OpeningState {
 export const useOpeningStore = create<OpeningState>()(
   devtools(
     (set, get) => ({
-      session: null,
-      attendance: [],
+      session: null as OpeningSession | null,
+      attendance: [] as OpeningAttendance[],
       isLoading: false,
-      error: null,
+      error: null as string | null,
 
       fetchSession: async (tenderId: string, silent = false) => {
         if (!silent) set({ isLoading: true, error: null });

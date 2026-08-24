@@ -32,12 +32,7 @@ public class RecommendationService {
     private void syncMissingRecommendationNotes() {
         List<RecommendationNote> existingNotes = repository.findAll();
         
-        // Clean up any previously generated dummy notes
-        for (RecommendationNote note : existingNotes) {
-            if ("Infrastructure Upgrade Project".equals(note.getTenderName()) || "ERP System Upgrade".equals(note.getTenderName())) {
-                repository.delete(note);
-            }
-        }
+        // Removed cleanup block to prevent deletion of real notes that fell back to dummy titles
 
         List<EvaluationResult> results = resultRepository.findAll();
         for (EvaluationResult result : results) {
@@ -60,7 +55,7 @@ public class RecommendationService {
         
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String tenderUrl = "http://localhost:8082/api/v1/tenders/" + tenderId;
+            String tenderUrl = "http://tender-service:8082/api/v1/tenders/" + tenderId;
             Map<String, Object> tenderRes = restTemplate.getForObject(tenderUrl, Map.class);
             if (tenderRes != null) {
                 if (tenderRes.get("title") != null) tenderName = (String) tenderRes.get("title");
@@ -80,7 +75,7 @@ public class RecommendationService {
 
         try {
             RestTemplate restTemplate = new RestTemplate();
-            String bidUrl = "http://localhost:8083/api/bids/tender/" + tenderId;
+            String bidUrl = "http://bid-service:8083/api/bids/tender/" + tenderId;
             Map<String, Object> bidsRes = restTemplate.getForObject(bidUrl, Map.class);
             if (bidsRes != null && bidsRes.get("data") != null) {
                 List<Map<String, Object>> bidsList = (List<Map<String, Object>>) bidsRes.get("data");

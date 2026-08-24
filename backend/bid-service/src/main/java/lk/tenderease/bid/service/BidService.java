@@ -28,10 +28,10 @@ public class BidService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
 
-    @org.springframework.beans.factory.annotation.Value("${user.service.url:http://localhost:8081}")
+    @org.springframework.beans.factory.annotation.Value("${USER_SERVICE_URL:http://localhost:8081}")
     private String userServiceUrl;
 
-    @org.springframework.beans.factory.annotation.Value("${tender.service.url:http://localhost:8082}")
+    @org.springframework.beans.factory.annotation.Value("${TENDER_SERVICE_URL:http://localhost:8082}")
     private String tenderServiceUrl;
 
     /**
@@ -93,7 +93,7 @@ public class BidService {
             vendorProfile = restTemplate.getForObject(vendorUrl, Map.class);
         } catch (Exception e) {
             log.error("Failed to fetch vendor profile: {}", e.getMessage());
-            throw new RuntimeException("Bidder is not a registered vendor on the platform.");
+            throw new RuntimeException("Bidder is not a registered vendor on the platform. (Error: " + e.getMessage() + " - URL: " + vendorUrl + ")");
         }
 
         if (vendorProfile == null) {
@@ -110,11 +110,20 @@ public class BidService {
         // 2. Fetch tender detail from tender-service
         String tenderUrl = tenderServiceUrl + "/api/tenders/" + request.getTenderId();
         Map<String, Object> tenderDetail = null;
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.set("X-User-Email", bidderEmail);
+        org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
         try {
-            tenderDetail = restTemplate.getForObject(tenderUrl, Map.class);
+            org.springframework.http.ResponseEntity<Map> response = restTemplate.exchange(
+                tenderUrl,
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                Map.class
+            );
+            tenderDetail = response.getBody();
         } catch (Exception e) {
             log.error("Failed to fetch tender details: {}", e.getMessage());
-            throw new RuntimeException("Tender not found with ID: " + request.getTenderId());
+            throw new RuntimeException("Tender not found with ID: " + request.getTenderId() + ". (Error: " + e.getMessage() + " - URL: " + tenderUrl + ")");
         }
 
         if (tenderDetail == null) {

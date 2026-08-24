@@ -52,7 +52,7 @@ export default function DocumentsTab({ documents }: any) {
               "_blank"
             );
           }}
-          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95"
+          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity shadow-lg active:scale-95"
         >
           <Download size={16} />
           Download All
@@ -109,7 +109,7 @@ export default function DocumentsTab({ documents }: any) {
           <div className="space-y-2">
             <h4 className="text-sm font-black text-info uppercase tracking-widest">Submission Integrity</h4>
             <p className="text-sm font-bold text-info/70 leading-relaxed max-w-3xl">
-              All documents are cryptographically signed. Any modification to the downloaded files will invalidate your submission. Ensure you have the latest versions before final upload.
+              Ensure you download all necessary documents for your submission. Review them carefully and ensure you have the latest versions before final upload.
             </p>
           </div>
         </div>

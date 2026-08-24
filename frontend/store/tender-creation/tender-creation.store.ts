@@ -148,12 +148,12 @@ export const useTenderCreationStore = create<TenderCreationState>()(
             fundingSources,
             biddingMethods,
           ] = await Promise.all([
-            api.listTenderTypes().catch(() => []),
-            api.listSbdTemplates().catch(() => []),
-            api.listProcurementTypes().catch(() => []),
-            api.listMinistries().catch(() => []),
-            api.listFundingSources().catch(() => []),
-            api.listBiddingMethods().catch(() => []),
+            api.listTenderTypes().catch((): any[] => []),
+            api.listSbdTemplates().catch((): any[] => []),
+            api.listProcurementTypes().catch((): any[] => []),
+            api.listMinistries().catch((): any[] => []),
+            api.listFundingSources().catch((): any[] => []),
+            api.listBiddingMethods().catch((): any[] => []),
           ]);
           // Helper to map string enums to objects
           const mapEnumData = (arr: any[]) => 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Globe2, Lock, MessageSquare, Trophy } from "lucide-react";
+import { ArrowRight, Lock, Download, Trophy, SquarePen, FileText, Globe2, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import QuickActionModal from "./QuickActionModal";
 
@@ -12,14 +12,14 @@ export default function QuickActions() {
 
   const actions = [
     { 
+      label: "Create Tender", 
+      icon: SquarePen,
+      path: "/tender-creation"
+    },
+    { 
       label: "Open Bid Session", 
       icon: Lock,
       path: "#"
-    },
-    { 
-      label: "View Opening Records", 
-      icon: FileText,
-      path: "#" 
     },
     { 
       label: "Reports & Audit", 
