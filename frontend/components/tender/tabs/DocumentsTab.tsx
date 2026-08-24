@@ -96,24 +96,6 @@ export default function DocumentsTab({ documents }: any) {
           </div>
         ))}
       </div>
-
-      {/* Footer Info Box */}
-      <div className="bg-info/5 border border-info/10 rounded-3xl p-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-5">
-          <ShieldCheck size={80} className="text-info" />
-        </div>
-        <div className="relative z-10 flex gap-4 items-start">
-          <div className="p-2 bg-info/10 rounded-lg text-info mt-1">
-            <ShieldCheck size={20} />
-          </div>
-          <div className="space-y-2">
-            <h4 className="text-sm font-black text-info uppercase tracking-widest">Submission Integrity</h4>
-            <p className="text-sm font-bold text-info/70 leading-relaxed max-w-3xl">
-              All documents are cryptographically signed. Any modification to the downloaded files will invalidate your submission. Ensure you have the latest versions before final upload.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
