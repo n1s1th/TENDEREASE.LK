@@ -38,7 +38,7 @@ const reportApi = axios.create({
 
 // Evaluation API — NEXT_PUBLIC_EVALUATION_API_URL = https://api.tenderease.me
 const evaluationApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084',
+  baseURL: (process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084') + '/api/v1',
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
 });
