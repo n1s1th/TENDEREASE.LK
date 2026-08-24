@@ -347,7 +347,7 @@ function RegistrationPageContent() {
               Are you sure you want to approve the officer registration for{" "}
               <strong className="text-[#953002] font-bold">
                 {(approveTarget as any)?.procuringEntityType || "Government Institution"}</strong>?
-              <span className="block mt-2 text-slate-400 text-sm">This will grant them full administrative permissions.</span>
+              <span className="block mt-2 text-slate-400 text-sm">This will grant them permissions to create and manage tenders on behalf of their institution.</span>
             </p>
             
             <div className="flex items-center justify-end gap-4">
