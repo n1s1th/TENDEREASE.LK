@@ -287,22 +287,24 @@ export default function ReportsPage() {
         </div>
 
         <div style={{display:"flex",gap:"0.75rem",flexWrap:"wrap",marginBottom:"1.75rem",padding:"1rem 1.25rem",background:"#fff",border:"1px solid #e2e8f0",borderRadius:12,boxShadow:"0 1px 4px rgba(0,0,0,0.05)"}}>
-          <select className="dash-select" style={{minWidth:160}} value={period} onChange={e=>setPeriod(e.target.value)}>
-            <option value="all_time">Time: All Time</option>
+          <select className="dash-select" style={{minWidth:160}} value={period.startsWith('20') ? 'custom' : period} onChange={e => {
+            if (e.target.value === 'custom') {
+              const d = new Date();
+              setPeriod(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+            } else {
+              setPeriod(e.target.value);
+            }
+          }}>
+            <option value="all_time">All Time</option>
             <option value="this_year">This Year</option>
             <option value="this_month">This Month</option>
             <option value="this_week">This Week</option>
             <option value="today">Today</option>
-            <optgroup label="Specific Months">
-              {Array.from({length: 12}).map((_, i) => {
-                const d = new Date();
-                d.setMonth(d.getMonth() - i);
-                const val = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-                const label = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-                return <option key={val} value={val}>{label}</option>;
-              })}
-            </optgroup>
+            <option value="custom">Specific Month...</option>
           </select>
+          {period.startsWith('20') && (
+            <input type="month" className="dash-select" style={{minWidth:150}} value={period} onChange={e => setPeriod(e.target.value || 'all_time')} />
+          )}
           <select className="dash-select" style={{minWidth:180}} value={department} onChange={e=>setDepartment(e.target.value)}>
             <option value="">All Departments</option>
             {departments.map((d: any) => <option key={d} value={d}>{d}</option>)}
