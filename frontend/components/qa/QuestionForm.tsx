@@ -32,14 +32,14 @@ export default function QuestionForm({
   onSubmit,
 }: QuestionFormProps) {
   return (
-    <section className="bg-white rounded-[2rem] shadow-premium border border-gray-100 p-6 sm:p-8 space-y-6">
+    <section className="bg-white rounded-[2rem] shadow-premium border border-gray-200 p-6 sm:p-8 space-y-6">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
           <HelpCircle size={20} />
         </div>
         <div>
-          <h2 className="text-lg font-black text-black-1">Ask a Question</h2>
-          <p className="text-xs font-bold text-gray-3">Questions are public and visible to all users.</p>
+          <h2 className="text-lg font-bold text-gray-900">Ask a Question</h2>
+          <p className="text-xs font-bold text-gray-500">Questions are public and visible to all users.</p>
         </div>
       </div>
 
@@ -47,14 +47,14 @@ export default function QuestionForm({
         value={questionText}
         onChange={(event) => onQuestionChange(event.target.value)}
         placeholder="Ask a question about registration, tenders, submissions, payments, or deadlines..."
-        className="min-h-36 w-full resize-none rounded-2xl border border-gray-100 bg-gray-5/30 px-5 py-4 text-sm font-semibold text-black-2 outline-none transition-all placeholder:text-gray-3 placeholder:font-medium focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+        className="min-h-36 w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4 text-sm font-semibold text-gray-900 outline-none transition-all placeholder:text-gray-500 placeholder:font-medium focus:bg-white focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
         <select
           value={category}
           onChange={(event) => onCategoryChange(event.target.value as QaCategory | "")}
-          className="w-full rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm font-bold text-black-2 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-gray-900 outline-none transition-all focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
         >
           <option value="">Select Category</option>
           {categories.map((item) => (
@@ -68,7 +68,7 @@ export default function QuestionForm({
           type="button"
           onClick={onSubmit}
           disabled={submitting}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-primary/90 hover:shadow-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-3 text-xs font-medium uppercase tracking-wider text-white transition-all hover:bg-primary/90 hover:shadow-primary active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           Submit Question

@@ -3,8 +3,7 @@
 // - Tender Service (port 8082) for KPIs and tender list
 // - Bid Service (port 8083) for bid counts
 
-const TENDER_SERVICE = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
-const BID_SERVICE = process.env.NEXT_PUBLIC_BID_SERVICE_URL || "http://localhost:8083";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 /**
  * Fetches the dashboard KPI metrics from the tender-service.
@@ -86,7 +85,7 @@ export async function getAssignedTenders(
 }> {
   const fallback = { data: { content: [] as any[], totalElements: 0, totalPages: 1, number: 0 } };
   try {
-    const url = new URL(`${TENDER_SERVICE}/api/officer/dashboard/tenders`);
+    const url = new URL(`${BASE_URL}/api/officer/dashboard/tenders`);
     if (keyword) url.searchParams.append("keyword", keyword);
     if (status && status !== "ALL") url.searchParams.append("status", status);
     url.searchParams.append("page", page.toString());
@@ -120,7 +119,7 @@ export async function getTendersForOpening(): Promise<{
 }> {
   const fallback = { success: false, data: [] as any[] };
   try {
-    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-for-opening`);
+    const res = await fetch(`${BASE_URL}/api/officer/dashboard/tenders-for-opening`);
     if (!res.ok) return fallback;
     return res.json();
   } catch (err) {
@@ -145,7 +144,7 @@ export async function getOpeningLogs(): Promise<{
 }> {
   const fallback = { success: false, data: [] as any[] };
   try {
-    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/opening-logs`);
+    const res = await fetch(`${BASE_URL}/api/officer/dashboard/opening-logs`);
     if (!res.ok) return fallback;
     return res.json();
   } catch (err) {
@@ -170,7 +169,7 @@ export async function getTendersWithBids(): Promise<{
 }> {
   const fallback = { success: false, data: [] as any[] };
   try {
-    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-with-bids`);
+    const res = await fetch(`${BASE_URL}/api/officer/dashboard/tenders-with-bids`);
     if (!res.ok) return fallback;
     return res.json();
   } catch (err) {
@@ -195,7 +194,7 @@ export async function getTendersPendingAward(): Promise<{
 }> {
   const fallback = { success: false, data: [] as any[] };
   try {
-    const res = await fetch(`${TENDER_SERVICE}/api/officer/dashboard/tenders-pending-award`);
+    const res = await fetch(`${BASE_URL}/api/officer/dashboard/tenders-pending-award`);
     if (!res.ok) return fallback;
     return res.json();
   } catch (err) {

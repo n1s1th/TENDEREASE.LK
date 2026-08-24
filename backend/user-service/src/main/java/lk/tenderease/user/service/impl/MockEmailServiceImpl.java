@@ -6,20 +6,36 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-/**
- * Mock implementation of EmailService.
- * Renders the HTML templates using Thymeleaf and logs them to the terminal console
- * instead of sending to an actual SMTP server.
- */
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MockEmailServiceImpl implements EmailService {
 
     private final TemplateEngine templateEngine;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final String NOTIFICATION_SERVICE_URL = "http://notification-service:8089/api/v1/notifications/email";
+
+    private void sendRealEmail(String to, String subject, String htmlBody) {
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("to", to);
+            payload.put("subject", subject);
+            payload.put("body", htmlBody);
+            payload.put("isHtml", true);
+            
+            restTemplate.postForObject(NOTIFICATION_SERVICE_URL, payload, String.class);
+            log.info("Successfully sent real email to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send real email to {}: {}", to, e.getMessage());
+        }
+    }
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -31,68 +47,30 @@ public class MockEmailServiceImpl implements EmailService {
         context.setVariable("referenceId", referenceId);
 
         String htmlContent = templateEngine.process("emails/officer-registration-success", context);
-
-        log.info("\n================ MOCK EMAIL GENERATED ================\n" +
-                 "TO: {}\n" +
-                 "SUBJECT: Registration Received successfully - TenderEase\n" +
-                 "BODY:\n" +
-                 "{}\n" +
-                 "=======================================================", 
-                 toEmail, htmlContent);
+        sendRealEmail(toEmail, "Registration Received successfully - TenderEase", htmlContent);
     }
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void sendRegistrationApprovalEmail(String toEmail, String officerName, String referenceId) {
-        log.info("\n" +
-                "╔══════════════════════════════════════════════════════════════╗\n" +
-                "║              📧 REGISTRATION APPROVAL EMAIL                ║\n" +
-                "╠══════════════════════════════════════════════════════════════╣\n" +
-                "║ TO:      {}                                                \n" +
-                "║ SUBJECT: Registration Approved - TenderEase                ║\n" +
-                "╠══════════════════════════════════════════════════════════════╣\n" +
-                "║                                                            ║\n" +
-                "║ Dear Officer,                                              \n" +
-                "║                                                            ║\n" +
-                "║ Congratulations! Your officer registration has been        ║\n" +
-                "║ APPROVED by the Chief Accounting Officer (CAO).            ║\n" +
-                "║                                                            ║\n" +
-                "║ Registration Reference: {}                                 \n" +
-                "║                                                            ║\n" +
-                "║ You can now log in to TenderEase.lk and start creating     ║\n" +
-                "║ and managing government tenders.                           ║\n" +
-                "║                                                            ║\n" +
-                "║ Best regards,                                              ║\n" +
-                "║ TenderEase Team                                            ║\n" +
-                "╚══════════════════════════════════════════════════════════════╝",
-                toEmail, referenceId);
+        String htmlContent = "<h2>Registration Approved - TenderEase</h2>" +
+                "<p>Dear Officer,</p>" +
+                "<p>Congratulations! Your officer registration has been <strong>APPROVED</strong> by the Chief Accounting Officer (CAO).</p>" +
+                "<p>Registration Reference: <strong>" + referenceId + "</strong></p>" +
+                "<p>You can now log in to TenderEase.lk and start creating and managing government tenders.</p>" +
+                "<p>Best regards,<br>TenderEase Team</p>";
+        sendRealEmail(toEmail, "Registration Approved - TenderEase", htmlContent);
     }
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void sendRegistrationRejectionEmail(String toEmail, String officerName, String referenceId, String reason) {
-        log.info("\n" +
-                "╔══════════════════════════════════════════════════════════════╗\n" +
-                "║              📧 REGISTRATION REJECTION EMAIL               ║\n" +
-                "╠══════════════════════════════════════════════════════════════╣\n" +
-                "║ TO:      {}                                                \n" +
-                "║ SUBJECT: Registration Rejected - TenderEase                ║\n" +
-                "╠══════════════════════════════════════════════════════════════╣\n" +
-                "║                                                            ║\n" +
-                "║ Dear Officer,                                              \n" +
-                "║                                                            ║\n" +
-                "║ We regret to inform you that your officer registration     ║\n" +
-                "║ has been REJECTED by the Chief Accounting Officer (CAO).   ║\n" +
-                "║                                                            ║\n" +
-                "║ Registration Reference: {}                                 \n" +
-                "║ Reason: {}                                                 \n" +
-                "║                                                            ║\n" +
-                "║ If you believe this is an error, please contact the CAO    ║\n" +
-                "║ office for further assistance.                             ║\n" +
-                "║                                                            ║\n" +
-                "║ Best regards,                                              ║\n" +
-                "║ TenderEase Team                                            ║\n" +
-                "╚══════════════════════════════════════════════════════════════╝",
-                toEmail, referenceId, reason);
+        String htmlContent = "<h2>Registration Rejected - TenderEase</h2>" +
+                "<p>Dear Officer,</p>" +
+                "<p>We regret to inform you that your officer registration has been <strong>REJECTED</strong> by the Chief Accounting Officer (CAO).</p>" +
+                "<p>Registration Reference: <strong>" + referenceId + "</strong><br>Reason: " + reason + "</p>" +
+                "<p>If you believe this is an error, please contact the CAO office for further assistance.</p>" +
+                "<p>Best regards,<br>TenderEase Team</p>";
+        sendRealEmail(toEmail, "Registration Rejected - TenderEase", htmlContent);
     }
 }

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import keycloak from '@/lib/keycloak';
-import { useAuthStore } from '@/store';
+import { useAuthStore, useSavedTendersStore } from '@/store';
 import { jwtDecode } from 'jwt-decode';
 
 interface AuthContextType {
@@ -68,6 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (authenticated) {
           applyAuth(keycloak.token!);
 
+          // Pull the user's bookmarks so saved tenders survive a page reload.
+          useSavedTendersStore.getState().fetchSavedIds();
+
           keycloak.onTokenExpired = () => {
             keycloak.updateToken(70).then((refreshed) => {
               if (refreshed) applyAuth(keycloak.token!);
@@ -75,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
         } else {
           clearAuth();
+          useSavedTendersStore.getState().reset();
         }
         setInitialized(true);
       } catch (error: any) {

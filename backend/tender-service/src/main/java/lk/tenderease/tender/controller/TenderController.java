@@ -140,8 +140,16 @@ public class TenderController {
     })
     public ResponseEntity<TenderResponse> createTender(
             @Valid @RequestBody CreateTenderRequest request) {
-        // Use a dummy user ID for development since Keycloak is disabled
-        TenderResponse response = tenderService.createTender(request, "dev-user-id");
+        String createdBy = request.getOfficerEmail() != null ? request.getOfficerEmail() : "officer@procurement.gov.lk";
+        try {
+            String username = lk.tenderease.common.security.SecurityUtils.getCurrentUsername();
+            if (username != null && !username.isEmpty() && !username.equals("anonymousUser")) {
+                createdBy = username;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        TenderResponse response = tenderService.createTender(request, createdBy);
         return ResponseEntity.status(201).body(response);
     }
 
@@ -177,7 +185,16 @@ public class TenderController {
     public ResponseEntity<TenderResponse> updateTender(
             @Parameter(description = "Tender UUID") @PathVariable UUID id,
             @Valid @RequestBody CreateTenderRequest request) {
-        return ResponseEntity.ok(tenderService.updateTender(id, request, "dev-user-id"));
+        String createdBy = "officer@procurement.gov.lk";
+        try {
+            String username = lk.tenderease.common.security.SecurityUtils.getCurrentUsername();
+            if (username != null && !username.isEmpty()) {
+                createdBy = username;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return ResponseEntity.ok(tenderService.updateTender(id, request, createdBy));
     }
 
     @DeleteMapping("/{id}")
@@ -449,9 +466,10 @@ public class TenderController {
     @Operation(summary = "Update tender status", description = "Updates status of a tender. Public/internal use.")
     public ResponseEntity<TenderResponse> updateStatus(
             @PathVariable UUID id,
-            @RequestParam TenderStatus status) {
+            @RequestParam TenderStatus status,
+            @RequestParam(required = false) String awardedBy) {
         log.info("REST request to update tender {} status to {}", id, status);
-        TenderResponse response = tenderService.updateTenderStatus(id, status, null, "system-user");
+        TenderResponse response = tenderService.updateTenderStatus(id, status, null, awardedBy != null ? awardedBy : "system-user");
         return ResponseEntity.ok(response);
     }
 }

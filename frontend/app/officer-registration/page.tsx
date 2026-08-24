@@ -14,10 +14,7 @@ import { useAuthStore } from '@/store';
 //  Constants
 // ────────────────────────────────────────────────────────
 
-const COUNTRIES = [
-  'Sri Lanka', 'India', 'United Kingdom', 'United States', 'Australia',
-  'Canada', 'Singapore', 'Japan', 'Germany', 'Other'
-];
+const COUNTRIES = ['Sri Lanka'];
 
 const TITLE_OPTIONS = ['Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Rev'];
 
@@ -90,7 +87,13 @@ export default function OfficerRegistrationPage() {
 
     // Restore draft if present
     if (formDraft && formDraft !== EMPTY_DRAFT) {
-      initialValues = { ...formDraft };
+      // If the draft belongs to someone else (different email), clear it
+      if (formDraft.liaisonEmail && formDraft.liaisonEmail !== defaultEmail) {
+        clearDraft();
+        initialValues = { ...EMPTY_DRAFT };
+      } else {
+        initialValues = { ...formDraft };
+      }
     }
 
     // Force current authenticated user's email (read-only)
@@ -156,6 +159,11 @@ export default function OfficerRegistrationPage() {
           supportId: undefined,
         });
       }
+      console.error("OFFICER REGISTRATION ERROR DETAILS:", error);
+      if (axios.isAxiosError(error)) {
+          console.error("AXIOS RESPONSE:", error.response?.data);
+          console.error("AXIOS MESSAGE:", error.message);
+      }
       router.push('/officer-registration/failure');
     } finally {
       setIsSubmitting(false);
@@ -168,7 +176,7 @@ export default function OfficerRegistrationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 pt-6 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">

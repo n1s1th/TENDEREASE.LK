@@ -63,6 +63,21 @@ public interface TenderService {
     TenderDetailResponse getTenderById(UUID id);
     TenderDetailResponse getTenderByNumber(String tenderNumber);
     byte[] viewDocument(UUID docId);
+
+    /**
+     * Builds a ZIP archive of every document attached to a tender, read from S3.
+     *
+     * @param tenderId the tender whose documents should be bundled
+     * @return the ZIP payload
+     */
+    byte[] getDocumentsArchive(UUID tenderId);
+
+    /**
+     * Returns the display filename for a stored tender file, or empty when the key
+     * is not a known tender document or addendum version. Acts as the whitelist for
+     * the public file endpoint.
+     */
+    java.util.Optional<String> resolveDownloadFilename(String s3Key);
     java.util.Map<String, Long> getKPIs(String department, String category, String month);
     java.util.List<java.util.Map<String, Object>> getKPITrend(String department, String category);
     TenderResponse updateTenderStatus(UUID id, TenderStatus status, String reason, String callerUserId);
@@ -250,9 +265,55 @@ public interface TenderService {
      */
     List<String> listTenderTypes();
 
-    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType, Pageable pageable);
+    /**
+     * Lists published tenders for the public portal.
+     *
+     * @param lifecycle "open" or "closed" to split by whether bidding is still
+     *                  possible (closing date aware); null/blank returns both
+     */
+    Page<TenderSummaryDTO> getAllPublishedTenders(String search, TenderStatus status, ProcurementType procurementType,
+                                                  String lifecycle, Pageable pageable);
 
     TenderDetailsDTO getPublicTenderById(UUID id);
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SAVED TENDERS (BOOKMARKS)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Bookmarks a tender for a user. Saving an already-saved tender is a no-op.
+     *
+     * @param userId   stable identifier of the owner
+     * @param tenderId the tender to bookmark
+     */
+    void saveTender(String userId, UUID tenderId);
+
+    /**
+     * Removes a bookmark. Removing one that does not exist is a no-op.
+     *
+     * @param userId   stable identifier of the owner
+     * @param tenderId the tender to un-bookmark
+     */
+    void unsaveTender(String userId, UUID tenderId);
+
+    /**
+     * Lists a user's bookmarked tenders, most recently saved first.
+     * Bookmarks whose tender no longer exists are skipped.
+     *
+     * @param userId   stable identifier of the owner
+     * @param pageable paging information
+     * @return a page of tender summaries
+     */
+    Page<TenderSummaryDTO> getSavedTenders(String userId, Pageable pageable);
+
+    /**
+     * Returns the ids of every tender the user has bookmarked, so the UI can render
+     * bookmark state without a request per tender.
+     *
+     * @param userId stable identifier of the owner
+     * @return the bookmarked tender ids
+     */
+    List<UUID> getSavedTenderIds(String userId);
     TenderDetailsDTO getPublicTenderByNumber(String tenderNumber);
 
     List<TenderDocumentDTO> getDocuments(UUID tenderId);

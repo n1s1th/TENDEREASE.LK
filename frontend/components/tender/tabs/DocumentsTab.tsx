@@ -2,6 +2,25 @@
 
 import { FileText, Download, ShieldCheck, Clock } from "lucide-react";
 
+// Same origin convention as the rest of the app: the env var is the service
+// origin and each caller appends its own path.
+const TENDER_SERVICE_URL =
+  process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
+
+/** Formats a byte count for display, falling back to a dash when unknown. */
+function formatFileSize(bytes?: number | null) {
+  if (bytes == null || Number.isNaN(bytes) || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
 export default function DocumentsTab({ documents }: any) {
   if (!documents || documents.length === 0) {
     return (
@@ -29,11 +48,11 @@ export default function DocumentsTab({ documents }: any) {
         <button
           onClick={() => {
             window.open(
-              `http://localhost:8082/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
+              `${TENDER_SERVICE_URL}/api/tenders/${documents[0]?.tenderId}/documents/download-all`,
               "_blank"
             );
           }}
-          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-black-1 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary transition-colors shadow-lg shadow-black-1/10 active:scale-95"
+          className="hidden sm:flex items-center gap-2 px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity shadow-lg active:scale-95"
         >
           <Download size={16} />
           Download All
@@ -57,7 +76,7 @@ export default function DocumentsTab({ documents }: any) {
                 <div className="flex items-center gap-3 text-[11px] font-bold text-gray-3 uppercase tracking-widest">
                   <span>{d.documentType || "PDF"}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-5"></span>
-                  <span>{d.fileSize || "1.2 MB"}</span>
+                  <span>{formatFileSize(d.fileSizeBytes)}</span>
                   <span className="w-1 h-1 rounded-full bg-gray-5"></span>
                   <div className="flex items-center gap-1">
                     <Clock size={12} />
@@ -68,7 +87,7 @@ export default function DocumentsTab({ documents }: any) {
             </div>
 
             <a
-              href={d.downloadUrl || d.fileUrl || "#"}
+              href={d.downloadUrl ? `${d.downloadUrl}?download=true` : d.fileUrl || "#"}
               className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gray-5 text-gray-3 group-hover:bg-primary/10 group-hover:text-primary font-black text-xs uppercase tracking-widest transition-all hover:shadow-sm active:scale-95"
             >
               <Download size={16} />
@@ -90,7 +109,7 @@ export default function DocumentsTab({ documents }: any) {
           <div className="space-y-2">
             <h4 className="text-sm font-black text-info uppercase tracking-widest">Submission Integrity</h4>
             <p className="text-sm font-bold text-info/70 leading-relaxed max-w-3xl">
-              All documents are cryptographically signed. Any modification to the downloaded files will invalidate your submission. Ensure you have the latest versions before final upload.
+              Ensure you download all necessary documents for your submission. Review them carefully and ensure you have the latest versions before final upload.
             </p>
           </div>
         </div>

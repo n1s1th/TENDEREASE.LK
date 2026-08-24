@@ -44,7 +44,7 @@ export default function HowItWorks() {
         {/* Header */}
         <div className="hiw-header">
           <span className="hiw-badge">Process</span>
-          <h2 className="hiw-title">How TenderEase Works</h2>
+          <h2 className="hiw-title">How Tenderease Works</h2>
           <p className="hiw-subtitle">
             A simple, transparent procurement process from start to finish
           </p>
@@ -52,11 +52,14 @@ export default function HowItWorks() {
 
         {/* Timeline */}
         <div className="hiw-timeline">
-          {steps.map((step) => {
+          {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
               <div key={step.number} className="hiw-step">
-                {/* Card */}
+                <div className="hiw-indicator-wrapper">
+                  <div className="hiw-indicator">{step.number}</div>
+                  {idx < steps.length - 1 && <div className="hiw-connector" />}
+                </div>
                 <div className="hiw-card">
                   <div className="hiw-card-icon">
                     <Icon size={22} color="#953002" strokeWidth={1.8} />
@@ -64,12 +67,6 @@ export default function HowItWorks() {
                   <h3 className="hiw-card-title">{step.title}</h3>
                   <p className="hiw-card-desc">{step.description}</p>
                 </div>
-
-                {/* Center indicator */}
-                <div className="hiw-indicator">{step.number}</div>
-
-                {/* Spacer for opposite side */}
-                <div className="hiw-spacer" />
               </div>
             );
           })}

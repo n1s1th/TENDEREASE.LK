@@ -30,7 +30,7 @@ export default function QuestionCard({ question, expanded, onToggle }: QuestionC
   const answered = question.status === "ANSWERED";
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-premium">
+    <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-premium">
       <button
         type="button"
         onClick={onToggle}
@@ -38,11 +38,11 @@ export default function QuestionCard({ question, expanded, onToggle }: QuestionC
       >
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-4 min-w-0">
-            <h3 className="text-base sm:text-lg font-black text-black-1 leading-snug">
+            <h3 className="text-base font-semibold text-gray-900 leading-snug">
               {question.questionText}
             </h3>
 
-            <div className="flex flex-wrap items-center gap-3 text-[11px] font-black uppercase tracking-widest text-gray-3">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-medium uppercase tracking-wider text-gray-500">
               <span className="rounded-full bg-secondary/15 px-3 py-1 text-primary">
                 {categoryLabels[question.category]}
               </span>
@@ -73,22 +73,22 @@ export default function QuestionCard({ question, expanded, onToggle }: QuestionC
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100 bg-[#fffaf0] px-5 py-5 sm:px-6">
+        <div className="border-t border-gray-200 bg-[#fffaf0] px-5 py-5 sm:px-6">
           {question.answer ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
                 <MessageCircle size={15} />
                 Official Answer
               </div>
-              <p className="text-sm sm:text-base font-medium leading-7 text-gray-1">
+              <p className="text-sm font-normal leading-relaxed text-gray-600">
                 {question.answer.answerText}
               </p>
-              <p className="text-[11px] font-black uppercase tracking-widest text-gray-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
                 Answered by {question.answer.answeredBy} on {formatDate(question.answer.createdAt)}
               </p>
             </div>
           ) : (
-            <p className="text-sm font-bold text-gray-3">Waiting for official answer.</p>
+            <p className="text-sm font-normal text-gray-500">Waiting for official answer.</p>
           )}
         </div>
       )}

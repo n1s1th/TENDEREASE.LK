@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useDynamicTenderCreationStore } from "@/store/tender-creation/dynamic-creation.store";
 import { templateService } from "@/services/template.service";
-import { StepIndicator } from "@/components/tender/creation/StepIndicator";
-import type { StepIndex } from "@/lib/types/tender-creation.types";
-import { BaseDetailsStep } from "@/components/tender/creation/dynamic/BaseDetailsStep";
+import { DynamicStepIndicator } from "@/components/tender/creation/dynamic/DynamicStepIndicator";
 import { DynamicSectionStep } from "@/components/tender/creation/dynamic/DynamicSectionStep";
 import { DynamicTenderPreview } from "@/components/tender/creation/dynamic/DynamicTenderPreview";
 import { Button } from "@/components/ui/button";
-import { Save, ChevronLeft, ChevronRight, Eye, Loader2, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Loader2, ArrowLeft } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
 export default function DynamicTenderCreationPage() {
   const params = useParams();
@@ -25,23 +24,24 @@ export default function DynamicTenderCreationPage() {
     showPreview,
     isSubmitting,
     error,
+    dynamicData,
     nextStep,
     prevStep,
     goToStep,
     setShowPreview,
     setTemplateId,
     fetchReferenceData,
+    reset,
   } = useDynamicTenderCreationStore();
 
+  // Reset store on fresh page load so step/data from previous session is cleared
   useEffect(() => {
+    reset();
     if (id) {
       loadTemplate(id);
+      fetchReferenceData();
     }
   }, [id]);
-
-  useEffect(() => {
-    fetchReferenceData();
-  }, [fetchReferenceData]);
 
   const loadTemplate = async (templateId: string) => {
     try {
@@ -68,7 +68,7 @@ export default function DynamicTenderCreationPage() {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-grey-1 gap-4">
         <h2 className="text-2xl font-bold text-foreground">Template Not Found</h2>
-        <button 
+        <button
           onClick={() => router.push('/tender-templates')}
           className="flex items-center text-primary hover:underline"
         >
@@ -79,61 +79,121 @@ export default function DynamicTenderCreationPage() {
   }
 
   const sections = template.schema?.sections || [];
-  const totalSteps = 1 + sections.length;
+  const totalSteps = sections.length;
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
 
-  const handleSaveDraft = () => {
-    alert("Save as Draft \u2014 not yet wired to backend.");
+  // Step labels correspond 1-to-1 with the template's defined sections
+  const stepLabels = sections.map((s: any, idx: number) => s.title || `Section ${idx + 1}`);
+
+  // ── Mandatory field validation for the active section ──────────────
+  const validateCurrentStep = (): boolean => {
+    const section = sections[currentStep];
+    if (!section) return true;
+
+    const missing: string[] = [];
+    for (const field of section.fields || []) {
+      if (!field.required) continue;
+      const val = dynamicData[field.id];
+      const isEmpty =
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        (Array.isArray(val) && val.length === 0);
+      if (isEmpty) missing.push(field.title);
+    }
+
+    if (missing.length > 0) {
+      toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+      return false;
+    }
+    return true;
   };
 
-  // ── Preview mode ────────────────────────────────────────
+  const handleNext = () => {
+    if (!validateCurrentStep()) return;
+    nextStep(totalSteps - 1);
+  };
+
+  const handleReview = () => {
+    if (!validateCurrentStep()) return;
+    setShowPreview(true);
+  };
+
+  // ── Preview mode ────────────────────────────────────────────
   if (showPreview) {
     return (
       <div className="min-h-screen bg-grey-1">
+        <Toaster position="top-right" richColors />
         <div className="border-b border-border bg-white">
           <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              Review Dynamic Tender
-            </h1>
-            <span className="text-xs font-medium text-grey-4">Preview</span>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                Review Tender
+              </h1>
+              <p className="text-xs text-grey-5 mt-0.5">{template.name}</p>
+            </div>
+            <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+              Preview Mode
+            </span>
           </div>
         </div>
 
         <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
-          <DynamicTenderPreview sections={sections} />
+          <DynamicTenderPreview sections={sections} template={template} />
         </div>
       </div>
     );
   }
 
-  // ── Normal wizard mode ──────────────────────────────────
+  // ── Normal wizard mode ──────────────────────────────────────
   return (
     <div className="min-h-screen bg-grey-1">
+      <Toaster position="top-right" richColors />
+
       {/* Top bar */}
-      <div className="border-b border-border bg-white">
+      <div className="border-b border-border bg-white sticky top-0 z-10 shadow-sm">
         <div className="max-w-[960px] mx-auto px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">
-              {template.name}
-            </h1>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                {template.name}
+              </h1>
+              <p className="text-xs text-grey-5 mt-0.5">
+                {totalSteps > 0 ? (
+                  <>Step {currentStep + 1} of {totalSteps} — {stepLabels[currentStep]}</>
+                ) : (
+                  "No sections configured"
+                )}
+              </p>
+            </div>
           </div>
-          <span className="text-xs font-medium text-grey-4">
-            Step {currentStep + 1} of {totalSteps}
-          </span>
+          {totalSteps > 0 && (
+            <span className="hidden sm:flex items-center text-xs font-semibold text-primary bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-full">
+              {stepLabels[currentStep]}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Main content */}
       <div className="max-w-[960px] mx-auto px-5 py-10 space-y-10">
-        {/* StepIndicator handles max 5 standard steps, we constrain it visually */}
-        <StepIndicator
-          currentStep={(currentStep > 4 ? 4 : currentStep) as StepIndex}
-          onStepClick={(step) => goToStep(step)}
-        />
+        {/* Dynamic step indicator matching template sections */}
+        {totalSteps > 1 && (
+          <DynamicStepIndicator
+            steps={stepLabels}
+            currentStep={currentStep}
+            onStepClick={(step) => {
+              // Only allow jumping to previous steps or next if valid
+              if (step < currentStep || validateCurrentStep()) {
+                goToStep(step);
+              }
+            }}
+          />
+        )}
 
         {error && (
           <div className="rounded-md border border-error/30 bg-error/5 px-5 py-3 text-sm text-error flex items-center gap-2">
@@ -143,28 +203,18 @@ export default function DynamicTenderCreationPage() {
 
         {/* Active step form */}
         <div className="min-h-[400px]">
-          {currentStep === 0 ? (
-            <BaseDetailsStep />
+          {sections[currentStep] ? (
+            <DynamicSectionStep section={sections[currentStep]} />
           ) : (
-            <DynamicSectionStep section={sections[currentStep - 1]} />
+            <div className="p-8 text-center bg-white rounded-xl border border-grey-2 text-grey-5">
+              No fields configured for this template.
+            </div>
           )}
         </div>
 
         {/* Bottom action bar */}
         <div className="flex items-center justify-between pt-5 border-t border-border">
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-            >
-              <Save data-icon="inline-start" className="size-4" />
-              Save as Draft
-            </Button>
-          </div>
-
-          <div className="flex gap-3">
+          <div>
             <Button
               type="button"
               variant="outline"
@@ -172,24 +222,22 @@ export default function DynamicTenderCreationPage() {
               onClick={prevStep}
               disabled={isFirstStep}
             >
-              <ChevronLeft data-icon="inline-start" className="size-4" />
+              <ChevronLeft className="size-4 mr-1" />
               Previous
             </Button>
+          </div>
 
-            {!isLastStep && (
-              <Button type="button" size="sm" onClick={() => nextStep(totalSteps - 1)}>
+          <div className="flex gap-3">
+            {!isLastStep && totalSteps > 1 && (
+              <Button type="button" size="sm" onClick={handleNext}>
                 Next Step
-                <ChevronRight data-icon="inline-end" className="size-4" />
+                <ChevronRight className="size-4 ml-1" />
               </Button>
             )}
 
-            {isLastStep && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setShowPreview(true)}
-              >
-                <Eye data-icon="inline-start" className="size-4" />
+            {(isLastStep || totalSteps <= 1) && (
+              <Button type="button" size="sm" onClick={handleReview}>
+                <Eye className="size-4 mr-1" />
                 Review Tender
               </Button>
             )}

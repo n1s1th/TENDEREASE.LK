@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
+const rawBidUrl = process.env.NEXT_PUBLIC_BID_SERVICE_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/bids` : "http://localhost:8083/api/bids");
+const BASE_URL = rawBidUrl.endsWith("/api/bids") ? rawBidUrl : `${rawBidUrl.replace(/\/+$/, "")}/api/bids`;
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -60,11 +61,14 @@ export async function submitBid(bidData: any) {
   return handleResponse(res);
 }
 
-// Upload a document
-export async function uploadBidDocument(file: File) {
+// Upload a document. The tenderId groups the file under bids/{tenderId}/ in S3.
+export async function uploadBidDocument(file: File, tenderId?: string) {
   const headers = getAuthHeaders();
   const formData = new FormData();
   formData.append("file", file);
+  if (tenderId) {
+    formData.append("tenderId", tenderId);
+  }
 
   const res = await fetch(`${BASE_URL}/upload`, {
     method: "POST",

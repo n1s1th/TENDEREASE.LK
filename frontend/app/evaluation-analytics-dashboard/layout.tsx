@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Footer from "@/components/home/Footer";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export const metadata: Metadata = {
   title: "Evaluation Analytics Dashboard - TenderEase.lk",
@@ -13,9 +14,12 @@ export default function EvaluationAnalyticsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="eval-analytics-layout">
-      <main className="eval-analytics-main">{children}</main>
-      <Footer />
-    </div>
+    <ProtectedRoute>
+      <div className="eval-analytics-layout">
+        <main className="eval-analytics-main">{children}</main>
+        <Footer />
+      </div>
+    </ProtectedRoute>
   );
 }
+

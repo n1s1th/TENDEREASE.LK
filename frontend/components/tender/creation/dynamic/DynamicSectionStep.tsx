@@ -28,6 +28,14 @@ interface DynamicSectionStepProps {
 export function DynamicSectionStep({ section }: DynamicSectionStepProps) {
   const { dynamicData, updateDynamicData } = useDynamicTenderCreationStore();
 
+  if (!section) {
+    return (
+      <div className="flex items-center justify-center h-40 text-grey-5">
+        <p>Section not found. Please go back and try again.</p>
+      </div>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="border-b border-border bg-grey-1/30">
@@ -43,95 +51,188 @@ export function DynamicSectionStep({ section }: DynamicSectionStepProps) {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
-          {section.fields.map((field) => (
-            <FieldRenderer 
-              key={field.id} 
-              field={field} 
-              value={dynamicData[field.id]}
-              onChange={(val) => updateDynamicData(field.id, val)}
-            />
-          ))}
-        </div>
+        {section.fields.length === 0 ? (
+          <p className="text-sm text-grey-5 text-center py-8">
+            This section has no fields configured.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+            {section.fields.map((field) => (
+              <FieldRenderer
+                key={field.id}
+                field={field}
+                value={dynamicData[field.id]}
+                onChange={(val) => updateDynamicData(field.id, val)}
+              />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function FieldRenderer({ field, value, onChange }: { field: TemplateField, value: any, onChange: (val: any) => void }) {
-  const isFullWidth = ['PARAGRAPH', 'FILE_UPLOAD', 'DOCUMENT_UPLOAD', 'CHECKBOXES'].includes(field.type);
-  
+function FieldRenderer({
+  field,
+  value,
+  onChange,
+}: {
+  field: TemplateField;
+  value: any;
+  onChange: (val: any) => void;
+}) {
+  const isFullWidth = ["PARAGRAPH", "FILE_UPLOAD", "DOCUMENT_UPLOAD", "CHECKBOXES"].includes(field.type);
+
+  // Determine if field is "empty" for visual feedback
+  const isEmpty =
+    value === undefined ||
+    value === null ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0);
+
+  const showRequiredError = field.required && isEmpty;
+
   return (
     <div className={cn("space-y-2", isFullWidth && "md:col-span-2")}>
       <Label className="flex items-center gap-1 font-semibold">
         {field.title}
         {field.required && <span className="text-error">*</span>}
       </Label>
-      
-      {renderInputControl(field, value, onChange)}
-      
+
+      {renderInputControl(field, value, onChange, showRequiredError)}
+
       {field.helperText && (
         <p className="text-xs text-grey-5 mt-1">{field.helperText}</p>
+      )}
+
+      {showRequiredError && (
+        <p className="text-xs text-error mt-1">This field is required</p>
       )}
     </div>
   );
 }
 
-function renderInputControl(field: TemplateField, value: any, onChange: (val: any) => void) {
+function renderInputControl(
+  field: TemplateField,
+  value: any,
+  onChange: (val: any) => void,
+  hasError: boolean
+) {
+  const errorClass = hasError ? "border-error/60 focus-visible:ring-error/30" : "";
+
   switch (field.type) {
-    case 'SHORT_ANSWER':
-      return <Input placeholder="Enter value" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'PARAGRAPH':
-      return <Textarea placeholder="Enter detailed description" className="min-h-[100px]" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'DROPDOWN':
+    case "SHORT_ANSWER":
       return (
-        <Select value={value || ''} onValueChange={onChange}>
-          <SelectTrigger className="w-full">
+        <Input
+          placeholder="Enter value"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={errorClass}
+        />
+      );
+
+    case "PARAGRAPH":
+      return (
+        <Textarea
+          placeholder="Enter detailed description"
+          className={cn("min-h-[100px]", errorClass)}
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
+
+    case "DROPDOWN":
+      return (
+        <Select value={value || ""} onValueChange={onChange}>
+          <SelectTrigger className={cn("w-full", errorClass)}>
             <SelectValue placeholder="Select an option" />
           </SelectTrigger>
           <SelectContent>
-            {(field.options || []).map(opt => (
-              <SelectItem key={opt.id} value={opt.value || opt.label}>{opt.label}</SelectItem>
+            {(field.options || []).map((opt) => (
+              <SelectItem key={opt.id} value={opt.value || opt.label}>
+                {opt.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       );
-      
-    case 'DATE':
-      return <Input type="date" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'TIME':
-      return <Input type="time" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'NUMBER':
-      return <Input type="number" placeholder="0" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'CURRENCY':
-      return <Input type="number" placeholder="0.00" value={value || ''} onChange={(e) => onChange(e.target.value)} />;
-      
-    case 'CHECKBOXES':
+
+    case "DATE":
+      return (
+        <Input
+          type="date"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={errorClass}
+        />
+      );
+
+    case "TIME":
+      return (
+        <Input
+          type="time"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={errorClass}
+        />
+      );
+
+    case "NUMBER":
+      return (
+        <Input
+          type="number"
+          placeholder="0"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          className={errorClass}
+        />
+      );
+
+    case "CURRENCY":
+      return (
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-grey-5 pointer-events-none">
+            LKR
+          </span>
+          <Input
+            type="number"
+            placeholder="0.00"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className={cn("pl-14", errorClass)}
+          />
+        </div>
+      );
+
+    case "CHECKBOXES": {
       const currentValues = Array.isArray(value) ? value : [];
       const handleToggle = (optValue: string) => {
         if (currentValues.includes(optValue)) {
-          onChange(currentValues.filter(v => v !== optValue));
+          onChange(currentValues.filter((v) => v !== optValue));
         } else {
           onChange([...currentValues, optValue]);
         }
       };
 
       return (
-        <div className="space-y-3 mt-3 p-4 rounded-md border border-border bg-grey-1/30">
-          {(field.options || []).map(opt => {
+        <div
+          className={cn(
+            "space-y-3 mt-1 p-4 rounded-md border bg-grey-1/30",
+            hasError ? "border-error/60" : "border-border"
+          )}
+        >
+          {(field.options || []).map((opt) => {
             const optVal = opt.value || opt.label;
             return (
-              <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 rounded border-grey-3 text-primary focus:ring-primary" 
+              <label
+                key={opt.id}
+                className="flex items-center gap-3 cursor-pointer group"
+              >
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-grey-3 text-primary focus:ring-primary"
                   checked={currentValues.includes(optVal)}
                   onChange={() => handleToggle(optVal)}
                 />
@@ -141,20 +242,35 @@ function renderInputControl(field: TemplateField, value: any, onChange: (val: an
           })}
         </div>
       );
-      
-    case 'FILE_UPLOAD':
-    case 'DOCUMENT_UPLOAD':
+    }
+
+    case "FILE_UPLOAD":
+    case "DOCUMENT_UPLOAD":
       return (
-        <div className="border-2 border-dashed border-border rounded-lg p-10 text-center cursor-pointer hover:border-primary/50 transition-colors bg-white mt-2">
+        <div
+          className={cn(
+            "border-2 border-dashed rounded-lg p-10 text-center cursor-pointer hover:border-primary/50 transition-colors bg-white mt-2",
+            hasError ? "border-error/60" : "border-border"
+          )}
+        >
           <Upload className="mx-auto h-8 w-8 text-grey-4 mb-3" />
           <p className="text-sm font-medium">
-            Drag & drop files here or <span className="text-primary font-semibold">click to browse</span>
+            Drag & drop files here or{" "}
+            <span className="text-primary font-semibold">click to browse</span>
           </p>
-          <p className="text-xs text-grey-5 mt-2">(File upload mock logic for dynamic fields)</p>
+          {field.helperText && (
+            <p className="text-xs text-grey-5 mt-2">{field.helperText}</p>
+          )}
         </div>
       );
-      
+
     default:
-      return <Input disabled placeholder="Unsupported field type" />;
+      return (
+        <Input
+          disabled
+          placeholder={`Unsupported field type: ${field.type}`}
+          className="opacity-50"
+        />
+      );
   }
 }

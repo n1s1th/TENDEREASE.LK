@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { OfficerRegistrationFormData } from '../validations/officerSchema';
 
-const API_BASE_URL = 'http://localhost:8081/api/officers';
+const API_BASE_URL = process.env.NEXT_PUBLIC_USER_API_URL ? `${process.env.NEXT_PUBLIC_USER_API_URL}/officers` : 'http://localhost:8081/api/officers';
 
 export interface OfficerSuccessResponse {
   success: boolean;
@@ -55,7 +55,7 @@ export function extractErrors(responseData: unknown): string[] {
     return [data.message];
   }
 
-  return ['Registration failed. Please try again.'];
+  return ['Registration failed: ' + (data ? JSON.stringify(data).substring(0, 300) : 'Unknown')];
 }
 
 /**

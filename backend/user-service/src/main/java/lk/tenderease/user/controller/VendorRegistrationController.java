@@ -10,6 +10,7 @@ import lk.tenderease.common.dto.PageResponse;
 import lk.tenderease.user.dto.request.VendorRegisterRequest;
 import lk.tenderease.user.dto.request.VendorSubmitRequest;
 import lk.tenderease.user.dto.request.VerifyRegistrationRequest;
+import lk.tenderease.user.dto.response.VendorDocumentDownload;
 import lk.tenderease.user.dto.response.VendorDocumentResponse;
 import lk.tenderease.user.dto.response.VendorProfileResponse;
 import lk.tenderease.user.dto.response.VendorRegistrationResponse;
@@ -122,17 +123,17 @@ public class VendorRegistrationController {
     public ResponseEntity<Resource> downloadDocument(
             @PathVariable UUID id,
             @PathVariable UUID docId) {
-        Resource file = vendorRegistrationService.getDocumentFile(id, docId);
-        String filename = file.getFilename();
-        VendorProfileResponse profile = vendorRegistrationService.getVendorById(id);
-        String originalName = profile.getDocuments().stream()
-                .filter(d -> d.getDocId().equals(docId))
-                .map(lk.tenderease.user.dto.response.VendorDocumentResponse::getOriginalFileName)
-                .findFirst()
-                .orElse(filename);
+        VendorDocumentDownload download = vendorRegistrationService.getDocumentFile(id, docId);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + originalName + "\"")
-                .body(file);
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + download.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(download.getContentType()));
+
+        if (download.getContentLength() != null && download.getContentLength() > 0) {
+            response.contentLength(download.getContentLength());
+        }
+
+        return response.body(download.getResource());
     }
 }

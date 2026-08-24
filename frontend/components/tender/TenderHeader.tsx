@@ -1,7 +1,29 @@
-import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2 } from "lucide-react";
+"use client";
+
+import { Calendar, CircleDollarSign, Building2, Clock, ShieldCheck, Share2, Bookmark } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { useSavedTendersStore } from "@/store";
 
 export default function TenderHeader({ tender }: any) {
+  const isSaved = useSavedTendersStore((s) =>
+    tender?.id ? s.savedIds.includes(String(tender.id)) : false
+  );
+  const toggleTender = useSavedTendersStore((s) => s.toggleTender);
+  const [toggling, setToggling] = useState(false);
+
+  const handleToggleSave = async () => {
+    if (!tender?.id || toggling) return;
+    setToggling(true);
+    try {
+      await toggleTender(String(tender.id));
+    } catch (error) {
+      console.error("Could not update saved tender:", error);
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const formatBudget = (amount: any) => {
     if (!amount) return "TBA";
     return new Intl.NumberFormat("en-LK", {
@@ -65,6 +87,19 @@ export default function TenderHeader({ tender }: any) {
                 Apply Now
               </button>
             )}
+            <button
+              onClick={handleToggleSave}
+              disabled={!tender?.id || toggling}
+              aria-pressed={isSaved}
+              title={isSaved ? "Remove from saved tenders" : "Save this tender"}
+              className={`p-4 border rounded-2xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${
+                isSaved
+                  ? "bg-primary/10 border-primary/20 text-primary"
+                  : "bg-white border-gray-100 text-gray-3 hover:text-primary hover:border-primary/20"
+              }`}
+            >
+              <Bookmark size={20} fill={isSaved ? "currentColor" : "none"} />
+            </button>
             <button className="p-4 bg-white border border-gray-100 text-gray-3 hover:text-primary hover:border-primary/20 rounded-2xl transition-all shadow-sm active:scale-[0.98]">
               <Share2 size={20} />
             </button>

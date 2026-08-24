@@ -127,14 +127,14 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--te-gray-1)", lineHeight: 1 }}>{recommendation.finalScore}</div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--te-gray-1)", lineHeight: 1 }}>{Number(recommendation.finalScore).toFixed(2)}</div>
               <div style={{ fontSize: "0.7rem", color: "var(--te-gray-4)", textTransform: "uppercase", fontWeight: 700, marginTop: "0.35rem", letterSpacing: "0.05em" }}>Final Score</div>
             </div>
           </div>
 
           <div style={{ fontSize: "0.95rem", color: "var(--te-gray-2)", lineHeight: "1.6" }}>
             <span style={{ fontWeight: 700, color: "var(--te-gray-3)", marginRight: "0.5rem" }}>Justification:</span> 
-            <span style={{ color: "var(--te-gray-1)" }}>{recommendation.justification}</span>
+            <span style={{ color: "var(--te-gray-1)" }}>{recommendation.justification || "Recommended based on scoring criteria."}</span>
           </div>
         </div>
       </div>

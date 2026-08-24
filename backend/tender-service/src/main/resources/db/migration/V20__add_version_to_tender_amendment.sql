@@ -1,1 +1,1 @@
-ALTER TABLE tender_amendment ADD COLUMN version INT DEFAULT 0;
+ALTER TABLE tender_amendment ADD COLUMN IF NOT EXISTS version INT DEFAULT 0;

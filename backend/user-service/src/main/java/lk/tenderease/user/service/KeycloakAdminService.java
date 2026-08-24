@@ -19,7 +19,7 @@ public class KeycloakAdminService {
     private final String realm;
 
     public KeycloakAdminService(
-            @Value("${spring.keycloak.admin.server-url:${KEYCLOAK_ADMIN_URL:https://lemur-1.cloud-iam.com/auth}}") String serverUrl,
+            @Value("${spring.keycloak.admin.server-url:${KEYCLOAK_ADMIN_URL:http://158.178.227.145:8080}}") String serverUrl,
             @Value("${spring.keycloak.admin.realm:${KEYCLOAK_REALM:tenderease}}") String realm,
             @Value("${spring.keycloak.admin.client-id:${KEYCLOAK_ADMIN_CLIENT_ID:tenderease-backend}}") String clientId,
             @Value("${spring.keycloak.admin.client-secret:${KEYCLOAK_ADMIN_CLIENT_SECRET:UdiHyV4TMypLJQqBsqOXDrltJaG5TK7O}}") String clientSecret) {

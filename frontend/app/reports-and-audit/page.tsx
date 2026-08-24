@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { getAssignedTenders } from "@/lib/api/officer.api";
 import { getBidsByTender, getAllBids } from "@/services/bid.service";
 import { getTimeline, addTimelineEvent } from "@/services/tender.service";
@@ -2326,8 +2327,10 @@ function ReportsAndAuditContent() {
 
 export default function ReportsAndAuditPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-500">Loading Reports & Audit...</div>}>
-      <ReportsAndAuditContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-500">Loading Reports & Audit...</div>}>
+        <ReportsAndAuditContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

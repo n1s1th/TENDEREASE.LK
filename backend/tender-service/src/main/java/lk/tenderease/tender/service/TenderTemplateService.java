@@ -14,4 +14,5 @@ public interface TenderTemplateService {
     List<TenderTemplateResponse> getActiveTemplates();
     TenderTemplateResponse publishTemplate(UUID id);
     void archiveTemplate(UUID id);
+    void deleteTemplate(UUID id);
 }
