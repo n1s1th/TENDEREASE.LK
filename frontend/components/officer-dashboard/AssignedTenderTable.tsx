@@ -181,16 +181,16 @@ export default function AssignedTenderTable({ title, subtitle }: AssignedTenderT
 
       {/* Table Wrapper */}
       <div className="w-full">
-        <table className="w-full table-fixed border-collapse">
+        <table className="w-full table-auto border-collapse">
           <thead>
             <tr className="bg-[#9A3B12] text-white text-[13px] font-black uppercase tracking-wider">
-              <th className="py-4 px-6 rounded-tl-lg text-center w-[13%]">Tender ID</th>
-              <th className="py-4 px-6 text-center w-[24%]">Tender Title</th>
-              <th className="py-4 px-6 text-center w-[13%]">Category</th>
-              <th className="py-4 px-6 text-center w-[13%]">Department</th>
-              <th className="py-4 px-6 text-center w-[13%]">Status</th>
-              <th className="py-4 px-6 text-center w-[12%]">Opening Date</th>
-              <th className="py-4 px-6 rounded-tr-lg text-center w-[12%]">Actions</th>
+              <th className="py-4 px-6 rounded-tl-lg text-center whitespace-nowrap">Tender ID</th>
+              <th className="py-4 px-6 text-center w-[30%]">Tender Title</th>
+              <th className="py-4 px-6 text-center whitespace-nowrap">Category</th>
+              <th className="py-4 px-6 text-center whitespace-nowrap">Department</th>
+              <th className="py-4 px-6 text-center whitespace-nowrap">Status</th>
+              <th className="py-4 px-6 text-center whitespace-nowrap">Opening Date</th>
+              <th className="py-4 px-6 rounded-tr-lg text-center whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
