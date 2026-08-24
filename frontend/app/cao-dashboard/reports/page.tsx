@@ -151,7 +151,7 @@ export default function ReportsPage() {
   const typeData     = {labels:Object.keys(kpi.byType),datasets:[{data:Object.values(kpi.byType),backgroundColor:CHART_COLORS,borderWidth:0}]};
   const methodData   = {labels:Object.keys(kpi.byMethod),datasets:[{label:'Tenders',data:Object.values(kpi.byMethod),backgroundColor:PRIMARY,borderRadius:6}]};
   const cycleData    = {labels:kpi.cycleTimeTrend.map(d=>d.label),datasets:[{label:'Avg Cycle (days)',data:kpi.cycleTimeTrend.map(d=>d.value),borderColor:PRIMARY,backgroundColor:'rgba(149,48,2,0.1)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:PRIMARY}]};
-  const activeCD     = {labels:kpi.activeTrend.map(d=>d.label),datasets:[{label:'Active Tenders',data:kpi.activeTrend.map(d=>d.value),backgroundColor:AMBER,borderRadius:5}]};
+  const activeCD     = {labels:kpi.activeTrend.map(d=>d.label),datasets:[{label:'Active Tenders',data:kpi.activeTrend.map(d=>d.value),backgroundColor:PRIMARY,borderRadius:5}]};
   const awardCD      = {labels:kpi.awardTrend.map(d=>d.label),datasets:[{label:'Award Value (Rs. Mn)',data:kpi.awardTrend.map(d=>d.value),backgroundColor:PRIMARY,borderRadius:5}]};
 
 
