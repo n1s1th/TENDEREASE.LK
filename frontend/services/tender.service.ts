@@ -225,16 +225,14 @@ export async function getContact(id: string) {
 
 // 🔥 UPDATE TENDER STATUS
 export async function updateTenderStatus(id: string, status: string) {
-  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
-  return apiFetch(`${secureBase}/${id}/status?status=${status}`, {
+  return apiFetch(`${BASE_URL}/${id}/status?status=${status}`, {
     method: "PUT",
   });
 }
 
-// 🔥 ADDENDA & VERSIONS
+// 🚀 ADDENDA & VERSIONS
 export async function createAddendum(id: string, formData: FormData) {
-  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
-  return apiFetch(`${secureBase}/${id}/addenda`, {
+  return apiFetch(`${BASE_URL}/${id}/addenda`, {
     method: "POST",
     // Do NOT set Content-Type to application/json, let browser handle FormData + boundary
     headers: { ...getAuthHeaders() },
@@ -243,8 +241,7 @@ export async function createAddendum(id: string, formData: FormData) {
 }
 
 export async function uploadAddendumVersion(id: string, addendumId: number, formData: FormData) {
-  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
-  return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`, {
+  return apiFetch(`${BASE_URL}/${id}/addenda/${addendumId}/versions`, {
     method: "POST",
     headers: { ...getAuthHeaders() },
     body: formData,
@@ -252,8 +249,7 @@ export async function uploadAddendumVersion(id: string, addendumId: number, form
 }
 
 export async function getAddendumVersions(id: string, addendumId: number) {
-  const secureBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_V1_URL || (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/v1/tenders` : "http://localhost:8082/api/v1/tenders");
-  return apiFetch(`${secureBase}/${id}/addenda/${addendumId}/versions`);
+  return apiFetch(`${BASE_URL}/${id}/addenda/${addendumId}/versions`);
 }
 
 
