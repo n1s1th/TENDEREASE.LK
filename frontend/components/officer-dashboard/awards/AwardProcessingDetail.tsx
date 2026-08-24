@@ -68,7 +68,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       if (tender.status !== 'AWARDED') {
         const currentUser = useAuthStore.getState().user;
         const currentOfficerEmail = currentUser?.email || currentUser?.username || "officer@procurement.gov.lk";
-        fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, { method: 'PUT' }).catch(console.error);
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082'}/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, { method: 'PUT' }).catch(console.error);
       }
     }
   }, [tenderId, tender, loadingBidders, winner, losers, tenderSentStatus, sentStatus]);
@@ -177,7 +177,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
 
       // Send to all recipients individually
       await Promise.all(recipients.map(async (recipientEmail) => {
-        const res = await fetch('http://localhost:8089/api/v1/notifications/email', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8089'}/api/v1/notifications/email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -239,7 +239,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       try {
         const currentUser = useAuthStore.getState().user;
         const currentOfficerEmail = currentUser?.email || currentUser?.username || "officer@procurement.gov.lk";
-        await fetch(`http://localhost:8082/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082'}/api/v1/tenders/${tenderId}/status?status=AWARDED&awardedBy=${encodeURIComponent(currentOfficerEmail)}`, {
           method: 'PUT'
         });
         useAwardProcessingStore.getState().fetchTenders();

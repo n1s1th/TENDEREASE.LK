@@ -29,7 +29,7 @@ interface AwardProcessingState {
   generateEmails: (tenderId: string, type: 'WINNER' | 'LOST') => Promise<void>;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084/api/v1';
+const BASE_URL = (process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084') + '/api/evaluations/mock';
 
 export const useAwardProcessingStore = create<AwardProcessingState>((set, get) => ({
   tenders: [],
@@ -41,8 +41,8 @@ export const useAwardProcessingStore = create<AwardProcessingState>((set, get) =
   fetchTenders: async () => {
     set({ loadingTenders: true });
     try {
-      // Temporary mock fetch from our BidEvaluationMockController
-      const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders`);
+      // Fetch from BidEvaluationMockController
+      const res = await fetch(`${BASE_URL}/awards/tenders`);
       if (res.ok) {
         const data = await res.json();
         set({ tenders: data });
@@ -57,7 +57,7 @@ export const useAwardProcessingStore = create<AwardProcessingState>((set, get) =
   fetchBidders: async (tenderId: string) => {
     set({ loadingBidders: true, bidders: [] });
     try {
-      const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
+      const res = await fetch(`${BASE_URL}/awards/tenders/${tenderId}/bidders`);
       if (res.ok) {
         const data = await res.json();
         set({ bidders: data });
@@ -72,7 +72,7 @@ export const useAwardProcessingStore = create<AwardProcessingState>((set, get) =
   generateEmails: async (tenderId: string, type: 'WINNER' | 'LOST') => {
     set({ generatingEmails: true });
     try {
-      const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders/${tenderId}/emails`, {
+      const res = await fetch(`${BASE_URL}/awards/tenders/${tenderId}/emails`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type })

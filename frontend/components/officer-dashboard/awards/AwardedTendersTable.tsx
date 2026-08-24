@@ -73,7 +73,8 @@ export default function AwardedTendersTable() {
     setExpandedId(tenderId);
     setLoadingBidders(true);
     try {
-      const res = await fetch(`http://localhost:8084/api/evaluations/mock/awards/tenders/${tenderId}/bidders`);
+      const baseUrl = (process.env.NEXT_PUBLIC_EVALUATION_API_URL || 'http://localhost:8084') + '/api/evaluations/mock';
+      const res = await fetch(`${baseUrl}/awards/tenders/${tenderId}/bidders`);
       if (res.ok) {
         const data = await res.json();
         setExpandedBidders(data);
