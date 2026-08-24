@@ -59,6 +59,7 @@ export default function RejectedRecommendationsPage() {
           />
         ))
       )}
+      <Pagination pagination={{ currentPage, totalPages, pageSize, totalItems }} onPageChange={setCurrentPage} />
     </div>
   );
 }
