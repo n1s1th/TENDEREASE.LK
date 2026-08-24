@@ -20,6 +20,15 @@ async function fetchAllTenders(): Promise<any[]> {
   return j.content || j.data || [];
 }
 
+
+async function fetchAllVendors(): Promise<any[]> {
+  try {
+    const res = await fetch(API_BASE + '/api/v1/vendors?size=1000');
+    const j = await res.json();
+    return j.content || j.data || [];
+  } catch { return []; }
+}
+
 function applyFilters(tenders: any[], params: any) {
   let t = [...tenders];
   if (params.department) t = t.filter((x: any) => (x.departmentName || x.department || '') === params.department);
@@ -67,6 +76,7 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle?: st
 
 export default function ReportsPage() {
   const [allTenders, setAllTenders] = useState<any[]>([]);
+  const [allVendors, setAllVendors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [department, setDepartment] = useState('');
   const [ministry, setMinistry]     = useState('');
@@ -75,7 +85,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     (async () => {
-      try { setLoading(true); setAllTenders(await fetchAllTenders()); }
+      try { setLoading(true); const [t, v] = await Promise.all([fetchAllTenders(), fetchAllVendors()]); setAllTenders(t); setAllVendors(v); }
       catch(e) { console.error(e); }
       finally { setLoading(false); }
     })();
@@ -119,8 +129,22 @@ export default function ReportsPage() {
     const cycleTimeTrend = MONTHS.slice(0,cm+1).map((l,i)=>{const c=cycleMap.get(i)!;return{label:l,value:c.count>0?Math.round(c.total/c.count):0};});
     const activeTrend    = MONTHS.slice(0,cm+1).map((l,i)=>({label:l,value:activeMap.get(i)||0}));
     const awardTrend     = MONTHS.slice(0,cm+1).map((l,i)=>({label:l,value:parseFloat(((awardMap.get(i)||0)/1e6).toFixed(2))}));
-    return {total:tenders.length,awarded:awarded.length,active:active.length,rejected:rejected.length,avgCycle,totalAwardVal,byStatus,byType,byMethod,cycleTimeTrend,activeTrend,awardTrend};
-  }, [tenders]);
+
+    // SME Participation: cross-reference bidders with vendor org type
+    const smeTypes = ['SOLE_PROPRIETORSHIP', 'PARTNERSHIP'];
+    const smeVendorIds = new Set(allVendors.filter((v: any) => smeTypes.includes(v.organizationType)).map((v: any) => v.vendorId));
+    const totalVendors = allVendors.length;
+    const smeCount = allVendors.filter((v: any) => smeTypes.includes(v.organizationType)).length;
+    const nonSmeCount = totalVendors - smeCount;
+    const smePercent = totalVendors > 0 ? Math.round((smeCount / totalVendors) * 100) : 0;
+    // Breakdown by org type
+    const byOrgType: Record<string,number> = {};
+    allVendors.forEach((v: any) => {
+      const t = v.organizationType || 'Unknown';
+      byOrgType[t] = (byOrgType[t] || 0) + 1;
+    });
+    return {total:tenders.length,awarded:awarded.length,active:active.length,rejected:rejected.length,avgCycle,totalAwardVal,byStatus,byType,byMethod,cycleTimeTrend,activeTrend,awardTrend,smeCount,nonSmeCount,smePercent,totalVendors,byOrgType};
+  }, [tenders, allVendors]);
 
   const tip = {backgroundColor:'#1e293b',padding:10,cornerRadius:8,titleFont:{size:12,weight:'bold' as const},bodyFont:{size:11}};
   const sharedOpts = (yLabel?: string) => ({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{font:{size:11}},title:yLabel?{display:true,text:yLabel,font:{size:10},color:SLATE}:undefined}}});
@@ -134,6 +158,16 @@ export default function ReportsPage() {
   const cycleData    = {labels:kpi.cycleTimeTrend.map(d=>d.label),datasets:[{label:'Avg Cycle (days)',data:kpi.cycleTimeTrend.map(d=>d.value),borderColor:PRIMARY,backgroundColor:'rgba(149,48,2,0.1)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:PRIMARY}]};
   const activeCD     = {labels:kpi.activeTrend.map(d=>d.label),datasets:[{label:'Active Tenders',data:kpi.activeTrend.map(d=>d.value),backgroundColor:BLUE,borderRadius:5}]};
   const awardCD      = {labels:kpi.awardTrend.map(d=>d.label),datasets:[{label:'Award Value (Rs. Mn)',data:kpi.awardTrend.map(d=>d.value),backgroundColor:EMERALD,borderRadius:5}]};
+
+
+  const smeData = {
+    labels: ['SME (Sole Prop / Partnership)', 'Other Entities'],
+    datasets: [{ data: [kpi.smeCount, kpi.nonSmeCount], backgroundColor: [EMERALD, '#e2e8f0'], borderWidth: 0 }],
+  };
+  const orgTypeData = {
+    labels: Object.keys(kpi.byOrgType).map(s => s.replace(/_/g, ' ')),
+    datasets: [{ data: Object.values(kpi.byOrgType), backgroundColor: [PRIMARY, AMBER, EMERALD, BLUE, SLATE], borderWidth: 0 }],
+  };
 
   const fmt = (n: number) => n>=1e6?'Rs. '+(n/1e6).toFixed(1)+'M':n>=1000?'Rs. '+(n/1000).toFixed(0)+'K':'Rs. '+n;
   const none = (msg: string) => <p style={{color:'#94a3b8',fontSize:'0.85rem',textAlign:'center' as const,marginTop:'4rem'}}>{msg}</p>;
@@ -206,6 +240,8 @@ export default function ReportsPage() {
               <StatCard label="Avg Cycle Time"    value={kpi.avgCycle + "d"}     icon={Clock}        color={AMBER}   />
               <StatCard label="Total Award Value" value={fmt(kpi.totalAwardVal)} icon={Package}      color={PRIMARY} />
               <StatCard label="Rejected"          value={kpi.rejected}           icon={CheckCircle}  color="#ef4444" />
+              <StatCard label="Total Vendors (Registered)" value={kpi.totalVendors} icon={Package} color="#8b5cf6" />
+              <StatCard label="SME Vendors" value={kpi.smeCount + " (" + kpi.smePercent + "%)"} icon={TrendingUp} color={EMERALD} />
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"1rem",marginBottom:"1rem"}}>
@@ -235,6 +271,29 @@ export default function ReportsPage() {
               </ChartCard>
             </div>
 
+
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem",marginBottom:"1rem"}}>
+              <ChartCard title="SME Participation" subtitle={"SME vs Non-SME registered vendors — " + kpi.smePercent + "% SME (" + kpi.smeCount + " of " + kpi.totalVendors + " vendors)"}>
+                <div style={{height:230}}>
+                  {kpi.totalVendors > 0
+                    ? <Doughnut data={smeData} options={{...donutOpts, plugins: {...donutOpts.plugins, tooltip: {backgroundColor:'#1e293b', padding:10, cornerRadius:8, callbacks: {label: (ctx: any) => ctx.label + ': ' + ctx.raw + ' vendors (' + (kpi.totalVendors > 0 ? Math.round(ctx.raw/kpi.totalVendors*100) : 0) + '%)'}}}}}/>
+                    : none("No vendor data available")}
+                </div>
+                <div style={{textAlign:"center",marginTop:"0.75rem"}}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:"0.4rem",background:"#d1fae5",color:"#065f46",padding:"0.25rem 0.75rem",borderRadius:999,fontSize:"0.78rem",fontWeight:700}}>
+                    &#9679; SME = Sole Proprietorship or Partnership
+                  </span>
+                </div>
+              </ChartCard>
+              <ChartCard title="Vendor Organization Types" subtitle="Breakdown of all registered vendors by business type">
+                <div style={{height:230}}>
+                  {Object.keys(kpi.byOrgType).length > 0
+                    ? <Pie data={orgTypeData} options={pieOpts}/>
+                    : none("No vendor data available")}
+                </div>
+              </ChartCard>
+            </div>
+
             <div style={{background:"#fff",border:"1px solid #e2e8f0",borderRadius:14,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
               <div style={{background:"#f8fafc",padding:"1rem 1.5rem",borderBottom:"1px solid #e2e8f0",fontWeight:700,fontSize:"0.9rem",color:"#374151",textTransform:"uppercase",letterSpacing:"0.04em"}}>Summary</div>
               <table style={{width:"100%",borderCollapse:"collapse"}}>
@@ -246,7 +305,8 @@ export default function ReportsPage() {
                     ['Rejected', kpi.rejected],
                     ['Avg. Cycle Time', kpi.avgCycle + ' days'],
                     ['Total Award Value (Est.)', 'Rs. ' + kpi.totalAwardVal.toLocaleString()],
-                    ['Filters Applied', (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')],
+                    ['SME Vendor Participation', kpi.smePercent + '% (' + kpi.smeCount + ' of ' + kpi.totalVendors + ' registered vendors)'],
+                    ['Filters Applied', (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')], (period||'all_time') + ' | ' + (department||'All Depts') + ' | ' + (ministry||'All Ministries') + ' | ' + (category||'All Types')],
                   ] as [string, any][]).map(([label, value], i) => (
                     <tr key={i} style={{borderBottom:"1px solid #f1f5f9",background:i%2===0?"#fff":"#fafafa"}}>
                       <td style={{padding:"0.875rem 1.5rem",color:"#64748b",fontWeight:600,fontSize:"0.875rem"}}>{label}</td>
