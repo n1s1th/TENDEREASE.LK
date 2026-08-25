@@ -139,7 +139,7 @@ function apiBidToRow(
   evalNotesMap: Record<string, string> = {}, 
   evalBidders: any[] = []
 ): BidRow {
-  const evaluationObj = evalBidders.find((eb: any) => eb.bidderId === bid.id || eb.bidderName === bid.bidderName);
+  const evaluationObj = evalBidders.find((eb: any) => eb.bidderId === bid.id);
 
   let admissionStatus = "Pending";
   if (evaluationObj) {

@@ -372,9 +372,7 @@ export default function BidEvaluationPage() {
           const existingBidder = baseData.bidders?.find((b: any) =>
             b.bidderId === bid.id ||
             b.bidderId?.toLowerCase() === bid.id?.toLowerCase() ||
-            b.bidderId === String(bid.id) ||
-            (b.bidderName && bid.companyName && b.bidderName.toLowerCase() === bid.companyName.toLowerCase()) ||
-            (b.bidderName && bid.bidderName && b.bidderName.toLowerCase() === bid.bidderName.toLowerCase())
+            b.bidderId === String(bid.id)
           );
 
           // Initial criteria
