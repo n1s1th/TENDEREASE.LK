@@ -708,6 +708,17 @@ export default function BidEvaluationPage() {
         } catch (statusErr) {
           console.warn("Failed to set tender status to EVALUATION:", statusErr);
         }
+        try {
+          await addTimelineEvent(
+            tenderUuid || tenderNo,
+            "EVAL_DRAFT_SAVED",
+            `Evaluation draft saved for ${activeBidder.bidderName}`,
+            user?.name || "Officer",
+            dbOfficerRole || "Procurement Officer"
+          );
+        } catch (timelineErr) {
+          console.warn("Failed to log evaluation draft event to timeline:", timelineErr);
+        }
         showToast(`Draft saved successfully for ${activeBidder.bidderName}!`, "success");
         setIsDirty(false);
         // Update local status if it was Not Started
@@ -754,6 +765,17 @@ export default function BidEvaluationPage() {
 
       const json = await res.json();
       if (res.ok) {
+        try {
+          await addTimelineEvent(
+            tenderUuid || tenderNo,
+            "EVAL_SUBMITTED",
+            `Evaluation submitted and locked for ${activeBidder.bidderName}`,
+            user?.name || "Officer",
+            dbOfficerRole || "Procurement Officer"
+          );
+        } catch (timelineErr) {
+          console.warn("Failed to log evaluation submit event to timeline:", timelineErr);
+        }
         showToast(`Evaluation submitted and locked for ${activeBidder.bidderName}!`, "success");
         setIsDirty(false);
         const updatedBidders = data.bidders.map(b => {
