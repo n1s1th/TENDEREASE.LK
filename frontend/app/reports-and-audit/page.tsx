@@ -998,6 +998,10 @@ function ReportsAndAuditContent() {
           action = "Scores Finalized";
         } else if (action === "REPORT_GENERATED") {
           action = "Report Generated";
+        } else if (action === "EVAL_DRAFT_SAVED") {
+          action = "Evaluation Draft Saved";
+        } else if (action === "EVAL_SUBMITTED") {
+          action = "Evaluation Submitted";
         }
 
         let timestampStr = "-- --- ---- · --:-- --";
