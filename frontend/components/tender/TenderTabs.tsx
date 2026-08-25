@@ -27,7 +27,7 @@ export default function TenderTabs({ tender }: any) {
         {activeTab === "Overview" && <OverviewTab tender={tender} />}
         {activeTab === "Requirements" && <RequirementsTab tender={tender} />}
         {activeTab === "Documents" && <DocumentsTab documents={tender.documents} />}
-        {activeTab === "Addenda" && <AddendaTab addenda={tender.addenda} />}
+        {activeTab === "Addenda" && <AddendaTab tenderId={tender.id} />}
         
         {/* 🔥 SAFE NOW */}
         {activeTab === "Clarifications" && (

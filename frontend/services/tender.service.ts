@@ -41,6 +41,19 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
+// 🔥 Auth-only headers for multipart/form-data uploads.
+// Do NOT include Content-Type — the browser must set it automatically
+// so it can append the correct multipart boundary string.
+function getMultipartHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    const { token, user } = useAuthStore.getState();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (user?.email) headers["X-User-Email"] = user.email;
+  }
+  return headers;
+}
+
 // 🔥 Helper function to handle responses
 async function handleResponse(response: Response) {
   if (!response.ok) {
@@ -231,21 +244,26 @@ export async function updateTenderStatus(id: string, status: string) {
 }
 
 // 🚀 ADDENDA & VERSIONS
+// Use direct fetch (not apiFetch) so Content-Type is never set —
+// the browser must inject the multipart/form-data boundary automatically.
 export async function createAddendum(id: string, formData: FormData) {
-  return apiFetch(`${BASE_URL}/${id}/addenda`, {
+  const res = await fetch(`${BASE_URL}/${id}/addenda`, {
     method: "POST",
-    // Do NOT set Content-Type to application/json, let browser handle FormData + boundary
-    headers: { ...getAuthHeaders() },
+    cache: "no-store",
+    headers: getMultipartHeaders(),
     body: formData,
   });
+  return handleResponse(res);
 }
 
 export async function uploadAddendumVersion(id: string, addendumId: number, formData: FormData) {
-  return apiFetch(`${BASE_URL}/${id}/addenda/${addendumId}/versions`, {
+  const res = await fetch(`${BASE_URL}/${id}/addenda/${addendumId}/versions`, {
     method: "POST",
-    headers: { ...getAuthHeaders() },
+    cache: "no-store",
+    headers: getMultipartHeaders(),
     body: formData,
   });
+  return handleResponse(res);
 }
 
 export async function getAddendumVersions(id: string, addendumId: number) {
