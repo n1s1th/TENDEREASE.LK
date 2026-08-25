@@ -111,7 +111,7 @@ export async function fetchEvalAnalytics(
 ): Promise<EvalAnalyticsData> {
   try {
     // 1. Fetch assigned tenders from the database
-    const TENDER_SERVICE = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "http://localhost:8082";
+    const TENDER_SERVICE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8082";
     const tendersUrl = `${TENDER_SERVICE}/api/officer/dashboard/tenders?size=100`;
     const tendersRes = await fetch(tendersUrl);
     
@@ -122,9 +122,13 @@ export async function fetchEvalAnalytics(
     }
 
     // 2. Fetch evaluation mock data for each tender and build rows
+    const EVAL_BASE = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
+    const evalApiBase = EVAL_BASE.includes("/api/v1") ? EVAL_BASE.replace("/api/v1", "") : EVAL_BASE;
+    
     const rowsPromise = dbTenders.map(async (t) => {
       try {
-        const evalRes = await fetch(`${BASE}/api/evaluations/mock/${t.tenderNo}/data`);
+        const tenderIdToFetch = t.id || t.tenderNo;
+        const evalRes = await fetch(`${evalApiBase}/api/evaluations/mock/${tenderIdToFetch}/data`);
         if (evalRes.ok) {
           const evalJson = await evalRes.json();
           const evalData = evalJson.data; // TenderEvaluationData
@@ -453,8 +457,10 @@ export async function fetchEvalAnalytics(
         if (cat === t) return true;
         if (t === "goods" && (cat.includes("goods") || cat.includes("supplies"))) return true;
         if (t === "works" && (cat.includes("works") || cat.includes("infrastructure") || cat.includes("roads"))) return true;
-        if (t === "services" && cat.includes("service")) return true;
-        if (t.includes("consult") && cat.includes("consult")) return true;
+        if (t === "services" && cat.includes("service") && !cat.includes("consult")) return true;
+        if (t === "consultancy" && cat.includes("consultancy")) return true;
+        if (t === "consulting services" && cat.includes("consulting") && !cat.includes("non")) return true;
+        if (t === "non consulting services" && cat.includes("non") && cat.includes("consult")) return true;
         return false;
       });
       const totalBids = matchingTenders.reduce((sum, r) => sum + r.bidCount, 0);
