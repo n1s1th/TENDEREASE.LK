@@ -1047,8 +1047,8 @@ function ReportsAndAuditContent() {
 
     const EVAL_BASE = process.env.NEXT_PUBLIC_EVALUATION_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8084";
     const evalApiUrl = EVAL_BASE.includes("/api/v1") 
-      ? `${EVAL_BASE.replace("/api/v1", "")}/api/evaluations/mock/${tenderNo}/data`
-      : `${EVAL_BASE}/api/evaluations/mock/${tenderNo}/data`;
+      ? `${EVAL_BASE.replace("/api/v1", "")}/api/evaluations/mock/${tenderId}/data`
+      : `${EVAL_BASE}/api/evaluations/mock/${tenderId}/data`;
 
     Promise.all([
       getBidsByTender(tenderId),
