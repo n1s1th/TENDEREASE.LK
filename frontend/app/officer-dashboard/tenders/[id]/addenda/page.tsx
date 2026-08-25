@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, UploadCloud, Clock, CheckCircle2, FileText, Download, AlertCircle } from "lucide-react";
-import { getTenderById, createAddendum, uploadAddendumVersion, getAddendumVersions } from "@/services/tender.service";
+import { getTenderById, createAddendum, uploadAddendumVersion, getAddendumVersions, getAddenda } from "@/services/tender.service";
 import { useAuthStore } from "@/store";
 
 export default function OfficerAddendaManagementPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [tender, setTender] = useState<any>(null);
+  const [amendments, setAmendments] = useState<any[]>([]);
   const [tenderId, setTenderId] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -36,8 +37,16 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
   const fetchTenderData = async (id: string) => {
     setLoading(true);
     try {
-      const data = await getTenderById(id);
-      setTender(data);
+      const [tenderData, addendaData] = await Promise.all([
+        getTenderById(id),
+        getAddenda(id).catch(() => []),
+      ]);
+      setTender(tenderData);
+      // getAddenda returns the raw response; normalise to array
+      const addendaArray = Array.isArray(addendaData)
+        ? addendaData
+        : (addendaData as any)?.data ?? [];
+      setAmendments(addendaArray);
     } catch (error) {
       console.error("Failed to fetch tender", error);
     } finally {
@@ -59,6 +68,7 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
       await createAddendum(tenderId, formData);
       setNewAddendum({ title: "", description: "", file: null });
       fetchTenderData(tenderId); // refresh
+
     } catch (error) {
       alert("Failed to create addendum.");
       console.error(error);
@@ -81,6 +91,7 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
       setNewVersion({ changeDescription: "", file: null });
       setUploadingVersionForId(null);
       fetchTenderData(tenderId); // refresh
+
     } catch (error) {
       alert("Failed to upload new version.");
       console.error(error);
@@ -121,8 +132,9 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
     );
   }
 
-  // Check if status allows editing addenda
-  const isUpdatable = tender.status === "PUBLISHED" || tender.status === "PENDING_OPENING" || tender.status === "OPEN" || tender.status === "APPROVED";
+  // Allow addenda on all active statuses; block only after award/close
+  const BLOCKED_STATUSES = ["AWARDED", "CLOSED", "CANCELLED", "NO_BID"];
+  const isUpdatable = !BLOCKED_STATUSES.includes(tender.status);
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] font-inter pt-8 px-4 sm:px-6">
@@ -137,7 +149,7 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
           </button>
           <div>
             <h1 className="text-[22px] font-black text-gray-900 tracking-tight uppercase">Manage Addenda</h1>
-            <p className="text-sm font-bold text-gray-500 mt-1">{tender.tenderNo} - {tender.title}</p>
+            <p className="text-sm font-bold text-gray-500 mt-1">{tender.tenderNumber ?? tender.tenderNo} - {tender.title}</p>
           </div>
         </div>
 
@@ -155,17 +167,17 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
             <h2 className="text-[15px] font-black text-gray-900 uppercase tracking-widest">Existing Addenda</h2>
-            <span className="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{tender.amendments?.length || 0} Total</span>
+            <span className="text-xs font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">{amendments.length} Total</span>
           </div>
           
           <div className="p-6 space-y-6">
-            {(!tender.amendments || tender.amendments.length === 0) ? (
+            {amendments.length === 0 ? (
               <div className="text-center py-10">
                 <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                 <p className="text-sm text-gray-500 font-bold">No addenda have been published for this tender yet.</p>
               </div>
             ) : (
-              tender.amendments.map((addendum: any) => (
+              amendments.map((addendum: any) => (
                 <div key={addendum.id} className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm transition-all hover:shadow-md hover:border-[#953002]/20">
                   <div className="p-5 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 gap-4">
                     <div>
