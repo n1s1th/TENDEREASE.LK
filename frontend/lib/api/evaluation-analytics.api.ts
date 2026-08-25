@@ -457,8 +457,10 @@ export async function fetchEvalAnalytics(
         if (cat === t) return true;
         if (t === "goods" && (cat.includes("goods") || cat.includes("supplies"))) return true;
         if (t === "works" && (cat.includes("works") || cat.includes("infrastructure") || cat.includes("roads"))) return true;
-        if (t === "services" && cat.includes("service")) return true;
-        if (t.includes("consult") && cat.includes("consult")) return true;
+        if (t === "services" && cat.includes("service") && !cat.includes("consult")) return true;
+        if (t === "consultancy" && cat.includes("consultancy")) return true;
+        if (t === "consulting services" && cat.includes("consulting") && !cat.includes("non")) return true;
+        if (t === "non consulting services" && cat.includes("non") && cat.includes("consult")) return true;
         return false;
       });
       const totalBids = matchingTenders.reduce((sum, r) => sum + r.bidCount, 0);
