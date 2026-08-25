@@ -21,6 +21,15 @@ function formatFileSize(bytes?: number | null) {
   return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
 
+const getDownloadUrl = (url: string | undefined): string => {
+  if (!url) return "#";
+  const publicBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "https://api.tenderease.me";
+  if (url.includes("localhost") && publicBase && !publicBase.includes("localhost")) {
+    return url.replace(/^http:\/\/(localhost|127\.0\.0\.1):\d+/, publicBase);
+  }
+  return url;
+};
+
 export default function DocumentsTab({ documents }: any) {
   if (!documents || documents.length === 0) {
     return (
@@ -87,7 +96,7 @@ export default function DocumentsTab({ documents }: any) {
             </div>
 
             <a
-              href={d.downloadUrl ? `${d.downloadUrl}?download=true` : d.fileUrl || "#"}
+              href={d.downloadUrl ? `${getDownloadUrl(d.downloadUrl)}?download=true` : getDownloadUrl(d.fileUrl) || "#"}
               className="flex items-center gap-3 px-6 py-3 rounded-xl bg-gray-5 text-gray-3 group-hover:bg-primary/10 group-hover:text-primary font-black text-xs uppercase tracking-widest transition-all hover:shadow-sm active:scale-95"
             >
               <Download size={16} />

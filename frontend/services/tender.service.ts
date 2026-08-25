@@ -19,6 +19,7 @@ function resolveTenderBaseUrl(): string {
 
 const BASE_URL = resolveTenderBaseUrl();
 const PUBLIC_BASE_URL = BASE_URL.replace("/v1/tenders", "/tenders");
+const OFFICER_BASE_URL = BASE_URL.replace("/api/tenders", "/api/v1/tenders");
 
 // Get Authorization headers
 function getAuthHeaders(): HeadersInit {
@@ -238,7 +239,7 @@ export async function getContact(id: string) {
 
 // 🔥 UPDATE TENDER STATUS
 export async function updateTenderStatus(id: string, status: string) {
-  return apiFetch(`${BASE_URL}/${id}/status?status=${status}`, {
+  return apiFetch(`${OFFICER_BASE_URL}/${id}/status?status=${status}`, {
     method: "PUT",
   });
 }
@@ -247,7 +248,7 @@ export async function updateTenderStatus(id: string, status: string) {
 // Use direct fetch (not apiFetch) so Content-Type is never set —
 // the browser must inject the multipart/form-data boundary automatically.
 export async function createAddendum(id: string, formData: FormData) {
-  const res = await fetch(`${BASE_URL}/${id}/addenda`, {
+  const res = await fetch(`${OFFICER_BASE_URL}/${id}/addenda`, {
     method: "POST",
     cache: "no-store",
     headers: getMultipartHeaders(),
@@ -257,7 +258,7 @@ export async function createAddendum(id: string, formData: FormData) {
 }
 
 export async function uploadAddendumVersion(id: string, addendumId: number, formData: FormData) {
-  const res = await fetch(`${BASE_URL}/${id}/addenda/${addendumId}/versions`, {
+  const res = await fetch(`${OFFICER_BASE_URL}/${id}/addenda/${addendumId}/versions`, {
     method: "POST",
     cache: "no-store",
     headers: getMultipartHeaders(),

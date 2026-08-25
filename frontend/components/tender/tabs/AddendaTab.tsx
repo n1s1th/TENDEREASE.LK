@@ -64,6 +64,16 @@ export default function AddendaTab({ tenderId }: AddendaTabProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const getDownloadUrl = (url: string | undefined): string => {
+    if (!url) return "#";
+    // If backend returned localhost but we're in prod, fix it using frontend env var
+    const publicBase = process.env.NEXT_PUBLIC_TENDER_SERVICE_URL || "https://api.tenderease.me";
+    if (url.includes("localhost") && publicBase && !publicBase.includes("localhost")) {
+      return url.replace(/^http:\/\/(localhost|127\.0\.0\.1):\d+/, publicBase);
+    }
+    return url;
+  };
+
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-3">
@@ -150,7 +160,7 @@ export default function AddendaTab({ tenderId }: AddendaTabProps) {
                     </div>
 
                     <a
-                      href={latestFile.secureUrl}
+                      href={getDownloadUrl(latestFile.secureUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       download={latestFile.originalFilename}
