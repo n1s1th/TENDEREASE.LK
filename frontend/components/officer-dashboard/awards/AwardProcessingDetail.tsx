@@ -215,13 +215,15 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
       lostSentAt: emailType === 'LOST' ? now : sentStatus[tenderId]?.lostSentAt,
     };
     
-    // Check if fully awarded (all required emails sent)
-    const winnerDone = !needsWinnerEmail || updatedStatus.winner;
-    const loserDone = !needsLoserEmail || updatedStatus.lost;
     
-    if (winnerDone && loserDone) {
-      (updatedStatus as any).fullyAwarded = true;
-    }
+      // Check if fully awarded (all required emails sent)
+      const winnerDone = !needsWinnerEmail || !!updatedStatus.winner;
+      const loserDone = !needsLoserEmail || !!updatedStatus.lost;
+
+      if (winnerDone && loserDone) {
+        (updatedStatus as any).fullyAwarded = true;
+      }
+
 
     const updated = {
       ...sentStatus,
@@ -267,7 +269,20 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Winning Bidder Section */}
+          
+      {tender?.status !== 'APPROVED' && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-bold text-amber-800">Pending CAO Approval</h4>
+            <p className="text-xs text-amber-700 mt-1">
+              This tender is currently waiting for CAO approval. You cannot generate award or rejection emails until the CAO has approved the evaluation recommendation.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Winning Bidder Section */}
           <section>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg uppercase tracking-widest flex items-center gap-2">
@@ -276,7 +291,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               {tender && winner && (
                 <button 
                   onClick={() => handleOpenModal('WINNER')}
-                  disabled={generatingEmails || tenderSentStatus.winner}
+                  disabled={generatingEmails || tenderSentStatus.winner || tender?.status !== "APPROVED"}
                   className="flex items-center gap-2 px-4 py-2 bg-[#953002] hover:bg-[#7a2701] text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
                 >
                   {generatingEmails && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -323,7 +338,7 @@ export default function AwardProcessingDetail({ tenderId }: { tenderId: string |
               {tender && losers.length > 0 && (
                 <button 
                   onClick={() => handleOpenModal('LOST')}
-                  disabled={generatingEmails || tenderSentStatus.lost}
+                  disabled={generatingEmails || tenderSentStatus.lost || tender?.status !== "APPROVED"}
                   className="flex items-center gap-2 px-4 py-2 bg-[#953002] hover:bg-[#7a2701] text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
                 >
                   {generatingEmails && <Loader2 className="w-4 h-4 animate-spin" />}
