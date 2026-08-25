@@ -69,8 +69,9 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
       setNewAddendum({ title: "", description: "", file: null });
       fetchTenderData(tenderId); // refresh
 
-    } catch (error) {
-      alert("Failed to create addendum.");
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      alert("Failed to create addendum: " + msg);
       console.error(error);
     } finally {
       setIsSubmittingNew(false);
@@ -92,8 +93,9 @@ export default function OfficerAddendaManagementPage({ params }: { params: Promi
       setUploadingVersionForId(null);
       fetchTenderData(tenderId); // refresh
 
-    } catch (error) {
-      alert("Failed to upload new version.");
+    } catch (error: any) {
+      const msg = error?.message || String(error);
+      alert("Failed to upload new version: " + msg);
       console.error(error);
       setUploadingVersionForId(null);
     }
