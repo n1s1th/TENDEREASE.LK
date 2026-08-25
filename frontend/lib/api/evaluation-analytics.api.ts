@@ -41,6 +41,7 @@ export interface CategoryScore {
 }
 
 export interface TenderEvalSummaryRow {
+  id: string;
   tenderId: string;
   tenderTitle: string;
   category: string;
@@ -168,6 +169,7 @@ export async function fetchEvalAnalytics(
           const passRate = status !== "Live" && bidCount > 0 ? Math.round((passedCount / bidCount) * 100) : 0;
 
           return {
+            id: t.id,
             tenderId: t.tenderNo,
             tenderTitle: t.title,
             category: t.procurementType || t.category || "General",
@@ -190,6 +192,7 @@ export async function fetchEvalAnalytics(
       else if (t.status === "APPROVED") fallbackStatus = "Awarded";
 
       return {
+        id: t.id,
         tenderId: t.tenderNo,
         tenderTitle: t.title,
         category: t.procurementType || t.category || "General",

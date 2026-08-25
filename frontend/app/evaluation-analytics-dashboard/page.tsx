@@ -1373,7 +1373,7 @@ export default function EvaluationAnalyticsDashboard() {
                         </td>
                         <td>
                           <Link
-                            href={`/tenders/${row.tenderId}`}
+                            href={`/tenders/${row.id}`}
                             className="p-2 rounded-xl text-gray-400 hover:text-[#9A3B12] hover:bg-orange-50 transition-all relative group/eye inline-flex items-center justify-center"
                           >
                             <Eye size={18} />
