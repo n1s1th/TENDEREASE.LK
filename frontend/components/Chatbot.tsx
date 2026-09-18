@@ -22,43 +22,43 @@ const QUICK_REPLIES = [
 const FAQ_RESPONSES: Record<string, string> = {
   greeting: "Hello! Welcome to TenderEase Support. How can I assist you with your procurement or vendor account today?",
   register: "To register as a vendor on TenderEase, follow these steps:\n\n" +
-            "1. Click 'Register' on the top-right of the homepage.\n" +
-            "2. Fill in the Company Profile (Legal Name, BRN, Address, Email, Phone).\n" +
-            "3. Enter the Authorized Officer details (Name, Designation, NIC, Mobile).\n" +
-            "4. Select your industry sectors/categories of interest.\n" +
-            "5. Upload required documents (Business Registration copy, VAT Certificate, etc.).\n" +
-            "6. Read and accept the platform terms, and click 'Submit Registration'.\n\n" +
-            "Once submitted, our Chief Administrative Officer (CAO) will review and approve your profile.",
+    "1. Click 'Register' on the top-right of the homepage.\n" +
+    "2. Fill in the Company Profile (Legal Name, BRN, Address, Email, Phone).\n" +
+    "3. Enter the Authorized Officer details (Name, Designation, NIC, Mobile).\n" +
+    "4. Select your industry sectors/categories of interest.\n" +
+    "5. Upload required documents (Business Registration copy, VAT Certificate, etc.).\n" +
+    "6. Read and accept the platform terms, and click 'Submit Registration'.\n\n" +
+    "Once submitted, our Chief Administrative Officer (CAO) will review and approve your profile.",
   bid: "To submit a bid for an active tender, follow these steps:\n\n" +
-       "1. Log in to your Vendor Dashboard and go to the 'Find Tenders' section.\n" +
-       "2. Search and click on the tender you wish to bid for.\n" +
-       "3. Click 'Download Bid Documents' to retrieve templates.\n" +
-       "4. Click 'Bid Now' to open the bidding submission interface.\n" +
-       "5. Enter your total financial bid value (Price Proposal).\n" +
-       "6. Upload your Technical Proposal document (PDF) and Financial Schedule (PDF).\n" +
-       "7. Upload the Bid Bond/Security guarantee if required.\n" +
-       "8. Review the summary and click 'Submit Bid' to generate your Bid Submission Receipt.",
+    "1. Log in to your Vendor Dashboard and go to the 'Find Tenders' section.\n" +
+    "2. Search and click on the tender you wish to bid for.\n" +
+    "3. Click 'Download Bid Documents' to retrieve templates.\n" +
+    "4. Click 'Bid Now' to open the bidding submission interface.\n" +
+    "5. Enter your total financial bid value (Price Proposal).\n" +
+    "6. Upload your Technical Proposal document (PDF) and Financial Schedule (PDF).\n" +
+    "7. Upload the Bid Bond/Security guarantee if required.\n" +
+    "8. Review the summary and click 'Submit Bid' to generate your Bid Submission Receipt.",
   drc: "DRC Verification is our automated system that validates your business details in real-time with the Department of the Registrar of Companies in Sri Lanka. " +
-       "When you input your Business Registration Number (BRN) during registration, our system queries the DRC database to verify company legitimacy, active registration status, and matching legal names. " +
-       "If the company status is inactive or mismatching in the DRC registry, the platform registration will be automatically restricted to prevent fraudulent profiles.",
+    "When you input your Business Registration Number (BRN) during registration, our system queries the DRC database to verify company legitimacy, active registration status, and matching legal names. " +
+    "If the company status is inactive or mismatching in the DRC registry, the platform registration will be automatically restricted to prevent fraudulent profiles.",
   cida: "CIDA (Construction Industry Development Authority) grading classifies contractors in Sri Lanka from C1 (highest capacity) to C9 (lowest capacity) based on financial strength, past project execution, and engineering expertise. " +
-        "Procurement officers specify minimum CIDA grade requirements for public works tenders. " +
-        "During evaluation, any bidding vendor who does not meet the specified CIDA grade threshold is automatically marked non-compliant and disqualified.",
+    "Procurement officers specify minimum CIDA grade requirements for public works tenders. " +
+    "During evaluation, any bidding vendor who does not meet the specified CIDA grade threshold is automatically marked non-compliant and disqualified.",
   document: "For a complete vendor profile and successful bid submissions, the following documents are required:\n\n" +
-            "📋 Vendor Registration Documents:\n" +
-            "• Business Registration Certificate (Mandatory - PDF format)\n" +
-            "• VAT Registration Certificate (If VAT registered - PDF format)\n" +
-            "• Authorized Officer Letter of Authorization (Mandatory - PDF format)\n" +
-            "• CIDA Grading Certificate (Mandatory for construction contractors - PDF format)\n\n" +
-            "💼 Bid Submission Documents:\n" +
-            "• Completed Technical Proposal (PDF format)\n" +
-            "• Completed Financial Proposal/Schedule (PDF format)\n" +
-            "• Bid Bond/Security Deposit proof (If specified - PDF format)",
+    "📋 Vendor Registration Documents:\n" +
+    "• Business Registration Certificate (Mandatory - PDF format)\n" +
+    "• VAT Registration Certificate (If VAT registered - PDF format)\n" +
+    "• Authorized Officer Letter of Authorization (Mandatory - PDF format)\n" +
+    "• CIDA Grading Certificate (Mandatory for construction contractors - PDF format)\n\n" +
+    "💼 Bid Submission Documents:\n" +
+    "• Completed Technical Proposal (PDF format)\n" +
+    "• Completed Financial Proposal/Schedule (PDF format)\n" +
+    "• Bid Bond/Security Deposit proof (If specified - PDF format)",
   contact: "You can reach the official TenderEase Support Desk through:\n\n" +
-           "📧 Email: support@tenderease.lk\n" +
-           "📞 Phone: +94 (11) 234-5678\n" +
-           "🏢 Office: Procurement Secretariat, Lotus Road, Colombo 01.\n" +
-           "⏰ Hours: Monday - Friday, 8:30 AM to 4:30 PM (Closed on public holidays).",
+    "📧 Email: support@tenderease.lk\n" +
+    "📞 Phone: +94 (11) 234-5678\n" +
+    "🏢 Office: Procurement Secretariat, Lotus Road, Colombo 01.\n" +
+    "⏰ Hours: Monday - Friday, 8:30 AM to 4:30 PM (Closed on public holidays).",
   password: "Password management is secured via Keycloak. To reset your password, click 'Forgot Password' on the login screen, or contact your organization's CAO user to reset it from the user administration panel.",
   thanks: "You're very welcome! If you have any other questions, feel free to ask.",
   default: "I'm not sure I fully understand that question. Could you please rephrase it, or select one of the quick replies below? You can also contact our support team at support@tenderease.lk."
@@ -121,7 +121,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize with greeting
@@ -146,7 +146,7 @@ export default function Chatbot() {
   // Fallback offline keyword matching logic
   const getOfflineResponse = (text: string): string => {
     const cleanText = text.toLowerCase().trim();
-    
+
     if (cleanText.includes("hi") || cleanText.includes("hello") || cleanText.includes("hey")) {
       return FAQ_RESPONSES.greeting;
     }
@@ -174,7 +174,7 @@ export default function Chatbot() {
     if (cleanText.includes("thank") || cleanText.includes("thanks")) {
       return FAQ_RESPONSES.thanks;
     }
-    
+
     return FAQ_RESPONSES.default;
   };
 
@@ -188,13 +188,13 @@ export default function Chatbot() {
       text,
       timestamp: new Date(),
     };
-    
+
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
     setIsTyping(true);
 
     // Retrieve API key from environment variable
-    const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+    const geminiKey = process.env.GEMINI_API_KEY || "";
 
     if (geminiKey) {
       const models = [
@@ -315,7 +315,7 @@ export default function Chatbot() {
       {/* Chat Window */}
       {isOpen && (
         <div className="w-[380px] max-w-[calc(100vw-32px)] h-[500px] bg-white rounded-3xl border border-slate-100 shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
-          
+
           {/* Header */}
           <div className="bg-gradient-to-r from-[#953002] to-[#b43d0b] p-4 text-white flex items-center justify-between shadow-md">
             <div className="flex items-center gap-3">
@@ -330,8 +330,8 @@ export default function Chatbot() {
                 </span>
               </div>
             </div>
-            
-            <button 
+
+            <button
               onClick={toggleChat}
               className="p-1.5 rounded-full hover:bg-white/10 text-white transition-colors"
             >
@@ -344,27 +344,24 @@ export default function Chatbot() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2.5 max-w-[85%] ${
-                  msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
-                }`}
+                className={`flex gap-2.5 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"
+                  }`}
               >
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border text-[10px] ${
-                    msg.sender === "user"
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border text-[10px] ${msg.sender === "user"
                       ? "bg-slate-200 text-slate-700 border-slate-300"
                       : "bg-[#953002]/10 text-[#953002] border-[#953002]/10"
-                  }`}
+                    }`}
                 >
                   {msg.sender === "user" ? <User size={12} /> : <Bot size={12} />}
                 </div>
-                
+
                 <div className="space-y-1">
                   <div
-                    className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${
-                      msg.sender === "user"
+                    className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${msg.sender === "user"
                         ? "bg-[#953002] text-white rounded-tr-none shadow-sm"
                         : "bg-white text-slate-800 rounded-tl-none border border-slate-100 shadow-sm"
-                    }`}
+                      }`}
                     style={{ whiteSpace: "pre-line" }}
                   >
                     {msg.text}
@@ -389,7 +386,7 @@ export default function Chatbot() {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
